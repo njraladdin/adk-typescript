@@ -16,43 +16,71 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { promisify } from 'util';
+import { v4 as uuidv4 } from 'uuid';
 import { LlmAgent } from '../agents/LlmAgent';
-// TODO: Import or define types: BaseArtifactService, InMemoryArtifactService, Runner, BaseSessionService, InMemorySessionService, Session, envs
+import { BaseArtifactService } from '../artifacts/BaseArtifactService';
+import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
+import { Content, Part } from '../models/types';
+import { Runner } from '../runners';
+import { BaseSessionService } from '../sessions/baseSessionService';
+import { InMemorySessionService } from '../sessions/inMemorySessionService';
+import { Session } from '../sessions/interfaces';
+import * as envs from './utils/envs';
 
 interface InputFile {
   state: Record<string, any>;
   queries: string[];
 }
 
+/**
+ * Run an agent using input from a file
+ * 
+ * @param appName Name of the application
+ * @param rootAgent The root agent to run
+ * @param artifactService Service for managing artifacts
+ * @param session The session to use
+ * @param sessionService Service for managing sessions
+ * @param inputPath Path to the input file
+ */
 export async function runInputFile(
   appName: string,
   rootAgent: LlmAgent,
-  artifactService: any, // BaseArtifactService
-  session: any, // Session
-  sessionService: any, // BaseSessionService
+  artifactService: BaseArtifactService,
+  session: Session,
+  sessionService: BaseSessionService,
   inputPath: string
 ): Promise<void> {
-  const Runner = require('../runners/Runner').Runner;
-  const inputFileRaw = await promisify(fs.readFile)(inputPath, 'utf-8');
-  const inputFile: InputFile = JSON.parse(inputFileRaw);
-  inputFile.state['_time'] = new Date().toISOString();
-  session.state = inputFile.state;
   const runner = new Runner({
     appName,
     agent: rootAgent,
     artifactService,
     sessionService,
   });
+
+  const inputFileRaw = await promisify(fs.readFile)(inputPath, 'utf-8');
+  const inputFile: InputFile = JSON.parse(inputFileRaw);
+  
+  // Add time to state
+  const state = { ...inputFile.state, _time: new Date() };
+  session.state = state;
+  
   for (const query of inputFile.queries) {
     console.log(`user: ${query}`);
-    const content = { role: 'user', parts: [{ text: query }] };
+    const content: Content = { 
+      role: 'user', 
+      parts: [{ text: query } as Part] 
+    };
+    
     for await (const event of runner.runAsync({
       userId: session.userId,
       sessionId: session.id,
       newMessage: content,
     })) {
       if (event.content && event.content.parts) {
-        const text = event.content.parts.map((part: any) => part.text || '').join('');
+        const text = event.content.parts
+          .map((part: Part) => part.text || '')
+          .join('');
+          
         if (text) {
           console.log(`[${event.author}]: ${text}`);
         }
@@ -61,94 +89,172 @@ export async function runInputFile(
   }
 }
 
+/**
+ * Run an agent interactively via CLI
+ * 
+ * @param appName Name of the application
+ * @param rootAgent The root agent to run
+ * @param artifactService Service for managing artifacts
+ * @param session The session to use
+ * @param sessionService Service for managing sessions
+ */
 export async function runInteractively(
   appName: string,
   rootAgent: LlmAgent,
-  artifactService: any, // BaseArtifactService
-  session: any, // Session
-  sessionService: any // BaseSessionService
+  artifactService: BaseArtifactService,
+  session: Session,
+  sessionService: BaseSessionService
 ): Promise<void> {
-  const Runner = require('../runners/Runner').Runner;
   const runner = new Runner({
     appName,
     agent: rootAgent,
     artifactService,
     sessionService,
   });
+  
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
+  
   const ask = (q: string) => new Promise<string>(resolve => rl.question(q, resolve));
+  
   while (true) {
     const query = (await ask('user: ')).trim();
     if (!query) continue;
     if (query === 'exit') break;
+    
+    const content: Content = { 
+      role: 'user', 
+      parts: [{ text: query } as Part] 
+    };
+    
     for await (const event of runner.runAsync({
       userId: session.userId,
       sessionId: session.id,
-      newMessage: { role: 'user', parts: [{ text: query }] },
+      newMessage: content,
     })) {
       if (event.content && event.content.parts) {
-        const text = event.content.parts.map((part: any) => part.text || '').join('');
+        const text = event.content.parts
+          .map((part: Part) => part.text || '')
+          .join('');
+          
         if (text) {
           console.log(`[${event.author}]: ${text}`);
         }
       }
     }
   }
+  
   rl.close();
 }
 
+/**
+ * Extract conversation contents from session events
+ * 
+ * @param session The session to extract contents from
+ * @returns Array of conversation contents
+ */
+function getSessionContents(session: Session): Content[] {
+  if (!session.events) return [];
+  
+  return session.events
+    .filter(event => event.content && event.content.parts && event.content.parts.length > 0)
+    .map(event => event.content as Content);
+}
+
+/**
+ * Run the CLI for a specific agent
+ * 
+ * @param options Configuration options
+ * @param options.agentParentDir The parent directory of the agent
+ * @param options.agentFolderName The folder name of the agent
+ * @param options.jsonFilePath Optional path to a JSON file
+ * @param options.saveSession Whether to save the session after running
+ */
 export async function runCli({
   agentParentDir,
   agentFolderName,
   jsonFilePath,
-  saveSession,
+  saveSession = false,
 }: {
   agentParentDir: string;
   agentFolderName: string;
   jsonFilePath?: string;
   saveSession: boolean;
 }): Promise<void> {
-  // Dynamically import services and envs
-  const { InMemoryArtifactService } = require('../artifacts/InMemoryArtifactService');
-  const { InMemorySessionService } = require('../sessions/InMemorySessionService');
-  const { Session } = require('../sessions/Session');
-  const envs = require('./utils/envs');
+  // Add agent parent directory to the module search path
   if (!process.env.PYTHONPATH?.includes(agentParentDir)) {
     process.env.PYTHONPATH = (process.env.PYTHONPATH || '') + path.delimiter + agentParentDir;
   }
+
+  // Initialize services
   const artifactService = new InMemoryArtifactService();
   const sessionService = new InMemorySessionService();
   let session = sessionService.createSession({
     appName: agentFolderName,
     userId: 'test_user',
   });
+
+  // Import agent module and get root agent
   const agentModulePath = path.join(agentParentDir, agentFolderName);
-  const agentModule = await import(path.join(agentParentDir, agentFolderName));
-  const rootAgent = agentModule.agent.rootAgent;
-  envs.loadDotenvForAgent(agentFolderName, agentParentDir);
-  if (jsonFilePath) {
-    if (jsonFilePath.endsWith('.input.json')) {
-      await runInputFile(
-        agentFolderName,
-        rootAgent,
-        artifactService,
-        session,
-        sessionService,
-        jsonFilePath
-      );
-    } else if (jsonFilePath.endsWith('.session.json')) {
-      const sessionRaw = await promisify(fs.readFile)(jsonFilePath, 'utf-8');
-      session = Session.modelValidateJson(sessionRaw);
-      for (const content of session.getContents()) {
-        if (content.role === 'user') {
-          console.log('user: ', content.parts[0].text);
-        } else {
-          console.log(content.parts[0].text);
+  
+  try {
+    // Load environment variables for the agent
+    envs.loadDotenvForAgent(agentFolderName, agentParentDir);
+    
+    // Dynamically import the agent module
+    const agentModule = require(agentModulePath);
+    const rootAgent = agentModule.agent.rootAgent;
+    
+    if (jsonFilePath) {
+      if (jsonFilePath.endsWith('.input.json')) {
+        // Run with input file
+        await runInputFile(
+          agentFolderName,
+          rootAgent,
+          artifactService,
+          session,
+          sessionService,
+          jsonFilePath
+        );
+      } else if (jsonFilePath.endsWith('.session.json')) {
+        // Load session from file
+        const sessionRaw = await promisify(fs.readFile)(jsonFilePath, 'utf-8');
+        const loadedSession = JSON.parse(sessionRaw);
+        
+        // Merge session data into our session object
+        session.id = loadedSession.id || session.id;
+        session.appName = loadedSession.appName || session.appName;
+        session.userId = loadedSession.userId || session.userId;
+        session.state = loadedSession.state || session.state;
+        session.events = loadedSession.events || session.events;
+        
+        // Print conversation history
+        const contents = getSessionContents(session);
+        for (const content of contents) {
+          if (content.role === 'user') {
+            console.log('user: ', content.parts[0].text);
+          } else {
+            console.log(content.parts[0].text);
+          }
         }
+        
+        // Run interactively
+        await runInteractively(
+          agentFolderName,
+          rootAgent,
+          artifactService,
+          session,
+          sessionService
+        );
+      } else {
+        console.error(`Unsupported file type: ${jsonFilePath}`);
+        process.exit(1);
       }
+    } else {
+      // Run interactively without input file
+      console.log(`Running agent ${rootAgent.name}, type exit to exit.`);
       await runInteractively(
         agentFolderName,
         rootAgent,
@@ -156,37 +262,44 @@ export async function runCli({
         session,
         sessionService
       );
-    } else {
-      console.error(`Unsupported file type: ${jsonFilePath}`);
-      process.exit(1);
     }
-  } else {
-    console.log(`Running agent ${rootAgent.name}, type exit to exit.`);
-    await runInteractively(
-      agentFolderName,
-      rootAgent,
-      artifactService,
-      session,
-      sessionService
-    );
-  }
-  if (saveSession) {
-    let sessionPath;
-    if (jsonFilePath) {
-      sessionPath = jsonFilePath.replace('.input.json', '.session.json');
-    } else {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      sessionPath = await new Promise<string>(resolve => rl.question('Session ID to save: ', resolve));
-      rl.close();
-      sessionPath = path.join(agentModulePath, `${sessionPath}.session.json`);
+
+    // Save session if requested
+    if (saveSession) {
+      let sessionPath: string;
+      if (jsonFilePath) {
+        sessionPath = jsonFilePath.replace('.input.json', '.session.json');
+      } else {
+        // Ask for session ID
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+        const sessionId = await new Promise<string>(resolve => {
+          rl.question('Session ID to save: ', resolve);
+        });
+        rl.close();
+        
+        sessionPath = path.join(agentModulePath, `${sessionId}.session.json`);
+      }
+      
+      // Fetch updated session
+      const updatedSession = sessionService.getSession({
+        appName: session.appName,
+        userId: session.userId,
+        sessionId: session.id,
+      }) || session;
+      
+      // Save session to file
+      await promisify(fs.writeFile)(
+        sessionPath, 
+        JSON.stringify(updatedSession, null, 2)
+      );
+      
+      console.log('Session saved to', sessionPath);
     }
-    // Fetch the session again to get all the details.
-    session = sessionService.getSession({
-      appName: session.appName,
-      userId: session.userId,
-      sessionId: session.id,
-    });
-    await promisify(fs.writeFile)(sessionPath, session.modelDumpJson({ indent: 2, excludeNone: true }));
-    console.log('Session saved to', sessionPath);
+  } catch (error) {
+    console.error('Error running CLI:', error);
+    process.exit(1);
   }
 } 

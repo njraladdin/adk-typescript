@@ -81,15 +81,54 @@ export enum AuthCredentialTypes {
 }
 
 /**
- * Data class representing an authentication credential.
+ * Interface representing authentication credentials
+ * 
+ * This is a flexible structure that can hold different types
+ * of authentication credentials depending on the auth scheme.
  */
 export interface AuthCredential {
-  auth_type: AuthCredentialTypes;
-  resource_ref?: string;
-  api_key?: string;
-  http?: HttpAuth;
-  service_account?: ServiceAccount;
-  oauth2?: OAuth2Auth;
-  // Add any extra fields as needed
+  /** Any property can be included in the credential */
   [key: string]: any;
+  
+  /** API key for API_KEY auth scheme */
+  apiKey?: string;
+  
+  /** Username for BASIC auth scheme */
+  username?: string;
+  
+  /** Password for BASIC auth scheme */
+  password?: string;
+  
+  /** Client ID for OAuth2/OIDC auth schemes */
+  clientId?: string;
+  
+  /** Client secret for OAuth2/OIDC auth schemes */
+  clientSecret?: string;
+  
+  /** Authorization URI for OAuth2/OIDC auth schemes */
+  authorizationUri?: string;
+  
+  /** Token URI for OAuth2/OIDC auth schemes */
+  tokenUri?: string;
+  
+  /** Redirect URI for OAuth2/OIDC auth schemes */
+  redirectUri?: string;
+  
+  /** Scopes for OAuth2/OIDC auth schemes */
+  scopes?: string[];
+  
+  /** State for OAuth2/OIDC auth schemes */
+  state?: string;
+  
+  /** Access token for OAuth2/OIDC auth schemes */
+  accessToken?: string;
+  
+  /** Refresh token for OAuth2/OIDC auth schemes */
+  refreshToken?: string;
+  
+  /** ID token for OIDC auth scheme */
+  idToken?: string;
+  
+  /** Service account key for SERVICE_ACCOUNT auth scheme */
+  serviceAccountKey?: string;
 } 

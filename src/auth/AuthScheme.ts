@@ -15,13 +15,27 @@
  */
 
 /**
- * Authentication module - Tools and utilities for authentication
+ * Enum representing different authentication schemes
  */
-
-// Export auth components - consolidate exports to avoid naming conflicts
-export * from './AuthCredential';
-export * from './AuthHandler';
-export * from './AuthSchemes'; // This includes AuthScheme enum
-export * from './AuthTool';     // This includes AuthConfig interface
-export * from './AuthPreprocessor';
-export * from './AuthConfig'; 
+export enum AuthScheme {
+  /** No authentication */
+  NONE = 'NONE',
+  
+  /** API key authentication */
+  API_KEY = 'API_KEY',
+  
+  /** Basic authentication with username and password */
+  BASIC = 'BASIC',
+  
+  /** OAuth 2.0 authentication */
+  OAUTH2 = 'OAUTH2',
+  
+  /** OpenID Connect authentication */
+  OIDC = 'OIDC',
+  
+  /** Google service account authentication */
+  SERVICE_ACCOUNT = 'SERVICE_ACCOUNT',
+  
+  /** Custom authentication mechanism */
+  CUSTOM = 'CUSTOM'
+} 

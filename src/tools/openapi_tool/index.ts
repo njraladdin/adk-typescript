@@ -15,13 +15,15 @@
  */
 
 /**
- * Authentication module - Tools and utilities for authentication
+ * OpenAPI tool module
+ *
+ * This module provides tools for working with OpenAPI specifications and creating
+ * tools that interact with REST APIs documented with OpenAPI.
  */
 
-// Export auth components - consolidate exports to avoid naming conflicts
-export * from './AuthCredential';
-export * from './AuthHandler';
-export * from './AuthSchemes'; // This includes AuthScheme enum
-export * from './AuthTool';     // This includes AuthConfig interface
-export * from './AuthPreprocessor';
-export * from './AuthConfig'; 
+// Export from OpenAPI spec parser
+export * from './openapi_spec_parser/RestApiTool';
+export * from './openapi_spec_parser/OpenAPIToolset';
+
+// Export commonly used types and utilities
+export * from './common/common'; 

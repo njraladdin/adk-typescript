@@ -14,14 +14,8 @@
  * limitations under the License.
  */
 
-/**
- * Authentication module - Tools and utilities for authentication
- */
-
-// Export auth components - consolidate exports to avoid naming conflicts
-export * from './AuthCredential';
-export * from './AuthHandler';
-export * from './AuthSchemes'; // This includes AuthScheme enum
-export * from './AuthTool';     // This includes AuthConfig interface
-export * from './AuthPreprocessor';
-export * from './AuthConfig'; 
+// Re-export utility functions from module files
+export * from './envs';
+export * from './evals';
+export * from './logs';
+export * from './init'; 

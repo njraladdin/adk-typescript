@@ -23,6 +23,9 @@ import { Event } from '../events/Event';
 import { BaseLlmFlow } from '../flows/llm_flows/BaseLlmFlow';
 import { Content } from '../models/types';
 import { BaseLlm } from '../models/BaseLlm';
+import { BaseTool } from '../tools/BaseTool';
+import { Session } from '../session';
+import { Message, MessageRole } from '../messages';
 
 /**
  * Extended options for LLM agents.
@@ -36,6 +39,12 @@ export interface LlmAgentOptions extends AgentOptions {
   
   /** Whether to allow transfers to peer agents (default: true) */
   allowTransferToPeer?: boolean;
+  
+  /** Tools available to this agent */
+  tools?: BaseTool[];
+  
+  /** The instruction template for the agent */
+  instruction?: string;
 }
 
 /**
@@ -50,6 +59,12 @@ export class LlmAgent extends BaseAgent {
   
   /** Whether to allow transfers to peer agents */
   allowTransferToPeer: boolean;
+  
+  /** Tools available to this agent */
+  canonicalTools: BaseTool[] = [];
+  
+  /** The instruction template for the agent */
+  instruction?: string;
   
   /**
    * Creates a new LLM agent.
@@ -67,6 +82,39 @@ export class LlmAgent extends BaseAgent {
     this.flow = options.flow;
     this.llm = options.llm;
     this.allowTransferToPeer = options.allowTransferToPeer ?? true;
+    this.instruction = options.instruction;
+    
+    // Set tools if provided
+    if (options.tools) {
+      this.canonicalTools = [...options.tools];
+    }
+  }
+  
+  /**
+   * Creates a new session for this agent
+   * 
+   * @returns A promise resolving to a new Session object
+   */
+  async createSession(): Promise<Session> {
+    // Create and return a new session for this agent
+    // This is a simplified implementation
+    return {
+      id: crypto.randomUUID(),
+      agent: this,
+      sendMessage: async (message: Message | string) => {
+        // Placeholder implementation
+        console.log(`Received message in session: ${typeof message === 'string' ? message : JSON.stringify(message)}`);
+        return {
+          id: crypto.randomUUID(),
+          role: MessageRole.ASSISTANT,
+          parts: [{ text: "Agent response" }],
+          timestamp: new Date(),
+          text: () => "Agent response"
+        };
+      },
+      getMessages: () => [],
+      end: async () => { /* End the session */ }
+    };
   }
   
   /**

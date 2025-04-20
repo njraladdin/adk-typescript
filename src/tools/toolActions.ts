@@ -15,13 +15,26 @@
  */
 
 /**
- * Authentication module - Tools and utilities for authentication
+ * Interface for tool actions that can be applied in a tool context
  */
-
-// Export auth components - consolidate exports to avoid naming conflicts
-export * from './AuthCredential';
-export * from './AuthHandler';
-export * from './AuthSchemes'; // This includes AuthScheme enum
-export * from './AuthTool';     // This includes AuthConfig interface
-export * from './AuthPreprocessor';
-export * from './AuthConfig'; 
+export interface ToolActions {
+  /**
+   * Whether to escalate the current flow (used by ExitLoopTool)
+   */
+  escalate?: boolean;
+  
+  /**
+   * Agent name to transfer to (used by TransferToAgentTool)
+   */
+  transferToAgent?: string;
+  
+  /**
+   * Whether to skip summarization (used by GetUserChoiceTool)
+   */
+  skipSummarization?: boolean;
+  
+  /**
+   * Optional properties for other actions
+   */
+  [key: string]: any;
+} 

@@ -15,13 +15,8 @@
  */
 
 /**
- * Authentication module - Tools and utilities for authentication
+ * Retrieval tools module - Tools for retrieving information
  */
 
-// Export auth components - consolidate exports to avoid naming conflicts
-export * from './AuthCredential';
-export * from './AuthHandler';
-export * from './AuthSchemes'; // This includes AuthScheme enum
-export * from './AuthTool';     // This includes AuthConfig interface
-export * from './AuthPreprocessor';
-export * from './AuthConfig'; 
+export * from './BaseRetrievalTool';
+export * from './WebSearchTool'; 
