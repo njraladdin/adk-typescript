@@ -21,19 +21,37 @@ import { EvalConstants } from './evaluation_constants';
 // import { InMemorySessionService } from '../sessions/InMemorySessionService';
 // import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 
-// TypeScript interface for an evaluation dataset entry
+/**
+ * Interface for an evaluation data entry
+ */
 export interface EvalEntry {
-  [EvalConstants.QUERY]: string;
-  [EvalConstants.EXPECTED_TOOL_USE]?: any[];
-  [EvalConstants.RESPONSE]?: string;
-  [EvalConstants.REFERENCE]?: string;
-  [EvalConstants.TOOL_NAME]?: string;
-  [EvalConstants.TOOL_INPUT]?: any;
-  [EvalConstants.MOCK_TOOL_OUTPUT]?: any;
-  [key: string]: any;
+  id: string;
+  query: string;
+  expectedResponse?: string;
+  actualResponse?: string;
+  // Add other required properties
 }
 
+/**
+ * Generates evaluation data from test files
+ */
 export class EvaluationGenerator {
+  /**
+   * Load evaluation data from a file or directory
+   * @param filePath Path to evaluation file or directory
+   * @returns Array of evaluation entries
+   */
+  static loadEvaluationData(filePath: string): EvalEntry[] {
+    // Placeholder implementation
+    return [
+      {
+        id: '1',
+        query: 'Test query',
+        expectedResponse: 'Expected response'
+      }
+    ];
+  }
+
   /**
    * Generates evaluation responses for the given dataset and agent.
    * @param evalDataset The dataset to evaluate

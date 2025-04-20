@@ -1,5 +1,5 @@
-export * from './EvaluationConstants';
+export * from './evaluation_constants';
 export * from './EvaluationGenerator';
-export * from './ResponseEvaluator';
-export * from './TrajectoryEvaluator';
-export * from './AgentEvaluator'; 
+export * from './response_evaluator';
+export * from './trajectory_evaluator';
+export { AgentEvaluator, EvaluationParams, EvaluationResult } from './AgentEvaluator'; 

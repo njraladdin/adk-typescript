@@ -14,7 +14,7 @@
 
 import { ResponseEvaluator, ResponseEvalResult } from './response_evaluator';
 import { TrajectoryEvaluator, TrajectoryEvalResult } from './trajectory_evaluator';
-import { EvalEntry } from './evaluation_generator';
+import { EvalEntry } from './EvaluationGenerator';
 
 // TypeScript interface for agent-level evaluation result
 export interface AgentEvalResult {
@@ -22,6 +22,19 @@ export interface AgentEvalResult {
   trajectoryResults: TrajectoryEvalResult[];
   overallScore: number;
   [key: string]: any;
+}
+
+export interface EvaluationParams {
+  agentModulePath: string;
+  evalDatasetFilePathOrDir: string;
+  numRuns: number;
+  initialSessionFile?: string;
+  agentName?: string;
+}
+
+export interface EvaluationResult {
+  success: boolean;
+  // Add other properties as needed
 }
 
 export class AgentEvaluator {
@@ -35,8 +48,8 @@ export class AgentEvaluator {
     const trajectoryResults = TrajectoryEvaluator.evaluateTrajectories(evalData);
     // Simple overall score: average of all scores
     const allScores = [
-      ...responseResults.map(r => r.score),
-      ...trajectoryResults.map(t => t.score)
+      ...responseResults.map((r: ResponseEvalResult) => r.score),
+      ...trajectoryResults.map((t: TrajectoryEvalResult) => t.score)
     ];
     const overallScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0;
     return {
@@ -44,5 +57,16 @@ export class AgentEvaluator {
       trajectoryResults,
       overallScore
     };
+  }
+
+  /**
+   * Evaluates an agent against a test dataset
+   * @param params Evaluation parameters
+   * @returns Array of evaluation results
+   */
+  static async evaluate(params: EvaluationParams): Promise<EvaluationResult[]> {
+    // Implementation will go here
+    // This is a placeholder implementation
+    return Array(params.numRuns).fill({ success: true });
   }
 } 
