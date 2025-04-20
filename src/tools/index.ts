@@ -42,11 +42,14 @@ export * from './VertexAISearchTool';
 export * from './ToolboxTool';
 export * from './LangchainTool';
 
+// Export MCP tools
+export * from './mcp_tool';
+
 // Export Google API tools
 export * from './google_api_tool';
 
 // Export OpenAPI tools
-export * from './openapi_tool';
+export { OpenAPIToolset, RestApiTool } from './openapi_tool';
 
 // Re-export specific tool directories
 export * from './retrieval/BaseRetrievalTool';
@@ -315,6 +318,61 @@ export const Tools = {
         return {
           status: 'Vertex AI Search tool is not meant to be executed directly. It is handled internally by the model.',
           searchEngineId
+        };
+      }
+    }
+  },
+  
+  /**
+   * MCP tools
+   */
+  mcp: {
+    /**
+     * Create an MCP toolset with stdio connection
+     */
+    createStdioToolset: {
+      name: 'create_mcp_stdio_toolset',
+      description: 'Creates an MCP toolset using stdio connection',
+      execute: async (params: { command: string, args: string[] }): Promise<any> => {
+        // Import dynamically to avoid circular dependencies
+        const { MCPToolset } = require('./mcp_tool');
+        
+        const [tools, exitStack] = await MCPToolset.fromServer({
+          connectionParams: {
+            command: params.command,
+            args: params.args
+          }
+        });
+        
+        return {
+          status: 'MCP Toolset created',
+          tools,
+          exitStack
+        };
+      }
+    },
+    
+    /**
+     * Create an MCP toolset with SSE connection
+     */
+    createSseToolset: {
+      name: 'create_mcp_sse_toolset',
+      description: 'Creates an MCP toolset using SSE connection',
+      execute: async (params: { url: string, headers?: Record<string, any> }): Promise<any> => {
+        // Import dynamically to avoid circular dependencies
+        const { MCPToolset, SseServerParams } = require('./mcp_tool');
+        
+        const [tools, exitStack] = await MCPToolset.fromServer({
+          connectionParams: new SseServerParams({
+            url: params.url,
+            headers: params.headers
+          })
+        });
+        
+        return {
+          status: 'MCP Toolset created',
+          tools,
+          exitStack
         };
       }
     }
