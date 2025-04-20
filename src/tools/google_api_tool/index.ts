@@ -24,6 +24,7 @@
 export * from './GoogleApiTool';
 export * from './GoogleApiToolSet';
 export * from './GoogleApiToolSets';
+export * from './GoogleApiToOpenApiConverter';
 
 // Export commonly used toolsets
 export {

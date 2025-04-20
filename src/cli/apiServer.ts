@@ -33,8 +33,8 @@ import { Session } from '../sessions/interfaces';
 import { createEmptyState, loadDotenvForAgent, convertSessionToEvalFormat } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 
-// Fix for the Event type conflict - use Runner's Event type
-import { Event as RunnerEvent } from '../runners/Runner';
+// Fix for the Event type conflict - import directly from events directory
+import { Event as RunnerEvent } from '../events/Event';
 
 // Interface definitions to replace Pydantic models
 interface AgentRunRequest {

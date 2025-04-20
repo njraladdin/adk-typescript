@@ -5,10 +5,17 @@
 
 // Export primary modules
 export * from './agents';
+
+// Fix re-exporting issue with MemoryResult
+import { MemoryResult } from './memory';
+export { MemoryResult };
 export * from './memory';
+
 export * from './sessions';
 export * from './tools';
 export * from './utils';
+export * from './telemetry';
+export * from './runners';
 
 // Version information
 export const VERSION = '0.1.0';

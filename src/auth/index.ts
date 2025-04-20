@@ -15,13 +15,35 @@
  */
 
 /**
- * Authentication module - Tools and utilities for authentication
+ * Auth module - Provides interfaces and implementations for authentication
  */
+
+// We'll use named exports to avoid ambiguities with existing exports
+// Export from original credential/scheme files (different naming to avoid conflicts)
+export {
+  AuthCredential as SimpleAuthCredential,
+  ApiKeyCredential,
+  BearerCredential,
+  BasicCredential
+} from './auth_credential';
+
+export {
+  AuthScheme as SimpleAuthScheme,
+  ApiKeyAuthScheme,
+  BearerAuthScheme,
+  BasicAuthScheme
+} from './auth_schemes';
 
 // Export auth components - consolidate exports to avoid naming conflicts
 export * from './AuthCredential';
 export * from './AuthHandler';
 export * from './AuthSchemes'; // This includes AuthScheme enum
-export * from './AuthTool';     // This includes AuthConfig interface
+
+// Export from AuthTool with renamed AuthConfig to avoid ambiguity
+import * as AuthToolExports from './AuthTool';
+export { 
+  AuthToolExports as AuthToolModule
+};
+
 export * from './AuthPreprocessor';
 export * from './AuthConfig'; 

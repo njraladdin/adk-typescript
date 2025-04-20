@@ -51,6 +51,9 @@ export * from './google_api_tool';
 // Export OpenAPI tools
 export { OpenAPIToolset, RestApiTool } from './openapi_tool';
 
+// Export APIHub tools
+export * from './apihub_tool';
+
 // Re-export specific tool directories
 export * from './retrieval/BaseRetrievalTool';
 export * from './retrieval/WebSearchTool';

@@ -17,6 +17,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { GoogleApiTool, RestApiTool } from './GoogleApiTool';
+import { GoogleApiToOpenApiConverterImpl } from './GoogleApiToOpenApiConverter';
 
 /**
  * OpenAPIToolset interface (placeholder for actual implementation)
@@ -42,7 +43,7 @@ export interface OpenIdConnectWithConfig {
  * GoogleApiToOpenApiConverter interface (placeholder for actual implementation)
  */
 export interface GoogleApiToOpenApiConverter {
-  convert: () => Record<string, any>;
+  convert: () => Promise<Record<string, any>>;
 }
 
 /**
@@ -91,22 +92,28 @@ export class GoogleApiToolSet {
   /**
    * Load a toolset for a specific Google API
    * 
-   * Note: This is a placeholder implementation. The actual implementation would require
-   * the GoogleApiToOpenApiConverter and OpenAPIToolset which are not currently available.
-   * 
    * @param apiName The name of the Google API
    * @param apiVersion The version of the Google API
    * @returns A new GoogleApiToolSet for the specified API
    */
-  static loadToolSet(apiName: string, apiVersion: string): GoogleApiToolSet {
+  static async loadToolSet(apiName: string, apiVersion: string): Promise<GoogleApiToolSet> {
     console.log(`Loading tool set for Google API: ${apiName} v${apiVersion}`);
     
-    // This is a placeholder implementation - in a real implementation, 
-    // we would use GoogleApiToOpenApiConverter to get the OpenAPI spec
-    // and then create an OpenAPIToolset from it
-    
-    // Mock implementation that returns an empty toolset
-    return new GoogleApiToolSet([]);
+    try {
+      // Use the GoogleApiToOpenApiConverterImpl to convert the Google API to OpenAPI
+      const converter = new GoogleApiToOpenApiConverterImpl(apiName, apiVersion);
+      const openApiSpec = await converter.convert();
+      
+      // This is still a placeholder implementation
+      // In a real implementation, we would use the openApiSpec to create an OpenAPIToolset
+      console.log(`Converted ${apiName} API to OpenAPI format`);
+      
+      // Mock implementation that returns an empty toolset
+      return new GoogleApiToolSet([]);
+    } catch (error) {
+      console.error(`Error loading tool set for ${apiName}:`, error);
+      return new GoogleApiToolSet([]);
+    }
   }
 
   /**
