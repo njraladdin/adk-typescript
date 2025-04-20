@@ -1,0 +1,192 @@
+/**
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { Agent, InvocationContext, ToolContext } from '../../../../src';
+import { PlanReActPlanner } from '../../../../src/planners';
+
+/**
+ * Simply ask to update these variables in the context
+ */
+function updateFc(
+  data_one: string,
+  data_two: string | number,
+  data_three: string[],
+  data_four: Array<string | number>,
+  toolContext: ToolContext
+): string {
+  toolContext.actions.updateState('data_one', data_one);
+  toolContext.actions.updateState('data_two', data_two);
+  toolContext.actions.updateState('data_three', data_three);
+  toolContext.actions.updateState('data_four', data_four);
+  return 'The function `update_fc` executed successfully';
+}
+
+/**
+ * Echo the context variable
+ */
+function echoInfo(customer_id: string): string {
+  return customer_id;
+}
+
+/**
+ * Build global instruction for agent
+ */
+function buildGlobalInstruction(invocationContext: InvocationContext): string {
+  return `This is the gloabl agent instruction for invocation: ${invocationContext.invocationId}.`;
+}
+
+/**
+ * Build sub agent instruction
+ */
+function buildSubAgentInstruction(): string {
+  return 'This is the plain text sub agent instruction.';
+}
+
+/**
+ * Context variable echo agent
+ */
+export const contextVariableEchoAgent = new Agent({
+  llm: 'gemini-1.5-flash',
+  name: 'context_variable_echo_agent',
+  instruction: 'Use the echo_info tool to echo {customerId}, {customerInt}, {customerFloat}, and {customerJson}. Ask for it if you need to.',
+  flow: 'auto',
+  tools: [
+    {
+      name: 'echo_info',
+      description: 'Echo the context variable',
+      function: echoInfo,
+      parameters: {
+        customer_id: {
+          type: 'string',
+          description: 'The customer ID to echo'
+        }
+      }
+    }
+  ]
+});
+
+/**
+ * Context variable with complicated format agent
+ */
+export const contextVariableWithComplicatedFormatAgent = new Agent({
+  llm: 'gemini-1.5-flash',
+  name: 'context_variable_echo_agent',
+  instruction: 'Use the echo_info tool to echo { customerId }, {{customer_int  }, { non-identifier-float}}, {artifact.fileName}, {\'key1\': \'value1\'} and {{\'key2\': \'value2\'}}. Ask for it if you need to.',
+  flow: 'auto',
+  tools: [
+    {
+      name: 'echo_info',
+      description: 'Echo the context variable',
+      function: echoInfo,
+      parameters: {
+        customer_id: {
+          type: 'string',
+          description: 'The customer ID to echo'
+        }
+      }
+    }
+  ]
+});
+
+/**
+ * Context variable with nl planner agent
+ */
+export const contextVariableWithNlPlannerAgent = new Agent({
+  llm: 'gemini-1.5-flash',
+  name: 'context_variable_with_nl_planner_agent',
+  instruction: 'Use the echo_info tool to echo {customerId}. Ask for it if you need to.',
+  flow: 'auto',
+  planner: new PlanReActPlanner(),
+  tools: [
+    {
+      name: 'echo_info',
+      description: 'Echo the context variable',
+      function: echoInfo,
+      parameters: {
+        customer_id: {
+          type: 'string',
+          description: 'The customer ID to echo'
+        }
+      }
+    }
+  ]
+});
+
+/**
+ * Context variable with function instruction agent
+ */
+export const contextVariableWithFunctionInstructionAgent = new Agent({
+  llm: 'gemini-1.5-flash',
+  name: 'context_variable_with_function_instruction_agent',
+  instruction: buildSubAgentInstruction,
+  flow: 'auto'
+});
+
+/**
+ * Context variable update agent
+ */
+export const contextVariableUpdateAgent = new Agent({
+  llm: 'gemini-1.5-flash',
+  name: 'context_variable_update_agent',
+  instruction: 'Call tools',
+  flow: 'auto',
+  tools: [
+    {
+      name: 'update_fc',
+      description: 'Update variables in the context',
+      function: updateFc,
+      parameters: {
+        data_one: {
+          type: 'string',
+          description: 'First data to update'
+        },
+        data_two: {
+          type: 'string',
+          description: 'Second data to update'
+        },
+        data_three: {
+          type: 'array',
+          items: {
+            type: 'string'
+          },
+          description: 'Third data to update'
+        },
+        data_four: {
+          type: 'array',
+          items: {
+            type: 'string'
+          },
+          description: 'Fourth data to update'
+        }
+      }
+    }
+  ]
+});
+
+/**
+ * Root agent for context variable tests
+ */
+export const contextVariableRootAgent = new Agent({
+  llm: 'gemini-1.5-flash',
+  name: 'root_agent',
+  description: 'The root agent.',
+  flow: 'auto',
+  globalInstruction: buildGlobalInstruction,
+  subAgents: [
+    contextVariableWithNlPlannerAgent,
+    contextVariableUpdateAgent
+  ]
+}); 
