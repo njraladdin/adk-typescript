@@ -514,6 +514,10 @@ export abstract class BaseLlmFlow {
       yield callbackResponse;
       return;
     }
+    // Automatically append function tools to the request so the model is aware of them
+    if (agent instanceof LlmAgent) {
+      llmRequest.appendTools(agent.canonicalTools);
+    }
     const llm = this._getLlm(invocationContext);
     const result = llm.generateContentAsync(llmRequest);
     let lastResponse: LlmResponse | undefined;

@@ -6,13 +6,14 @@
 import { FunctionTool } from '../../src/tools/FunctionTool';
 import { LlmAgent } from '../../src/agents/LlmAgent';
 import { ToolContext } from '../../src/tools/toolContext';
-import { Gemini } from '../../src/models/GoogleLlm';
+import { Gemini } from '../../src/models';
 import { SingleFlow } from '../../src/flows/llm_flows/SingleFlow';
+import { requestProcessor } from '../../src/flows/llm_flows/basic';
 
 // Step 1: Create a model and flow
 // Changed model from gemini-2.0-flash to gemini-1.5-flash for better compatibility
-export const model = new Gemini('gemini-2.0-flash');
-export const flow = new SingleFlow();
+export const model = new Gemini('gemini-1.5-flash');
+export const flow = new SingleFlow([requestProcessor]);
 
 // Enable debug logging
 const DEBUG = true;
@@ -169,7 +170,8 @@ export const timeTool = new FunctionTool({
 export const rootAgent = new LlmAgent(
   'weather_time_agent', 
   {
-    model: 'gemini-2.0-flash',
+    model: 'gemini-1.5-flash',
+    flow,
     instruction: `You are a helpful agent who can answer user questions about the time and weather in a city.
     
     Use get_weather for weather queries.

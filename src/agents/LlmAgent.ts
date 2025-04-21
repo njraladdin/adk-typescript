@@ -162,6 +162,9 @@ function convertToolUnionToTool(toolUnion: ToolUnion): BaseTool {
  * An agent that uses an LLM flow to process requests.
  */
 export class LlmAgent extends BaseAgent {
+  /** Optional custom flow for this agent */
+  private customFlow?: BaseLlmFlow;
+  
   /** The LLM model used by this agent */
   model: string | BaseLlm = '';
   
@@ -226,6 +229,7 @@ export class LlmAgent extends BaseAgent {
     super(name, options);
     
     // Set properties from options
+    this.customFlow = options.flow;
     this.model = options.model || '';
     this.instruction = options.instruction || '';
     this.globalInstruction = options.globalInstruction || '';
@@ -449,15 +453,19 @@ export class LlmAgent extends BaseAgent {
    * Gets the appropriate LLM flow based on agent configuration.
    */
   private get llmFlow(): BaseLlmFlow {
+    // Use custom flow if configured
+    if (this.customFlow) {
+      return this.customFlow;
+    }
+    // Default flow based on agent transfer settings
     if (
       this.disallowTransferToParent &&
       this.disallowTransferToPeers &&
       this.subAgents.length === 0
     ) {
       return new SingleFlow();
-    } else {
-      return new AutoFlow();
     }
+    return new AutoFlow();
   }
   
   /**

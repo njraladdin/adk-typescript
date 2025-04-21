@@ -21,6 +21,8 @@ import { InvocationContext } from '../../agents/InvocationContext';
 import { Event } from '../../events/Event';
 import { LlmRequest } from '../../models/LlmRequest';
 import { BaseLlmRequestProcessor } from './BaseLlmProcessor';
+import { Content } from '../../models/types';
+import { LlmAgent } from '../../agents/LlmAgent';
 
 /**
  * A request processor that adds the user's content to the request.
@@ -37,22 +39,26 @@ class ContentLlmRequestProcessor implements BaseLlmRequestProcessor {
     invocationContext: InvocationContext,
     llmRequest: LlmRequest
   ): AsyncGenerator<Event, void, unknown> {
-    // Add user content to the request
+    // Build conversation history from session events (events contain past user/model messages)
+    const historyContents = (invocationContext.session.events || [])
+      .map(event => event.content)
+      .filter((c): c is Content => c !== undefined);
+    // Exclude the latest user content if present
+    const historyWithoutLatestUserMessage = historyContents.filter(
+      (content) => content !== invocationContext.userContent
+    );
+    for (const content of historyWithoutLatestUserMessage) {
+      llmRequest.contents.push(content);
+    }
+    // Now add the new user content at the end
     if (invocationContext.userContent) {
       llmRequest.contents.push(invocationContext.userContent);
     }
-
-    // Get conversation history from the session
-    const conversationHistory = invocationContext.session.getConversationHistory();
-    if (conversationHistory) {
-      // We already have the latest user message, so we don't need to add it again
-      const historyWithoutLatestUserMessage = conversationHistory.filter(
-        (content) => content !== invocationContext.userContent
-      );
-      
-      for (const content of historyWithoutLatestUserMessage) {
-        llmRequest.contents.push(content);
-      }
+    
+    // Append tool definitions for any available tools on the agent
+    const agent = invocationContext.agent;
+    if (agent instanceof LlmAgent) {
+      llmRequest.appendTools(agent.canonicalTools);
     }
     
     // Ensure async generator contract but don't yield anything

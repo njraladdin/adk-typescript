@@ -1,5 +1,9 @@
 /**
- * Runner script for the multi_tool_agent
+implement this : https://github.com/google/adk-samples/tree/main/agents/personalized-shopping USE THE CLI 
+
+
+
+* Runner script for the multi_tool_agent
  * This uses the actual ADK framework to run the agent
  */
 import { rootAgent } from './agent';
