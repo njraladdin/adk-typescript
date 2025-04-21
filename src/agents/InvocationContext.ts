@@ -24,7 +24,7 @@ import { BaseArtifactService } from '../artifacts/BaseArtifactService';
 import { BaseMemoryService } from '../memory/BaseMemoryService';
 import { BaseSessionService } from '../sessions/baseSessionService';
 import { BaseLlm } from '../models/BaseLlm';
-import { ToolContext } from '../tools/tool_context';
+import { ToolContext } from '../tools/toolContext';
 
 /**
  * Error thrown when the number of LLM calls exceed the limit.

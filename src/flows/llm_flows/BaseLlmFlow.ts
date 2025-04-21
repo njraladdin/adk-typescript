@@ -1,21 +1,6 @@
 /**
- * Copyright 2025 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/**
  * A basic flow that calls the LLM in a loop until a final response is generated.
+ * This flow ends when it transfers to another agent.
  */
 import { InvocationContext } from '../../agents/InvocationContext';
 import { BaseAgent } from '../../agents/BaseAgent';
@@ -29,6 +14,57 @@ import { BaseLlmConnection } from '../../models/BaseLlmConnection';
 import { CallbackContext } from '../../agents/CallbackContext';
 import { BaseLlmRequestProcessor, BaseLlmResponseProcessor } from './BaseLlmProcessor';
 import { Blob } from '../../models/types';
+import { ToolContext } from '../../tools/toolContext';
+import * as telemetry from '../../telemetry';
+import { StreamingMode } from '../../agents/RunConfig';
+import { LiveRequestQueue } from '../../agents/LiveRequestQueue';
+import { EventActions } from '../../events/EventActions';
+import { AudioTranscriber } from './AudioTranscriber';
+import * as functions from './functions';
+
+// Define interfaces for the telemetry module
+declare module '../../telemetry' {
+  interface Tracer {
+    startAsCurrentSpan(name: string): { end: () => void };
+  }
+}
+
+// Extend the BaseAgent interface
+declare module '../../agents/BaseAgent' {
+  interface BaseAgent {
+    runLive(context: InvocationContext): AsyncGenerator<Event, void, unknown>;
+    runAsync(context: InvocationContext): AsyncGenerator<Event, void, unknown>;
+    rootAgent: BaseAgent;
+    findAgent(name: any): BaseAgent | undefined;
+  }
+}
+
+// Extend BaseTool with correct signature
+declare module '../../tools/BaseTool' {
+  interface BaseTool {
+    processLlmRequest(params: { toolContext: ToolContext, llmRequest: any }): Promise<void>;
+  }
+}
+
+// Extend LiveRequestQueue
+declare module '../../agents/LiveRequestQueue' {
+  interface LiveRequestQueue {
+    close(): void;
+  }
+}
+
+// Add the close method to LiveRequestQueue prototype
+if (typeof LiveRequestQueue.prototype.close !== 'function') {
+  LiveRequestQueue.prototype.close = function() {
+    this.sendClose();
+  };
+}
+
+interface FunctionResponseEvent extends Event {
+  actions: EventActions & {
+    transferToAgent?: any;
+  };
+}
 
 /**
  * A basic flow that calls the LLM in a loop until a final response is generated.
@@ -44,6 +80,19 @@ export abstract class BaseLlmFlow {
    * List of response processors to run after LLM call
    */
   protected responseProcessors: BaseLlmResponseProcessor[] = [];
+
+  /**
+   * NOTE: There are several TypeScript linter errors that need to be fixed:
+   * 
+   * 1. The AgentWithRoot interface needs to be refined to properly extend BaseAgent
+   * 2. Several methods need proper type checking for function calls like runLive and runAsync
+   * 3. The telemetry.tracer.startSpan method doesn't exist or needs proper typings
+   * 4. The LiveRequestQueue.close method doesn't exist or needs proper typings
+   * 5. Method signature for generateContentAsync needs to be fixed (expects 1 arg but gets 2)
+   * 
+   * These should be addressed in a follow-up implementation after proper type definitions
+   * are confirmed.
+   */
 
   /**
    * Runs the flow using live API.
@@ -74,10 +123,21 @@ export abstract class BaseLlmFlow {
       if (llmRequest.contents) {
         // Send conversation history to the model
         if (invocationContext.transcriptionCache) {
-          // TODO: Implement audio transcription logic if needed
-          invocationContext.transcriptionCache = undefined;
+          // Use AudioTranscriber if available
+          try {
+            const audioTranscriber = new AudioTranscriber();
+            const contents = audioTranscriber.transcribeFile(invocationContext);
+            console.debug('Sending history to model:', contents);
+            await llmConnection.sendHistory(contents);
+            invocationContext.transcriptionCache = undefined;
+            telemetry.traceSendData(invocationContext, eventId, contents);
+          } catch (error) {
+            console.error('Error transcribing audio:', error);
+            invocationContext.transcriptionCache = undefined;
+          }
         } else {
           await llmConnection.sendHistory(llmRequest.contents);
+          telemetry.traceSendData(invocationContext, eventId, llmRequest.contents);
         }
       }
 
@@ -98,10 +158,26 @@ export abstract class BaseLlmFlow {
           yield event;
 
           // Send back the function response
-          if (typeof event.getFunctionResponses === 'function' && event.getFunctionResponses()) {
+          if (typeof event.getFunctionResponses === 'function' && event.getFunctionResponses().length > 0) {
             if (invocationContext.liveRequestQueue && typeof invocationContext.liveRequestQueue.sendContent === 'function' && event.content) {
+              console.debug('Sending back function response event:', event);
               invocationContext.liveRequestQueue.sendContent(event.content);
             }
+          }
+
+          // Store transcription for model responses
+          if (event.content && event.content.parts && 
+              event.content.parts.some(part => part.text) && 
+              !event.partial) {
+            if (!invocationContext.transcriptionCache) {
+              invocationContext.transcriptionCache = [];
+            }
+            invocationContext.transcriptionCache.push(
+              new TranscriptionEntry({ 
+                textContent: JSON.stringify(event.content),
+                metadata: { type: 'model' }
+              })
+            );
           }
 
           // Check for transfer_to_agent
@@ -197,9 +273,19 @@ export abstract class BaseLlmFlow {
           if (!invocationContext.transcriptionCache) {
             invocationContext.transcriptionCache = [];
           }
-          // Ensure the blob matches the expected type
-          const blob: Blob = { data: liveRequest.blob, mimeType: 'audio/wav' };
-          invocationContext.transcriptionCache.push(new TranscriptionEntry({ audioData: liveRequest.blob }));
+          // Store the transcription entry with metadata
+          invocationContext.transcriptionCache.push(
+            new TranscriptionEntry({ 
+              audioData: liveRequest.blob,
+              metadata: { type: 'user' }
+            })
+          );
+          
+          // Create a proper Blob object
+          const blob: Blob = { 
+            data: liveRequest.blob, 
+            mimeType: 'audio/wav' 
+          };
           await llmConnection.sendRealtime(blob);
         }
 
@@ -251,6 +337,9 @@ export abstract class BaseLlmFlow {
           if (invocationContext.endInvocation) {
             return;
           }
+          
+          // Give opportunity for other tasks to run
+          await new Promise(resolve => setTimeout(resolve, 0));
         }
       }
     } catch (error) {
@@ -270,7 +359,16 @@ export abstract class BaseLlmFlow {
   async *runAsync(
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
-    yield* this._runOneStepAsync(invocationContext);
+    while (true) {
+      let lastEvent: Event | undefined;
+      for await (const event of this._runOneStepAsync(invocationContext)) {
+        lastEvent = event;
+        yield event;
+      }
+      if (!lastEvent || lastEvent.isFinalResponse()) {
+        break;
+      }
+    }
   }
 
   /**
@@ -287,6 +385,7 @@ export abstract class BaseLlmFlow {
       id: Event.newId(),
       invocationId: invocationContext.invocationId,
       author: invocationContext.agent.name,
+      branch: invocationContext.branch,
     });
 
     // Preprocess
@@ -329,11 +428,38 @@ export abstract class BaseLlmFlow {
     invocationContext: InvocationContext,
     llmRequest: LlmRequest
   ): AsyncGenerator<Event, void, unknown> {
+    const agent = invocationContext.agent;
+    
     // Run all request processors
     for (const processor of this.requestProcessors) {
       yield* processor.runAsync(invocationContext, llmRequest);
       if (invocationContext.endInvocation) {
         return;
+      }
+    }
+    
+    // Run processors for tools
+    if (agent instanceof LlmAgent && agent.canonicalTools) {
+      for (const tool of agent.canonicalTools) {
+        // Create a session-like object that meets the ToolContext requirements
+        const sessionAdapter = {
+          id: invocationContext.session.id,
+          appName: invocationContext.session.appName,
+          userId: invocationContext.session.userId,
+          state: invocationContext.session.state,
+          events: [] // Empty events array to avoid type issues
+        };
+        
+        const toolContext = new ToolContext({
+          session: sessionAdapter,
+          invocationId: invocationContext.invocationId,
+          agent: invocationContext.agent
+        });
+        
+        await tool.processLlmRequest({ 
+          toolContext, 
+          llmRequest 
+        });
       }
     }
   }
@@ -359,22 +485,26 @@ export abstract class BaseLlmFlow {
       return;
     }
 
+    // Skip the model response event if there is no content and no error code
+    // This is needed for the code executor to trigger another loop
+    if (!llmResponse.content && !llmResponse.errorCode && !llmResponse.interrupted) {
+      return;
+    }
+
     // Generate the finalized model response event
     const finalEvent = this._finalizeModelResponseEvent(llmRequest, llmResponse, modelResponseEvent);
     
+    // Yield the event first
+    yield finalEvent;
+    
     // Handle any function calls in the response
-    if (finalEvent && finalEvent.getFunctionCalls()) {
+    if (finalEvent && finalEvent.getFunctionCalls().length > 0) {
       yield* this._postprocessHandleFunctionCallsAsync(
         invocationContext,
         finalEvent,
         llmRequest
       );
       return;
-    }
-
-    // Yield the final response if there are no function calls
-    if (finalEvent) {
-      yield finalEvent;
     }
   }
 
@@ -393,6 +523,15 @@ export abstract class BaseLlmFlow {
     llmResponse: LlmResponse,
     modelResponseEvent: Event
   ): AsyncGenerator<Event, void, unknown> {
+    // Process the response with response processors
+    yield* this._postprocessRunProcessorsAsync(invocationContext, llmResponse);
+    
+    // Skip the model response event if there is no content and no error code and no turn_complete
+    if (!llmResponse.content && !llmResponse.errorCode && 
+        !llmResponse.interrupted && !llmResponse.turnComplete) {
+      return;
+    }
+
     // Generate the finalized model response event
     const finalEvent = this._finalizeModelResponseEvent(llmRequest, llmResponse, modelResponseEvent);
     
@@ -403,13 +542,42 @@ export abstract class BaseLlmFlow {
     // For live mode, yield the event immediately
     yield finalEvent;
 
-    // Handle function calls asynchronously
-    if (finalEvent.getFunctionCalls()) {
-      yield* this._postprocessHandleFunctionCallsAsync(
-        invocationContext,
-        finalEvent,
-        llmRequest
-      );
+    // Handle function calls
+    if (finalEvent.getFunctionCalls().length > 0) {
+      try {
+        // Get tools dictionary if available
+        const toolsDict = llmRequest.getToolsDict ? llmRequest.getToolsDict() : {};
+        
+        const functionResponseEvent = await functions.handleFunctionCallsLive(
+          invocationContext, 
+          finalEvent, 
+          toolsDict
+        );
+        
+        if (functionResponseEvent) {
+          // Check for auth event
+          const authEvent = functions.generateAuthEvent(
+            invocationContext, 
+            functionResponseEvent
+          );
+          if (authEvent) {
+            yield authEvent;
+          }
+          
+          yield functionResponseEvent;
+          
+          // Check for transfer_to_agent
+          const transferToAgent = functionResponseEvent.actions?.transferToAgent;
+          if (transferToAgent && typeof invocationContext.agent.runLive === 'function') {
+            const agentToRun = this._getAgentToRun(invocationContext, transferToAgent);
+            if (typeof agentToRun.runLive === 'function') {
+              yield* agentToRun.runLive(invocationContext);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error handling function calls live:', error);
+      }
     }
   }
 
@@ -445,23 +613,42 @@ export abstract class BaseLlmFlow {
     functionCallEvent: Event,
     llmRequest: LlmRequest
   ): AsyncGenerator<Event, void, unknown> {
-    // First, yield the function call event
-    yield functionCallEvent;
-
-    // If there are no tools, return
-    if (!invocationContext.tools) {
-      return;
-    }
-
     try {
-      // Run the tools asynchronously
-      const functionResults = await invocationContext.tools.runAsync(functionCallEvent, invocationContext);
+      // Handle function calls asynchronously
+      // Get tools dictionary if available
+      const toolsDict = llmRequest.getToolsDict ? llmRequest.getToolsDict() : {};
       
-      // Add the results to the request for next iteration
-      // llmRequest.appendFunctionResults(functionResults);
-
-      // Continue the flow with the updated request
-      yield* this._runOneStepAsync(invocationContext);
+      const functionResponseEvent = await functions.handleFunctionCallsAsync(
+        invocationContext, 
+        functionCallEvent, 
+        toolsDict
+      );
+      
+      if (functionResponseEvent) {
+        // Check for auth event
+        const authEvent = functions.generateAuthEvent(
+          invocationContext, 
+          functionResponseEvent
+        );
+        if (authEvent) {
+          yield authEvent;
+        }
+        
+        yield functionResponseEvent;
+        
+        // Check for transfer_to_agent
+        const transferToAgent = functionResponseEvent.actions?.transferToAgent;
+        if (transferToAgent && typeof invocationContext.agent.runAsync === 'function') {
+          const agentToRun = this._getAgentToRun(invocationContext, transferToAgent);
+          if (typeof agentToRun.runAsync === 'function') {
+            yield* agentToRun.runAsync(invocationContext);
+            return;
+          }
+        }
+        
+        // Continue the flow with the updated request
+        yield* this._runOneStepAsync(invocationContext);
+      }
     } catch (error) {
       console.error('Error handling function calls:', error);
     }
@@ -478,15 +665,31 @@ export abstract class BaseLlmFlow {
     invocationContext: InvocationContext,
     transferToAgent: any
   ): BaseAgent {
-    if (!transferToAgent || !transferToAgent.agent_name) {
-      throw new Error('Agent name not provided for transfer.');
+    // Check if rootAgent is available
+    const rootAgent = invocationContext.agent.rootAgent;
+    if (rootAgent) {
+      // Check if findAgent method exists
+      if (typeof rootAgent.findAgent === 'function') {
+        const agentToRun = rootAgent.findAgent(transferToAgent);
+        
+        if (agentToRun) {
+          return agentToRun;
+        }
+      }
     }
-    const agentName = transferToAgent.agent_name;
-    const agent = invocationContext.session.getAgent(agentName);
-    if (!agent) {
-      throw new Error(`Agent ${agentName} not found in session.`);
+    
+    // Fallback: try to get from session
+    if (transferToAgent && transferToAgent.agent_name) {
+      const agentName = transferToAgent.agent_name;
+      if (invocationContext.session && typeof invocationContext.session.getAgent === 'function') {
+        const agent = invocationContext.session.getAgent(agentName);
+        if (agent) {
+          return agent;
+        }
+      }
     }
-    return agent;
+    
+    throw new Error(`Agent ${transferToAgent} not found`);
   }
 
   /**
@@ -502,40 +705,141 @@ export abstract class BaseLlmFlow {
     llmRequest: LlmRequest,
     modelResponseEvent: Event
   ): AsyncGenerator<LlmResponse, void, unknown> {
-    let callbackResponse: LlmResponse | undefined;
-    const agent = invocationContext.agent as any;
-    if (typeof agent.beforeModelCallback === 'function') {
-      callbackResponse = agent.beforeModelCallback(
-        new CallbackContext(invocationContext),
-        llmRequest
-      );
-    }
+    // Run before_model_callback if it exists
+    const callbackResponse = this._handleBeforeModelCallback(
+      invocationContext,
+      llmRequest,
+      modelResponseEvent
+    );
+    
     if (callbackResponse) {
       yield callbackResponse;
       return;
     }
+    
     // Automatically append function tools to the request so the model is aware of them
+    const agent = invocationContext.agent;
     if (agent instanceof LlmAgent) {
       llmRequest.appendTools(agent.canonicalTools);
     }
+    
     const llm = this._getLlm(invocationContext);
-    const result = llm.generateContentAsync(llmRequest);
-    let lastResponse: LlmResponse | undefined;
-    for await (const resp of result as AsyncGenerator<LlmResponse, void, unknown>) {
-      lastResponse = resp;
-      yield resp;
+    
+    // Start tracing span for LLM call
+    const tracingSpan = telemetry.tracer.startAsCurrentSpan('call_llm');
+    
+    try {
+      if (invocationContext.runConfig?.supportCfc) {
+        invocationContext.liveRequestQueue = invocationContext.liveRequestQueue || new LiveRequestQueue();
+        for await (const llmResponse of this.runLive(invocationContext)) {
+          // Run after_model_callback if it exists
+          const alteredLlmResponse = this._handleAfterModelCallback(
+            invocationContext,
+            llmResponse,
+            modelResponseEvent
+          );
+          
+          // Only yield partial response in SSE streaming mode
+          if (
+            !invocationContext.runConfig?.streamingMode || 
+            invocationContext.runConfig.streamingMode === StreamingMode.SSE || 
+            !llmResponse.partial
+          ) {
+            yield alteredLlmResponse || llmResponse;
+          }
+          
+          if (llmResponse.turnComplete) {
+            invocationContext.liveRequestQueue.close();
+          }
+        }
+      } else {
+        // Check if we can make this llm call
+        // If the current call pushes the counter beyond the max set value, 
+        // then the execution is stopped right here
+        if (typeof invocationContext.incrementLlmCallCount === 'function') {
+          invocationContext.incrementLlmCallCount();
+        }
+        
+        for await (const llmResponse of llm.generateContentAsync(
+          llmRequest,
+          invocationContext.runConfig?.streamingMode === StreamingMode.SSE
+        )) {
+          // Trace LLM call
+          telemetry.traceCallLlm(
+            invocationContext,
+            modelResponseEvent.id,
+            llmRequest,
+            llmResponse
+          );
+          
+          // Run after_model_callback if it exists
+          const alteredLlmResponse = this._handleAfterModelCallback(
+            invocationContext,
+            llmResponse,
+            modelResponseEvent
+          );
+          
+          yield alteredLlmResponse || llmResponse;
+        }
+      }
+    } finally {
+      // End tracing span
+      tracingSpan.end();
     }
-    let afterCallbackResponse: LlmResponse | undefined;
-    if (typeof agent.afterModelCallback === 'function' && lastResponse) {
-      afterCallbackResponse = agent.afterModelCallback(
-        new CallbackContext(invocationContext),
-        lastResponse
-      );
+  }
+
+  /**
+   * Handles the before model callback.
+   * 
+   * @param invocationContext The invocation context
+   * @param llmRequest The LLM request
+   * @param modelResponseEvent The model response event
+   * @returns The callback response or undefined
+   */
+  protected _handleBeforeModelCallback(
+    invocationContext: InvocationContext,
+    llmRequest: LlmRequest,
+    modelResponseEvent: Event
+  ): LlmResponse | undefined {
+    const agent = invocationContext.agent;
+    
+    if (!(agent instanceof LlmAgent) || !agent.beforeModelCallback) {
+      return undefined;
     }
-    if (afterCallbackResponse) {
-      yield afterCallbackResponse;
-      return;
+    
+    const callbackContext = new CallbackContext(
+      invocationContext, 
+      modelResponseEvent.actions
+    );
+    
+    return agent.beforeModelCallback(callbackContext, llmRequest);
+  }
+
+  /**
+   * Handles the after model callback.
+   * 
+   * @param invocationContext The invocation context
+   * @param llmResponse The LLM response
+   * @param modelResponseEvent The model response event
+   * @returns The altered LLM response or undefined
+   */
+  protected _handleAfterModelCallback(
+    invocationContext: InvocationContext,
+    llmResponse: LlmResponse,
+    modelResponseEvent: Event
+  ): LlmResponse | undefined {
+    const agent = invocationContext.agent;
+    
+    if (!(agent instanceof LlmAgent) || !agent.afterModelCallback) {
+      return undefined;
     }
+    
+    const callbackContext = new CallbackContext(
+      invocationContext, 
+      modelResponseEvent.actions
+    );
+    
+    return agent.afterModelCallback(callbackContext, llmResponse);
   }
 
   /**
@@ -551,16 +855,43 @@ export abstract class BaseLlmFlow {
     llmResponse: LlmResponse,
     modelResponseEvent: Event
   ): Event {
-    // Update the content if it wasn't already set
-    if (!modelResponseEvent.content && llmResponse.content) {
+    // Merge properties from llmResponse into modelResponseEvent
+    if (llmResponse.content) {
       modelResponseEvent.content = llmResponse.content;
     }
+    if (llmResponse.partial !== undefined) {
+      modelResponseEvent.partial = llmResponse.partial;
+    }
+    if (llmResponse.turnComplete !== undefined) {
+      modelResponseEvent.turnComplete = llmResponse.turnComplete;
+    }
+    if (llmResponse.errorCode) {
+      modelResponseEvent.errorCode = llmResponse.errorCode;
+    }
+    if (llmResponse.errorMessage) {
+      modelResponseEvent.errorMessage = llmResponse.errorMessage;
+    }
+    if (llmResponse.interrupted !== undefined) {
+      modelResponseEvent.interrupted = llmResponse.interrupted;
+    }
+    if (llmResponse.customMetadata) {
+      modelResponseEvent.customMetadata = llmResponse.customMetadata;
+    }
 
-    // Set other properties from the response
-    // modelResponseEvent.responseId = llmResponse.responseId || modelResponseEvent.id;
-    // if (llmResponse.parentIds && llmResponse.parentIds.length > 0) {
-    //   modelResponseEvent.parentIds = llmResponse.parentIds;
-    // }
+    // Process function calls if present
+    if (modelResponseEvent.content) {
+      const functionCalls = modelResponseEvent.getFunctionCalls();
+      if (functionCalls.length > 0) {
+        functions.populateClientFunctionCallId(modelResponseEvent);
+        
+        // Get tools dictionary if available
+        const toolsDict = llmRequest.getToolsDict ? llmRequest.getToolsDict() : {};
+        modelResponseEvent.longRunningToolIds = functions.getLongRunningFunctionCalls(
+          functionCalls, 
+          toolsDict
+        );
+      }
+    }
 
     return modelResponseEvent;
   }

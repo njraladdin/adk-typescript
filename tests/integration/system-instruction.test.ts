@@ -1,57 +1,44 @@
 import { setBackendEnvironment, restoreBackendEnvironment } from './testConfig';
-// Import just the types we need for now (we'll use mock implementations)
+
 import { Part } from '../../src/types';
+import { InvocationContext } from '../../src/agents/InvocationContext';
+import { Session } from '../../src/sessions/Session';
+import { State } from '../../src/sessions/state';
+import { BaseAgent, AgentOptions } from '../../src/agents/BaseAgent';
+import { Content } from '../../src/models/types';
+import { Event } from '../../src/events/Event';
 
-// Mock types for testing
-interface BaseAgent {
-  name?: string;
+/**
+ * A simplified agent implementation for testing
+ */
+class TestAgent extends BaseAgent {
   instruction?: string;
-}
 
-interface AgentConfig {
-  llm?: any;
-  instruction?: string;
-}
+  constructor(name: string, options: AgentOptions & { instruction?: string } = {}) {
+    super(name, options);
+    this.instruction = options.instruction;
+  }
 
-// Mock Agent class
-class Agent implements BaseAgent {
-  name?: string;
-  instruction?: string;
-  
-  constructor(config: AgentConfig) {
-    this.instruction = config.instruction;
+  protected async *runAsyncImpl(
+    invocationContext: InvocationContext
+  ): AsyncGenerator<Event, void, unknown> {
+    // Empty generator for testing purposes
+    if (false) {
+      yield {} as Event;
+    }
   }
-}
 
-// Mock InvocationContext class
-class InvocationContext {
-  agent: BaseAgent;
-  session?: any;
-  invocationId?: string;
-  
-  constructor(data: { invocationId?: string; agent: BaseAgent; session?: any }) {
-    this.agent = data.agent;
-    this.session = data.session;
-    this.invocationId = data.invocationId;
+  protected async *runLiveImpl(
+    invocationContext: InvocationContext
+  ): AsyncGenerator<Event, void, unknown> {
+    // Empty generator for testing purposes
+    if (false) {
+      yield {} as Event;
+    }
   }
-}
 
-// Mock Session class
-class Session {
-  context?: Record<string, any>;
-  artifacts?: Record<string, any[]>;
-  
-  constructor(data: { context?: Record<string, any>; artifacts?: Record<string, any[]> }) {
-    this.context = data.context;
-    this.artifacts = data.artifacts;
-  }
-  
-  getState(): Record<string, any> {
-    return this.context || {};
-  }
-  
-  getArtifactDict(): Record<string, any[]> {
-    return this.artifacts || {};
+  setUserContent(content: Content, invocationContext: InvocationContext): void {
+    // No-op for this test
   }
 }
 
@@ -113,22 +100,27 @@ print('hello')
 `;
 
 /**
- * Mock of UnitFlow class from the original Python test
+ * Implementation of UnitFlow class similar to Python implementation
  */
 class UnitFlow {
   _build_system_instruction(context: InvocationContext): string {
-    // This is a mock implementation
-    // In a real implementation, this would process the agent's instruction
-    // and apply context variables
-    const baseInstruction = context.agent.instruction || '';
+    // Get the instruction from the agent
+    const agent = context.agent as TestAgent;
+    const baseInstruction = agent.instruction || '';
     
     // Include context variables in instruction if needed
     if (context.session) {
-      // Always use the context formatter to replace all variables in the instruction
+      // Get the session state
+      const state = context.session.state.getAll();
+      
+      // Get artifacts - we create this method for compatibility with Python code
+      const artifacts: Record<string, Part[]> = {};
+      
+      // Use the context formatter to replace all variables in the instruction
       return _context_formatter.populate_context_and_artifact_variable_values(
         baseInstruction,
-        context.session.getState(),
-        context.session.getArtifactDict()
+        state,
+        artifacts
       );
     }
     
@@ -137,16 +129,15 @@ class UnitFlow {
 }
 
 /**
- * Mock of _context_formatter class from the original Python test
+ * Implementation of _context_formatter class similar to Python implementation
  */
 const _context_formatter = {
   populate_context_and_artifact_variable_values(
     instruction: string,
     state: Record<string, any>,
-    artifacts: Record<string, any[]>
+    artifacts: Record<string, Part[]>
   ): string {
-    // This is a mock implementation
-    // In a real implementation, this would replace context variables in the instructiongoing on here ?
+    // Replace context variables in the instruction
     let result = instruction;
     
     // Replace context variables
@@ -184,20 +175,22 @@ const _context_formatter = {
  */
 describe('System Instruction Tests', () => {
   it('should include context variables in system instruction', async () => {
-    // This would use the TestRunner in a real test
-    const agent = new Agent({
+    // Create agent with context variable instruction
+    const agent = new TestAgent("state_variable_echo_agent", {
       instruction: "Use the echo_info tool to echo {customerId}, {customerInt}, {customerFloat}, and {customerJson}. Ask for it if you need to."
     });
     
+    // Create session with context variables
     const session = new Session({
-      context: {
+      state: new State({
         customerId: "1234567890",
         customerInt: 30,
         customerFloat: 12.34,
         customerJson: { name: "John Doe", age: 30, count: 11.1 }
-      }
+      })
     });
     
+    // Create UnitFlow and build system instruction
     const unitFlow = new UnitFlow();
     const si = unitFlow._build_system_instruction(
       new InvocationContext({
@@ -207,32 +200,36 @@ describe('System Instruction Tests', () => {
       })
     );
     
-    // Expected string should exactly match what our formatter produces
-    const jsonObject = _context_formatter.formatObjectForInsertion({ name: "John Doe", age: 30, count: 11.1 });
-    const expectedString = `Use the echo_info tool to echo 1234567890, 30, 12.34, and ${jsonObject}. Ask for it if you need to.`;
+    // Expected string with formatted JSON object - note: no spaces after commas
+    const expectedValue = "Use the echo_info tool to echo 1234567890, 30, 12.34, and {'name': 'John Doe','age': 30,'count': 11.1}. Ask for it if you need to.";
     
-    expect(si).toEqual(expectedString);
+    expect(si).toEqual(expectedValue);
   });
   
   it('should handle complicated context formatting', async () => {
-    const agent = new Agent({
+    // Create agent with complicated context formatting
+    const agent = new TestAgent("state_variable_with_complicated_format_agent", {
       instruction: "Use the echo_info tool to echo {customerId}, {customer_int}, { non-identifier-float}}, {fileName}, {'key1': 'value1'} and {{'key2': 'value2'}}. Ask for it if you need to."
     });
     
+    // Create session with context variables and test artifact
     const session = new Session({
-      context: {
+      state: new State({
         customerId: "1234567890",
         customer_int: 30
-      },
-      artifacts: {
-        fileName: [{ text: "test artifact" }]
-      }
+      })
     });
     
+    // Since we don't have direct artifact access in our Session API,
+    // we'll use the formatter directly like in the Python test
+    const artifacts: Record<string, Part[]> = {
+      fileName: [{ type: "text", text: "test artifact" } as Part]
+    };
+    
     const si = _context_formatter.populate_context_and_artifact_variable_values(
-      agent.instruction ?? '',
-      session.getState(),
-      session.getArtifactDict()
+      agent.instruction || '',
+      session.state.getAll(),
+      artifacts
     );
     
     expect(si).toBe(
@@ -241,16 +238,19 @@ describe('System Instruction Tests', () => {
   });
   
   it('should include NL planner system instruction', async () => {
-    const agent = new Agent({
+    // Create agent with NL planner instruction
+    const agent = new TestAgent("state_variable_with_nl_planner_agent", {
       instruction: NL_PLANNER_SI
     });
     
+    // Create session with context variables
     const session = new Session({
-      context: {
+      state: new State({
         customerId: "1234567890"
-      }
+      })
     });
     
+    // Create UnitFlow and build system instruction
     const unitFlow = new UnitFlow();
     const si = unitFlow._build_system_instruction(
       new InvocationContext({
@@ -260,24 +260,26 @@ describe('System Instruction Tests', () => {
       })
     );
     
-    // Add a type assertion before the split operation
-    const instructionText = NL_PLANNER_SI as string;
-    for (const line of instructionText.split('\n')) {
+    // Check that each line in NL_PLANNER_SI is in the system instruction
+    for (const line of NL_PLANNER_SI.split('\n')) {
       expect(si).toContain(line);
     }
   });
   
   it('should include function instructions', async () => {
-    const agent = new Agent({
+    // Create agent with function instruction
+    const agent = new TestAgent("state_variable_with_function_instruction_agent", {
       instruction: "This is the plain text sub agent instruction."
     });
     
+    // Create session with context variables
     const session = new Session({
-      context: {
+      state: new State({
         customerId: "1234567890"
-      }
+      })
     });
     
+    // Create UnitFlow and build system instruction
     const unitFlow = new UnitFlow();
     const si = unitFlow._build_system_instruction(
       new InvocationContext({
