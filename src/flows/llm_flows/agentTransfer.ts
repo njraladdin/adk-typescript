@@ -107,9 +107,33 @@ class AgentTransferLlmRequestProcessor implements BaseLlmRequestProcessor {
    */
   private buildTargetAgentsList(invocationContext: InvocationContext): Array<{name: string, description: string}> {
     const agent = invocationContext.agent;
-    // Cast session to the concrete type to access the agents property
-    const session = invocationContext.session as Session;
+    // Get the session from invocation context
+    const session = invocationContext.session as any;
     const targetAgents: Array<{name: string, description: string}> = [];
+    
+    // Make sure the session has an agents Map
+    if (!session.agents) {
+      session.agents = new Map();
+    }
+    
+    // Ensure the agents property is a Map or at least has a forEach method
+    if (!(session.agents instanceof Map) && typeof session.agents.entries !== 'function') {
+      console.warn('Session agents is not a Map, creating a new Map');
+      const oldAgents = session.agents;
+      session.agents = new Map();
+      
+      // If agents is an object, try to convert it to a Map
+      if (typeof oldAgents === 'object' && oldAgents !== null) {
+        Object.entries(oldAgents).forEach(([name, agent]) => {
+          session.agents.set(name, agent);
+        });
+      }
+    }
+    
+    // Add the current agent to the session if not already there
+    if (!session.agents.has(agent.name)) {
+      session.agents.set(agent.name, agent);
+    }
     
     // Access parent through parentAgent property from BaseAgent
     if (agent.parentAgent) {
@@ -122,34 +146,42 @@ class AgentTransferLlmRequestProcessor implements BaseLlmRequestProcessor {
       }
       
       // Check if parent allows transfers to peer agents
-      // Cast to LlmAgent to access allowTransferToPeer
-      const parentAsLlmAgent = agent.parentAgent as unknown as { allowTransferToPeer?: boolean };
-      if (parentAsLlmAgent.allowTransferToPeer !== false) {
+      // Use disallowTransferToPeers property on LlmAgent
+      if (agent.parentAgent instanceof LlmAgent && !agent.parentAgent.disallowTransferToPeers) {
         // Add peer agents (siblings)
         // Use the agents map from the session
-        for (const [_, peerAgent] of session.agents) {
-          // Skip self and non-children of parent
-          if (peerAgent === agent || peerAgent.parentAgent !== agent.parentAgent) {
-            continue;
+        try {
+          // Safely iterate over the agents Map
+          for (const [peerName, peerAgent] of session.agents.entries()) {
+            // Skip self and non-children of parent
+            if (peerAgent === agent || peerAgent.parentAgent !== agent.parentAgent) {
+              continue;
+            }
+            
+            targetAgents.push({
+              name: peerAgent.name,
+              description: peerAgent.description || `Peer agent: ${peerAgent.name}`
+            });
           }
-          
-          targetAgents.push({
-            name: peerAgent.name,
-            description: peerAgent.description || `Peer agent: ${peerAgent.name}`
-          });
+        } catch (error) {
+          console.error('Error iterating over agents:', error);
         }
       }
     }
     
     // Add sub-agents as transfer targets
-    // Use the agents map from the session
-    for (const [_, subAgent] of session.agents) {
-      if (subAgent.parentAgent === agent) {
-        targetAgents.push({
-          name: subAgent.name,
-          description: subAgent.description || `Sub-agent: ${subAgent.name}`
-        });
+    // Safely iterate over the agents Map
+    try {
+      for (const [subName, subAgent] of session.agents.entries()) {
+        if (subAgent.parentAgent === agent) {
+          targetAgents.push({
+            name: subAgent.name,
+            description: subAgent.description || `Sub-agent: ${subAgent.name}`
+          });
+        }
       }
+    } catch (error) {
+      console.error('Error iterating over agents for sub-agents:', error);
     }
     
     return targetAgents;

@@ -18,7 +18,7 @@
 
 // Import all models
 import { Claude } from './AnthropicLlm';
-import { Gemini } from './Gemini';
+import { Gemini } from './GoogleLlm';
 import { LlmRegistry } from './LlmRegistry';
 
 // Export base classes
@@ -29,7 +29,7 @@ export { LlmResponse } from './LlmResponse';
 export { LlmRegistry } from './LlmRegistry';
 export { LiteLlm, TextChunk, FunctionChunk } from './LiteLlm';
 export { Claude } from './AnthropicLlm';
-export { Gemini } from './Gemini';
+export { Gemini } from './GoogleLlm';
 export { GeminiLlmConnection } from './GeminiLlmConnection';
 
 // Export types

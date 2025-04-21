@@ -19,6 +19,7 @@
  */
 import { InvocationContext } from '../../agents/InvocationContext';
 import { BaseAgent } from '../../agents/BaseAgent';
+import { LlmAgent } from '../../agents/LlmAgent';
 import { TranscriptionEntry } from '../../agents/TranscriptionEntry';
 import { Event } from '../../events/Event';
 import { BaseLlm } from '../../models/BaseLlm';
@@ -567,9 +568,27 @@ export abstract class BaseLlmFlow {
    * @returns The LLM
    */
   private _getLlm(invocationContext: InvocationContext): BaseLlm {
-    if (!invocationContext.llm) {
-      throw new Error('LLM not found in invocation context');
+    // First try to get LLM from invocation context
+    if (invocationContext.llm) {
+      return invocationContext.llm;
     }
-    return invocationContext.llm;
+    
+    // If not set in context, try to get from agent
+    const agent = invocationContext.agent;
+    if (agent instanceof LlmAgent) {
+      try {
+        // Try to access canonicalModel from LlmAgent
+        const llm = agent.canonicalModel;
+        if (llm) {
+          // Save it in the context for future use
+          invocationContext.llm = llm;
+          return llm;
+        }
+      } catch (error) {
+        console.error('Error getting LLM from agent.canonicalModel:', error);
+      }
+    }
+    
+    throw new Error('LLM not found in invocation context or agent');
   }
 } 

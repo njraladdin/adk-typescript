@@ -12,15 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Content, GenerateContentConfig, LiveConnectConfig, Tool } from './types';
-
-// Placeholder for a BaseTool interface - you'll need to implement this
-// based on your tools module
-export interface BaseTool {
-  name: string;
-  _getDeclaration(): any;
-  getDeclaration(): any;
-}
+import { Content, GenerateContentConfig, LiveConnectConfig, Tool, FunctionDeclaration } from './types';
+import { BaseTool } from '../tools/BaseTool';
 
 /**
  * LLM request class that allows passing in tools, output schema and system
@@ -50,13 +43,27 @@ export class LlmRequest {
 
   /**
    * The tools dictionary.
+   * Maps tool names to tool instances.
    * @private Not serialized when converting to JSON
    */
   private toolsDict: Record<string, BaseTool> = {};
 
+  /**
+   * Creates a new LLM request.
+   */
   constructor() {
     this.config = {
-      tools: []
+      temperature: undefined,
+      topP: undefined,
+      topK: undefined,
+      maxOutputTokens: undefined,
+      candidateCount: undefined,
+      stopSequences: undefined,
+      systemInstruction: undefined,
+      tools: [],
+      responseSchema: undefined,
+      responseMimeType: undefined,
+      thinkingConfig: undefined
     };
     this.liveConnectConfig = {};
   }
@@ -66,6 +73,10 @@ export class LlmRequest {
    * @param instructions The instructions to append.
    */
   appendInstructions(instructions: string[]): void {
+    if (!instructions || instructions.length === 0) {
+      return;
+    }
+
     if (this.config.systemInstruction) {
       this.config.systemInstruction += '\n\n' + instructions.join('\n\n');
     } else {
@@ -82,16 +93,14 @@ export class LlmRequest {
       return;
     }
 
-    const declarations: any[] = [];
+    const declarations: FunctionDeclaration[] = [];
+    
     for (const tool of tools) {
-      let declaration;
-      // Check if the tool has _getDeclaration method
-      if (typeof tool._getDeclaration === 'function') {
-        declaration = tool._getDeclaration();
-      } 
-      // Check if the tool has getDeclaration method 
-      else if (typeof (tool as any).getDeclaration === 'function') {
-        declaration = (tool as any).getDeclaration();
+      let declaration: FunctionDeclaration | null = null;
+      
+      // Use the public getDeclaration method which internally calls _getDeclaration
+      if (typeof tool.getDeclaration === 'function') {
+        declaration = tool.getDeclaration();
       }
       
       if (declaration) {
@@ -101,18 +110,104 @@ export class LlmRequest {
     }
 
     if (declarations.length > 0) {
-      this.config.tools.push({
-        function_declarations: declarations
-      });
+      // Find an existing tool entry with function_declarations, or create a new one
+      let toolEntry = this.config.tools.find(t => 
+        Array.isArray(t.function_declarations)
+      );
+      
+      if (toolEntry) {
+        // Append to existing function declarations
+        toolEntry.function_declarations = [
+          ...toolEntry.function_declarations,
+          ...declarations
+        ];
+      } else {
+        // Create a new tool entry
+        this.config.tools.push({
+          function_declarations: declarations
+        });
+      }
     }
   }
 
   /**
    * Sets the output schema for the request.
-   * @param baseModel The class to set the output schema to.
+   * @param baseModel The schema class to set the output schema to.
    */
   setOutputSchema(baseModel: any): void {
     this.config.responseSchema = baseModel;
     this.config.responseMimeType = 'application/json';
+  }
+
+  /**
+   * Get the tools dictionary for this request.
+   * @returns The tools dictionary
+   */
+  getToolsDict(): Record<string, BaseTool> {
+    return { ...this.toolsDict };
+  }
+
+  /**
+   * Converts this LlmRequest to a plain object for API requests.
+   * @returns A plain object representation of this request
+   */
+  toRequestObject(): any {
+    const result: any = {
+      contents: this.contents,
+      model: this.model
+    };
+
+    // Add configuration if it exists
+    if (this.config && Object.keys(this.config).length > 0) {
+      result.generationConfig = {};
+      
+      // Copy over generation config properties
+      if (this.config.temperature !== undefined) {
+        result.generationConfig.temperature = this.config.temperature;
+      }
+      if (this.config.topP !== undefined) {
+        result.generationConfig.topP = this.config.topP;
+      }
+      if (this.config.topK !== undefined) {
+        result.generationConfig.topK = this.config.topK;
+      }
+      if (this.config.maxOutputTokens !== undefined) {
+        result.generationConfig.maxOutputTokens = this.config.maxOutputTokens;
+      }
+      if (this.config.candidateCount !== undefined) {
+        result.generationConfig.candidateCount = this.config.candidateCount;
+      }
+      if (this.config.stopSequences !== undefined) {
+        result.generationConfig.stopSequences = this.config.stopSequences;
+      }
+      
+      // Add system instructions if present
+      if (this.config.systemInstruction) {
+        result.systemInstruction = this.config.systemInstruction;
+      }
+      
+      // Add tools if present
+      if (this.config.tools && this.config.tools.length > 0) {
+        result.tools = this.config.tools;
+      }
+      
+      // Add response schema if present
+      if (this.config.responseSchema) {
+        result.generationConfig.responseSchema = this.config.responseSchema;
+        result.generationConfig.responseMimeType = this.config.responseMimeType || 'application/json';
+      }
+      
+      // Add thinking config if present
+      if (this.config.thinkingConfig) {
+        result.thinkingConfig = this.config.thinkingConfig;
+      }
+    }
+    
+    // Add live connect config if present
+    if (this.liveConnectConfig && Object.keys(this.liveConnectConfig).length > 0) {
+      result.liveConnectConfig = this.liveConnectConfig;
+    }
+    
+    return result;
   }
 } 

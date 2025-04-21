@@ -138,10 +138,32 @@ function convertTools(tools: any[] | undefined): GoogleTool[] {
  * Helper to convert response from Google GenAI to our expected format
  */
 function convertResponse(response: any): GenerateContentResponse {
+  // Log the raw response for debugging purposes
+  console.log(`Raw API response: ${JSON.stringify(response, null, 2)}`);
+  
+  // Check if the response is empty or invalid
+  if (!response || typeof response !== 'object') {
+    console.error('Received invalid response from Gemini API:', response);
+    return {
+      candidates: [{
+        content: {
+          role: 'model',
+          parts: [{ text: 'The API returned an invalid response. Please try again.' }]
+        },
+        finish_reason: 'ERROR',
+        finish_message: 'Invalid API response'
+      }]
+    };
+  }
+  
+  // Handle VertexAI response format which nests the actual response inside a 'response' property
+  const actualResponse = response.response || response;
+  
+  // Create result object
   const result: GenerateContentResponse = {};
   
-  if (response.candidates) {
-    result.candidates = response.candidates.map((candidate: any) => ({
+  if (actualResponse.candidates) {
+    result.candidates = actualResponse.candidates.map((candidate: any) => ({
       content: candidate.content,
       finish_reason: candidate.finishReason,
       grounding_metadata: candidate.groundingMetadata,
@@ -149,18 +171,18 @@ function convertResponse(response: any): GenerateContentResponse {
     }));
   }
   
-  if (response.promptFeedback) {
+  if (actualResponse.promptFeedback) {
     result.prompt_feedback = {
-      block_reason: response.promptFeedback.blockReason,
-      block_reason_message: response.promptFeedback.blockReasonMessage
+      block_reason: actualResponse.promptFeedback.blockReason,
+      block_reason_message: actualResponse.promptFeedback.blockReasonMessage
     };
   }
   
-  if (response.usageMetadata) {
+  if (actualResponse.usageMetadata) {
     result.usage_metadata = {
-      prompt_token_count: response.usageMetadata.promptTokenCount,
-      candidates_token_count: response.usageMetadata.candidatesTokenCount,
-      total_token_count: response.usageMetadata.totalTokenCount
+      prompt_token_count: actualResponse.usageMetadata.promptTokenCount,
+      candidates_token_count: actualResponse.usageMetadata.candidatesTokenCount,
+      total_token_count: actualResponse.usageMetadata.totalTokenCount
     };
   }
   
@@ -192,6 +214,31 @@ function convertResponse(response: any): GenerateContentResponse {
     }
   }
   
+  // ONLY If no candidates were returned but response exists, create a default one
+  if ((!result.candidates || result.candidates.length === 0) && 
+      (!result.prompt_feedback || !result.prompt_feedback.block_reason)) {
+    console.warn('Response missing candidates, creating a default candidate');
+    result.candidates = [{
+      content: {
+        role: 'model',
+        parts: [{ text: 'I received your message but encountered an issue generating a proper response. Please try again.' }]
+      },
+      finish_reason: 'DEFAULT_CANDIDATE',
+      finish_message: 'Created default candidate due to missing response data'
+    }];
+  }
+  
+  // Check if the response has valid candidates but is asking for system instructions
+  if (result.candidates && 
+      result.candidates.length > 0 && 
+      result.candidates[0].content && 
+      result.candidates[0].content.parts && 
+      result.candidates[0].content.parts[0] && 
+      result.candidates[0].content.parts[0].text && 
+      result.candidates[0].content.parts[0].text.includes("Please provide the System Instruction")) {
+    console.warn('Model is asking for system instructions - this suggests the system instructions were not properly passed');
+  }
+  
   return result;
 }
 
@@ -215,6 +262,24 @@ class GenAIClient {
     config: GenerateContentConfig
   ): Promise<GenerateContentResponse> {
     try {
+      console.log(`Generating content with model: ${model}`);
+      
+      // Check for system instruction in contents
+      const hasSystemMessage = contents.some(content => content.role === 'system');
+      let systemInstructionText = config.systemInstruction;
+      
+      // If there's a system message in contents, extract it for the SDK
+      if (hasSystemMessage && !systemInstructionText) {
+        const systemMessage = contents.find(content => content.role === 'system');
+        if (systemMessage && systemMessage.parts && systemMessage.parts[0] && systemMessage.parts[0].text) {
+          systemInstructionText = systemMessage.parts[0].text;
+          console.log(`Found system instruction in contents: ${systemInstructionText}`);
+          
+          // Remove system message from contents as it will be passed separately
+          contents = contents.filter(content => content.role !== 'system');
+        }
+      }
+      
       // Create model instance
       const genModel = this.genAI.getGenerativeModel({
         model: model,
@@ -226,23 +291,64 @@ class GenAIClient {
           candidateCount: config.candidateCount,
           stopSequences: config.stopSequences,
         },
-        systemInstruction: config.systemInstruction,
+        systemInstruction: systemInstructionText,
         tools: convertTools(config.tools),
       });
       
+      // Log configuration for debugging
+      console.log(`Model configuration: ${JSON.stringify({
+        temperature: config.temperature,
+        topP: config.topP,
+        topK: config.topK,
+        maxOutputTokens: config.maxOutputTokens,
+        systemInstruction: systemInstructionText ? 'Set' : 'Not set'
+      }, null, 2)}`);
+      
       // Convert content format
       const convertedContents = contents.map(convertContent);
+      console.log(`Sending ${convertedContents.length} content items to the model`);
       
-      // Generate content
-      const response = await genModel.generateContent({
-        contents: convertedContents
-      });
-      
-      // Convert response back to our expected format
-      return convertResponse(response);
-    } catch (error) {
+      try {
+        // Generate content
+        const response = await genModel.generateContent({
+          contents: convertedContents
+        });
+        
+        // Convert response back to our expected format
+        return convertResponse(response);
+      } catch (apiErrorUnknown) {
+        // Type cast the error
+        const apiError = apiErrorUnknown as Error;
+        console.error("API Error generating content:", apiError);
+        
+        // Create a fallback response with the error information
+        return {
+          candidates: [{
+            content: {
+              role: 'model',
+              parts: [{ text: `API Error: ${apiError.message || 'Unknown error occurred'}. Please try again.` }]
+            },
+            finish_reason: 'ERROR',
+            finish_message: apiError.message || 'Unknown error'
+          }]
+        };
+      }
+    } catch (errorUnknown) {
+      // Type cast the error
+      const error = errorUnknown as Error;
       console.error("Error generating content:", error);
-      throw error;
+      
+      // Return a fallback response instead of throwing
+      return {
+        candidates: [{
+          content: {
+            role: 'model',
+            parts: [{ text: `An error occurred: ${error.message || 'Unknown error'}. Please try again.` }]
+          },
+          finish_reason: 'ERROR',
+          finish_message: error.message || 'Unknown error'
+        }]
+      };
     }
   }
 
@@ -252,6 +358,24 @@ class GenAIClient {
     config: GenerateContentConfig
   ): AsyncGenerator<GenerateContentResponse, void, unknown> {
     try {
+      console.log(`Generating streaming content with model: ${model}`);
+      
+      // Check for system instruction in contents
+      const hasSystemMessage = contents.some(content => content.role === 'system');
+      let systemInstructionText = config.systemInstruction;
+      
+      // If there's a system message in contents, extract it for the SDK
+      if (hasSystemMessage && !systemInstructionText) {
+        const systemMessage = contents.find(content => content.role === 'system');
+        if (systemMessage && systemMessage.parts && systemMessage.parts[0] && systemMessage.parts[0].text) {
+          systemInstructionText = systemMessage.parts[0].text;
+          console.log(`Found system instruction in contents for streaming: ${systemInstructionText}`);
+          
+          // Remove system message from contents as it will be passed separately
+          contents = contents.filter(content => content.role !== 'system');
+        }
+      }
+      
       // Create model instance
       const genModel = this.genAI.getGenerativeModel({
         model: model,
@@ -263,12 +387,22 @@ class GenAIClient {
           candidateCount: config.candidateCount,
           stopSequences: config.stopSequences,
         },
-        systemInstruction: config.systemInstruction,
+        systemInstruction: systemInstructionText,
         tools: convertTools(config.tools),
       });
       
+      // Log configuration for streaming
+      console.log(`Streaming model configuration: ${JSON.stringify({
+        temperature: config.temperature,
+        topP: config.topP,
+        topK: config.topK,
+        maxOutputTokens: config.maxOutputTokens,
+        systemInstruction: systemInstructionText ? 'Set' : 'Not set'
+      }, null, 2)}`);
+      
       // Convert content format
       const convertedContents = contents.map(convertContent);
+      console.log(`Streaming ${convertedContents.length} content items to the model`);
       
       // Generate streaming content
       const responseStream = await genModel.generateContentStream({
@@ -279,9 +413,21 @@ class GenAIClient {
       for await (const chunk of responseStream.stream) {
         yield convertResponse(chunk);
       }
-    } catch (error) {
+    } catch (errorUnknown) {
+      const error = errorUnknown as Error;
       console.error("Error in streaming content generation:", error);
-      throw error;
+      
+      // Return a fallback response instead of throwing
+      yield {
+        candidates: [{
+          content: {
+            role: 'model',
+            parts: [{ text: `An error occurred during streaming: ${error.message || 'Unknown error'}. Please try again.` }]
+          },
+          finish_reason: 'ERROR',
+          finish_message: error.message || 'Streaming error'
+        }]
+      };
     }
   }
 
@@ -374,7 +520,52 @@ export class Gemini extends BaseLlm {
     llmRequest: LlmRequest,
     stream: boolean = false
   ): AsyncGenerator<LlmResponse, void, unknown> {
+    // Make sure contents array exists
+    if (!llmRequest.contents) {
+      llmRequest.contents = [];
+    }
+    
+    // Preserve original user message for logging
+    const originalUserMessages = llmRequest.contents
+      .filter(content => content.role === 'user')
+      .map(content => JSON.stringify(content));
+      
+    if (originalUserMessages.length > 0) {
+      console.log(`Processing original user message(s): ${originalUserMessages.join(', ')}`);
+    } else {
+      console.warn('No user message found in request - this is unusual');
+    }
+    
+    // Check if system instruction exists and add it to the contents directly as a system message
+    if (llmRequest.config.systemInstruction && 
+        !llmRequest.contents.some(content => content.role === 'system')) {
+      console.log(`Adding system instruction as a system message: ${llmRequest.config.systemInstruction}`);
+      // Insert the system message at the beginning of the contents array
+      llmRequest.contents.unshift({
+        role: 'system',
+        parts: [{ text: llmRequest.config.systemInstruction }]
+      });
+    }
+    
+    // Only append user content if absolutely necessary
     this._maybeAppendUserContent(llmRequest);
+    
+    // Sanity check - make sure we still have the original user message
+    const userMessagesAfter = llmRequest.contents
+      .filter(content => content.role === 'user')
+      .map(content => JSON.stringify(content));
+    
+    if (originalUserMessages.length > 0 && 
+        !userMessagesAfter.some(msg => originalUserMessages.includes(msg))) {
+      console.error('ERROR: Original user message was lost during processing!');
+      // In this case, restore the first original user message to ensure it's not lost
+      if (originalUserMessages.length > 0) {
+        const firstOriginalMsg = JSON.parse(originalUserMessages[0]);
+        console.log('Restoring original user message:', firstOriginalMsg);
+        llmRequest.contents.push(firstOriginalMsg);
+      }
+    }
+    
     console.info(
       `Sending out request, model: ${llmRequest.model || this.model}, backend: ${this._apiBackend}, stream: ${stream}`
     );
@@ -578,24 +769,33 @@ export class Gemini extends BaseLlm {
    * @param llmRequest The request to modify
    */
   private _maybeAppendUserContent(llmRequest: LlmRequest): void {
-    // If no content is provided, append a user content to hint model response
-    // using system instruction
-    if (!llmRequest.contents || llmRequest.contents.length === 0) {
+    // Make sure contents array exists
+    if (!llmRequest.contents) {
+      llmRequest.contents = [];
+    }
+    
+    // If contents array is completely empty, add a default message
+    // This should only happen in very rare cases where no message was provided at all
+    if (llmRequest.contents.length === 0) {
+      console.warn('WARNING: No content provided in request. This is unusual and suggests an error in the calling code.');
       llmRequest.contents.push({
         role: 'user',
         parts: [{
-          text: 'Handle the requests as specified in the System Instruction.'
+          text: 'Hello'
         }]
       });
       return;
     }
 
-    // Insert a user content to preserve user intent and avoid empty model response
-    if (llmRequest.contents[llmRequest.contents.length - 1].role !== 'user') {
+    // Add a continuation prompt only if the last message is not from the user
+    // This is to ensure that model responses are always triggered by a user message
+    if (llmRequest.contents.length > 0 && 
+        llmRequest.contents[llmRequest.contents.length - 1].role !== 'user') {
+      console.log('Last message is not from user, adding minimal continuation prompt');
       llmRequest.contents.push({
         role: 'user',
         parts: [{
-          text: 'Continue processing previous requests as instructed. Exit or provide a summary if no more outputs are needed.'
+          text: 'Continue please.'
         }]
       });
     }

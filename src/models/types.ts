@@ -129,4 +129,26 @@ export interface Schema {
   properties?: Record<string, Schema>;
   items?: Schema | { type: string };
   required?: string[];
+}
+
+/**
+ * Message role enum for consistent role naming in messages
+ */
+export enum MessageRole {
+  USER = 'user',
+  ASSISTANT = 'assistant',
+  MODEL = 'model',
+  SYSTEM = 'system',
+  TOOL = 'tool'
+}
+
+/**
+ * Message interface for communication between agents and sessions
+ */
+export interface Message {
+  id: string;
+  role: MessageRole | string;
+  parts: Part[];
+  timestamp: Date;
+  text: () => string;
 } 
