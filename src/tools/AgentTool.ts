@@ -16,15 +16,14 @@
 
 import { BaseTool, BaseToolOptions } from './BaseTool';
 import { ToolContext } from './toolContext';
-import { LlmAgent } from '../agents/LlmAgent';
-import { Agent } from '../';
+import { LlmAgent } from '../';
 
 // Define a type that can be either Agent or LlmAgent
-export type BaseAgentType = Agent | LlmAgent;
+export type BaseAgentType = LlmAgent;
 
-// Type guard to check if an agent is an LlmAgent
+// Type guard to check if an agent is an LlmAgent (always true now)
 function isLlmAgent(agent: BaseAgentType): agent is LlmAgent {
-  return 'instruction' in agent && 'createSession' in agent;
+  return true;
 }
 
 /**

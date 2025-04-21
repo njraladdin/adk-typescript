@@ -15,10 +15,15 @@
  */
 
 import * as path from 'path';
-import { Agent } from '../../../../src';
+import { LlmAgent as Agent } from '../../../../src';
 import { AgentTool } from '../../../../src/tools/AgentTool';
 import { FilesRetrieval } from '../../../../src/tools/retrieval/FilesRetrieval';
 import { VertexAiRagRetrieval } from '../../../../src/tools/retrieval/VertexAiRagRetrieval';
+import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { FunctionTool } from '../../../../src/tools/FunctionTool';
+
+// Create model instance for all agents
+const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
 
 // Define schema interfaces (equivalent to Python's Pydantic models)
 interface TestCase {
@@ -218,15 +223,13 @@ const docsTools = {
 };
 
 // Create sub-agents
-const noSchemaAgent = new Agent({
-  llm: 'gemini-2.0-flash-001',
-  name: 'no_schema_agent',
+const noSchemaAgent = new Agent('no_schema_agent', {
+  llm: geminiModel,
   instruction: `Just say 'Hi'`
 });
 
-const schemaAgent = new Agent({
-  llm: 'gemini-2.0-flash-001',
-  name: 'schema_agent',
+const schemaAgent = new Agent('schema_agent', {
+  llm: geminiModel,
   instruction: `
     You will be given a test case.
     Return a list of the received test case appended with '_success' and '_failure' as test_titles
@@ -250,9 +253,8 @@ const schemaAgent = new Agent({
   } as const
 });
 
-const noInputSchemaAgent = new Agent({
-  llm: 'gemini-2.0-flash-001',
-  name: 'no_input_schema_agent',
+const noInputSchemaAgent = new Agent('no_input_schema_agent', {
+  llm: geminiModel,
   instruction: `
     Just return ['Tools_success, Tools_failure']
   `,
@@ -268,9 +270,8 @@ const noInputSchemaAgent = new Agent({
   } as const
 });
 
-const noOutputSchemaAgent = new Agent({
-  llm: 'gemini-2.0-flash-001',
-  name: 'no_output_schema_agent',
+const noOutputSchemaAgent = new Agent('no_output_schema_agent', {
+  llm: geminiModel,
   instruction: `
     Just say 'Hi'
   `,
@@ -283,23 +284,30 @@ const noOutputSchemaAgent = new Agent({
   } as const
 });
 
-const singleFunctionAgent = new Agent({
-  llm: 'gemini-2.0-flash-001',
-  name: 'single_function_agent',
+const singleFunctionAgent = new Agent('single_function_agent', {
+  llm: geminiModel,
   description: 'An agent that calls a single function',
   instruction: 'When calling tools, just return what the tool returns.',
   tools: [
-    {
+    new FunctionTool({
       name: 'simple_function',
       description: 'A simple function that validates parameter type',
-      function: simpleFunction,
-      parameters: {
-        param: {
-          type: 'string',
-          description: 'A string parameter'
+      fn: async (params) => simpleFunction(params.param),
+      functionDeclaration: {
+        name: 'simple_function',
+        description: 'A simple function that validates parameter type',
+        parameters: {
+          type: 'object',
+          properties: {
+            param: {
+              type: 'string',
+              description: 'A string parameter'
+            }
+          },
+          required: ['param']
         }
       }
-    }
+    })
   ]
 });
 
@@ -307,127 +315,238 @@ const singleFunctionAgent = new Agent({
 export { singleFunctionAgent };
 
 // Create the root agent
-export const toolAgent = new Agent({
-  llm: 'gemini-2.0-flash-001',
-  name: 'tool_agent',
+export const toolAgent = new Agent('tool_agent', {
+  llm: geminiModel,
   description: 'An agent that can call other tools',
   instruction: 'When calling tools, just return what the tool returns.',
   tools: [
-    {
+    new FunctionTool({
       name: 'simple_function',
       description: 'A simple function that validates parameter type',
-      function: simpleFunction,
-      parameters: {
-        param: {
-          type: 'string',
-          description: 'A string parameter'
+      fn: async (params) => simpleFunction(params.param),
+      functionDeclaration: {
+        name: 'simple_function',
+        description: 'A simple function that validates parameter type',
+        parameters: {
+          type: 'object',
+          properties: {
+            param: {
+              type: 'string',
+              description: 'A string parameter'
+            }
+          },
+          required: ['param']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'no_param_function',
       description: 'A function that takes no parameters',
-      function: noParamFunction,
-      parameters: {}
-    },
-    {
+      fn: async () => noParamFunction(),
+      functionDeclaration: {
+        name: 'no_param_function',
+        description: 'A function that takes no parameters',
+        parameters: {
+          type: 'object',
+          properties: {}
+        }
+      }
+    }),
+    new FunctionTool({
       name: 'no_output_function',
       description: 'A function that returns no output',
-      function: noOutputFunction,
-      parameters: {
-        param: {
-          type: 'string',
-          description: 'A string parameter'
+      fn: async (params) => noOutputFunction(params.param),
+      functionDeclaration: {
+        name: 'no_output_function',
+        description: 'A function that returns no output',
+        parameters: {
+          type: 'object',
+          properties: {
+            param: {
+              type: 'string',
+              description: 'A string parameter'
+            }
+          },
+          required: ['param']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'multiple_param_types_function',
       description: 'A function that accepts multiple parameter types',
-      function: multipleParamTypesFunction,
-      parameters: {
-        param1: {
-          type: 'string',
-          description: 'A string parameter'
-        },
-        param2: {
-          type: 'number',
-          description: 'An integer parameter'
-        },
-        param3: {
-          type: 'number',
-          description: 'A float parameter'
-        },
-        param4: {
-          type: 'boolean',
-          description: 'A boolean parameter'
+      fn: async (params) => multipleParamTypesFunction(
+        params.param1, 
+        params.param2, 
+        params.param3, 
+        params.param4
+      ),
+      functionDeclaration: {
+        name: 'multiple_param_types_function',
+        description: 'A function that accepts multiple parameter types',
+        parameters: {
+          type: 'object',
+          properties: {
+            param1: {
+              type: 'string',
+              description: 'A string parameter'
+            },
+            param2: {
+              type: 'number',
+              description: 'An integer parameter'
+            },
+            param3: {
+              type: 'number',
+              description: 'A float parameter'
+            },
+            param4: {
+              type: 'boolean',
+              description: 'A boolean parameter'
+            }
+          },
+          required: ['param1', 'param2', 'param3', 'param4']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'throw_error_function',
       description: 'A function that throws an error',
-      function: throwErrorFunction,
-      parameters: {
-        param: {
-          type: 'string',
-          description: 'A string parameter'
+      fn: async (params) => throwErrorFunction(params.param),
+      functionDeclaration: {
+        name: 'throw_error_function',
+        description: 'A function that throws an error',
+        parameters: {
+          type: 'object',
+          properties: {
+            param: {
+              type: 'string',
+              description: 'A string parameter'
+            }
+          },
+          required: ['param']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'list_str_param_function',
       description: 'A function that accepts a list of strings',
-      function: listStrParamFunction,
-      parameters: {
-        param: {
-          type: 'array',
-          items: {
-            type: 'string'
+      fn: async (params) => listStrParamFunction(params.param),
+      functionDeclaration: {
+        name: 'list_str_param_function',
+        description: 'A function that accepts a list of strings',
+        parameters: {
+          type: 'object',
+          properties: {
+            param: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'An array of strings'
+            }
           },
-          description: 'An array of strings'
+          required: ['param']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'return_list_str_function',
       description: 'A function that returns a list of strings',
-      function: returnListStrFunction,
-      parameters: {
-        param: {
-          type: 'string',
-          description: 'A string parameter'
+      fn: async (params) => returnListStrFunction(params.param),
+      functionDeclaration: {
+        name: 'return_list_str_function',
+        description: 'A function that returns a list of strings',
+        parameters: {
+          type: 'object',
+          properties: {
+            param: {
+              type: 'string',
+              description: 'A string parameter'
+            }
+          },
+          required: ['param']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'repetive_call_1',
       description: 'First repetitive call function',
-      function: repetiveCall1,
-      parameters: {
-        param: {
-          type: 'string',
-          description: 'A string parameter'
+      fn: async (params) => repetiveCall1(params.param),
+      functionDeclaration: {
+        name: 'repetive_call_1',
+        description: 'First repetitive call function',
+        parameters: {
+          type: 'object',
+          properties: {
+            param: {
+              type: 'string',
+              description: 'A string parameter'
+            }
+          },
+          required: ['param']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'repetive_call_2',
       description: 'Second repetitive call function',
-      function: repetiveCall2,
-      parameters: {
-        param: {
-          type: 'string',
-          description: 'A string parameter'
+      fn: async (params) => repetiveCall2(params.param),
+      functionDeclaration: {
+        name: 'repetive_call_2',
+        description: 'Second repetitive call function',
+        parameters: {
+          type: 'object',
+          properties: {
+            param: {
+              type: 'string',
+              description: 'A string parameter'
+            }
+          },
+          required: ['param']
         }
       }
-    },
+    }),
     testCaseRetrieval,
     validRagRetrieval,
     invalidRagRetrieval,
     nonExistRagRetrieval,
-    shellTool,
-    docsTools,
+    new FunctionTool({
+      name: 'shell_tool',
+      description: 'Execute shell commands',
+      fn: async (params) => `Executed command: ${params.command}`,
+      functionDeclaration: {
+        name: 'shell_tool',
+        description: 'Execute shell commands',
+        parameters: {
+          type: 'object',
+          properties: {
+            command: {
+              type: 'string',
+              description: 'The shell command to execute'
+            }
+          },
+          required: ['command']
+        }
+      }
+    }),
+    new FunctionTool({
+      name: 'directory_read_tool',
+      description: 'Use this to find files for you.',
+      fn: async (params) => `Read directory: ${params.directory}`,
+      functionDeclaration: {
+        name: 'directory_read_tool',
+        description: 'Use this to find files for you.',
+        parameters: {
+          type: 'object',
+          properties: {
+            directory: {
+              type: 'string',
+              description: 'The directory to read'
+            }
+          },
+          required: ['directory']
+        }
+      }
+    }),
     new AgentTool({
       name: 'no_schema_agent_tool',
       description: 'A tool that uses an agent with no schema',

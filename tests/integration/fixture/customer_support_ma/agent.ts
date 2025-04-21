@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-import { Agent, RemoteAgent, Session } from '../../../../src';
+import { LlmAgent as Agent, RemoteAgent, Session } from '../../../../src';
 import { Content, Part } from '../../../../src/types';
+import { BaseLlm } from '../../../../src/models/BaseLlm';
+import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { FunctionTool } from '../../../../src/tools/FunctionTool';
+import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
 
 /**
  * Reset any data maintained by the agent
@@ -150,13 +154,18 @@ function afterModelCall(agent: Agent, session: Session, content: Content): Conte
   return null;
 }
 
+// Create model instances for our agents
+const geminiModel = LlmRegistry.newLlm('gemini-1.5-pro');
+
+// Create flow instances
+const autoFlow = new AutoFlow();
+
 /**
  * Flight agent for handling flight bookings and information
  */
-export const flightAgent = new Agent({
-  name: 'flight_agent',
+export const flightAgent = new Agent('flight_agent', {
   description: 'Handles flight information, policy and updates',
-  llm: 'gemini-1.5-pro',
+  llm: geminiModel,
   instruction: `
       You are a specialized assistant for handling flight updates.
         The primary assistant delegates work to you whenever the user needs help updating their bookings.
@@ -165,130 +174,194 @@ export const flightAgent = new Agent({
         Remember that a booking isn't completed until after the relevant tool has successfully been used.
       Do not waste the user's time. Do not make up invalid tools or functions.
   `,
+  flow: autoFlow,
   tools: [
-    {
+    new FunctionTool({
       name: 'list_customer_flights',
-      function: listCustomerFlights,
-      parameters: {
-        customer_email: {
-          type: 'string',
-          description: 'Customer email address'
+      description: 'List flights for a customer',
+      fn: async (params) => listCustomerFlights(params.customer_email),
+      functionDeclaration: {
+        name: 'list_customer_flights',
+        description: 'List flights for a customer',
+        parameters: {
+          type: 'object',
+          properties: {
+            customer_email: {
+              type: 'string',
+              description: 'Customer email address'
+            }
+          },
+          required: ['customer_email']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'lookup_company_policy',
-      function: lookupCompanyPolicy,
-      parameters: {
-        topic: {
-          type: 'string',
-          description: 'The policy topic to look up'
+      description: 'Look up company policy',
+      fn: async (params) => lookupCompanyPolicy(params.topic),
+      functionDeclaration: {
+        name: 'lookup_company_policy',
+        description: 'Look up company policy',
+        parameters: {
+          type: 'object',
+          properties: {
+            topic: {
+              type: 'string',
+              description: 'The policy topic to look up'
+            }
+          },
+          required: ['topic']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'fetch_user_flight_information',
-      function: fetchUserFlightInformation,
-      parameters: {
-        customer_email: {
-          type: 'string',
-          description: 'Customer email address'
+      description: 'Fetch user flight information',
+      fn: async (params) => fetchUserFlightInformation(params.customer_email),
+      functionDeclaration: {
+        name: 'fetch_user_flight_information',
+        description: 'Fetch user flight information',
+        parameters: {
+          type: 'object',
+          properties: {
+            customer_email: {
+              type: 'string',
+              description: 'Customer email address'
+            }
+          },
+          required: ['customer_email']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'search_flights',
-      function: searchFlights,
-      parameters: {
-        departure_airport: {
-          type: 'string',
-          description: 'Departure airport code',
-          optional: true
-        },
-        arrival_airport: {
-          type: 'string',
-          description: 'Arrival airport code',
-          optional: true
-        },
-        start_time: {
-          type: 'string',
-          description: 'Start time for the flight search',
-          optional: true
-        },
-        end_time: {
-          type: 'string',
-          description: 'End time for the flight search',
-          optional: true
+      description: 'Search for available flights',
+      fn: async (params) => searchFlights(
+        params.departure_airport,
+        params.arrival_airport,
+        params.start_time,
+        params.end_time
+      ),
+      functionDeclaration: {
+        name: 'search_flights',
+        description: 'Search for available flights',
+        parameters: {
+          type: 'object',
+          properties: {
+            departure_airport: {
+              type: 'string',
+              description: 'Departure airport code'
+            },
+            arrival_airport: {
+              type: 'string',
+              description: 'Arrival airport code'
+            },
+            start_time: {
+              type: 'string',
+              description: 'Start time for the flight search'
+            },
+            end_time: {
+              type: 'string',
+              description: 'End time for the flight search'
+            }
+          }
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'update_ticket_to_new_flight',
-      function: updateTicketToNewFlight,
-      parameters: {
-        ticket_no: {
-          type: 'string',
-          description: 'Ticket number'
-        },
-        new_flight_id: {
-          type: 'string',
-          description: 'New flight ID'
+      description: 'Update ticket to a new flight',
+      fn: async (params) => updateTicketToNewFlight(params.ticket_no, params.new_flight_id),
+      functionDeclaration: {
+        name: 'update_ticket_to_new_flight',
+        description: 'Update ticket to a new flight',
+        parameters: {
+          type: 'object',
+          properties: {
+            ticket_no: {
+              type: 'string',
+              description: 'Ticket number'
+            },
+            new_flight_id: {
+              type: 'string',
+              description: 'New flight ID'
+            }
+          },
+          required: ['ticket_no', 'new_flight_id']
         }
       }
-    }
+    })
   ]
 });
 
 /**
  * Hotel agent for handling hotel bookings
  */
-export const hotelAgent = new Agent({
-  name: 'hotel_agent',
+export const hotelAgent = new Agent('hotel_agent', {
   description: 'Handles hotel information and booking',
-  llm: 'gemini-1.5-pro',
+  llm: geminiModel,
   instruction: `
       You are a specialized assistant for handling hotel bookings.
       The primary assistant delegates work to you whenever the user needs help booking a hotel.
       Search for available hotels based on the user's preferences and confirm the booking details with the customer.
         When searching, be persistent. Expand your query bounds if the first search returns no results.
   `,
+  flow: autoFlow,
   tools: [
-    {
+    new FunctionTool({
       name: 'search_hotels',
-      function: searchHotels,
-      parameters: {
-        location: {
-          type: 'string',
-          description: 'Hotel location',
-          optional: true
-        },
-        price_tier: {
-          type: 'string',
-          description: 'Price tier',
-          optional: true
-        },
-        checkin_date: {
-          type: 'string',
-          description: 'Check-in date',
-          optional: true
-        },
-        checkout_date: {
-          type: 'string',
-          description: 'Check-out date',
-          optional: true
+      description: 'Search for available hotels',
+      fn: async (params) => searchHotels(
+        params.location,
+        params.price_tier,
+        params.checkin_date,
+        params.checkout_date
+      ),
+      functionDeclaration: {
+        name: 'search_hotels',
+        description: 'Search for available hotels',
+        parameters: {
+          type: 'object',
+          properties: {
+            location: {
+              type: 'string',
+              description: 'Hotel location'
+            },
+            price_tier: {
+              type: 'string',
+              description: 'Price tier'
+            },
+            checkin_date: {
+              type: 'string',
+              description: 'Check-in date'
+            },
+            checkout_date: {
+              type: 'string',
+              description: 'Check-out date'
+            }
+          }
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'book_hotel',
-      function: bookHotel,
-      parameters: {
-        hotel_name: {
-          type: 'string',
-          description: 'Name of the hotel to book'
+      description: 'Book a hotel',
+      fn: async (params) => bookHotel(params.hotel_name),
+      functionDeclaration: {
+        name: 'book_hotel',
+        description: 'Book a hotel',
+        parameters: {
+          type: 'object',
+          properties: {
+            hotel_name: {
+              type: 'string',
+              description: 'Name of the hotel to book'
+            }
+          },
+          required: ['hotel_name']
         }
       }
-    }
+    })
   ]
 });
 
@@ -300,21 +373,20 @@ export const ideaAgent = new RemoteAgent(
   {
     description: 'Provide travel ideas base on the destination.',
     url: 'http://localhost:8000/agent/run',
-    llm: 'gemini-1.5-pro'
+    llm: geminiModel
   }
 );
 
 /**
  * Root agent for customer support
  */
-export const customerSupportRootAgent = new Agent({
-  name: 'root_agent',
-  llm: 'gemini-1.5-pro',
+export const customerSupportRootAgent = new Agent('root_agent', {
+  llm: geminiModel,
   instruction: `
       You are a helpful customer support assistant for Swiss Airlines.
   `,
   subAgents: [flightAgent, hotelAgent, ideaAgent],
-  flow: 'auto',
+  flow: autoFlow,
   examples: [
     {
       input: {

@@ -14,7 +14,17 @@
  * limitations under the License.
  */
 
-import { Agent } from '../../../../src';
+import { LlmAgent } from '../../../../src';
+import { FunctionTool } from '../../../../src/tools/FunctionTool';
+import { ToolContext } from '../../../../src/tools/toolContext';
+import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
+import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+
+// Create a single instance of AutoFlow to be reused
+const autoFlow = new AutoFlow();
+
+// Create a model instance
+const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
 
 /**
  * Roll a die and return the rolled result.
@@ -57,12 +67,56 @@ function checkPrime(nums: number[]): string {
     : `${Array.from(primes).join(', ')} are prime numbers.`;
 }
 
+// Create function tools
+const rollDieTool = new FunctionTool({
+  name: 'roll_die',
+  description: 'Roll a die and return the rolled result.',
+  fn: async (params: Record<string, any>) => rollDie(params.sides),
+  functionDeclaration: {
+    name: 'roll_die',
+    description: 'Roll a die and return the rolled result.',
+    parameters: {
+      type: 'object',
+      properties: {
+        sides: {
+          type: 'number',
+          description: 'The integer number of sides the die has.'
+        }
+      },
+      required: ['sides']
+    }
+  }
+});
+
+const checkPrimeTool = new FunctionTool({
+  name: 'check_prime',
+  description: 'Check if a given list of numbers are prime.',
+  fn: async (params: Record<string, any>) => checkPrime(params.nums),
+  functionDeclaration: {
+    name: 'check_prime',
+    description: 'Check if a given list of numbers are prime.',
+    parameters: {
+      type: 'object',
+      properties: {
+        nums: {
+          type: 'array',
+          items: {
+            type: 'number'
+          },
+          description: 'The list of numbers to check.'
+        }
+      },
+      required: ['nums']
+    }
+  }
+});
+
 /**
  * The root agent for the hello world example
  */
-export const helloWorldRootAgent = new Agent({
-  llm: 'gemini-2.0-flash-001',
-  name: 'data_processing_agent',
+export const helloWorldRootAgent = new LlmAgent('data_processing_agent', {
+  llm: geminiModel,
+  flow: autoFlow,
   instruction: `
     You roll dice and answer questions about the outcome of the dice rolls.
     You can roll dice of different sizes.
@@ -81,33 +135,7 @@ export const helloWorldRootAgent = new Agent({
     You should always perform the previous 3 steps when asking for a roll and checking prime numbers.
     You should not rely on the previous history on prime results.
   `,
-  tools: [
-    {
-      name: 'roll_die',
-      description: 'Roll a die and return the rolled result.',
-      function: rollDie,
-      parameters: {
-        sides: {
-          type: 'number',
-          description: 'The integer number of sides the die has.'
-        }
-      }
-    },
-    {
-      name: 'check_prime',
-      description: 'Check if a given list of numbers are prime.',
-      function: checkPrime,
-      parameters: {
-        nums: {
-          type: 'array',
-          items: {
-            type: 'number'
-          },
-          description: 'The list of numbers to check.'
-        }
-      }
-    }
-  ],
+  tools: [rollDieTool, checkPrimeTool],
   safetySettings: [
     {
       category: 'HARM_CATEGORY_DANGEROUS_CONTENT',

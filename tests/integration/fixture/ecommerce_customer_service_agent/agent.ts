@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { Agent } from '../../../../src';
+import { LlmAgent as Agent } from '../../../../src';
+import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { FunctionTool } from '../../../../src/tools/FunctionTool';
+import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
 
 // A lightweight in-memory mock database
 interface OrderDB {
@@ -255,12 +258,17 @@ function getUserIdFromCookie(): string {
   return "user_a";
 }
 
+// Create model instances for our agents
+const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
+
+// Create flow instances
+const autoFlow = new AutoFlow();
+
 /**
  * E-commerce customer service agent
  */
-export const ecommerceCustomerServiceAgent = new Agent({
-  name: "Ecommerce_Customer_Service",
-  llm: "gemini-2.0-flash-001",
+export const ecommerceCustomerServiceAgent = new Agent('Ecommerce_Customer_Service', {
+  llm: geminiModel,
   instruction: `
     You are an intelligent customer service assistant for an e-commerce platform. Your goal is to accurately understand user queries and use the appropriate tools to fulfill requests. Follow these guidelines:
 
@@ -292,143 +300,249 @@ export const ecommerceCustomerServiceAgent = new Agent({
       - Confirm the actions performed, including details like ticket ID or pending orders.
       - Ensure the response aligns with the steps taken and query intent.
   `,
+  flow: autoFlow,
   tools: [
-    {
+    new FunctionTool({
       name: 'get_order_status',
-      function: getOrderStatus,
-      parameters: {
-        order_id: {
-          type: 'string',
-          description: 'The unique identifier of the order'
+      description: 'Get the status of an order',
+      fn: async (params) => getOrderStatus(params.order_id),
+      functionDeclaration: {
+        name: 'get_order_status',
+        description: 'Get the status of an order',
+        parameters: {
+          type: 'object',
+          properties: {
+            order_id: {
+              type: 'string',
+              description: 'The unique identifier of the order'
+            }
+          },
+          required: ['order_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'cancel_order',
-      function: cancelOrder,
-      parameters: {
-        order_id: {
-          type: 'string',
-          description: 'The unique identifier of the order to be canceled'
+      description: 'Cancel an order if it is in a PENDING state',
+      fn: async (params) => cancelOrder(params.order_id),
+      functionDeclaration: {
+        name: 'cancel_order',
+        description: 'Cancel an order if it is in a PENDING state',
+        parameters: {
+          type: 'object',
+          properties: {
+            order_id: {
+              type: 'string',
+              description: 'The unique identifier of the order to be canceled'
+            }
+          },
+          required: ['order_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'get_order_ids_for_user',
-      function: getOrderIdsForUser,
-      parameters: {
-        user_id: {
-          type: 'string',
-          description: 'The unique identifier of the user'
+      description: 'Get the list of order IDs assigned to a specific user',
+      fn: async (params) => getOrderIdsForUser(params.user_id),
+      functionDeclaration: {
+        name: 'get_order_ids_for_user',
+        description: 'Get the list of order IDs assigned to a specific user',
+        parameters: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'The unique identifier of the user'
+            }
+          },
+          required: ['user_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'refund_order',
-      function: refundOrder,
-      parameters: {
-        order_id: {
-          type: 'string',
-          description: 'The unique identifier of the order to be refunded'
+      description: 'Process a refund for an order if it is in a CANCELED state',
+      fn: async (params) => refundOrder(params.order_id),
+      functionDeclaration: {
+        name: 'refund_order',
+        description: 'Process a refund for an order if it is in a CANCELED state',
+        parameters: {
+          type: 'object',
+          properties: {
+            order_id: {
+              type: 'string',
+              description: 'The unique identifier of the order to be refunded'
+            }
+          },
+          required: ['order_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'create_ticket',
-      function: createTicket,
-      parameters: {
-        user_id: {
-          type: 'string',
-          description: 'The unique identifier of the user creating the ticket'
-        },
-        issue_type: {
-          type: 'string',
-          description: 'An issue type the user is facing'
+      description: 'Create a new support ticket for a user',
+      fn: async (params) => createTicket(params.user_id, params.issue_type),
+      functionDeclaration: {
+        name: 'create_ticket',
+        description: 'Create a new support ticket for a user',
+        parameters: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'The unique identifier of the user creating the ticket'
+            },
+            issue_type: {
+              type: 'string',
+              description: 'An issue type the user is facing'
+            }
+          },
+          required: ['user_id', 'issue_type']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'update_ticket_status',
-      function: updateTicketStatus,
-      parameters: {
-        ticket_id: {
-          type: 'string',
-          description: 'The unique identifier of the ticket'
-        },
-        status: {
-          type: 'string',
-          description: 'The new status to assign to the ticket'
+      description: 'Update the status of a support ticket',
+      fn: async (params) => updateTicketStatus(params.ticket_id, params.status),
+      functionDeclaration: {
+        name: 'update_ticket_status',
+        description: 'Update the status of a support ticket',
+        parameters: {
+          type: 'object',
+          properties: {
+            ticket_id: {
+              type: 'string',
+              description: 'The unique identifier of the ticket'
+            },
+            status: {
+              type: 'string',
+              description: 'The new status to assign to the ticket'
+            }
+          },
+          required: ['ticket_id', 'status']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'get_tickets_for_user',
-      function: getTicketsForUser,
-      parameters: {
-        user_id: {
-          type: 'string',
-          description: 'The unique identifier of the user'
+      description: 'Get all the ticket IDs associated with a user',
+      fn: async (params) => getTicketsForUser(params.user_id),
+      functionDeclaration: {
+        name: 'get_tickets_for_user',
+        description: 'Get all the ticket IDs associated with a user',
+        parameters: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'The unique identifier of the user'
+            }
+          },
+          required: ['user_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'get_ticket_info',
-      function: getTicketInfo,
-      parameters: {
-        ticket_id: {
-          type: 'string',
-          description: 'The unique identifier of the ticket'
+      description: 'Retrieve the information of a support ticket',
+      fn: async (params) => getTicketInfo(params.ticket_id),
+      functionDeclaration: {
+        name: 'get_ticket_info',
+        description: 'Retrieve the information of a support ticket',
+        parameters: {
+          type: 'object',
+          properties: {
+            ticket_id: {
+              type: 'string',
+              description: 'The unique identifier of the ticket'
+            }
+          },
+          required: ['ticket_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'get_user_info',
-      function: getUserInfo,
-      parameters: {
-        user_id: {
-          type: 'string',
-          description: 'The unique identifier of the user'
+      description: 'Retrieve information about a user',
+      fn: async (params) => getUserInfo(params.user_id),
+      functionDeclaration: {
+        name: 'get_user_info',
+        description: 'Retrieve information about a user',
+        parameters: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'The unique identifier of the user'
+            }
+          },
+          required: ['user_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'send_email',
-      function: sendEmail,
-      parameters: {
-        user_id: {
-          type: 'string',
-          description: 'The unique identifier of the user'
-        },
-        email: {
-          type: 'string',
-          description: 'The email address of the user'
+      description: 'Send email to user for notification',
+      fn: async (params) => sendEmail(params.user_id, params.email),
+      functionDeclaration: {
+        name: 'send_email',
+        description: 'Send email to user for notification',
+        parameters: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'The unique identifier of the user'
+            },
+            email: {
+              type: 'string',
+              description: 'The email address of the user'
+            }
+          },
+          required: ['user_id', 'email']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'update_user_info',
-      function: updateUserInfo,
-      parameters: {
-        user_id: {
-          type: 'string',
-          description: 'The unique identifier of the user'
-        },
-        email: {
-          type: 'string',
-          description: 'The new email address',
-          optional: true
-        },
-        name: {
-          type: 'string',
-          description: 'The new name',
-          optional: true
+      description: 'Update a user\'s information',
+      fn: async (params) => updateUserInfo(params.user_id, params.email, params.name),
+      functionDeclaration: {
+        name: 'update_user_info',
+        description: 'Update a user\'s information',
+        parameters: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'The unique identifier of the user'
+            },
+            email: {
+              type: 'string',
+              description: 'The new email address'
+            },
+            name: {
+              type: 'string',
+              description: 'The new name'
+            }
+          },
+          required: ['user_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'get_user_id_from_cookie',
-      function: getUserIdFromCookie,
-      parameters: {}
-    }
+      description: 'Get user ID from the cookie',
+      fn: async () => getUserIdFromCookie(),
+      functionDeclaration: {
+        name: 'get_user_id_from_cookie',
+        description: 'Get user ID from the cookie',
+        parameters: {
+          type: 'object',
+          properties: {}
+        }
+      }
+    })
   ]
 }); 

@@ -1,7 +1,7 @@
 import { setBackendEnvironment, restoreBackendEnvironment } from './testConfig';
 import { TestRunner } from './utils/TestRunner';
 import { callFunctionAndAssert } from './utils/TestAssertions';
-import type { Agent } from '../../src';
+import { LlmAgent as Agent } from '../../src';
 
 // Import the agents directly to avoid TypeScript module resolution issues
 const { singleFunctionAgent, toolAgent: rootAgent }: { singleFunctionAgent: Agent; toolAgent: Agent } = require('./fixture/tool_agent/agent');

@@ -1,4 +1,4 @@
-import { Agent } from '../../../src';
+import { LlmAgent as Agent } from '../../../src';
 import { Runner } from '../../../src/runners';
 import { BaseAgent } from '../../../src/agents/BaseAgent';
 import { BaseArtifactService } from '../../../src/artifacts/BaseArtifactService';

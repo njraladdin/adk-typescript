@@ -16,6 +16,7 @@ import { BaseLlm } from './BaseLlm';
 import { LlmRequest } from './LlmRequest';
 import { LlmResponse } from './LlmResponse';
 import { Content, Part, FunctionDeclaration } from './types';
+import Anthropic from '@anthropic-ai/sdk';
 
 /**
  * Maximum tokens for Claude model responses
@@ -97,6 +98,8 @@ interface Message {
 class AnthropicVertexClient {
   private projectId: string;
   private region: string;
+  private client: Anthropic;
+  private isConfigured: boolean = false;
 
   /**
    * Constructor
@@ -106,6 +109,33 @@ class AnthropicVertexClient {
   constructor(projectId: string, region: string) {
     this.projectId = projectId;
     this.region = region;
+    
+    try {
+      // Initialize the Anthropic client specifically for Vertex AI integration
+      this.client = new Anthropic({
+        apiKey: 'vertex-ai', // Special value to indicate Vertex AI integration
+        baseURL: this.getVertexEndpoint(),
+        defaultHeaders: {
+          'x-goog-user-project': this.projectId,
+          'x-vertex-ai-region': this.region,
+        }
+      });
+      
+      this.isConfigured = true;
+    } catch (error) {
+      console.error("Error initializing Anthropic client:", error);
+      this.client = new Anthropic(); // Fallback empty client
+      this.isConfigured = false;
+    }
+  }
+
+  /**
+   * Get the Vertex AI endpoint for Anthropic
+   * @param model The model name to use
+   * @returns The endpoint URL
+   */
+  private getVertexEndpoint(model: string = 'claude-3-5-sonnet-v2@20241022'): string {
+    return `https://${this.region}-aiplatform.googleapis.com/v1/projects/${this.projectId}/locations/${this.region}/publishers/anthropic/models/${model}:predict`;
   }
 
   /**
@@ -126,8 +156,59 @@ class AnthropicVertexClient {
       tool_choice?: ToolChoiceAutoParam;
       max_tokens?: number;
     }): Promise<Message> => {
-      // This is a placeholder - in a real implementation, this would call the Anthropic API
-      throw new Error('Not implemented: This requires integration with Anthropic API');
+      if (!this.isConfigured) {
+        throw new Error('Anthropic client not properly configured.');
+      }
+
+      try {
+        // For Vertex AI, we need to use the correct endpoint based on the requested model
+        // We could rebuild the client for each request, but for now we'll use the existing client
+        // Ideally we would use a model-specific endpoint
+
+        // Convert our options to Anthropic SDK format
+        const createParams: Anthropic.MessageCreateParams = {
+          model: options.model,
+          max_tokens: options.max_tokens || MAX_TOKEN,
+          system: options.system,
+          messages: options.messages as Anthropic.MessageParam[],
+        };
+
+        // Add tools if provided
+        if (options.tools && options.tools.length > 0) {
+          createParams.tools = options.tools as any[];
+        }
+
+        // Add tool choice if provided
+        if (options.tool_choice) {
+          createParams.tool_choice = {
+            type: options.tool_choice.type,
+            // Map additional parameters
+            ...(options.tool_choice.disable_parallel_tool_use !== undefined ? 
+              { disable_parallel_tool_use: options.tool_choice.disable_parallel_tool_use } : {})
+          } as any;
+        }
+
+        // Call the Anthropic API
+        const response = await this.client.messages.create(createParams);
+        
+        // Return parsed response
+        return {
+          id: response.id,
+          type: response.type,
+          role: response.role,
+          content: response.content as ContentBlock[],
+          model: response.model,
+          stop_reason: response.stop_reason,
+          stop_sequence: response.stop_sequence,
+          usage: {
+            input_tokens: response.usage.input_tokens,
+            output_tokens: response.usage.output_tokens
+          }
+        };
+      } catch (error) {
+        console.error("Error calling Anthropic API:", error);
+        throw error;
+      }
     }
   };
 }
@@ -378,24 +459,52 @@ export class Claude extends BaseLlm {
     } as ToolChoiceAutoParam : undefined;
     
     try {
-      // Call the Anthropic API
-      const message = await this.client.messages.create({
-        model: this.model,
-        system: llmRequest.config.systemInstruction,
-        messages: messages,
-        tools: tools,
-        tool_choice: toolChoice,
-        max_tokens: MAX_TOKEN
-      });
-      
-      // Log the response (would use proper logging in real implementation)
-      console.log('Claude response:', JSON.stringify(message, null, 2));
-      
-      // Convert and yield the response
-      yield messageToGenerateContentResponse(message);
+      if (stream) {
+        // Log that streaming is not fully supported yet but we're falling back to non-streaming
+        console.warn('Streaming for Claude is not fully supported in this implementation. Falling back to non-streaming.');
+        
+        // Implement basic streaming simulation by yielding the entire response at once
+        // In a full implementation, you would use the Anthropic streaming API
+        const message = await this.client.messages.create({
+          model: this.model,
+          system: llmRequest.config.systemInstruction,
+          messages: messages,
+          tools: tools,
+          tool_choice: toolChoice,
+          max_tokens: MAX_TOKEN
+        });
+        
+        // Log the response (would use proper logging in real implementation)
+        console.log('Claude response (stream mode):', JSON.stringify(message, null, 2));
+        
+        // Convert and yield the response
+        // In a real streaming implementation, we would process chunks as they arrive
+        yield messageToGenerateContentResponse(message);
+      } else {
+        // Standard non-streaming implementation
+        const message = await this.client.messages.create({
+          model: this.model,
+          system: llmRequest.config.systemInstruction,
+          messages: messages,
+          tools: tools,
+          tool_choice: toolChoice,
+          max_tokens: MAX_TOKEN
+        });
+        
+        // Log the response (would use proper logging in real implementation)
+        console.log('Claude response:', JSON.stringify(message, null, 2));
+        
+        // Convert and yield the response
+        yield messageToGenerateContentResponse(message);
+      }
     } catch (error) {
       console.error('Error during Claude API call:', error);
-      throw error;
+      
+      // Create an error response
+      const errorResponse = new LlmResponse();
+      errorResponse.errorCode = 'CLAUDE_API_ERROR';
+      errorResponse.errorMessage = String(error);
+      yield errorResponse;
     }
   }
 
@@ -404,6 +513,13 @@ export class Claude extends BaseLlm {
    * @returns Regular expressions for supported model names
    */
   static supportedModels(): string[] {
-    return ["claude-3-.*"];
+    return [
+      "claude-3-5-haiku@\\d+",
+      "claude-3-5-sonnet-v2@\\d+",
+      "claude-3-5-sonnet@\\d+",
+      "claude-3-haiku@\\d+",
+      "claude-3-opus@\\d+",
+      "claude-3-sonnet@\\d+"
+    ];
   }
 } 

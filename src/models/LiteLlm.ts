@@ -16,6 +16,7 @@ import { BaseLlm } from './BaseLlm';
 import { LlmRequest } from './LlmRequest';
 import { LlmResponse } from './LlmResponse';
 import { Content, Part, FunctionDeclaration, Schema, Tool } from './types';
+import { completion as litellmCompletion } from 'litellm';
 
 // TypeScript equivalents of LiteLLM types
 interface Message {
@@ -39,12 +40,14 @@ interface Function {
   arguments: string;
 }
 
+// Compatible with litellm response
 interface ModelResponse {
   choices?: {
     message?: Message;
     delta?: Message;
     finish_reason?: string | null;
   }[];
+  [key: string]: any; // Allow additional properties from litellm responses
 }
 
 export class TextChunk {
@@ -60,7 +63,99 @@ export class FunctionChunk {
 }
 
 /**
+ * StreamIterator class to handle both sync and async iteration
+ * for compatibility with the expected interfaces
+ */
+class StreamIterator implements AsyncIterable<ModelResponse>, Iterable<ModelResponse> {
+  private chunks: ModelResponse[] = [];
+  private done = false;
+  private position = 0;
+  private streamPromise: Promise<void>;
+  private resolveStream: () => void = () => {};
+
+  constructor(streamResponse: AsyncIterable<any>) {
+    this.streamPromise = new Promise<void>((resolve) => {
+      this.resolveStream = resolve;
+    });
+
+    // Process the stream in the background
+    this.processStream(streamResponse);
+  }
+
+  private async processStream(streamResponse: AsyncIterable<any>) {
+    try {
+      for await (const chunk of streamResponse) {
+        const normalizedChunk = this.normalizeResponse(chunk);
+        this.chunks.push(normalizedChunk);
+      }
+    } catch (error) {
+      console.error("Error processing stream:", error);
+    } finally {
+      this.done = true;
+      this.resolveStream();
+    }
+  }
+
+  // For async iteration (used by for-await-of)
+  [Symbol.asyncIterator](): AsyncIterator<ModelResponse> {
+    let position = 0;
+    
+    return {
+      next: async () => {
+        // If we've already consumed all chunks and the stream is done
+        if (position >= this.chunks.length && this.done) {
+          return { done: true, value: undefined };
+        }
+        
+        // If we need to wait for more chunks
+        while (position >= this.chunks.length && !this.done) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        
+        // Return the next available chunk
+        if (position < this.chunks.length) {
+          return { done: false, value: this.chunks[position++] };
+        }
+        
+        // Stream is done and all chunks consumed
+        return { done: true, value: undefined };
+      }
+    };
+  }
+
+  // For sync iteration (used by for-of), returns all chunks at once
+  [Symbol.iterator](): Iterator<ModelResponse> {
+    return {
+      next: () => {
+        if (this.position < this.chunks.length) {
+          return { done: false, value: this.chunks[this.position++] };
+        } else {
+          return { done: true, value: undefined };
+        }
+      }
+    };
+  }
+
+  private normalizeResponse(response: any): ModelResponse {
+    // Already in expected format
+    if (response.choices && Array.isArray(response.choices)) {
+      return response as ModelResponse;
+    }
+
+    // Create a compatible response
+    return {
+      choices: [{
+        message: response.message || response.delta,
+        finish_reason: response.finish_reason
+      }]
+    };
+  }
+}
+
+/**
  * LiteLLM client for making completions
+ * This implementation uses any types in places where strict typing is challenging
+ * due to differences between the TypeScript and JavaScript implementations
  */
 export class LiteLLMClient {
   /**
@@ -73,12 +168,24 @@ export class LiteLLMClient {
    */
   async acompletion(
     model: string,
-    messages: Message[],
+    messages: any[],
     tools?: any[],
     ...kwargs: any[]
-  ): Promise<ModelResponse> {
-    // This is a placeholder - in a real implementation, this would call the LiteLLM SDK
-    throw new Error('Not implemented: This requires integration with LiteLLM SDK');
+  ): Promise<any> {
+    try {
+      const params: any = {
+        model,
+        messages,
+        tools,
+        ...Object.assign({}, ...kwargs)
+      };
+      
+      const response = await litellmCompletion(params);
+      return response;
+    } catch (error) {
+      console.error("Error in acompletion:", error);
+      throw error;
+    }
   }
 
   /**
@@ -92,13 +199,25 @@ export class LiteLLMClient {
    */
   completion(
     model: string,
-    messages: Message[],
+    messages: any[],
     tools?: any[],
-    stream?: boolean,
+    stream: boolean = false,
     ...kwargs: any[]
-  ): Iterable<ModelResponse> {
-    // This is a placeholder - in a real implementation, this would call the LiteLLM SDK
-    throw new Error('Not implemented: This requires integration with LiteLLM SDK');
+  ): any {
+    try {
+      const params: any = {
+        model,
+        messages,
+        tools,
+        stream,
+        ...Object.assign({}, ...kwargs)
+      };
+      
+      return litellmCompletion(params);
+    } catch (error) {
+      console.error("Error in completion:", error);
+      throw error;
+    }
   }
 }
 
@@ -534,101 +653,114 @@ export class LiteLlm extends BaseLlm {
 
     const [messages, tools] = getCompletionInputs(llmRequest);
 
-    const completionArgs = {
+    const completionArgs: Record<string, any> = {
       model: this.model,
       messages,
       tools,
       ...this._additionalArgs
     };
 
-    if (stream) {
-      let text = '';
-      let functionName = '';
-      let functionArgs = '';
-      let functionId: string | null = null;
-      
-      const streamingArgs = {
-        ...completionArgs,
-        stream: true
-      };
-      
-      try {
-        for (const part of this.llmClient.completion(
-          streamingArgs.model,
-          streamingArgs.messages,
-          streamingArgs.tools,
-          true,
-          streamingArgs // Pass the entire object, not just values
-        )) {
-          for (const [chunk, finishReason] of modelResponseToChunk(part)) {
-            if (chunk instanceof FunctionChunk) {
-              if (chunk.name) {
-                functionName += chunk.name;
-              }
-              if (chunk.args) {
-                functionArgs += chunk.args;
-              }
-              functionId = chunk.id || functionId;
-            } else if (chunk instanceof TextChunk) {
-              text += chunk.text;
-              yield messageToGenerateContentResponse(
-                {
-                  role: 'assistant',
-                  content: chunk.text,
-                },
-                true
-              );
-            }
-            
-            if (finishReason === 'tool_calls' && functionId) {
-              yield messageToGenerateContentResponse(
-                {
-                  role: 'assistant',
-                  content: '',
-                  tool_calls: [
-                    {
-                      type: 'function',
-                      id: functionId,
-                      function: {
-                        name: functionName,
-                        arguments: functionArgs,
-                      },
-                    },
-                  ],
-                }
-              );
-              functionName = '';
-              functionArgs = '';
-              functionId = null;
-            } else if (finishReason === 'stop' && text) {
-              yield messageToGenerateContentResponse(
-                {
-                  role: 'assistant',
-                  content: text,
-                }
-              );
-              text = '';
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error during streaming completion:', error);
-        throw error;
-      }
-    } else {
-      try {
-        const response = await this.llmClient.acompletion(
+    try {
+      if (stream) {
+        let text = '';
+        let functionName = '';
+        let functionArgs = '';
+        let functionId: string | null = null;
+        
+        completionArgs.stream = true;
+        
+        // Call the completion method for streaming
+        const streamingResponse = this.llmClient.completion(
           completionArgs.model,
           completionArgs.messages,
           completionArgs.tools,
-          completionArgs // Pass the entire object, not just values
+          true,
+          completionArgs
+        );
+        
+        // Process the streaming response
+        try {
+          for await (const part of streamingResponse) {
+            for (const [chunk, finishReason] of modelResponseToChunk(part)) {
+              if (chunk instanceof FunctionChunk) {
+                if (chunk.name) {
+                  functionName += chunk.name;
+                }
+                if (chunk.args) {
+                  functionArgs += chunk.args;
+                }
+                functionId = chunk.id || functionId;
+              } else if (chunk instanceof TextChunk) {
+                text += chunk.text;
+                yield messageToGenerateContentResponse(
+                  {
+                    role: 'assistant',
+                    content: chunk.text,
+                  },
+                  true
+                );
+              }
+              
+              if (finishReason === 'tool_calls' && functionId) {
+                yield messageToGenerateContentResponse(
+                  {
+                    role: 'assistant',
+                    content: '',
+                    tool_calls: [
+                      {
+                        type: 'function',
+                        id: functionId,
+                        function: {
+                          name: functionName,
+                          arguments: functionArgs,
+                        },
+                      },
+                    ],
+                  }
+                );
+                functionName = '';
+                functionArgs = '';
+                functionId = null;
+              } else if (finishReason === 'stop' && text) {
+                yield messageToGenerateContentResponse(
+                  {
+                    role: 'assistant',
+                    content: text,
+                  }
+                );
+                text = '';
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error processing streaming response:', error);
+          // If there's an error in stream processing but we have accumulated text
+          if (text) {
+            yield messageToGenerateContentResponse(
+              {
+                role: 'assistant',
+                content: text,
+              }
+            );
+          }
+        }
+      } else {
+        // Non-streaming: just call acompletion and yield the response
+        const response = await this.llmClient.acompletion(
+          completionArgs.model,
+          completionArgs.messages,
+          completionArgs.tools, 
+          completionArgs
         );
         
         yield modelResponseToGenerateContentResponse(response);
-      } catch (error) {
-        console.error('Error during completion:', error);
-        throw error;
       }
+    } catch (error) {
+      console.error('Error during LLM completion:', error);
+      const errorResponse = new LlmResponse();
+      errorResponse.errorCode = 'COMPLETION_ERROR';
+      errorResponse.errorMessage = String(error);
+      yield errorResponse;
     }
   }
 

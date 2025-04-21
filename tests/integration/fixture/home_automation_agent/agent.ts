@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { Agent } from '../../../../src';
+import { LlmAgent as Agent } from '../../../../src';
+import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { FunctionTool } from '../../../../src/tools/FunctionTool';
+import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
 
 // Device database interfaces
 interface DeviceInfo {
@@ -223,143 +226,234 @@ function listDevices(status: string = "", location: string = ""): Array<{ device
   return devices.length > 0 ? devices : "No devices found matching the criteria.";
 }
 
+// Create model instance
+const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
+
+// Create flow instance
+const autoFlow = new AutoFlow();
+
 /**
  * Home automation agent for controlling smart home devices
  */
-export const homeAutomationRootAgent = new Agent({
-  name: "Home_automation_agent",
-  llm: "gemini-2.0-flash-001",
+export const homeAutomationRootAgent = new Agent('Home_automation_agent', {
+  llm: geminiModel,
   instruction: `
     You are Home Automation Agent. You are responsible for controlling the devices in the home.
   `,
+  flow: autoFlow,
   tools: [
-    {
+    new FunctionTool({
       name: 'get_device_info',
-      function: getDeviceInfo,
-      parameters: {
-        device_id: {
-          type: 'string',
-          description: 'The unique identifier of the device'
+      description: 'Get the current status and location of a AC device',
+      fn: async (params) => getDeviceInfo(params.device_id),
+      functionDeclaration: {
+        name: 'get_device_info',
+        description: 'Get the current status and location of a AC device',
+        parameters: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The unique identifier of the device'
+            }
+          },
+          required: ['device_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'set_device_info',
-      function: setDeviceInfo,
-      parameters: {
-        device_id: {
-          type: 'string',
-          description: 'The unique identifier of the device'
-        },
-        status: {
-          type: 'string',
-          description: 'The new status to set for the device (ON or OFF)',
-          optional: true
-        },
-        location: {
-          type: 'string',
-          description: 'The new location to set for the device',
-          optional: true
+      description: 'Update the information of a AC device',
+      fn: async (params) => setDeviceInfo(params.device_id, params.status, params.location),
+      functionDeclaration: {
+        name: 'set_device_info',
+        description: 'Update the information of a AC device',
+        parameters: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The unique identifier of the device'
+            },
+            status: {
+              type: 'string',
+              description: 'The new status to set for the device (ON or OFF)'
+            },
+            location: {
+              type: 'string',
+              description: 'The new location to set for the device'
+            }
+          },
+          required: ['device_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'get_temperature',
-      function: getTemperature,
-      parameters: {
-        location: {
-          type: 'string',
-          description: 'The location for which to retrieve the temperature'
+      description: 'Get the current temperature in celsius of a location',
+      fn: async (params) => getTemperature(params.location),
+      functionDeclaration: {
+        name: 'get_temperature',
+        description: 'Get the current temperature in celsius of a location',
+        parameters: {
+          type: 'object',
+          properties: {
+            location: {
+              type: 'string',
+              description: 'The location for which to retrieve the temperature'
+            }
+          },
+          required: ['location']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'set_temperature',
-      function: setTemperature,
-      parameters: {
-        location: {
-          type: 'string',
-          description: 'The location where the temperature should be set'
-        },
-        temperature: {
-          type: 'number',
-          description: 'The desired temperature to set in celsius'
+      description: 'Set the desired temperature in celsius for a location',
+      fn: async (params) => setTemperature(params.location, params.temperature),
+      functionDeclaration: {
+        name: 'set_temperature',
+        description: 'Set the desired temperature in celsius for a location',
+        parameters: {
+          type: 'object',
+          properties: {
+            location: {
+              type: 'string',
+              description: 'The location where the temperature should be set'
+            },
+            temperature: {
+              type: 'number',
+              description: 'The desired temperature to set in celsius'
+            }
+          },
+          required: ['location', 'temperature']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'get_user_preferences',
-      function: getUserPreferences,
-      parameters: {
-        user_id: {
-          type: 'string',
-          description: 'The unique identifier of the user'
+      description: 'Get the temperature preferences and preferred location of a user',
+      fn: async (params) => getUserPreferences(params.user_id),
+      functionDeclaration: {
+        name: 'get_user_preferences',
+        description: 'Get the temperature preferences and preferred location of a user',
+        parameters: {
+          type: 'object',
+          properties: {
+            user_id: {
+              type: 'string',
+              description: 'The unique identifier of the user'
+            }
+          },
+          required: ['user_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'set_device_schedule',
-      function: setDeviceSchedule,
-      parameters: {
-        device_id: {
-          type: 'string',
-          description: 'The unique identifier of the device'
-        },
-        time: {
-          type: 'string',
-          description: 'The time at which the device should change its status (format: HH:MM)'
-        },
-        status: {
-          type: 'string',
-          description: 'The status to set for the device at the specified time'
+      description: 'Schedule a device to change its status at a specific time',
+      fn: async (params) => setDeviceSchedule(params.device_id, params.time, params.status),
+      functionDeclaration: {
+        name: 'set_device_schedule',
+        description: 'Schedule a device to change its status at a specific time',
+        parameters: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The unique identifier of the device'
+            },
+            time: {
+              type: 'string',
+              description: 'The time at which the device should change its status (format: HH:MM)'
+            },
+            status: {
+              type: 'string',
+              description: 'The status to set for the device at the specified time'
+            }
+          },
+          required: ['device_id', 'time', 'status']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'get_device_schedule',
-      function: getDeviceSchedule,
-      parameters: {
-        device_id: {
-          type: 'string',
-          description: 'The unique identifier of the device'
+      description: 'Retrieve the schedule of a device',
+      fn: async (params) => getDeviceSchedule(params.device_id),
+      functionDeclaration: {
+        name: 'get_device_schedule',
+        description: 'Retrieve the schedule of a device',
+        parameters: {
+          type: 'object',
+          properties: {
+            device_id: {
+              type: 'string',
+              description: 'The unique identifier of the device'
+            }
+          },
+          required: ['device_id']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'celsius_to_fahrenheit',
-      function: celsiusToFahrenheit,
-      parameters: {
-        celsius: {
-          type: 'number',
-          description: 'Temperature in Celsius'
+      description: 'Convert Celsius to Fahrenheit',
+      fn: async (params) => celsiusToFahrenheit(params.celsius),
+      functionDeclaration: {
+        name: 'celsius_to_fahrenheit',
+        description: 'Convert Celsius to Fahrenheit',
+        parameters: {
+          type: 'object',
+          properties: {
+            celsius: {
+              type: 'number',
+              description: 'Temperature in Celsius'
+            }
+          },
+          required: ['celsius']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'fahrenheit_to_celsius',
-      function: fahrenheitToCelsius,
-      parameters: {
-        fahrenheit: {
-          type: 'number',
-          description: 'Temperature in Fahrenheit'
+      description: 'Convert Fahrenheit to Celsius',
+      fn: async (params) => fahrenheitToCelsius(params.fahrenheit),
+      functionDeclaration: {
+        name: 'fahrenheit_to_celsius',
+        description: 'Convert Fahrenheit to Celsius',
+        parameters: {
+          type: 'object',
+          properties: {
+            fahrenheit: {
+              type: 'number',
+              description: 'Temperature in Fahrenheit'
+            }
+          },
+          required: ['fahrenheit']
         }
       }
-    },
-    {
+    }),
+    new FunctionTool({
       name: 'list_devices',
-      function: listDevices,
-      parameters: {
-        status: {
-          type: 'string',
-          description: 'The status to filter devices by',
-          optional: true
-        },
-        location: {
-          type: 'string',
-          description: 'The location to filter devices by',
-          optional: true
+      description: 'Retrieve a list of AC devices, filtered by status and/or location',
+      fn: async (params) => listDevices(params.status, params.location),
+      functionDeclaration: {
+        name: 'list_devices',
+        description: 'Retrieve a list of AC devices, filtered by status and/or location',
+        parameters: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              description: 'The status to filter devices by'
+            },
+            location: {
+              type: 'string',
+              description: 'The location to filter devices by'
+            }
+          }
         }
       }
-    }
+    })
   ]
 }); 

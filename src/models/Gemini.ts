@@ -18,6 +18,7 @@ import { GeminiLlmConnection } from './GeminiLlmConnection';
 import { LlmRequest } from './LlmRequest';
 import { LlmResponse } from './LlmResponse';
 import { Blob, Content, FunctionDeclaration, Part } from './types';
+import { GoogleGenerativeAI, GenerativeModel, Tool as GoogleTool } from '@google/generative-ai';
 
 // Simulated interfaces for GenAI SDK types in TypeScript
 interface GenerateContentResponse {
@@ -72,11 +73,140 @@ interface AsyncSession {
   close(): Promise<void>;
 }
 
+/**
+ * Helper function to convert our content type to Google GenAI content format
+ */
+function convertContent(content: Content): { role: string, parts: any[] } {
+  // Convert role from model to assistant if needed
+  const role = content.role === 'model' ? 'assistant' : content.role;
+  
+  // Convert parts
+  const parts = content.parts.map(part => {
+    if (part.text) {
+      return { text: part.text };
+    } else if (part.inlineData) {
+      return {
+        inline_data: {
+          mime_type: part.inlineData.mimeType,
+          data: part.inlineData.data
+        }
+      };
+    } else if (part.functionCall) {
+      return {
+        function_call: {
+          name: part.functionCall.name,
+          args: part.functionCall.args
+        }
+      };
+    } else if (part.functionResponse) {
+      return {
+        function_response: {
+          name: part.functionResponse.name,
+          response: part.functionResponse.response
+        }
+      };
+    }
+    return {}; // Empty part as fallback
+  });
+  
+  return { role, parts };
+}
+
+/**
+ * Helper function to convert Google GenAI tools to our format
+ */
+function convertTools(tools: any[] | undefined): GoogleTool[] {
+  if (!tools || tools.length === 0) {
+    return [];
+  }
+  
+  return tools.map(tool => {
+    if (tool.function_declarations) {
+      return {
+        functionDeclarations: tool.function_declarations.map((func: FunctionDeclaration) => ({
+          name: func.name,
+          description: func.description || '',
+          parameters: func.parameters || {},
+        }))
+      };
+    }
+    return {};
+  });
+}
+
+/**
+ * Helper to convert response from Google GenAI to our expected format
+ */
+function convertResponse(response: any): GenerateContentResponse {
+  const result: GenerateContentResponse = {};
+  
+  if (response.candidates) {
+    result.candidates = response.candidates.map((candidate: any) => ({
+      content: candidate.content,
+      finish_reason: candidate.finishReason,
+      grounding_metadata: candidate.groundingMetadata,
+      finish_message: candidate.finishMessage
+    }));
+  }
+  
+  if (response.promptFeedback) {
+    result.prompt_feedback = {
+      block_reason: response.promptFeedback.blockReason,
+      block_reason_message: response.promptFeedback.blockReasonMessage
+    };
+  }
+  
+  if (response.usageMetadata) {
+    result.usage_metadata = {
+      prompt_token_count: response.usageMetadata.promptTokenCount,
+      candidates_token_count: response.usageMetadata.candidatesTokenCount,
+      total_token_count: response.usageMetadata.totalTokenCount
+    };
+  }
+  
+  // Extract text from first candidate if available
+  if (result.candidates && 
+      result.candidates[0] && 
+      result.candidates[0].content && 
+      result.candidates[0].content.parts && 
+      result.candidates[0].content.parts[0] && 
+      result.candidates[0].content.parts[0].text) {
+    result.text = result.candidates[0].content.parts[0].text;
+  }
+  
+  // Extract function calls if available
+  if (result.candidates && 
+      result.candidates[0] && 
+      result.candidates[0].content && 
+      result.candidates[0].content.parts) {
+    
+    const functionCalls = result.candidates[0].content.parts
+      .filter((part: any) => part.functionCall)
+      .map((part: any) => ({
+        name: part.functionCall.name,
+        args: part.functionCall.args
+      }));
+    
+    if (functionCalls.length > 0) {
+      result.function_calls = functionCalls;
+    }
+  }
+  
+  return result;
+}
+
 // GenAI Client for Gemini
 class GenAIClient {
   vertexai: boolean = false;
+  private genAI: GoogleGenerativeAI;
   
-  constructor(private httpOptions: { headers: Record<string, string>, api_version?: string }) {}
+  constructor(private httpOptions: { headers: Record<string, string>, api_version?: string }) {
+    // Initialize Google GenAI with API key from environment
+    this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+    
+    // Check if this is a Vertex AI environment
+    this.vertexai = !!process.env.VERTEX_AI || !!process.env.GOOGLE_CLOUD_PROJECT;
+  }
 
   // Models API
   async generateContent(
@@ -84,8 +214,36 @@ class GenAIClient {
     contents: Content[],
     config: GenerateContentConfig
   ): Promise<GenerateContentResponse> {
-    // This would call the actual GenAI SDK in a real implementation
-    throw new Error('Not implemented: This requires integration with GenAI SDK');
+    try {
+      // Create model instance
+      const genModel = this.genAI.getGenerativeModel({
+        model: model,
+        generationConfig: {
+          temperature: config.temperature,
+          topP: config.topP,
+          topK: config.topK,
+          maxOutputTokens: config.maxOutputTokens,
+          candidateCount: config.candidateCount,
+          stopSequences: config.stopSequences,
+        },
+        systemInstruction: config.systemInstruction,
+        tools: convertTools(config.tools),
+      });
+      
+      // Convert content format
+      const convertedContents = contents.map(convertContent);
+      
+      // Generate content
+      const response = await genModel.generateContent({
+        contents: convertedContents
+      });
+      
+      // Convert response back to our expected format
+      return convertResponse(response);
+    } catch (error) {
+      console.error("Error generating content:", error);
+      throw error;
+    }
   }
 
   async *generateContentStream(
@@ -93,9 +251,38 @@ class GenAIClient {
     contents: Content[],
     config: GenerateContentConfig
   ): AsyncGenerator<GenerateContentResponse, void, unknown> {
-    // This would call the actual GenAI SDK in a real implementation
-    throw new Error('Not implemented: This requires integration with GenAI SDK');
-    yield {} as GenerateContentResponse; // To satisfy the generator requirement
+    try {
+      // Create model instance
+      const genModel = this.genAI.getGenerativeModel({
+        model: model,
+        generationConfig: {
+          temperature: config.temperature,
+          topP: config.topP,
+          topK: config.topK,
+          maxOutputTokens: config.maxOutputTokens,
+          candidateCount: config.candidateCount,
+          stopSequences: config.stopSequences,
+        },
+        systemInstruction: config.systemInstruction,
+        tools: convertTools(config.tools),
+      });
+      
+      // Convert content format
+      const convertedContents = contents.map(convertContent);
+      
+      // Generate streaming content
+      const responseStream = await genModel.generateContentStream({
+        contents: convertedContents
+      });
+      
+      // Process and yield each chunk
+      for await (const chunk of responseStream.stream) {
+        yield convertResponse(chunk);
+      }
+    } catch (error) {
+      console.error("Error in streaming content generation:", error);
+      throw error;
+    }
   }
 
   // Live API
@@ -103,8 +290,46 @@ class GenAIClient {
     model: string,
     config: LiveConnectConfig
   ): Promise<{ session: AsyncSession }> {
-    // This would create a real AsyncSession in a real implementation
-    throw new Error('Not implemented: This requires integration with GenAI SDK');
+    try {
+      // Create model instance with appropriate configuration
+      const genModel = this.genAI.getGenerativeModel({
+        model: model
+      });
+      
+      // Start chat session
+      const chat = genModel.startChat({
+        history: config.systemInstruction 
+          ? [convertContent(config.systemInstruction)]
+          : undefined,
+        tools: convertTools(config.tools),
+      });
+      
+      // Create an AsyncSession wrapper around the chat
+      const session: AsyncSession = {
+        async send(input: any): Promise<void> {
+          await chat.sendMessage(input);
+        },
+        
+        async *receive(): AsyncGenerator<any, void, unknown> {
+          // In a real implementation, this would listen for responses
+          // This is a placeholder as the Google GenAI JS SDK doesn't 
+          // have a direct equivalent to the Python SDK's receive() method
+          // Instead of getLastResponse, we'll use sendMessage to get a response
+          const response = await chat.sendMessage("continue");
+          yield convertResponse(response);
+        },
+        
+        async close(): Promise<void> {
+          // Clean up resources if needed
+          // The Google GenAI JS SDK doesn't have an explicit close method
+        }
+      };
+      
+      return { session };
+    } catch (error) {
+      console.error("Error connecting to Gemini model:", error);
+      throw error;
+    }
   }
 }
 
@@ -131,11 +356,11 @@ export class Gemini extends BaseLlm {
    */
   static supportedModels(): string[] {
     return [
-      'gemini-.*',
-      // fine-tuned vertex endpoint pattern
-      'projects\\/.*\\/locations\\/.*\\/endpoints\\/.*',
-      // vertex gemini long name
-      'projects\\/.*\\/locations\\/.*\\/publishers\\/google\\/models\\/gemini.*',
+      'gemini-1\\.5-flash(-\\d+)?',
+      'gemini-1\\.5-pro(-\\d+)?',
+      'gemini-2\\.0-flash-exp',
+      'projects/.+/locations/.+/endpoints/.+', // finetuned vertex gemini endpoint
+      'projects/.+/locations/.+/publishers/google/models/gemini.+', // vertex gemini long name
     ];
   }
 

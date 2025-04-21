@@ -92,7 +92,7 @@ export class LlmRegistry {
 
     // Search for matching regex
     for (const [regex, llmClass] of llmRegistryDict.entries()) {
-      if (new RegExp(regex).test(model)) {
+      if (new RegExp(`^${regex}$`).test(model)) {
         // Add to cache
         if (LlmRegistry.resolveCache.size >= LlmRegistry.MAX_CACHE_SIZE) {
           // Remove oldest entry if cache is full

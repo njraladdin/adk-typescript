@@ -262,10 +262,13 @@ describe('GeminiLlmConnection', () => {
         responses.push(response);
       }
       
-      expect(responses.length).toBe(1);
+      // The receive method yields an additional interrupted response
+      expect(responses.length).toBe(2);
       expect(responses[0].content?.role).toBe('model');
       expect(responses[0].content?.parts[0].text).toBe('Hello, this is a test response.');
       expect(responses[0].partial).toBe(true);
+      // The second response is the interrupted status
+      expect(responses[1].interrupted).toBeDefined();
     });
 
     test('handles function call responses', async () => {
@@ -294,11 +297,18 @@ describe('GeminiLlmConnection', () => {
         responses.push(response);
       }
       
-      expect(responses.length).toBe(3); // text + full text + turn complete
+      // Text message + interrupted status + full text response + turn complete response
+      expect(responses.length).toBe(4);
+      // First response is the text message with partial flag
       expect(responses[0].content?.parts[0].text).toBe('Hello, this is a test response.');
-      expect(responses[1].content?.parts[0].text).toBe('Hello, this is a test response.');
-      expect(responses[1].partial).toBeUndefined();
-      expect(responses[2].turnComplete).toBe(true);
+      expect(responses[0].partial).toBe(true);
+      // Second response is the interrupted status
+      expect(responses[1].interrupted).toBeDefined();
+      // Third response is the full text (non-partial)
+      expect(responses[2].content?.parts[0].text).toBe('Hello, this is a test response.');
+      expect(responses[2].partial).toBeUndefined();
+      // Fourth response is the turn complete
+      expect(responses[3].turnComplete).toBe(true);
     });
 
     test('handles interrupted responses', async () => {
@@ -312,9 +322,16 @@ describe('GeminiLlmConnection', () => {
         responses.push(response);
       }
       
-      expect(responses.length).toBe(3); // text + full text + interrupted
-      expect(responses[1].content?.parts[0].text).toBe('Hello, this is a test response.');
-      expect(responses[2].interrupted).toBe(true);
+      // Text message + interrupted status + full text response + interrupted response
+      expect(responses.length).toBe(4);
+      // First response is the text message
+      expect(responses[0].content?.parts[0].text).toBe('Hello, this is a test response.');
+      // Second response is the first interrupted status
+      expect(responses[1].interrupted).toBeDefined();
+      // Third response is the full text
+      expect(responses[2].content?.parts[0].text).toBe('Hello, this is a test response.');
+      // Fourth response is the final interrupted status
+      expect(responses[3].interrupted).toBe(true);
     });
 
     test('handles transcription responses', async () => {

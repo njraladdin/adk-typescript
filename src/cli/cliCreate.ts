@@ -60,8 +60,8 @@ async function promptForGoogleApiKey(rl: readline.Interface, googleApiKey?: stri
 
 async function promptForModel(rl: readline.Interface): Promise<string> {
   while (true) {
-    const modelChoice = await askQuestion(rl, `Choose a model for the root agent:\n1. gemini-2.0-flash-001\n2. Other models (fill later)\nChoose model`, '1');
-    if (modelChoice === '1') return 'gemini-2.0-flash-001';
+    const modelChoice = await askQuestion(rl, `Choose a model for the root agent:\n1. gemini-1.5-flash\n2. Other models (fill later)\nChoose model`, '1');
+    if (modelChoice === '1') return 'gemini-1.5-flash';
     if (modelChoice === '2') {
       console.log(OTHER_MODEL_MSG);
       return '<FILL_IN_MODEL>';
