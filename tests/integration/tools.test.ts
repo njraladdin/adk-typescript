@@ -1,6 +1,10 @@
 import { setBackendEnvironment, restoreBackendEnvironment } from './testConfig';
 import { TestRunner } from './utils/TestRunner';
 import { callFunctionAndAssert } from './utils/TestAssertions';
+import type { Agent } from '../../src';
+
+// Import the agents directly to avoid TypeScript module resolution issues
+const { singleFunctionAgent, toolAgent: rootAgent }: { singleFunctionAgent: Agent; toolAgent: Agent } = require('./fixture/tool_agent/agent');
 
 /**
  * Tests for agent tools functionality
@@ -41,8 +45,8 @@ describe('Tools Tests', () => {
         let agentRunner: TestRunner;
         
         beforeEach(() => {
-          // Create a TestRunner for the single function agent
-          agentRunner = TestRunner.fromAgentName('tests.integration.fixture.tool_agent.single_function_agent');
+          // Create a TestRunner with the single function agent
+          agentRunner = new TestRunner(singleFunctionAgent);
         });
         
         it('should successfully call a single function', async () => {
@@ -59,8 +63,8 @@ describe('Tools Tests', () => {
         let agentRunner: TestRunner;
         
         beforeEach(() => {
-          // Create a TestRunner for the root agent with multiple functions
-          agentRunner = TestRunner.fromAgentName('tests.integration.fixture.tool_agent.root_agent');
+          // Create a TestRunner with the root agent
+          agentRunner = new TestRunner(rootAgent);
         });
         
         it('should successfully call multiple functions', async () => {
@@ -126,6 +130,7 @@ describe('Tools Tests', () => {
           );
         });
         
+        // Agent tools tests are now implemented in the TypeScript version
         it('should handle agent tools successfully', async () => {
           await callFunctionAndAssert(
             agentRunner,
@@ -156,6 +161,24 @@ describe('Tools Tests', () => {
           );
         });
         
+        it('should handle langchain tool successfully', async () => {
+          await callFunctionAndAssert(
+            agentRunner,
+            'terminal',
+            'Run the following shell command \'echo test!\'',
+            'test'
+          );
+        });
+        
+        it('should handle crewai tool successfully', async () => {
+          await callFunctionAndAssert(
+            agentRunner,
+            'directory_read_tool',
+            'Find all the file paths',
+            'file'
+          );
+        });
+        
         it('should handle files retrieval successfully', async () => {
           await callFunctionAndAssert(
             agentRunner,
@@ -165,9 +188,8 @@ describe('Tools Tests', () => {
           );
           
           // For non-relevant query, just check it runs without comparing response
-          await agentRunner.executeFunction(
-            'test_case_retrieval',
-            'What is the weather in bay area?'
+          await agentRunner.run(
+            `Call the test_case_retrieval function with the query "What is the weather in bay area?"`
           );
         });
       });

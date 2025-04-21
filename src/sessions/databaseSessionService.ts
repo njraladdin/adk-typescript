@@ -34,7 +34,7 @@ import {
 import { Event, Session, SessionsList } from './interfaces';
 import { Content, Part } from './types';
 import { BaseSessionService, ListEventsResponse } from './baseSessionService';
-import { State } from './state';
+import { StatePrefix } from './state';
 
 /**
  * Extract state delta from a state object, categorizing into app, user, and session state
@@ -48,11 +48,11 @@ function extractStateDelta(
 
   if (state) {
     for (const [key, value] of Object.entries(state)) {
-      if (key.startsWith(State.APP_PREFIX)) {
-        appStateDelta[key.substring(State.APP_PREFIX.length)] = value;
-      } else if (key.startsWith(State.USER_PREFIX)) {
-        userStateDelta[key.substring(State.USER_PREFIX.length)] = value;
-      } else if (!key.startsWith(State.TEMP_PREFIX)) {
+      if (key.startsWith(StatePrefix.APP_PREFIX)) {
+        appStateDelta[key.substring(StatePrefix.APP_PREFIX.length)] = value;
+      } else if (key.startsWith(StatePrefix.USER_PREFIX)) {
+        userStateDelta[key.substring(StatePrefix.USER_PREFIX.length)] = value;
+      } else if (!key.startsWith(StatePrefix.TEMP_PREFIX)) {
         sessionStateDelta[key] = value;
       }
     }
@@ -72,11 +72,11 @@ function mergeState(
   const mergedState = { ...sessionState };
   
   for (const [key, value] of Object.entries(appState)) {
-    mergedState[State.APP_PREFIX + key] = value;
+    mergedState[StatePrefix.APP_PREFIX + key] = value;
   }
   
   for (const [key, value] of Object.entries(userState)) {
-    mergedState[State.USER_PREFIX + key] = value;
+    mergedState[StatePrefix.USER_PREFIX + key] = value;
   }
   
   return mergedState;
@@ -770,5 +770,103 @@ export class DatabaseSessionService extends BaseSessionService {
     }));
     
     return { events };
+  }
+
+  /**
+   * Updates the state of a session.
+   */
+  async updateSessionState(
+    appName: string, 
+    userId: string, 
+    sessionId: string, 
+    stateDelta: Record<string, any>
+  ): Promise<Session> {
+    await this.ensureConnection();
+    
+    // Fetch the session
+    const storageSession = await this.sessionRepo.findOneBy({
+      appName,
+      userId,
+      id: sessionId
+    });
+    
+    if (!storageSession) {
+      throw new Error(`Session ${sessionId} not found for user ${userId} in app ${appName}`);
+    }
+    
+    // Fetch app and user states
+    let appState = await this.appStateRepo.findOneBy({ appName });
+    if (!appState) {
+      appState = new StorageAppState();
+      appState.appName = appName;
+      appState.state = {};
+      await this.appStateRepo.save(appState);
+    }
+    
+    let userState = await this.userStateRepo.findOneBy({ appName, userId });
+    if (!userState) {
+      userState = new StorageUserState();
+      userState.appName = appName;
+      userState.userId = userId;
+      userState.state = {};
+      await this.userStateRepo.save(userState);
+    }
+    
+    // Extract state deltas
+    const [appStateDelta, userStateDelta, sessionStateDelta] = extractStateDelta(stateDelta);
+    
+    // Apply state deltas
+    if (Object.keys(appStateDelta).length > 0) {
+      Object.assign(appState.state, appStateDelta);
+      await this.appStateRepo.save(appState);
+    }
+    
+    if (Object.keys(userStateDelta).length > 0) {
+      Object.assign(userState.state, userStateDelta);
+      await this.userStateRepo.save(userState);
+    }
+    
+    // Update session state
+    if (Object.keys(sessionStateDelta).length > 0) {
+      Object.assign(storageSession.state, sessionStateDelta);
+      await this.sessionRepo.save(storageSession);
+    }
+    
+    // Fetch events for this session
+    const storageEvents = await this.eventRepo.findBy({
+      appName,
+      userId,
+      sessionId
+    });
+    
+    // Create the session object
+    const session: Session = {
+      id: sessionId,
+      appName,
+      userId,
+      state: mergeState(
+        appState.state,
+        userState.state,
+        storageSession.state
+      ),
+      events: []
+    };
+    
+    // Convert storage events to Event objects
+    session.events = storageEvents.map(storageEvent => ({
+      id: storageEvent.id,
+      invocationId: storageEvent.invocationId,
+      author: storageEvent.author,
+      content: decodeContent(storageEvent.content),
+      actions: storageEvent.actions,
+      turnComplete: storageEvent.turnComplete,
+      partial: storageEvent.partial,
+      longRunningToolIds: storageEvent.longRunningToolIds,
+      errorCode: storageEvent.errorCode,
+      errorMessage: storageEvent.errorMessage,
+      interrupted: storageEvent.interrupted
+    }));
+    
+    return session;
   }
 } 

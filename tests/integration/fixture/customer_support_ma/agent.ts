@@ -15,17 +15,19 @@
  */
 
 import { Agent, RemoteAgent, Session } from '../../../../src';
-import { Content } from '../../../../src/types';
+import { Content, Part } from '../../../../src/types';
 
 /**
- * Reset data
+ * Reset any data maintained by the agent
  */
 function resetData(): void {
-  // No implementation needed
+  // Implementation would go here
 }
 
 /**
- * Fetch user flight information
+ * Fetch user flight information.
+ * @param customerEmail The email of the customer
+ * @returns A string containing flight information
  */
 function fetchUserFlightInformation(customerEmail: string): string {
   return `
@@ -35,13 +37,18 @@ function fetchUserFlightInformation(customerEmail: string): string {
 
 /**
  * List customer flights
+ * @param customerEmail The email of the customer
+ * @returns A string containing flight information
  */
 function listCustomerFlights(customerEmail: string): string {
   return "{'flights': [{'book_ref': 'C46E9F'}]}";
 }
 
 /**
- * Update ticket to new flight
+ * Update ticket to a new flight
+ * @param ticketNo The ticket number
+ * @param newFlightId The new flight ID
+ * @returns A confirmation message
  */
 function updateTicketToNewFlight(ticketNo: string, newFlightId: string): string {
   return 'OK, your ticket has been updated.';
@@ -49,6 +56,8 @@ function updateTicketToNewFlight(ticketNo: string, newFlightId: string): string 
 
 /**
  * Lookup company policy
+ * @param topic The policy topic to look up
+ * @returns Policy information as a string
  */
 function lookupCompanyPolicy(topic: string): string {
   return `
@@ -61,7 +70,12 @@ function lookupCompanyPolicy(topic: string): string {
 }
 
 /**
- * Search flights
+ * Search for flights
+ * @param departureAirport The departure airport code
+ * @param arrivalAirport The arrival airport code
+ * @param startTime The start time for the flight search
+ * @param endTime The end time for the flight search
+ * @returns Flight search results as a string
  */
 function searchFlights(
   departureAirport?: string,
@@ -74,7 +88,12 @@ function searchFlights(
 }
 
 /**
- * Search hotels
+ * Search for hotels
+ * @param location The hotel location
+ * @param priceTier The price tier
+ * @param checkinDate The check-in date
+ * @param checkoutDate The check-out date
+ * @returns Hotel search results as a string
  */
 function searchHotels(
   location?: string,
@@ -88,14 +107,20 @@ function searchHotels(
 }
 
 /**
- * Book hotel
+ * Book a hotel
+ * @param hotelName The name of the hotel to book
+ * @returns A confirmation message
  */
 function bookHotel(hotelName: string): string {
   return 'OK, your hotel has been booked.';
 }
 
 /**
- * Before model call callback
+ * Hook executed before model call
+ * @param agent The agent instance
+ * @param session The session
+ * @param userMessage The user message
+ * @returns A response if intercept needed, otherwise null
  */
 function beforeModelCall(agent: Agent, session: Session, userMessage: string): Content | null {
   if (userMessage.toLowerCase().includes('expedia')) {
@@ -108,7 +133,11 @@ function beforeModelCall(agent: Agent, session: Session, userMessage: string): C
 }
 
 /**
- * After model call callback
+ * Hook executed after model call
+ * @param agent The agent instance
+ * @param session The session
+ * @param content The model content
+ * @returns A modified response if needed, otherwise null
  */
 function afterModelCall(agent: Agent, session: Session, content: Content): Content | null {
   const modelMessage = content.parts[0].text;
@@ -122,27 +151,26 @@ function afterModelCall(agent: Agent, session: Session, content: Content): Conte
 }
 
 /**
- * Flight agent
+ * Flight agent for handling flight bookings and information
  */
 export const flightAgent = new Agent({
-  llm: 'gemini-1.5-pro',
   name: 'flight_agent',
   description: 'Handles flight information, policy and updates',
+  llm: 'gemini-1.5-pro',
   instruction: `
-    You are a specialized assistant for handling flight updates.
-      The primary assistant delegates work to you whenever the user needs help updating their bookings.
-    Confirm the updated flight details with the customer and inform them of any additional fees.
-      When searching, be persistent. Expand your query bounds if the first search returns no results.
-      Remember that a booking isn't completed until after the relevant tool has successfully been used.
-    Do not waste the user's time. Do not make up invalid tools or functions.
+      You are a specialized assistant for handling flight updates.
+        The primary assistant delegates work to you whenever the user needs help updating their bookings.
+      Confirm the updated flight details with the customer and inform them of any additional fees.
+        When searching, be persistent. Expand your query bounds if the first search returns no results.
+        Remember that a booking isn't completed until after the relevant tool has successfully been used.
+      Do not waste the user's time. Do not make up invalid tools or functions.
   `,
   tools: [
     {
       name: 'list_customer_flights',
-      description: 'List customer flights',
       function: listCustomerFlights,
       parameters: {
-        customerEmail: {
+        customer_email: {
           type: 'string',
           description: 'Customer email address'
         }
@@ -150,21 +178,19 @@ export const flightAgent = new Agent({
     },
     {
       name: 'lookup_company_policy',
-      description: 'Lookup policies for flight cancelation and rebooking',
       function: lookupCompanyPolicy,
       parameters: {
         topic: {
           type: 'string',
-          description: 'Policy topic to look up'
+          description: 'The policy topic to look up'
         }
       }
     },
     {
       name: 'fetch_user_flight_information',
-      description: 'Fetch user flight information',
       function: fetchUserFlightInformation,
       parameters: {
-        customerEmail: {
+        customer_email: {
           type: 'string',
           description: 'Customer email address'
         }
@@ -172,37 +198,39 @@ export const flightAgent = new Agent({
     },
     {
       name: 'search_flights',
-      description: 'Search for available flights',
       function: searchFlights,
       parameters: {
-        departureAirport: {
+        departure_airport: {
           type: 'string',
-          description: 'Departure airport code'
+          description: 'Departure airport code',
+          optional: true
         },
-        arrivalAirport: {
+        arrival_airport: {
           type: 'string',
-          description: 'Arrival airport code'
+          description: 'Arrival airport code',
+          optional: true
         },
-        startTime: {
+        start_time: {
           type: 'string',
-          description: 'Start time for search window'
+          description: 'Start time for the flight search',
+          optional: true
         },
-        endTime: {
+        end_time: {
           type: 'string',
-          description: 'End time for search window'
+          description: 'End time for the flight search',
+          optional: true
         }
       }
     },
     {
       name: 'update_ticket_to_new_flight',
-      description: 'Update ticket to a new flight',
       function: updateTicketToNewFlight,
       parameters: {
-        ticketNo: {
+        ticket_no: {
           type: 'string',
-          description: 'Ticket number to update'
+          description: 'Ticket number'
         },
-        newFlightId: {
+        new_flight_id: {
           type: 'string',
           description: 'New flight ID'
         }
@@ -212,48 +240,50 @@ export const flightAgent = new Agent({
 });
 
 /**
- * Hotel agent
+ * Hotel agent for handling hotel bookings
  */
 export const hotelAgent = new Agent({
-  llm: 'gemini-1.5-pro',
   name: 'hotel_agent',
   description: 'Handles hotel information and booking',
+  llm: 'gemini-1.5-pro',
   instruction: `
-    You are a specialized assistant for handling hotel bookings.
-    The primary assistant delegates work to you whenever the user needs help booking a hotel.
-    Search for available hotels based on the user's preferences and confirm the booking details with the customer.
-      When searching, be persistent. Expand your query bounds if the first search returns no results.
+      You are a specialized assistant for handling hotel bookings.
+      The primary assistant delegates work to you whenever the user needs help booking a hotel.
+      Search for available hotels based on the user's preferences and confirm the booking details with the customer.
+        When searching, be persistent. Expand your query bounds if the first search returns no results.
   `,
   tools: [
     {
       name: 'search_hotels',
-      description: 'Search for available hotels',
       function: searchHotels,
       parameters: {
         location: {
           type: 'string',
-          description: 'Hotel location'
+          description: 'Hotel location',
+          optional: true
         },
-        priceTier: {
+        price_tier: {
           type: 'string',
-          description: 'Price tier (Luxury, Upper Upscale, Upscale, etc.)'
+          description: 'Price tier',
+          optional: true
         },
-        checkinDate: {
+        checkin_date: {
           type: 'string',
-          description: 'Check-in date'
+          description: 'Check-in date',
+          optional: true
         },
-        checkoutDate: {
+        checkout_date: {
           type: 'string',
-          description: 'Check-out date'
+          description: 'Check-out date',
+          optional: true
         }
       }
     },
     {
       name: 'book_hotel',
-      description: 'Book a hotel',
       function: bookHotel,
       parameters: {
-        hotelName: {
+        hotel_name: {
           type: 'string',
           description: 'Name of the hotel to book'
         }
@@ -263,23 +293,25 @@ export const hotelAgent = new Agent({
 });
 
 /**
- * Idea agent
+ * Idea agent for providing travel ideas
  */
-export const ideaAgent = new RemoteAgent({
-  llm: 'gemini-1.5-pro',
-  name: 'idea_agent',
-  description: 'Provide travel ideas base on the destination.',
-  url: 'http://localhost:8000/agent/run'
-});
+export const ideaAgent = new RemoteAgent(
+  'idea_agent',
+  {
+    description: 'Provide travel ideas base on the destination.',
+    url: 'http://localhost:8000/agent/run',
+    llm: 'gemini-1.5-pro'
+  }
+);
 
 /**
- * Root agent with subagents
+ * Root agent for customer support
  */
-export const rootAgent = new Agent({
-  llm: 'gemini-1.5-pro',
+export const customerSupportRootAgent = new Agent({
   name: 'root_agent',
+  llm: 'gemini-1.5-pro',
   instruction: `
-    You are a helpful customer support assistant for Swiss Airlines.
+      You are a helpful customer support assistant for Swiss Airlines.
   `,
   subAgents: [flightAgent, hotelAgent, ideaAgent],
   flow: 'auto',

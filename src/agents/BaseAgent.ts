@@ -78,6 +78,11 @@ export abstract class BaseAgent {
    * @param options Options for the agent
    */
   constructor(name: string, options: AgentOptions = {}) {
+    // Validate agent name - it should be a valid identifier
+    if (!/^[a-zA-Z0-9_]+$/.test(name)) {
+      throw new Error('Agent name must contain only alphanumeric characters and underscores');
+    }
+    
     this.name = name;
     this.description = options.description;
     

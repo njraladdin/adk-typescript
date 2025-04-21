@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Event, Session, SessionsList } from './interfaces';
 import { Content, Part } from './types';
 import { BaseSessionService, ListEventsResponse } from './baseSessionService';
-import { State } from './state';
+import { State, StatePrefix } from './state';
 
 export class InMemorySessionService extends BaseSessionService {
   // Store sessions by app/user/session ID
@@ -27,6 +27,42 @@ export class InMemorySessionService extends BaseSessionService {
   private userState: Record<string, Record<string, Record<string, any>>> = {};
   // Store app state by app
   private appState: Record<string, Record<string, any>> = {};
+
+  /**
+   * Implementation of updateSessionState abstract method
+   * Updates a session's state.
+   * 
+   * @param appName The application name
+   * @param userId The user ID
+   * @param sessionId The session ID
+   * @param stateDelta The changes to apply to the session state
+   * @returns The updated session
+   */
+  async updateSessionState(
+    appName: string,
+    userId: string,
+    sessionId: string,
+    stateDelta: Record<string, any>
+  ): Promise<Session> {
+    const session = this.getSession({ appName, userId, sessionId });
+    if (!session) {
+      throw new Error(`Session not found: ${sessionId}`);
+    }
+    
+    // Update the session state
+    for (const [key, value] of Object.entries(stateDelta)) {
+      session.state[key] = value;
+    }
+    
+    // Update the stored session
+    if (this.sessions[appName] && this.sessions[appName][userId] && this.sessions[appName][userId][sessionId]) {
+      for (const [key, value] of Object.entries(stateDelta)) {
+        this.sessions[appName][userId][sessionId].state[key] = value;
+      }
+    }
+    
+    return session;
+  }
 
   createSession(options: {
     appName: string;
@@ -168,17 +204,17 @@ export class InMemorySessionService extends BaseSessionService {
     if (event.actions?.stateDelta) {
       for (const [key, value] of Object.entries(event.actions.stateDelta)) {
         // App state
-        if (key.startsWith(State.APP_PREFIX)) {
+        if (key.startsWith(StatePrefix.APP_PREFIX)) {
           if (!this.appState[appName]) {
             this.appState[appName] = {};
           }
           
-          const appKey = key.substring(State.APP_PREFIX.length);
+          const appKey = key.substring(StatePrefix.APP_PREFIX.length);
           this.appState[appName][appKey] = value;
         }
         
         // User state
-        if (key.startsWith(State.USER_PREFIX)) {
+        if (key.startsWith(StatePrefix.USER_PREFIX)) {
           if (!this.userState[appName]) {
             this.userState[appName] = {};
           }
@@ -186,7 +222,7 @@ export class InMemorySessionService extends BaseSessionService {
             this.userState[appName][userId] = {};
           }
           
-          const userKey = key.substring(State.USER_PREFIX.length);
+          const userKey = key.substring(StatePrefix.USER_PREFIX.length);
           this.userState[appName][userId][userKey] = value;
         }
       }
@@ -200,7 +236,7 @@ export class InMemorySessionService extends BaseSessionService {
     if (!storageEvent.partial) {
       if (storageEvent.actions?.stateDelta) {
         for (const [key, value] of Object.entries(storageEvent.actions.stateDelta)) {
-          if (!key.startsWith(State.TEMP_PREFIX)) {
+          if (!key.startsWith(StatePrefix.TEMP_PREFIX)) {
             storageSession.state[key] = value;
           }
         }
@@ -219,14 +255,14 @@ export class InMemorySessionService extends BaseSessionService {
     // Merge app state
     if (this.appState[appName]) {
       for (const [key, value] of Object.entries(this.appState[appName])) {
-        session.state[State.APP_PREFIX + key] = value;
+        session.state[StatePrefix.APP_PREFIX + key] = value;
       }
     }
     
     // Merge user state
     if (this.userState[appName] && this.userState[appName][userId]) {
       for (const [key, value] of Object.entries(this.userState[appName][userId])) {
-        session.state[State.USER_PREFIX + key] = value;
+        session.state[StatePrefix.USER_PREFIX + key] = value;
       }
     }
     

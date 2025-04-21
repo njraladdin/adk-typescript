@@ -17,6 +17,15 @@
 import { BaseTool, BaseToolOptions } from './BaseTool';
 import { ToolContext } from './toolContext';
 import { LlmAgent } from '../agents/LlmAgent';
+import { Agent } from '../';
+
+// Define a type that can be either Agent or LlmAgent
+export type BaseAgentType = Agent | LlmAgent;
+
+// Type guard to check if an agent is an LlmAgent
+function isLlmAgent(agent: BaseAgentType): agent is LlmAgent {
+  return 'instruction' in agent && 'createSession' in agent;
+}
 
 /**
  * Options for creating an AgentTool
@@ -25,7 +34,7 @@ export interface AgentToolOptions extends BaseToolOptions {
   /**
    * The agent that will be used as a tool
    */
-  agent: LlmAgent;
+  agent: BaseAgentType;
   
   /**
    * Optional function declaration schema override
@@ -40,7 +49,7 @@ export class AgentTool extends BaseTool {
   /**
    * The agent used by this tool
    */
-  private agent: LlmAgent;
+  private agent: BaseAgentType;
   
   /**
    * The function declaration schema 
@@ -68,7 +77,7 @@ export class AgentTool extends BaseTool {
     }
     
     // Use the agent's instruction as a description if available
-    const description = this.agent.instruction || this.description;
+    const description = isLlmAgent(this.agent) ? this.agent.instruction : this.description;
     
     // Default minimal function declaration
     return {
@@ -99,6 +108,10 @@ export class AgentTool extends BaseTool {
     context: ToolContext
   ): Promise<any> {
     const input = params.input;
+    
+    if (!isLlmAgent(this.agent)) {
+      throw new Error(`Agent ${this.name} does not support createSession method`);
+    }
     
     // Create a new session for the agent
     const session = await this.agent.createSession();

@@ -163,7 +163,7 @@ export class Runner {
       const rootAgent = this.agent;
 
       if (newMessage) {
-        this._appendNewMessageToSession({
+        await this._appendNewMessageToSession({
           session: session as any,
           newMessage,
           invocationContext,
@@ -189,25 +189,21 @@ export class Runner {
   }
 
   /**
-   * Appends a new message to the session.
+   * Appends a new message to a session.
    *
-   * @param session The session to append the message to.
-   * @param newMessage The new message to append.
-   * @param invocationContext The invocation context for the message.
+   * @param session The session to append to.
+   * @param newMessage The message to append.
+   * @param invocationContext The invocation context.
    * @param saveInputBlobsAsArtifacts Whether to save input blobs as artifacts.
    * @private
    */
-  private _appendNewMessageToSession(params: {
+  private async _appendNewMessageToSession(params: {
     session: Session;
     newMessage: Content;
     invocationContext: InvocationContext;
     saveInputBlobsAsArtifacts?: boolean;
-  }): void {
+  }): Promise<void> {
     const { session, newMessage, invocationContext, saveInputBlobsAsArtifacts = false } = params;
-
-    if (!newMessage.parts || newMessage.parts.length === 0) {
-      throw new Error('No parts in the new_message.');
-    }
 
     if (this.artifactService && saveInputBlobsAsArtifacts) {
       // The runner directly saves the artifacts (if applicable) in the
@@ -219,16 +215,27 @@ export class Runner {
           continue;
         }
         const fileName = `artifact_${invocationContext.invocationId}_${i}`;
-        this.artifactService.saveArtifact({
-          appName: this.appName,
-          userId: session.userId,
-          sessionId: session.id,
-          filename: fileName,
-          artifact: part
-        });
-        newMessage.parts[i] = {
-          text: `Uploaded file: ${fileName}. It is saved into artifacts`
-        };
+        try {
+          const saveResult = this.artifactService.saveArtifact({
+            appName: this.appName,
+            userId: session.userId,
+            sessionId: session.id,
+            filename: fileName,
+            artifact: part
+          });
+          
+          // Handle both synchronous and asynchronous cases
+          if (saveResult instanceof Promise) {
+            await saveResult;
+          }
+          
+          newMessage.parts[i] = {
+            text: `Uploaded file: ${fileName}. It is saved into artifacts`
+          };
+        } catch (error) {
+          console.error('Error saving artifact:', error);
+          // Continue with the message even if saving artifact fails
+        }
       }
     }
     
@@ -239,7 +246,7 @@ export class Runner {
       content: newMessage
     });
     
-    this.sessionService.appendEvent({
+    await this.sessionService.appendEvent({
       session: session as any,
       event: event as any
     });

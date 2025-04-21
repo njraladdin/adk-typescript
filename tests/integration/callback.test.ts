@@ -1,5 +1,6 @@
 import { setBackendEnvironment, restoreBackendEnvironment } from './testConfig';
 import { TestRunner } from './utils/TestRunner';
+import { beforeAgentCallbackAgent, beforeModelCallbackAgent, afterModelCallbackAgent } from './fixture';
 
 /**
  * Helper function to simplify events (ported from Python test utilities)
@@ -8,20 +9,20 @@ function simplifyEvents(events: any[]): any[] {
   // This is a simplified implementation
   // In a real implementation, this would extract the relevant data from each event
   return events.map(event => [
-    event.agentName || '',
-    event.content || ''
+    event.author || '',
+    event.content?.parts?.[0]?.text || ''
   ]);
 }
 
 /**
  * Helper function to assert that an agent says something (ported from Python test utilities)
  */
-function assertAgentSays(
+async function assertAgentSays(
   expectedText: string,
   agentName: string,
   agentRunner: TestRunner
-): void {
-  const events = agentRunner.getEvents();
+): Promise<void> {
+  const events = await agentRunner.getEvents();
   const simplified = simplifyEvents(events);
   const agentEvents = simplified.filter(event => event[0] === agentName);
   
@@ -64,29 +65,29 @@ describe('Callback Tests', () => {
         }
       });
       
-      // Skipping these tests as they require fixture agents that aren't available yet
-      it.skip('should trigger before agent callback', async () => {
-        // This would use the TestRunner in a real test
-        const agentRunner = TestRunner.fromAgentName('tests.integration.fixture.callback_agent.before_agent_callback_agent');
+      // Using the fixture agents we've ported
+      it('should trigger before agent callback', async () => {
+        // Create a test runner using our ported fixture
+        const agentRunner = new TestRunner(beforeAgentCallbackAgent);
         
-        await agentRunner.executeQuery('Hi.');
+        await agentRunner.run('Hi.');
         
         // Assert the response content
-        assertAgentSays(
+        await assertAgentSays(
           'End invocation event before agent call.',
           'before_agent_callback_agent',
           agentRunner
         );
       });
       
-      it.skip('should trigger before model callback', async () => {
-        // This would use the TestRunner in a real test
-        const agentRunner = TestRunner.fromAgentName('tests.integration.fixture.callback_agent.before_model_callback_agent');
+      it('should trigger before model callback', async () => {
+        // Create a test runner using our ported fixture
+        const agentRunner = new TestRunner(beforeModelCallbackAgent);
         
-        await agentRunner.executeQuery('Hi.');
+        await agentRunner.run('Hi.');
         
         // Assert the response content
-        assertAgentSays(
+        await assertAgentSays(
           'End invocation event before model call.',
           'before_model_callback_agent',
           agentRunner
@@ -95,13 +96,14 @@ describe('Callback Tests', () => {
       
       // Only run this test with Google AI backend for now
       if (backend === 'GOOGLE_AI') {
-        it.skip('should trigger after model callback', async () => {
-          // This would use the TestRunner in a real test
-          const agentRunner = TestRunner.fromAgentName('tests.integration.fixture.callback_agent.after_model_callback_agent');
+        it('should trigger after model callback', async () => {
+          // Create a test runner using our ported fixture
+          const agentRunner = new TestRunner(afterModelCallbackAgent);
           
-          const events = await agentRunner.executeQuery('Hi.');
+          await agentRunner.run('Hi.');
           
           // Assert the response content
+          const events = await agentRunner.getEvents();
           const simplified = simplifyEvents(events);
           expect(simplified[0][0]).toBe('after_model_callback_agent');
           expect(simplified[0][1]).toMatch(/Update response event after model call.$/);

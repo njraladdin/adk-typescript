@@ -1,22 +1,23 @@
 import { setBackendEnvironment, restoreBackendEnvironment } from './testConfig';
 import { TestRunner } from './utils/TestRunner';
+import { contextVariableEchoAgent, contextVariableUpdateAgent } from './fixture';
 
 /**
  * Helper function to call a function and assert the result
  */
-function callFunctionAndAssert(
+async function callFunctionAndAssert(
   agentRunner: TestRunner,
   functionName: string,
   params: any,
   expected: string
-): void {
+): Promise<void> {
   const paramSection = params !== null
     ? ` with params ${typeof params === 'string' ? params : JSON.stringify(params)}`
     : '';
     
-  agentRunner.executeQuery(`Call ${functionName}${paramSection} and show me the result`);
+  await agentRunner.run(`Call ${functionName}${paramSection} and show me the result`);
   
-  const events = agentRunner.getEvents();
+  const events = await agentRunner.getEvents();
   const modelResponseEvent = events[events.length - 1];
   
   expect(modelResponseEvent.author).toBe('context_variable_update_agent');
@@ -59,22 +60,22 @@ describe('Context Variable Tests', () => {
         }
       });
       
-      // Skipping these tests as they require fixture agents that aren't available yet
-      it.skip('should throw error when context variable is missing', async () => {
-        // This would use the TestRunner in a real test
-        const agentRunner = TestRunner.fromAgentName('tests.integration.fixture.context_variable_agent.state_variable_echo_agent');
+      // Using the fixture agents we've ported
+      it('should throw error when context variable is missing', async () => {
+        // Create a test runner using our ported fixture
+        const agentRunner = new TestRunner(contextVariableEchoAgent);
         
         // Expected to throw KeyError in Python
         await expect(async () => {
-          await agentRunner.executeQuery('Hi echo my customer id.');
+          await agentRunner.run('Hi echo my customer id.');
         }).rejects.toThrow('customerId');
       });
       
-      it.skip('should update context variables', async () => {
-        // This would use the TestRunner in a real test
-        const agentRunner = TestRunner.fromAgentName('tests.integration.fixture.context_variable_agent.state_variable_update_agent');
+      it('should update context variables', async () => {
+        // Create a test runner using our ported fixture
+        const agentRunner = new TestRunner(contextVariableUpdateAgent);
         
-        callFunctionAndAssert(
+        await callFunctionAndAssert(
           agentRunner,
           'update_fc',
           ['RRRR', '3.141529', ['apple', 'banana'], [1, 3.14, 'hello']],

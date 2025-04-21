@@ -1,0 +1,4 @@
+{
+  "rootAgent": "flowComplexSparkRootAgent",
+  "failFast": true
+} 

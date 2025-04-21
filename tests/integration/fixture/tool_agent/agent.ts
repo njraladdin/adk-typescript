@@ -14,34 +14,25 @@
  * limitations under the License.
  */
 
-/**
- * NOTE: This TypeScript port of the tool_agent fixture has some limitations
- * compared to the Python version. In particular, the AgentTool class in the
- * TypeScript version expects an LlmAgent instance, while we're using the Agent class.
- * Since they are not directly compatible, we've commented out the agent-related
- * portions of the fixture. The basic function tools remain intact.
- */
-
 import * as path from 'path';
-import { Agent, AgentTool } from '../../../../src';
-import { FilesRetrieval, VertexAiRagRetrieval } from '../../../../src/tools/retrieval';
+import { Agent } from '../../../../src';
+import { AgentTool } from '../../../../src/tools/AgentTool';
+import { FilesRetrieval } from '../../../../src/tools/retrieval/FilesRetrieval';
+import { VertexAiRagRetrieval } from '../../../../src/tools/retrieval/VertexAiRagRetrieval';
 
-/**
- * Type for test case
- */
+// Define schema interfaces (equivalent to Python's Pydantic models)
 interface TestCase {
   case: string;
 }
 
-/**
- * Type for test result
- */
 interface Test {
   test_title: string[];
 }
 
 /**
- * Simple function with a string parameter
+ * Simple function that validates the parameter type
+ * @param param A string parameter
+ * @returns A string indicating success or failure
  */
 function simpleFunction(param: string): string {
   if (typeof param === 'string') {
@@ -52,6 +43,7 @@ function simpleFunction(param: string): string {
 
 /**
  * Function with no parameters
+ * @returns A string indicating success
  */
 function noParamFunction(): string {
   return "Called no param function successfully";
@@ -59,13 +51,19 @@ function noParamFunction(): string {
 
 /**
  * Function with no return value
+ * @param param A string parameter
  */
 function noOutputFunction(param: string): void {
   return;
 }
 
 /**
- * Function with multiple parameter types
+ * Function that accepts multiple parameter types
+ * @param param1 A string parameter
+ * @param param2 An integer parameter
+ * @param param3 A float parameter
+ * @param param4 A boolean parameter
+ * @returns A string indicating success or failure
  */
 function multipleParamTypesFunction(
   param1: string,
@@ -75,7 +73,7 @@ function multipleParamTypesFunction(
 ): string {
   if (
     typeof param1 === 'string' &&
-    typeof param2 === 'number' &&
+    Number.isInteger(param2) &&
     typeof param3 === 'number' &&
     typeof param4 === 'boolean'
   ) {
@@ -86,13 +84,17 @@ function multipleParamTypesFunction(
 
 /**
  * Function that throws an error
+ * @param param A string parameter
+ * @throws ValueError
  */
 function throwErrorFunction(param: string): string {
   throw new Error("Error thrown by throw_error_function");
 }
 
 /**
- * Function that takes a string array parameter
+ * Function that accepts a list of strings
+ * @param param An array of strings
+ * @returns A string indicating success or failure
  */
 function listStrParamFunction(param: string[]): string {
   if (Array.isArray(param) && param.every(item => typeof item === 'string')) {
@@ -102,14 +104,19 @@ function listStrParamFunction(param: string[]): string {
 }
 
 /**
- * Function that returns a string array
+ * Function that returns a list of strings
+ * @param param A string parameter
+ * @returns An array of strings
  */
 function returnListStrFunction(param: string): string[] {
   return ["Called return list str function successfully"];
 }
 
 /**
- * Complex function with dictionary and array parameters
+ * Complex function that handles dictionaries and lists
+ * @param param1 A dictionary parameter
+ * @param param2 An array of dictionaries
+ * @returns An array of Test objects
  */
 function complexFunctionListDict(
   param1: Record<string, any>,
@@ -130,77 +137,96 @@ function complexFunctionListDict(
 
 /**
  * First repetitive call function
+ * @param param A string parameter
+ * @returns A string message
  */
 function repetiveCall1(param: string): string {
-  return `Call repetive_call_2 tool with param ${param}_repetive`;
+  return `Call repetive_call_2 tool with param ${param + '_repetive'}`;
 }
 
 /**
  * Second repetitive call function
+ * @param param A string parameter
+ * @returns The input parameter
  */
 function repetiveCall2(param: string): string {
   return param;
 }
 
-/**
- * Test case retrieval tool
- */
+// Create retrieval tools
 const testCaseRetrieval = new FilesRetrieval({
-  name: "test_case_retrieval",
-  description: "General guidance for agent test cases",
-  inputDir: path.join(__dirname, "files")
+  name: 'test_case_retrieval',
+  description: 'General guidance for agent test cases',
+  inputDir: path.join(__dirname, 'file')
 });
 
-/**
- * Valid RAG retrieval tool
- */
 const validRagRetrieval = new VertexAiRagRetrieval({
-  name: "valid_rag_retrieval",
+  name: 'valid_rag_retrieval',
   ragCorpora: [
-    "projects/1096655024998/locations/us-central1/ragCorpora/4985766262475849728"
+    'projects/1096655024998/locations/us-central1/ragCorpora/4985766262475849728'
   ],
-  description: "General guidance for agent test cases"
+  description: 'General guidance for agent test cases'
 });
 
-/**
- * Invalid RAG retrieval tool
- */
 const invalidRagRetrieval = new VertexAiRagRetrieval({
-  name: "invalid_rag_retrieval",
+  name: 'invalid_rag_retrieval',
   ragCorpora: [
-    "projects/1096655024998/locations/us-central1/InValidRagCorporas/4985766262475849728"
+    'projects/1096655024998/locations/us-central1/InValidRagCorporas/4985766262475849728'
   ],
-  description: "Invalid rag retrieval resource name"
+  description: 'Invalid rag retrieval resource name'
 });
 
-/**
- * Non-existent RAG retrieval tool
- */
 const nonExistRagRetrieval = new VertexAiRagRetrieval({
-  name: "non_exist_rag_retrieval",
+  name: 'non_exist_rag_retrieval',
   ragCorpora: [
-    "projects/1096655024998/locations/us-central1/RagCorpora/1234567"
+    'projects/1096655024998/locations/us-central1/RagCorpora/1234567'
   ],
-  description: "Non exist rag retrieval resource name"
+  description: 'Non exist rag retrieval resource name'
 });
 
-/**
- * Agent with no schema
- */
-/*
+// Create shell and directory tools
+// Note: The exact implementation depends on how these are implemented in your TypeScript project
+// These may require custom implementations or adaptations
+const shellTool = {
+  name: 'shell_tool',
+  description: 'Execute shell commands',
+  function: (command: string) => {
+    // This is a mock implementation - actual implementation would depend on your project
+    return `Executed command: ${command}`;
+  },
+  parameters: {
+    command: {
+      type: 'string',
+      description: 'The shell command to execute'
+    }
+  }
+};
+
+const docsTools = {
+  name: 'directory_read_tool',
+  description: 'Use this to find files for you.',
+  function: (directory: string) => {
+    // This is a mock implementation - actual implementation would depend on your project
+    return `Read directory: ${directory}`;
+  },
+  parameters: {
+    directory: {
+      type: 'string',
+      description: 'The directory to read'
+    }
+  }
+};
+
+// Create sub-agents
 const noSchemaAgent = new Agent({
-  llm: "gemini-1.5-flash",
-  name: "no_schema_agent",
-  instruction: "Just say 'Hi'"
+  llm: 'gemini-2.0-flash-001',
+  name: 'no_schema_agent',
+  instruction: `Just say 'Hi'`
 });
 
-/**
- * Agent with schema
- */
-/*
 const schemaAgent = new Agent({
-  llm: "gemini-1.5-flash",
-  name: "schema_agent",
+  llm: 'gemini-2.0-flash-001',
+  name: 'schema_agent',
   instruction: `
     You will be given a test case.
     Return a list of the received test case appended with '_success' and '_failure' as test_titles
@@ -211,7 +237,7 @@ const schemaAgent = new Agent({
       case: { type: 'string' }
     },
     required: ['case']
-  },
+  } as const,
   outputSchema: {
     type: 'object',
     properties: {
@@ -221,16 +247,12 @@ const schemaAgent = new Agent({
       }
     },
     required: ['test_title']
-  }
+  } as const
 });
 
-/**
- * Agent with no input schema
- */
-/*
 const noInputSchemaAgent = new Agent({
-  llm: "gemini-1.5-flash",
-  name: "no_input_schema_agent",
+  llm: 'gemini-2.0-flash-001',
+  name: 'no_input_schema_agent',
   instruction: `
     Just return ['Tools_success, Tools_failure']
   `,
@@ -243,16 +265,12 @@ const noInputSchemaAgent = new Agent({
       }
     },
     required: ['test_title']
-  }
+  } as const
 });
 
-/**
- * Agent with no output schema
- */
-/*
 const noOutputSchemaAgent = new Agent({
-  llm: "gemini-1.5-flash",
-  name: "no_output_schema_agent",
+  llm: 'gemini-2.0-flash-001',
+  name: 'no_output_schema_agent',
   instruction: `
     Just say 'Hi'
   `,
@@ -262,22 +280,18 @@ const noOutputSchemaAgent = new Agent({
       case: { type: 'string' }
     },
     required: ['case']
-  }
+  } as const
 });
-*/
 
-/**
- * Agent with a single function
- */
-export const singleFunctionAgent = new Agent({
-  llm: "gemini-1.5-flash",
-  name: "single_function_agent",
-  description: "An agent that calls a single function",
-  instruction: "When calling tools, just return what the tool returns.",
+const singleFunctionAgent = new Agent({
+  llm: 'gemini-2.0-flash-001',
+  name: 'single_function_agent',
+  description: 'An agent that calls a single function',
+  instruction: 'When calling tools, just return what the tool returns.',
   tools: [
     {
       name: 'simple_function',
-      description: 'A simple function',
+      description: 'A simple function that validates parameter type',
       function: simpleFunction,
       parameters: {
         param: {
@@ -289,19 +303,19 @@ export const singleFunctionAgent = new Agent({
   ]
 });
 
-/**
- * Root agent with all tools
- */
-export const rootAgent = new Agent({
-  llm: "gemini-1.5-flash",
-  name: "tool_agent",
-  description: "An agent that can call other tools",
-  instruction: "When calling tools, just return what the tool returns.",
+// Export the single function agent for tests
+export { singleFunctionAgent };
+
+// Create the root agent
+export const toolAgent = new Agent({
+  llm: 'gemini-2.0-flash-001',
+  name: 'tool_agent',
+  description: 'An agent that can call other tools',
+  instruction: 'When calling tools, just return what the tool returns.',
   tools: [
-    // Function tools
     {
       name: 'simple_function',
-      description: 'A simple function',
+      description: 'A simple function that validates parameter type',
       function: simpleFunction,
       parameters: {
         param: {
@@ -312,13 +326,13 @@ export const rootAgent = new Agent({
     },
     {
       name: 'no_param_function',
-      description: 'A function with no parameters',
+      description: 'A function that takes no parameters',
       function: noParamFunction,
       parameters: {}
     },
     {
       name: 'no_output_function',
-      description: 'A function with no return value',
+      description: 'A function that returns no output',
       function: noOutputFunction,
       parameters: {
         param: {
@@ -329,7 +343,7 @@ export const rootAgent = new Agent({
     },
     {
       name: 'multiple_param_types_function',
-      description: 'A function with multiple parameter types',
+      description: 'A function that accepts multiple parameter types',
       function: multipleParamTypesFunction,
       parameters: {
         param1: {
@@ -338,7 +352,7 @@ export const rootAgent = new Agent({
         },
         param2: {
           type: 'number',
-          description: 'A number parameter'
+          description: 'An integer parameter'
         },
         param3: {
           type: 'number',
@@ -363,7 +377,7 @@ export const rootAgent = new Agent({
     },
     {
       name: 'list_str_param_function',
-      description: 'A function that takes a string array parameter',
+      description: 'A function that accepts a list of strings',
       function: listStrParamFunction,
       parameters: {
         param: {
@@ -371,13 +385,13 @@ export const rootAgent = new Agent({
           items: {
             type: 'string'
           },
-          description: 'A string array parameter'
+          description: 'An array of strings'
         }
       }
     },
     {
       name: 'return_list_str_function',
-      description: 'A function that returns a string array',
+      description: 'A function that returns a list of strings',
       function: returnListStrFunction,
       parameters: {
         param: {
@@ -408,36 +422,31 @@ export const rootAgent = new Agent({
         }
       }
     },
-    
-    // Retrieval tools
     testCaseRetrieval,
     validRagRetrieval,
     invalidRagRetrieval,
     nonExistRagRetrieval,
-    
-    // Agent tools - commented out due to type incompatibility between Agent and LlmAgent
-    // The TypeScript version uses a different agent model structure than Python
-    /*
+    shellTool,
+    docsTools,
     new AgentTool({
-      name: 'no_schema_agent',
-      description: 'Agent with no schema',
+      name: 'no_schema_agent_tool',
+      description: 'A tool that uses an agent with no schema',
       agent: noSchemaAgent
     }),
     new AgentTool({
-      name: 'schema_agent',
-      description: 'Agent with schema',
+      name: 'schema_agent_tool',
+      description: 'A tool that uses an agent with input and output schema',
       agent: schemaAgent
     }),
     new AgentTool({
-      name: 'no_input_schema_agent',
-      description: 'Agent with no input schema',
+      name: 'no_input_schema_agent_tool',
+      description: 'A tool that uses an agent with no input schema',
       agent: noInputSchemaAgent
     }),
     new AgentTool({
-      name: 'no_output_schema_agent',
-      description: 'Agent with no output schema',
+      name: 'no_output_schema_agent_tool',
+      description: 'A tool that uses an agent with no output schema',
       agent: noOutputSchemaAgent
     })
-    */
   ]
 }); 

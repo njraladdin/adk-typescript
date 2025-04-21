@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-/**
- * Tools module for integration tests
- */
-
-// Re-export tools test utilities
-// Add more exports as they are ported 
+// Export all agent tests
+import './BaseAgent.test';
+import './LlmAgent.test';
+import './LlmAgentCallbacks.test';
+import './LoopAgent.test';
+import './ParallelAgent.test';
+import './SequentialAgent.test';
+import './LanggraphAgent.test'; 

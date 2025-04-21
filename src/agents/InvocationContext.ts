@@ -50,6 +50,7 @@ class InvocationCostManager {
 
     if (
       runConfig &&
+      runConfig.maxLlmCalls !== undefined &&
       runConfig.maxLlmCalls > 0 &&
       this.numberOfLlmCalls > runConfig.maxLlmCalls
     ) {

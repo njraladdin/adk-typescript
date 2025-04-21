@@ -41,8 +41,8 @@ export interface SystemMessage extends Message {
  * Interface for a CompiledGraph from LangGraph
  */
 export interface CompiledGraph {
-  invoke: (input: any, config: any) => any;
-  getState: (config: any) => { values?: { messages?: any[] } };
+  invoke: (input: { messages: Message[] }, config: any) => { messages: Message[] };
+  getState: (config: any) => { values?: { messages?: Message[] } };
   checkpointer?: any;
 }
 
@@ -105,14 +105,24 @@ export class LanggraphAgent extends BaseAgent {
    */
   constructor(name: string, options: LanggraphAgentOptions) {
     super(name, options);
+    
+    if (!options.graph) {
+      throw new Error('LanggraphAgent requires a graph');
+    }
+    
     this.graph = options.graph;
     this.instruction = options.instruction || '';
   }
 
   /**
-   * @inheritdoc
+   * Implementation of the agent's async invocation logic.
+   * 
+   * @param ctx The invocation context
+   * @returns An async generator of events
    */
-  protected async* runAsyncImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
+  protected async* runAsyncImpl(
+    ctx: InvocationContext
+  ): AsyncGenerator<Event, void, unknown> {
     // Needed for langgraph checkpointer (for subsequent invocations; multi-turn)
     const config = { configurable: { thread_id: ctx.session.id } };
 
@@ -150,15 +160,24 @@ export class LanggraphAgent extends BaseAgent {
   }
 
   /**
-   * @inheritdoc
+   * Implementation of the agent's live invocation logic.
+   * 
+   * @param ctx The invocation context
+   * @returns An async generator of events
    */
-  protected async* runLiveImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
+  protected async* runLiveImpl(
+    ctx: InvocationContext
+  ): AsyncGenerator<Event, void, unknown> {
     // For live implementation, we simply delegate to the async implementation
     yield* this.runAsyncImpl(ctx);
   }
 
   /**
-   * @inheritdoc
+   * Sets the user content for the agent.
+   * This is a no-op for LanggraphAgent as it extracts content from session events.
+   * 
+   * @param content The user content
+   * @param invocationContext The invocation context
    */
   setUserContent(content: Content, invocationContext: InvocationContext): void {
     // LanggraphAgent doesn't need to store user content locally
@@ -189,8 +208,8 @@ export class LanggraphAgent extends BaseAgent {
    * @param events The list of events
    * @returns List of messages
    */
-  private getConversationWithAgent(events: Event[]): Message[] {
-    const messages: Message[] = [];
+  private getConversationWithAgent(events: Event[]): (HumanMessage | AIMessage)[] {
+    const messages: (HumanMessage | AIMessage)[] = [];
     
     for (const event of events) {
       if (!event.content || !event.content.parts || event.content.parts.length === 0) {

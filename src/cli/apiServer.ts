@@ -271,83 +271,115 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
 
   // Artifact management endpoints
   app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName', 
-    (req: express.Request, res: express.Response) => {
+    async (req: express.Request, res: express.Response) => {
       const { appName, userId, sessionId, artifactName } = req.params;
       const version = req.query.version ? parseInt(req.query.version as string) : undefined;
       
       // Connect to managed session if agent_engine_id is set
       const effectiveAppName = agentEngineId || appName;
       
-      const artifact = artifactService.loadArtifact({
-        appName: effectiveAppName,
-        userId,
-        sessionId,
-        filename: artifactName,
-        version
-      });
-      
-      if (!artifact) {
-        return res.status(404).json({ error: 'Artifact not found' });
+      try {
+        const artifactResult = artifactService.loadArtifact({
+          appName: effectiveAppName,
+          userId,
+          sessionId,
+          filename: artifactName,
+          version
+        });
+        
+        // Handle both synchronous and asynchronous cases
+        const artifact = artifactResult instanceof Promise ? await artifactResult : artifactResult;
+        
+        if (!artifact) {
+          return res.status(404).json({ error: 'Artifact not found' });
+        }
+        
+        res.json(artifact);
+      } catch (error) {
+        console.error('Error loading artifact:', error);
+        res.status(500).json({ error: 'Error loading artifact' });
       }
-      
-      res.json(artifact);
   });
 
   app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName/versions/:versionId', 
-    (req: express.Request, res: express.Response) => {
+    async (req: express.Request, res: express.Response) => {
       const { appName, userId, sessionId, artifactName, versionId } = req.params;
       const version = parseInt(versionId);
       
       // Connect to managed session if agent_engine_id is set
       const effectiveAppName = agentEngineId || appName;
       
-      const artifact = artifactService.loadArtifact({
-        appName: effectiveAppName,
-        userId,
-        sessionId,
-        filename: artifactName,
-        version
-      });
-      
-      if (!artifact) {
-        return res.status(404).json({ error: 'Artifact not found' });
+      try {
+        const artifactResult = artifactService.loadArtifact({
+          appName: effectiveAppName,
+          userId,
+          sessionId,
+          filename: artifactName,
+          version
+        });
+        
+        // Handle both synchronous and asynchronous cases
+        const artifact = artifactResult instanceof Promise ? await artifactResult : artifactResult;
+        
+        if (!artifact) {
+          return res.status(404).json({ error: 'Artifact not found' });
+        }
+        
+        res.json(artifact);
+      } catch (error) {
+        console.error('Error loading artifact version:', error);
+        res.status(500).json({ error: 'Error loading artifact version' });
       }
-      
-      res.json(artifact);
   });
 
   app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts', 
-    (req: express.Request, res: express.Response) => {
+    async (req: express.Request, res: express.Response) => {
       const { appName, userId, sessionId } = req.params;
       
       // Connect to managed session if agent_engine_id is set
       const effectiveAppName = agentEngineId || appName;
       
-      // Fix for listArtifactKeys - no filename parameter needed
-      const artifactNames = artifactService.listArtifactKeys({
-        appName: effectiveAppName,
-        userId,
-        sessionId
-      } as any); // Using 'as any' to bypass TypeScript check as this is how the method is implemented
-      
-      res.json(artifactNames);
+      try {
+        // Fix for listArtifactKeys - no filename parameter needed
+        const artifactNamesResult = artifactService.listArtifactKeys({
+          appName: effectiveAppName,
+          userId,
+          sessionId
+        } as any); // Using 'as any' to bypass TypeScript check as this is how the method is implemented
+        
+        // Handle both synchronous and asynchronous cases
+        const artifactNames = artifactNamesResult instanceof Promise ? await artifactNamesResult : artifactNamesResult;
+        
+        res.json(artifactNames);
+      } catch (error) {
+        console.error('Error listing artifacts:', error);
+        res.status(500).json({ error: 'Error listing artifacts' });
+      }
   });
 
   app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName/versions', 
-    (req: express.Request, res: express.Response) => {
+    async (req: express.Request, res: express.Response) => {
       const { appName, userId, sessionId, artifactName } = req.params;
       
       // Connect to managed session if agent_engine_id is set
       const effectiveAppName = agentEngineId || appName;
       
-      const versions = artifactService.listVersions({
-        appName: effectiveAppName,
-        userId,
-        sessionId,
-        filename: artifactName
-      });
-      
-      res.json(versions);
+      try {
+        const versionsResult = artifactService.listVersions({
+          appName: effectiveAppName,
+          userId,
+          sessionId,
+          filename: artifactName
+        });
+        
+        // Handle both synchronous and asynchronous cases
+        const versions = versionsResult instanceof Promise ? await versionsResult : versionsResult;
+        
+        res.json(versions);
+      } catch (error) {
+        console.error('Error listing versions:', error);
+        res.status(500).json({ error: 'Error listing versions' });
+      }
   });
 
   app.delete('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName', 

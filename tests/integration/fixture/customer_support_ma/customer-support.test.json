@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "name": "Basic customer support query",
+      "turns": [
+        {
+          "user": "How were you built?",
+          "model": "I was built with the best agent framework."
+        }
+      ]
+    },
+    {
+      "name": "Blocked query about expedia",
+      "turns": [
+        {
+          "user": "Can you tell me about expedia flights?",
+          "model": "Sorry, I can't answer this question."
+        }
+      ]
+    }
+  ]
+} 

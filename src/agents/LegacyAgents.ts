@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Content } from '../models/types';
+import { InvocationContext } from './InvocationContext';
 import { BaseAgent } from './BaseAgent';
+import { Event } from '../events/Event';
 
 /**
- * ReasoningAgent - An agent that can reason step by step
+ * Legacy agent implementation that extends BaseAgent rather than implementing
+ * a partial interface. This ensures we meet all the required interface requirements.
  * @deprecated Use the new agent architecture instead
  */
-export class ReasoningAgent implements Omit<BaseAgent, 'runAsyncImpl' | 'runLiveImpl' | 'name'> {
-  readonly name: string = 'reasoning_agent';
-  private config: any;
-
+export class ReasoningAgent extends BaseAgent {
   constructor(config: any) {
-    this.config = config;
+    super('reasoning_agent', config);
   }
 
   /**
@@ -37,30 +38,47 @@ export class ReasoningAgent implements Omit<BaseAgent, 'runAsyncImpl' | 'runLive
   }
 
   /**
-   * For compatibility with BaseAgent interface
+   * Required abstract method implementation
    */
-  async* runAsync(): AsyncGenerator<any, void, unknown> {
-    yield { status: 'reasoning agent pending implementation' };
+  protected async* runAsyncImpl(): AsyncGenerator<Event, void, unknown> {
+    yield new Event({
+      author: this.name,
+      content: {
+        role: 'assistant',
+        parts: [{ text: 'reasoning agent pending implementation' }]
+      }
+    });
   }
 
   /**
-   * For compatibility with BaseAgent interface
+   * Required abstract method implementation
    */
-  async* runLive(): AsyncGenerator<any, void, unknown> {
-    yield { status: 'reasoning agent pending implementation' };
+  protected async* runLiveImpl(): AsyncGenerator<Event, void, unknown> {
+    yield new Event({
+      author: this.name,
+      content: {
+        role: 'assistant',
+        parts: [{ text: 'reasoning agent pending implementation' }]
+      }
+    });
+  }
+
+  /**
+   * Required abstract method implementation
+   */
+  setUserContent(content: Content, invocationContext: InvocationContext): void {
+    // No-op implementation
   }
 }
 
 /**
- * PlanningAgent - An agent that can create and execute plans
+ * Legacy agent implementation that extends BaseAgent rather than implementing
+ * a partial interface. This ensures we meet all the required interface requirements.
  * @deprecated Use the new agent architecture instead
  */
-export class PlanningAgent implements Omit<BaseAgent, 'runAsyncImpl' | 'runLiveImpl' | 'name'> {
-  readonly name: string = 'planning_agent';
-  private config: any;
-
+export class PlanningAgent extends BaseAgent {
   constructor(config: any) {
-    this.config = config;
+    super('planning_agent', config);
   }
 
   /**
@@ -74,16 +92,35 @@ export class PlanningAgent implements Omit<BaseAgent, 'runAsyncImpl' | 'runLiveI
   }
 
   /**
-   * For compatibility with BaseAgent interface
+   * Required abstract method implementation
    */
-  async* runAsync(): AsyncGenerator<any, void, unknown> {
-    yield { status: 'planning agent pending implementation' };
+  protected async* runAsyncImpl(): AsyncGenerator<Event, void, unknown> {
+    yield new Event({
+      author: this.name,
+      content: {
+        role: 'assistant',
+        parts: [{ text: 'planning agent pending implementation' }]
+      }
+    });
   }
 
   /**
-   * For compatibility with BaseAgent interface
+   * Required abstract method implementation
    */
-  async* runLive(): AsyncGenerator<any, void, unknown> {
-    yield { status: 'planning agent pending implementation' };
+  protected async* runLiveImpl(): AsyncGenerator<Event, void, unknown> {
+    yield new Event({
+      author: this.name,
+      content: {
+        role: 'assistant',
+        parts: [{ text: 'planning agent pending implementation' }]
+      }
+    });
+  }
+
+  /**
+   * Required abstract method implementation
+   */
+  setUserContent(content: Content, invocationContext: InvocationContext): void {
+    // No-op implementation
   }
 } 
