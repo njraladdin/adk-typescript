@@ -1,5 +1,3 @@
-
-
 import { BaseTool, BaseToolOptions } from './BaseTool';
 import { ToolContext } from './toolContext';
 import { LlmAgent } from '../';
@@ -99,7 +97,7 @@ export class AgentTool extends BaseTool {
     }
     
     // Create a new session for the agent
-    const session = await this.agent.createSession();
+    const session: any = await this.agent.createSession();
     
     // Send the input to the agent and get the response
     const response = await session.sendMessage(input);

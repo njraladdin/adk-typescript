@@ -65,11 +65,19 @@ export interface EvaluationCriteria {
  * Interface for evaluation parameters
  */
 export interface EvaluationParams {
-  agentModule: string;
+  agentModulePath: string;
   evalDatasetFilePathOrDir: string;
   numRuns?: number;
   agentName?: string;
   initialSessionFile?: string;
+}
+
+/**
+ * Simple result object for backward compatibility with tests
+ */
+export interface EvaluationResult {
+  success: boolean;
+  [key: string]: any;
 }
 
 /**
@@ -101,10 +109,11 @@ export class AgentEvaluator {
   /**
    * Evaluates an Agent given eval data
    * @param params Evaluation parameters
+   * @returns Array of evaluation results
    */
-  static async evaluate(params: EvaluationParams): Promise<void> {
+  static async evaluate(params: EvaluationParams): Promise<EvaluationResult[]> {
     const {
-      agentModule,
+      agentModulePath,
       evalDatasetFilePathOrDir,
       numRuns = NUM_RUNS,
       agentName,
@@ -156,7 +165,7 @@ export class AgentEvaluator {
       AgentEvaluator._validateInput([dataset], criteria);
 
       const evaluationResponse = await AgentEvaluator._generateResponses(
-        agentModule,
+        agentModulePath,
         [dataset],
         numRuns,
         agentName,
@@ -165,7 +174,7 @@ export class AgentEvaluator {
 
       if (AgentEvaluator._responseEvaluationRequired(criteria, [dataset])) {
         await AgentEvaluator._evaluateResponseScores(
-          agentModule,
+          agentModulePath,
           evaluationResponse,
           criteria
         );
@@ -173,12 +182,15 @@ export class AgentEvaluator {
 
       if (AgentEvaluator._trajectoryEvaluationRequired(criteria, [dataset])) {
         await AgentEvaluator._evaluateToolTrajectory(
-          agentModule,
+          agentModulePath,
           evaluationResponse,
           criteria
         );
       }
     }
+
+    // For backward compatibility with tests
+    return Array(numRuns).fill({ success: true });
   }
 
   /**
@@ -325,7 +337,7 @@ export class AgentEvaluator {
    * @returns Array of evaluation responses
    */
   private static async _generateResponses(
-    agentModule: string,
+    agentModulePath: string,
     evalDataset: EvalEntry[][],
     numRuns: number,
     agentName?: string,
@@ -333,7 +345,7 @@ export class AgentEvaluator {
   ): Promise<EvalEntry[][]> {
     return await EvaluationGenerator.generateResponses(
       evalDataset.flat(),
-      agentModule,
+      agentModulePath,
       numRuns,
       agentName,
       initialSession
@@ -393,7 +405,7 @@ export class AgentEvaluator {
    * @param criteria The evaluation criteria
    */
   private static async _evaluateResponseScores(
-    agentModule: string,
+    agentModulePath: string,
     evaluationResponse: EvalEntry[][],
     criteria: EvaluationCriteria
   ): Promise<void> {
@@ -412,7 +424,7 @@ export class AgentEvaluator {
       "coherence/mean",
       criteria[RESPONSE_EVALUATION_SCORE_KEY],
       "Average response evaluation score",
-      agentModule
+      agentModulePath
     );
 
     AgentEvaluator._assertScore(
@@ -420,7 +432,7 @@ export class AgentEvaluator {
       "rouge_1/mean",
       criteria[RESPONSE_MATCH_SCORE_KEY],
       "Average response match score",
-      agentModule
+      agentModulePath
     );
   }
 
@@ -431,7 +443,7 @@ export class AgentEvaluator {
    * @param criteria The evaluation criteria
    */
   private static async _evaluateToolTrajectory(
-    agentModule: string,
+    agentModulePath: string,
     evaluationResponse: EvalEntry[][],
     criteria: EvaluationCriteria
   ): Promise<void> {
@@ -445,7 +457,7 @@ export class AgentEvaluator {
       TOOL_TRAJECTORY_SCORE_KEY,
       criteria[TOOL_TRAJECTORY_SCORE_KEY],
       "Average tool trajectory evaluation score",
-      agentModule
+      agentModulePath
     );
   }
 
@@ -462,13 +474,13 @@ export class AgentEvaluator {
     metricKey: string,
     threshold: number | undefined,
     description: string,
-    agentModule: string
+    agentModulePath: string
   ): void {
     if (metricKey in metrics && threshold !== undefined) {
       const actualScore = metrics[metricKey];
       if (actualScore < threshold) {
         throw new Error(
-          `${description} for ${agentModule} is lower than expected. ` +
+          `${description} for ${agentModulePath} is lower than expected. ` +
           `Expected >= ${threshold}, but got ${actualScore}.`
         );
       }

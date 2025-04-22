@@ -1,5 +1,3 @@
-
-
 import { LlmAgent, LlmAgentOptions } from '../../../src/agents/LlmAgent';
 import { ReadonlyContext } from '../../../src/agents/ReadonlyContext';
 import { InvocationContext } from '../../../src/agents/InvocationContext';
@@ -9,13 +7,16 @@ import { CallbackContext } from '../../../src/agents/CallbackContext';
 import { LlmRequest } from '../../../src/models/LlmRequest';
 import { LlmResponse } from '../../../src/models/LlmResponse';
 import { GenerateContentConfig } from '../../../src/models/types';
-import { Content, Part } from '../../../src/models/types';
+import { Content, Part, Blob } from '../../../src/models/types';
 import { Event } from '../../../src/events/Event';
 import { BaseAgent } from '../../../src/agents/BaseAgent';
 import { State } from '../../../src/sessions/state';
 import { BaseLlmConnection } from '../../../src/models/BaseLlmConnection';
+import { Session } from '../../../src/sessions/Session';
 
-// Mock implementation of BaseLlm for testing
+/**
+ * Mock implementation of BaseLlm for testing that correctly extends BaseLlm
+ */
 class MockLlm extends BaseLlm {
   constructor(model: string) {
     super(model);
@@ -25,38 +26,40 @@ class MockLlm extends BaseLlm {
     _llmRequest: LlmRequest,
     _stream?: boolean
   ): AsyncGenerator<LlmResponse, void, unknown> {
-    yield {
-      response: {
-        candidates: [{
-          content: {
-            role: 'model',
-            parts: [{ text: 'Mock response' }]
-          }
-        }]
+    // Create a proper LlmResponse instance
+    yield new LlmResponse({
+      content: {
+        role: 'model', 
+        parts: [{ text: 'Mock response' }]
       }
-    } as LlmResponse;
+    });
   }
 
-  // Mock connection that implements BaseLlmConnection interface
+  // Implement the connect method correctly
   connect(_request: LlmRequest): BaseLlmConnection {
     return {
       sendHistory: async () => {},
       sendContent: async () => {},
       sendRealtime: async () => {},
-      receive: async function* () { yield { } },
+      receive: async function* () { 
+        yield new LlmResponse({
+          content: {
+            role: 'model',
+            parts: [{ text: 'Mock live response' }]
+          }
+        });
+      },
       close: async () => {}
     };
   }
 }
 
-// Mock implementation of BaseLlmFlow for testing
+/**
+ * Mock implementation of BaseLlmFlow for testing
+ */
 class MockLlmFlow extends BaseLlmFlow {
-  constructor() {
-    super();
-  }
-
   async *runAsync(
-    _invocationContext: InvocationContext
+    invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
     yield new Event({
       author: 'mock_flow',
@@ -66,7 +69,7 @@ class MockLlmFlow extends BaseLlmFlow {
   }
 
   async *runLive(
-    _invocationContext: InvocationContext
+    invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
     yield new Event({
       author: 'mock_flow',
@@ -76,31 +79,16 @@ class MockLlmFlow extends BaseLlmFlow {
   }
 }
 
-// Mock Session class for testing
-class MockSession {
-  id: string;
-  appName: string;
-  userId: string;
-  state: State;
-  events: any[] = [];
-  agents: Map<string, BaseAgent> = new Map();
-  lastUpdateTime: number = Date.now();
-  conversationHistory: Content[] = [];
-
-  constructor(options: { state?: Record<string, any> } = {}) {
-    this.id = 'test-session-id';
-    this.appName = 'test_app';
-    this.userId = 'test_user';
-    this.state = new State(options.state || {});
-  }
-
-  addAgent(agent: BaseAgent): void {
-    this.agents.set(agent.name, agent);
-  }
-
-  getAgent(name: string): BaseAgent | undefined {
-    return this.agents.get(name);
-  }
+/**
+ * Helper function to create a session for testing
+ */
+function createTestSession(state: Record<string, any> = {}): Session {
+  return new Session({
+    id: 'test-session-id',
+    appName: 'test_app',
+    userId: 'test_user',
+    state: new State(state)
+  });
 }
 
 /**
@@ -110,13 +98,13 @@ function createReadonlyContext(
   agent: LlmAgent,
   state: Record<string, any> = {}
 ): ReadonlyContext {
-  // Create a mock session
-  const mockSession = new MockSession({ state });
+  // Create a test session
+  const session = createTestSession(state);
   
   const invocationContext = new InvocationContext({
     invocationId: 'test_id',
     agent,
-    session: mockSession as any
+    session
   });
   
   return new ReadonlyContext(invocationContext);
@@ -125,10 +113,21 @@ function createReadonlyContext(
 describe('LlmAgent', () => {
   // Tests for model access
   describe('model access', () => {
-    test('should throw error when flow is not provided', () => {
-      expect(() => {
-        new LlmAgent('test_agent', {});
-      }).toThrow('LlmAgent requires a flow');
+    test('should initialize with default settings when created with minimal options', () => {
+      const flow = new MockLlmFlow();
+      
+      const agent = new LlmAgent('test_agent', {
+        flow
+      });
+      
+      // Check default values
+      expect(agent.model).toBe('');
+      expect(agent.instruction).toBe('');
+      expect(agent.globalInstruction).toBe('');
+      expect(agent.tools).toEqual([]);
+      expect(agent.disallowTransferToParent).toBe(false);
+      expect(agent.disallowTransferToPeers).toBe(false);
+      expect(agent.includeContents).toBe('default');
     });
     
     test('should access the model property when provided', () => {
@@ -136,12 +135,12 @@ describe('LlmAgent', () => {
       const flow = new MockLlmFlow();
       
       const agent = new LlmAgent('test_agent', {
-        llm,
+        model: llm,
         flow
       });
       
-      expect(agent.llm).toBeDefined();
-      expect(agent.llm!.model).toBe('gemini-pro');
+      expect(agent.model).toBeDefined();
+      expect((agent.model as BaseLlm).model).toBe('gemini-pro');
     });
     
     test('should inherit model from parent agent', () => {
@@ -149,7 +148,7 @@ describe('LlmAgent', () => {
       const flow = new MockLlmFlow();
       
       const parentAgent = new LlmAgent('parent_agent', {
-        llm,
+        model: llm,
         flow
       });
       
@@ -164,18 +163,19 @@ describe('LlmAgent', () => {
       const invocationContext = new InvocationContext({
         invocationId: 'test_id',
         agent: childAgent,
-        session: new MockSession() as any
+        session: createTestSession()
       });
       
-      // Check that parent has an LLM and it's the one we provided
-      expect(parentAgent.llm).toBeDefined();
-      expect(parentAgent.llm).toBe(llm);
+      // Check that parent has a model and it's the one we provided
+      expect(parentAgent.model).toBeDefined();
+      expect(parentAgent.model).toBe(llm);
       
-      // Child doesn't have its own LLM initially
-      expect(childAgent.llm).toBeUndefined();
+      // Child doesn't have its own model initially
+      expect(childAgent.model).toBe('');
       
-      // Additional test could be added here to test runtime behavior
-      // where the child would get the parent's LLM
+      // The canonicalModel getter would normally resolve this at runtime
+      // We can't easily test this without running the agent, but we can
+      // verify the structure is correct
     });
   });
   
@@ -204,31 +204,31 @@ describe('LlmAgent', () => {
         tools: [mockTool]
       });
       
-      expect(agent.canonicalTools).toContain(mockTool);
+      expect(agent.tools).toContain(mockTool);
     });
   });
   
   // Tests for agent transfer settings
   describe('agent transfer settings', () => {
-    test('should allow transfer by default', () => {
+    test('should not disallow transfer by default', () => {
       const flow = new MockLlmFlow();
       
       const agent = new LlmAgent('test_agent', {
         flow
       });
       
-      expect(agent.allowTransferToPeer).toBe(true);
+      expect(agent.disallowTransferToPeers).toBe(false);
     });
     
-    test('should respect allowTransferToPeer setting', () => {
+    test('should respect disallowTransferToPeers setting', () => {
       const flow = new MockLlmFlow();
       
       const agent = new LlmAgent('test_agent', {
         flow,
-        allowTransferToPeer: false
+        disallowTransferToPeers: true
       });
       
-      expect(agent.allowTransferToPeer).toBe(false);
+      expect(agent.disallowTransferToPeers).toBe(true);
     });
   });
   
@@ -244,7 +244,7 @@ describe('LlmAgent', () => {
       const invocationContext = new InvocationContext({
         invocationId: 'test_id',
         agent,
-        session: new MockSession() as any
+        session: createTestSession()
       });
       
       const userContent: Content = {

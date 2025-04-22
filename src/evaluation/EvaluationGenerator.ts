@@ -14,6 +14,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
+import * as path from 'path';
 import { EvalConstants } from './EvaluationConstants';
 import { Content, Part, FunctionCall } from '../models/types';
 import { BaseAgent } from '../agents/BaseAgent';
@@ -132,19 +133,58 @@ export class EvaluationGenerator {
     // Dynamically import the agent module and get the root agent
     // Note: In TypeScript/Node.js dynamic imports work differently than Python
     // This is a simplified approximation - implementation details may vary
-    const agentModule = await import(moduleName);
-    const rootAgent = agentModule.agent.rootAgent;
-    const resetFunc = agentModule.agent.reset_data;
+    console.log(`Original module path: ${moduleName}`);
+    
+    try {
+      // Try different import approaches
+      let agentModule;
+      
+      // First try: direct module path
+      try {
+        console.log(`Trying direct import: ${moduleName}`);
+        agentModule = await import(moduleName);
+      } catch (e) {
+        // Second try: add index.js
+        try {
+          const indexPath = path.join(moduleName, 'index');
+          console.log(`Trying index import: ${indexPath}`);
+          agentModule = await import(indexPath);
+        } catch (e) {
+          // Third try: module path with agent.js
+          try {
+            const agentPath = path.join(moduleName, 'agent');
+            console.log(`Trying agent import: ${agentPath}`);
+            agentModule = await import(agentPath);
+          } catch (e) {
+            // Last try: as absolute path
+            const resolvedPath = path.resolve(process.cwd(), moduleName);
+            console.log(`Trying absolute path: ${resolvedPath}`);
+            agentModule = await import(resolvedPath);
+          }
+        }
+      }
+      
+      // Check if we have a valid agent module
+      if (!agentModule || !agentModule.agent || !agentModule.agent.rootAgent) {
+        throw new Error(`Invalid agent module imported: ${JSON.stringify(Object.keys(agentModule || {}))}`);
+      }
 
-    let agentToEvaluate = rootAgent;
-    if (agentName) {
-      agentToEvaluate = rootAgent.findAgent(agentName);
-      if (!agentToEvaluate) throw new Error(`Sub-Agent ${agentName} not found.`);
+      const rootAgent = agentModule.agent.rootAgent;
+      const resetFunc = agentModule.agent.reset_data;
+
+      let agentToEvaluate = rootAgent;
+      if (agentName) {
+        agentToEvaluate = rootAgent.findAgent(agentName);
+        if (!agentToEvaluate) throw new Error(`Sub-Agent ${agentName} not found.`);
+      }
+
+      return await EvaluationGenerator._processQueryWithRootAgent(
+        data, agentToEvaluate, resetFunc, initialSession
+      );
+    } catch (error) {
+      console.error(`Failed to import agent module: ${error}`);
+      throw error;
     }
-
-    return await EvaluationGenerator._processQueryWithRootAgent(
-      data, agentToEvaluate, resetFunc, initialSession
-    );
   }
 
   /**

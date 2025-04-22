@@ -1,5 +1,3 @@
-
-
 import { LlmAgent } from '../../../src/agents/LlmAgent';
 import { CallbackContext } from '../../../src/agents/CallbackContext';
 import { InvocationContext } from '../../../src/agents/InvocationContext';
@@ -11,6 +9,8 @@ import { Session } from '../../../src/sessions/Session';
 import { BaseLlm } from '../../../src/models/BaseLlm';
 import { LlmResponse } from '../../../src/models/LlmResponse';
 import { BaseLlmFlow } from '../../../src/flows/llm_flows/BaseLlmFlow';
+import { BaseLlmConnection } from '../../../src/models/BaseLlmConnection';
+import { State } from '../../../src/sessions/state';
 
 // Extended options for LLM agents with callbacks
 interface LlmAgentExtendedOptions {
@@ -176,194 +176,280 @@ function createInvocationContext(
   });
 }
 
+/**
+ * MockModel implementation that returns predefined responses
+ */
+class MockModel extends BaseLlm {
+  private responses: string[];
+  private responseIndex: number = 0;
+
+  constructor(responses: string[] = ['default_response']) {
+    super('mock-model');
+    this.responses = responses;
+  }
+
+  async *generateContentAsync(
+    _llmRequest: LlmRequest,
+    _stream?: boolean
+  ): AsyncGenerator<LlmResponse, void, unknown> {
+    const response = this.responses[this.responseIndex];
+    this.responseIndex = (this.responseIndex + 1) % this.responses.length;
+
+    yield new LlmResponse({
+      content: {
+        role: 'model',
+        parts: [{ text: response }]
+      }
+    });
+  }
+
+  connect(_request: LlmRequest): BaseLlmConnection {
+    return {
+      sendHistory: async () => {},
+      sendContent: async () => {},
+      sendRealtime: async () => {},
+      receive: async function* () {
+        yield new LlmResponse({
+          content: {
+            role: 'model',
+            parts: [{ text: 'Mock live response' }]
+          }
+        });
+      },
+      close: async () => {}
+    };
+  }
+
+  static create(options: { responses: string[] }): MockModel {
+    return new MockModel(options.responses);
+  }
+}
+
+/**
+ * Mock before model callback that returns a predefined response
+ */
+class MockBeforeModelCallback {
+  private mockResponse: string;
+
+  constructor(mockResponse: string) {
+    this.mockResponse = mockResponse;
+  }
+
+  call(
+    _callbackContext: CallbackContext,
+    _llmRequest: LlmRequest
+  ): LlmResponse {
+    return new LlmResponse({
+      content: {
+        role: 'model',
+        parts: [{ text: this.mockResponse }]
+      }
+    });
+  }
+}
+
+/**
+ * Mock after model callback that returns a predefined response
+ */
+class MockAfterModelCallback {
+  private mockResponse: string;
+
+  constructor(mockResponse: string) {
+    this.mockResponse = mockResponse;
+  }
+
+  call(
+    _callbackContext: CallbackContext,
+    _llmResponse: LlmResponse
+  ): LlmResponse {
+    return new LlmResponse({
+      content: {
+        role: 'model',
+        parts: [{ text: this.mockResponse }]
+      }
+    });
+  }
+}
+
+/**
+ * No-operation callback that doesn't return anything
+ */
+function noopCallback(_callbackContext: CallbackContext, _request: any): undefined {
+  return undefined;
+}
+
+/**
+ * Helper class to run tests with an in-memory session
+ */
+class TestInMemoryRunner {
+  private agent: LlmAgent;
+  private sessionService: InMemorySessionService;
+
+  constructor(agent: LlmAgent) {
+    this.agent = agent;
+    this.sessionService = new InMemorySessionService();
+  }
+
+  async runAsyncWithNewSession(userInput: string): Promise<Event[]> {
+    // Create a session
+    const session = new Session({
+      id: 'test-session-id',
+      appName: 'test_app',
+      userId: 'test_user',
+      state: new State()
+    });
+
+    // Create an invocation context
+    const invocationContext = new InvocationContext({
+      invocationId: 'test-invocation-id',
+      agent: this.agent,
+      session,
+      sessionService: this.sessionService,
+      userContent: {
+        role: 'user',
+        parts: [{ text: userInput }]
+      }
+    });
+
+    // Run the agent
+    const events: Event[] = [];
+    for await (const event of this.agent.invoke(invocationContext)) {
+      events.push(event);
+    }
+
+    return events;
+  }
+}
+
+/**
+ * Helper function to simplify events for assertion
+ */
+function simplifyEvents(events: Event[]): [string, string][] {
+  return events.map(event => {
+    const text = event.content?.parts?.[0]?.text || '';
+    return [event.author, text];
+  });
+}
+
 describe('LlmAgent Callbacks', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
   
-  test('should run before model callback and use its response', async () => {
-    // Create a before model callback that returns content
-    const beforeModelCallback = jest.fn((
-      _callbackContext: CallbackContext,
-      _llmRequest: LlmRequest
-    ): Content => {
-      return {
-        role: 'model',
-        parts: [{ text: 'Response from before model callback' } as Part]
-      };
+  test('should run before model callback', async () => {
+    const responses = ['model_response'];
+    const mockModel = MockModel.create({ responses });
+    
+    const beforeModelCallback = new MockBeforeModelCallback('before_model_callback');
+    
+    const agent = new LlmAgent('root_agent', {
+      model: mockModel,
+      beforeModelCallback: beforeModelCallback.call.bind(beforeModelCallback)
     });
+
+    const runner = new TestInMemoryRunner(agent);
+    const events = await runner.runAsyncWithNewSession('test');
     
-    // Create a flow with the callback
-    const testFlow = new TestLlmFlow({
-      beforeModelCallback
-    });
-    
-    // Create an LLM agent with the flow
-    const agent = new LlmAgent('test_agent', {
-      flow: testFlow
-    });
-    
-    // Set up user content
-    const userContent: Content = {
-      role: 'user',
-      parts: [{ text: 'User input' } as Part]
-    };
-    
-    // Create invocation context
-    const invocationContext = createInvocationContext(agent, userContent);
-    
-    // Collect events from the agent
-    const events: Event[] = [];
-    for await (const event of agent.invoke(invocationContext)) {
-      events.push(event);
-    }
-    
-    // Verify the callback was called
-    expect(beforeModelCallback).toHaveBeenCalled();
-    
-    // Verify we got content from the callback
-    expect(events.length).toBe(1);
-    expect(events[0].content?.parts?.[0]?.text).toBe('Response from before model callback');
+    expect(simplifyEvents(events)).toEqual([
+      ['root_agent', 'before_model_callback']
+    ]);
   });
-  
-  test('should run before model callback without returning content', async () => {
-    // Create a callback that modifies the request but doesn't return content
-    const beforeModelCallback = jest.fn((
-      _callbackContext: CallbackContext,
-      llmRequest: LlmRequest
-    ): void => {
-      // Modify the request
-      if (llmRequest.contents && llmRequest.contents.length > 0) {
-        llmRequest.contents[0].parts.push({
-          text: 'Additional text from callback'
-        } as Part);
-      }
+
+  test('should run before model callback noop', async () => {
+    const responses = ['model_response'];
+    const mockModel = MockModel.create({ responses });
+    
+    const agent = new LlmAgent('root_agent', {
+      model: mockModel,
+      beforeModelCallback: noopCallback
     });
+
+    const runner = new TestInMemoryRunner(agent);
+    const events = await runner.runAsyncWithNewSession('test');
     
-    // Create a flow with the callback
-    const testFlow = new TestLlmFlow({
-      beforeModelCallback
-    });
-    
-    // Create an agent with the flow
-    const agent = new LlmAgent('test_agent', {
-      flow: testFlow
-    });
-    
-    // Set up user content
-    const userContent: Content = {
-      role: 'user',
-      parts: [{ text: 'User input' } as Part]
-    };
-    
-    // Create invocation context
-    const invocationContext = createInvocationContext(agent, userContent);
-    
-    // Collect events from the agent
-    const events: Event[] = [];
-    for await (const event of agent.invoke(invocationContext)) {
-      events.push(event);
-    }
-    
-    // Verify the callback was called
-    expect(beforeModelCallback).toHaveBeenCalled();
-    
-    // Verify we got the model response (not from callback)
-    expect(events.length).toBe(1);
-    expect(events[0].content?.parts?.[0]?.text).toBe('Model response');
+    expect(simplifyEvents(events)).toEqual([
+      ['root_agent', 'model_response']
+    ]);
   });
-  
-  test('should run after model callback and use its modified response', async () => {
-    // Create an after model callback that modifies the response
-    const afterModelCallback = jest.fn((
-      _callbackContext: CallbackContext,
-      _llmResponse: LlmResponse
-    ): Content => {
-      return {
-        role: 'model',
-        parts: [{ text: 'Modified by after model callback' } as Part]
-      };
+
+  test('should run before model callback end', async () => {
+    const responses = ['model_response'];
+    const mockModel = MockModel.create({ responses });
+    
+    const beforeModelCallback = new MockBeforeModelCallback('before_model_callback');
+    
+    const agent = new LlmAgent('root_agent', {
+      model: mockModel,
+      beforeModelCallback: beforeModelCallback.call.bind(beforeModelCallback)
     });
+
+    const runner = new TestInMemoryRunner(agent);
+    const events = await runner.runAsyncWithNewSession('test');
     
-    // Create a flow with the callback
-    const testFlow = new TestLlmFlow({
-      afterModelCallback
-    });
-    
-    // Create an agent with the flow
-    const agent = new LlmAgent('test_agent', {
-      flow: testFlow
-    });
-    
-    // Set up user content
-    const userContent: Content = {
-      role: 'user',
-      parts: [{ text: 'User input' } as Part]
-    };
-    
-    // Create invocation context
-    const invocationContext = createInvocationContext(agent, userContent);
-    
-    // Collect events from the agent
-    const events: Event[] = [];
-    for await (const event of agent.invoke(invocationContext)) {
-      events.push(event);
-    }
-    
-    // Verify the callback was called
-    expect(afterModelCallback).toHaveBeenCalled();
-    
-    // Verify we got the modified content
-    expect(events.length).toBe(1);
-    expect(events[0].content?.parts?.[0]?.text).toBe('Modified by after model callback');
+    expect(simplifyEvents(events)).toEqual([
+      ['root_agent', 'before_model_callback']
+    ]);
   });
-  
-  test('should support both before and after model callbacks', async () => {
-    // Create before callback that allows model to run
-    const beforeModelCallback = jest.fn((
-      _callbackContext: CallbackContext,
-      _llmRequest: LlmRequest
-    ): void => {
-      // Just modify request, don't return anything
+
+  test('should run after model callback', async () => {
+    const responses = ['model_response'];
+    const mockModel = MockModel.create({ responses });
+    
+    const afterModelCallback = new MockAfterModelCallback('after_model_callback');
+    
+    const agent = new LlmAgent('root_agent', {
+      model: mockModel,
+      afterModelCallback: afterModelCallback.call.bind(afterModelCallback)
     });
+
+    const runner = new TestInMemoryRunner(agent);
+    const events = await runner.runAsyncWithNewSession('test');
     
-    // Create after callback that modifies response
-    const afterModelCallback = jest.fn((
-      _callbackContext: CallbackContext,
-      _llmResponse: LlmResponse
-    ): Content => {
-      return {
-        role: 'model',
-        parts: [{ text: 'Response modified by both callbacks' } as Part]
-      };
+    expect(simplifyEvents(events)).toEqual([
+      ['root_agent', 'after_model_callback']
+    ]);
+  });
+
+  test('should run both before and after model callbacks', async () => {
+    const responses = ['model_response'];
+    const mockModel = MockModel.create({ responses });
+    
+    const beforeModelCallback = new MockBeforeModelCallback('before_model_callback');
+    const afterModelCallback = new MockAfterModelCallback('after_model_callback');
+    
+    const agent = new LlmAgent('root_agent', {
+      model: mockModel,
+      beforeModelCallback: beforeModelCallback.call.bind(beforeModelCallback),
+      afterModelCallback: afterModelCallback.call.bind(afterModelCallback)
     });
+
+    const runner = new TestInMemoryRunner(agent);
+    const events = await runner.runAsyncWithNewSession('test');
     
-    // Create a flow with both callbacks
-    const testFlow = new TestLlmFlow({
-      beforeModelCallback,
-      afterModelCallback
+    // Since the beforeModelCallback returns a response, the afterModelCallback
+    // should not be called in this implementation
+    expect(simplifyEvents(events)).toEqual([
+      ['root_agent', 'before_model_callback']
+    ]);
+  });
+
+  test('should run after model callback when before returns nothing', async () => {
+    const responses = ['model_response'];
+    const mockModel = MockModel.create({ responses });
+    
+    const afterModelCallback = new MockAfterModelCallback('after_model_callback');
+    
+    const agent = new LlmAgent('root_agent', {
+      model: mockModel,
+      beforeModelCallback: noopCallback,
+      afterModelCallback: afterModelCallback.call.bind(afterModelCallback)
     });
+
+    const runner = new TestInMemoryRunner(agent);
+    const events = await runner.runAsyncWithNewSession('test');
     
-    // Create an agent with the flow
-    const agent = new LlmAgent('test_agent', {
-      flow: testFlow
-    });
-    
-    // Create invocation context
-    const invocationContext = createInvocationContext(agent);
-    
-    // Collect events
-    const events: Event[] = [];
-    for await (const event of agent.invoke(invocationContext)) {
-      events.push(event);
-    }
-    
-    // Verify both callbacks were called
-    expect(beforeModelCallback).toHaveBeenCalled();
-    expect(afterModelCallback).toHaveBeenCalled();
-    
-    // Verify we got the content from after callback
-    expect(events.length).toBe(1);
-    expect(events[0].content?.parts?.[0]?.text).toBe('Response modified by both callbacks');
+    expect(simplifyEvents(events)).toEqual([
+      ['root_agent', 'after_model_callback']
+    ]);
   });
 }); 

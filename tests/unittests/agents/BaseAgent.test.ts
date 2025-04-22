@@ -1,55 +1,15 @@
-
-
 import { BaseAgent, AgentOptions } from '../../../src/agents/BaseAgent';
 import { CallbackContext } from '../../../src/agents/CallbackContext';
 import { InvocationContext } from '../../../src/agents/InvocationContext';
 import { Event } from '../../../src/events/Event';
 import { InMemorySessionService } from '../../../src/sessions/inMemorySessionService';
 import { Content, Part } from '../../../src/models/types';
-import { Session } from '../../../src/sessions/interfaces';
+import { Session } from '../../../src/sessions/Session';
+import { EventActions } from '../../../src/events/EventActions';
+import { Session as SessionInterface } from '../../../src/sessions/interfaces';
+import { State } from '../../../src/sessions/state';
 
-/**
- * Mock Session class for testing
- */
-class MockSession {
-  id: string;
-  appName: string;
-  userId: string;
-  agents: Map<string, BaseAgent> = new Map();
-  state: Record<string, any> = {};
-  events: Event[] = [];
-  conversationHistory: Content[] = [];
-  lastUpdateTime: number = Date.now();
 
-  constructor(sessionData: any = {}) {
-    this.id = sessionData.id || 'test-session-id';
-    this.appName = sessionData.appName || 'test_app';
-    this.userId = sessionData.userId || 'test_user';
-    this.state = sessionData.state || {};
-    this.events = sessionData.events || [];
-  }
-
-  addAgent(agent: BaseAgent): void {
-    this.agents.set(agent.name, agent);
-  }
-
-  getAgent(name: string): BaseAgent | undefined {
-    return this.agents.get(name);
-  }
-
-  addConversationHistory(content: Content): void {
-    this.conversationHistory.push(content);
-  }
-
-  getConversationHistory(): Content[] {
-    return [...this.conversationHistory];
-  }
-
-  addEvent(event: Event): void {
-    this.events.push(event);
-    this.lastUpdateTime = Date.now();
-  }
-}
 
 /**
  * Helper function for before agent callback that does nothing
@@ -165,30 +125,32 @@ function createParentInvocationContext(
   branch?: string
 ): InvocationContext {
   const sessionService = new InMemorySessionService();
+  // Use the sessionService to create a session
   const sessionData = sessionService.createSession({
     appName: 'test_app',
     userId: 'test_user'
   });
   
-  // Create a mock session with all required properties
-  const mockSession = new MockSession(sessionData);
+  // Create a proper Session instance for the test
+  const session = new Session({
+    id: sessionData.id,
+    appName: sessionData.appName,
+    userId: sessionData.userId,
+    // Convert the Record<string, any> to a proper State instance
+    state: new State(sessionData.state),
+    // Just pass an empty events array since the sessionData.events might have a different type
+    events: []
+  });
 
   return new InvocationContext({
     invocationId: `${testName}_invocation_id`,
     branch,
     agent,
-    session: mockSession as any,
+    session,
     sessionService
   });
 }
 
-// Mock type for the ValueError error
-class ValueError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ValueError';
-  }
-}
 
 describe('BaseAgent', () => {
   test('should throw error for invalid agent name', () => {
@@ -210,12 +172,7 @@ describe('BaseAgent', () => {
     expect(events[0].author).toBe(agent.name);
     
     const content = events[0].content;
-    const parts = content?.parts;
-    const firstPart = parts?.[0];
-    
-    if (firstPart && typeof firstPart.text === 'string') {
-      expect(firstPart.text).toBe('Hello, world!');
-    }
+    expect(content?.parts?.[0]?.text).toBe('Hello, world!');
   });
 
   test('should run async with branch', async () => {
@@ -233,16 +190,9 @@ describe('BaseAgent', () => {
 
     expect(events.length).toBe(1);
     expect(events[0].author).toBe(agent.name);
+    expect(events[0].content?.parts?.[0]?.text).toBe('Hello, world!');
     
-    const content = events[0].content;
-    const parts = content?.parts;
-    const firstPart = parts?.[0];
-    
-    if (firstPart && typeof firstPart.text === 'string') {
-      expect(firstPart.text).toBe('Hello, world!');
-    }
-    
-    // Check that branch contains parent_branch (not agent name in this case since we provided a branch)
+    // Check that branch contains parent_branch
     expect(events[0].branch).toBe('parent_branch');
   });
 
@@ -268,61 +218,7 @@ describe('BaseAgent', () => {
   });
 
   test('should bypass agent when before agent callback returns content', async () => {
-    // For the bypass test, we need to mock the behavior directly
-    // Create a special test event that simulates the bypass content
-    const bypassEvent = new Event({
-      author: 'test_agent',
-      content: {
-        role: 'model',
-        parts: [{ text: 'agent run is bypassed.' }]
-      }
-    });
-    
-    // Create a mock agent that bypasses its normal implementation
-    class BypassTestAgent extends BaseAgent {
-      constructor(name: string, options: AgentOptions = {}) {
-        super(name, options);
-        // Ensure the callback is set
-        if (options.beforeAgentCallback) {
-          this.beforeAgentCallback = options.beforeAgentCallback;
-        }
-      }
-      
-      // Override invoke to simulate bypass behavior
-      async *invoke(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
-        // Directly yield the bypass event
-        yield bypassEvent;
-        // Don't call runAsyncImpl
-      }
-      
-      protected async *runAsyncImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
-        // This shouldn't be called
-        yield new Event({
-          author: this.name,
-          content: {
-            role: 'model',
-            parts: [{ text: 'This should not be yielded' }]
-          }
-        });
-      }
-      
-      protected async *runLiveImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
-        // This shouldn't be called
-        yield new Event({
-          author: this.name,
-          content: {
-            role: 'model',
-            parts: [{ text: 'This should not be yielded' }]
-          }
-        });
-      }
-      
-      setUserContent(content: Content, ctx: InvocationContext): void {
-        // No implementation needed
-      }
-    }
-    
-    const agent = new BypassTestAgent('test_agent', {
+    const agent = new TestingAgent('test_agent', {
       beforeAgentCallback: beforeAgentCallbackBypassAgent
     });
     
@@ -344,14 +240,7 @@ describe('BaseAgent', () => {
     
     // We should have exactly one event with the bypass content
     expect(events.length).toBe(1);
-    
-    const content = events[0].content;
-    const parts = content?.parts;
-    const firstPart = parts?.[0];
-    
-    if (firstPart && typeof firstPart.text === 'string') {
-      expect(firstPart.text).toBe('agent run is bypassed.');
-    }
+    expect(events[0].content?.parts?.[0]?.text).toBe('agent run is bypassed.');
   });
 
   test('should run with after agent callback (noop)', async () => {
@@ -372,76 +261,9 @@ describe('BaseAgent', () => {
   });
 
   test('should append reply when after agent callback returns content', async () => {
-    // For the after callback test, we need to simulate both events being yielded
-    // Create the events that will be yielded
-    const firstEvent = new Event({
-      author: 'test_agent',
-      content: {
-        role: 'model',
-        parts: [{ text: 'Hello, world!' }]
-      }
-    });
-    
-    const secondEvent = new Event({
-      author: 'test_agent',
-      content: {
-        role: 'model',
-        parts: [{ text: 'Agent reply from after agent callback.' }]
-      }
-    });
-    
-    // Create a mock agent that handles after callback 
-    class AfterCallbackTestAgent extends BaseAgent {
-      constructor(name: string, options: AgentOptions = {}) {
-        super(name, options);
-        // Ensure the callback is set
-        if (options.afterAgentCallback) {
-          this.afterAgentCallback = options.afterAgentCallback;
-        }
-      }
-      
-      // Override invoke to simulate both events
-      async *invoke(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
-        // Yield the first event (as if from runAsyncImpl)
-        yield firstEvent;
-        // Yield the second event (as if from afterAgentCallback)
-        yield secondEvent;
-      }
-      
-      protected async *runAsyncImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
-        // This is bypassed by our invoke override
-        yield new Event({
-          author: this.name,
-          content: {
-            role: 'model',
-            parts: [{ text: 'Should not be seen' }]
-          }
-        });
-      }
-      
-      protected async *runLiveImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
-        // This is bypassed by our invoke override
-        yield new Event({
-          author: this.name,
-          content: {
-            role: 'model',
-            parts: [{ text: 'Should not be seen' }]
-          }
-        });
-      }
-      
-      setUserContent(content: Content, ctx: InvocationContext): void {
-        // No implementation needed
-      }
-    }
-    
-    // Create the agent with the after callback
-    const agent = new AfterCallbackTestAgent('test_agent', {
+    const agent = new TestingAgent('test_agent', {
       afterAgentCallback: afterAgentCallbackAppendAgentReply
     });
-    
-    // Verify that the after callback is set
-    expect(agent.afterAgentCallback).toBeDefined();
     
     const parentCtx = createParentInvocationContext(
       'test_run_async_after_agent_callback_append_reply',
@@ -549,5 +371,19 @@ describe('BaseAgent', () => {
     expect(subAgent.parentAgent).toBe(parentAgent2);
     expect(parentAgent2.subAgents).toContain(subAgent);
     expect(parentAgent1.subAgents).not.toContain(subAgent);
+  });
+
+  test('should throw error when agent is added to two parents', () => {
+    const parentAgent1 = new TestingAgent('parent_agent1');
+    const parentAgent2 = new TestingAgent('parent_agent2');
+    const subAgent = new TestingAgent('sub_agent');
+    
+    // Add to first parent
+    parentAgent1.addSubAgent(subAgent);
+    
+    // Try to add to second parent (should throw)
+    expect(() => {
+      parentAgent2.addSubAgent(subAgent);
+    }).toThrow();
   });
 }); 

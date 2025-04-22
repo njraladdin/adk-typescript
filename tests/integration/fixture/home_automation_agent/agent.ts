@@ -1,5 +1,3 @@
-
-
 import { LlmAgent as Agent } from '../../../../src';
 import { LlmRegistry } from '../../../../src/models/LlmRegistry';
 import { FunctionTool } from '../../../../src/tools/FunctionTool';
@@ -212,17 +210,14 @@ function listDevices(status: string = "", location: string = ""): Array<{ device
   return devices.length > 0 ? devices : "No devices found matching the criteria.";
 }
 
-// Create model instance
-const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
-
 // Create flow instance
 const autoFlow = new AutoFlow();
 
 /**
  * Home automation agent for controlling smart home devices
  */
-export const homeAutomationRootAgent = new Agent('Home_automation_agent', {
-  llm: geminiModel,
+const homeAutomationRootAgent = new Agent('Home_automation_agent', {
+  model: 'gemini-1.5-flash',
   instruction: `
     You are Home Automation Agent. You are responsible for controlling the devices in the home.
   `,
@@ -442,4 +437,10 @@ export const homeAutomationRootAgent = new Agent('Home_automation_agent', {
       }
     })
   ]
-}); 
+});
+
+// Export according to the expected structure for the test framework
+export const rootAgent = homeAutomationRootAgent;
+
+// Export reset function for tests
+export const reset_data = resetData; 

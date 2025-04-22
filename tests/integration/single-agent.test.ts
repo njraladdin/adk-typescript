@@ -35,17 +35,22 @@ describe('Single Agent Tests', () => {
           return;
         }
         
-        // Mimic the Python test but with TypeScript paths
-        const results = await AgentEvaluator.evaluate({
-          agentModulePath: 'tests/integration/fixture/home-automation-agent',
-          evalDatasetFilePathOrDir: 'tests/integration/fixture/home-automation-agent/simple_test.test.json',
-          numRuns: 4
-        });
-        
-        // Assert that results were generated correctly
-        expect(results).toBeDefined();
-        expect(results.length).toBe(4);
-        expect(results.every(result => result.success)).toBe(true);
+        try {
+          // Mimic the Python test but with TypeScript paths
+          const results = await AgentEvaluator.evaluate({
+            agentModulePath: 'tests/integration/fixture/home_automation_agent',
+            evalDatasetFilePathOrDir: 'tests/integration/fixture/home_automation_agent/simple_test.test.json',
+            numRuns: 4
+          });
+          
+          // Assert that results were generated correctly
+          expect(results).toBeDefined();
+          expect(results.length).toBe(4);
+          expect(results.every(result => result.success)).toBe(true);
+        } catch (error) {
+          console.error('Test failed with error:', error);
+          throw error;
+        }
       });
     });
   });
