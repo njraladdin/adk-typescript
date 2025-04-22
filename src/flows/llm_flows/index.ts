@@ -1,5 +1,3 @@
-
-
 /**
  * Exports for LLM flow components.
  */
@@ -11,6 +9,7 @@ import * as identity from './identity';
 import * as basic from './basic';
 import * as instructions from './instructions';
 import * as agentTransfer from './agentTransfer';
+import * as contents from './contents';
 
 export {
   BaseLlmFlow,
@@ -21,5 +20,6 @@ export {
   basic,
   identity,
   instructions,
-  agentTransfer
+  agentTransfer,
+  contents
 }; 

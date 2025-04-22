@@ -1,12 +1,171 @@
-
-
 /**
  * Module for creating LLM request processors that provide standard instructions.
  */
 import { InvocationContext } from '../../agents/InvocationContext';
+import { ReadonlyContext } from '../../agents/ReadonlyContext';
+import { LlmAgent } from '../../agents/LlmAgent';
 import { Event } from '../../events/Event';
 import { LlmRequest } from '../../models/LlmRequest';
+import { StatePrefix } from '../../sessions/state';
 import { BaseLlmRequestProcessor } from './BaseLlmProcessor';
+import { ArtifactParams } from '../../artifacts/BaseArtifactService';
+
+/**
+ * Handles instructions and global instructions for LLM flow.
+ */
+class InstructionsLlmRequestProcessor implements BaseLlmRequestProcessor {
+  /**
+   * Runs the processor asynchronously.
+   * 
+   * @param invocationContext The invocation context
+   * @param llmRequest The LLM request to process
+   * @returns An async generator yielding events
+   */
+  async *runAsync(
+    invocationContext: InvocationContext,
+    llmRequest: LlmRequest
+  ): AsyncGenerator<Event, void, unknown> {
+    const agent = invocationContext.agent;
+    
+    // Only process if the agent is an LlmAgent
+    if (!(agent instanceof LlmAgent)) {
+      return;
+    }
+
+    const rootAgent = agent.rootAgent;
+
+    // Append global instructions if set
+    if (rootAgent instanceof LlmAgent && rootAgent.globalInstruction) {
+      const rawSi = rootAgent.canonicalGlobalInstruction(
+        new ReadonlyContext(invocationContext)
+      );
+      const si = populateValues(rawSi, invocationContext);
+      llmRequest.appendInstructions([si]);
+    }
+
+    // Append agent instructions if set
+    if (agent.instruction) {
+      const rawSi = agent.canonicalInstruction(
+        new ReadonlyContext(invocationContext)
+      );
+      const si = populateValues(rawSi, invocationContext);
+      llmRequest.appendInstructions([si]);
+    }
+
+    // Maintain async generator contract
+    if (false) {
+      yield {} as Event;
+    }
+  }
+}
+
+/**
+ * The main instructions request processor instance.
+ */
+export const requestProcessor = new InstructionsLlmRequestProcessor();
+
+/**
+ * Populates values in the instruction template, e.g. state, artifact, etc.
+ * 
+ * @param instructionTemplate The instruction template
+ * @param context The invocation context
+ * @returns The populated instruction
+ */
+function populateValues(
+  instructionTemplate: string,
+  context: InvocationContext
+): string {
+  return instructionTemplate.replace(
+    /{+[^{}]*}+/g,
+    (match) => {
+      let varName = match.slice(1, -1).trim();
+      let optional = false;
+
+      if (varName.endsWith('?')) {
+        optional = true;
+        varName = varName.slice(0, -1);
+      }
+
+      if (varName.startsWith('artifact.')) {
+        varName = varName.substring('artifact.'.length);
+        if (context.artifactService) {
+          try {
+            const artifactParams: ArtifactParams = {
+              appName: context.session.appName,
+              userId: context.session.userId,
+              sessionId: context.session.id,
+              filename: varName
+            };
+            
+            const artifact = context.artifactService.loadArtifact(
+              artifactParams
+            );
+            return String(artifact);
+          } catch (error) {
+            if (optional) return '';
+            throw new Error(`Artifact ${varName} not found.`);
+          }
+        } else {
+          throw new Error('Artifact service is not initialized.');
+        }
+      } else {
+        if (!isValidStateName(varName)) {
+          return match;
+        }
+        
+        if (context.session.state.has(varName)) {
+          return String(context.session.state.get(varName));
+        } else {
+          if (optional) {
+            return '';
+          } else {
+            throw new Error(`Context variable not found: \`${varName}\`.`);
+          }
+        }
+      }
+    }
+  );
+}
+
+/**
+ * Checks if the variable name is a valid state name.
+ * 
+ * Valid state is either:
+ *   - Valid identifier
+ *   - <Valid prefix>:<Valid identifier>
+ * All the others will just return as they are.
+ * 
+ * @param varName The variable name to check
+ * @returns True if the variable name is a valid state name, false otherwise
+ */
+function isValidStateName(varName: string): boolean {
+  const parts = varName.split(':');
+  
+  if (parts.length === 1) {
+    return isValidIdentifier(varName);
+  }
+
+  if (parts.length === 2) {
+    const prefixes = [StatePrefix.APP_PREFIX, StatePrefix.USER_PREFIX, StatePrefix.TEMP_PREFIX];
+    if (prefixes.includes(parts[0] + ':')) {
+      return isValidIdentifier(parts[1]);
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Checks if the string is a valid JavaScript identifier.
+ * 
+ * @param str The string to check
+ * @returns True if the string is a valid identifier, false otherwise
+ */
+function isValidIdentifier(str: string): boolean {
+  if (!str || str.length === 0) return false;
+  if (!isNaN(parseInt(str[0], 10))) return false;
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(str);
+}
 
 /**
  * Creates a LLM request processor that adds instructions to the request.
@@ -15,7 +174,7 @@ import { BaseLlmRequestProcessor } from './BaseLlmProcessor';
  * @returns A LLM request processor that adds the instruction
  */
 export function makeInstructionsRequestProcessor(instructionText: string): BaseLlmRequestProcessor {
-  class InstructionsRequestProcessor implements BaseLlmRequestProcessor {
+  class SimpleInstructionsRequestProcessor implements BaseLlmRequestProcessor {
     /**
      * Runs the processor asynchronously.
      * 
@@ -36,7 +195,7 @@ export function makeInstructionsRequestProcessor(instructionText: string): BaseL
     }
   }
   
-  return new InstructionsRequestProcessor();
+  return new SimpleInstructionsRequestProcessor();
 }
 
 /**
