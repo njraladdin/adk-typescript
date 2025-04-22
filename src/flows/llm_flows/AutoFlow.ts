@@ -1,11 +1,9 @@
-
-
 /**
  * Implementation of AutoFlow.
  */
 import * as agentTransfer from './agentTransfer';
 import { SingleFlow } from './SingleFlow';
-import { BaseLlmRequestProcessor } from './BaseLlmProcessor';
+import { BaseLlmRequestProcessor, BaseLlmResponseProcessor } from './BaseLlmProcessor';
 
 /**
  * AutoFlow is SingleFlow with agent transfer capability.
@@ -34,10 +32,15 @@ export class AutoFlow extends SingleFlow {
   /**
    * Creates a new AutoFlow instance with agent transfer capability.
    * 
-   * @param requestProcessors Additional request processors to use
+   * @param additionalRequestProcessors Additional request processors to use
+   * @param additionalResponseProcessors Additional response processors to use
    */
-  constructor(requestProcessors: BaseLlmRequestProcessor[] = []) {
-    super(requestProcessors);
+  constructor(
+    additionalRequestProcessors: BaseLlmRequestProcessor[] = [],
+    additionalResponseProcessors: BaseLlmResponseProcessor[] = []
+  ) {
+    // Pass the additional processors to the parent constructor
+    super(additionalRequestProcessors, additionalResponseProcessors);
     
     // Add the agent transfer processor to enable transfer capabilities
     this.requestProcessors.push(agentTransfer.requestProcessor);

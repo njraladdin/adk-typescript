@@ -116,7 +116,7 @@ export class Runner {
     runConfig?: RunConfig;
   }): AsyncGenerator<Event, void, unknown> {
     const { userId, sessionId, newMessage, runConfig = new RunConfig() } = params;
-
+console.log('received new message', newMessage)
     // In JavaScript, we can just use the async generator directly
     for await (const event of this.runAsync({
       userId,
@@ -145,7 +145,7 @@ export class Runner {
     runConfig?: RunConfig;
   }): AsyncGenerator<Event, void, unknown> {
     const { userId, sessionId, newMessage, runConfig = new RunConfig() } = params;
-
+console.log('2- received new message', newMessage)
     const span = tracer.startAsCurrentSpan('invocation');
     try {
       const session = await this.sessionService.getSession({
@@ -156,6 +156,8 @@ export class Runner {
 
       if (!session) {
         throw new Error(`Session not found: ${sessionId}`);
+      } else {
+        console.log('3- session found', session)
       }
 
       const invocationContext = this._newInvocationContext({
@@ -163,20 +165,22 @@ export class Runner {
         newMessage,
         runConfig
       });
-
+console.log('4- invocationContext', invocationContext)
       const rootAgent = this.agent;
 
       if (newMessage) {
+        console.log('5- newMessage is NOT empty')
         await this._appendNewMessageToSession({
           session: session as any,
           newMessage,
           invocationContext,
           saveInputBlobsAsArtifacts: runConfig.saveInputBlobsAsArtifacts
         });
+      } else {
+        console.log('6- newMessage is empty')
       }
 
       invocationContext.agent = this._findAgentToRun(session as any, rootAgent);
-      
       // Use invoke method which is guaranteed to exist
       for await (const event of invocationContext.agent.invoke(invocationContext)) {
         if (!event.partial) {
@@ -185,6 +189,7 @@ export class Runner {
             event: event as any
           });
         }
+        console.log('7- event', event)
         yield event;
       }
     } finally {

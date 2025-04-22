@@ -264,23 +264,23 @@ class GenAIClient {
     try {
       console.log(`Generating content with model: ${model}`);
       
-      // Check for system instruction in contents
-      const hasSystemMessage = contents.some(content => content.role === 'system');
-      let systemInstructionText = config.systemInstruction;
+      // IMPORTANT: The JavaScript SDK handles system instructions differently than Python
+      // We need to pass systemInstruction in the model configuration
+      // not as a message in contents with role 'system'
       
-      // If there's a system message in contents, extract it for the SDK
-      if (hasSystemMessage && !systemInstructionText) {
-        const systemMessage = contents.find(content => content.role === 'system');
-        if (systemMessage && systemMessage.parts && systemMessage.parts[0] && systemMessage.parts[0].text) {
-          systemInstructionText = systemMessage.parts[0].text;
-          console.log(`Found system instruction in contents: ${systemInstructionText}`);
-          
-          // Remove system message from contents as it will be passed separately
-          contents = contents.filter(content => content.role !== 'system');
-        }
+      // Extract system instructions from config
+      const systemInstructionText = config.systemInstruction;
+      
+      // Filter out any system messages from contents
+      // as they're not supported by the JavaScript SDK
+      contents = contents.filter(content => content.role !== 'system');
+      
+      // Log information about system instructions
+      if (systemInstructionText) {
+        console.log(`Using system instruction: ${systemInstructionText}`);
       }
       
-      // Create model instance
+      // Create model instance with systemInstruction as a configuration parameter
       const genModel = this.genAI.getGenerativeModel({
         model: model,
         generationConfig: {
@@ -360,23 +360,23 @@ class GenAIClient {
     try {
       console.log(`Generating streaming content with model: ${model}`);
       
-      // Check for system instruction in contents
-      const hasSystemMessage = contents.some(content => content.role === 'system');
-      let systemInstructionText = config.systemInstruction;
+      // IMPORTANT: The JavaScript SDK handles system instructions differently than Python
+      // We need to pass systemInstruction in the model configuration
+      // not as a message in contents with role 'system'
       
-      // If there's a system message in contents, extract it for the SDK
-      if (hasSystemMessage && !systemInstructionText) {
-        const systemMessage = contents.find(content => content.role === 'system');
-        if (systemMessage && systemMessage.parts && systemMessage.parts[0] && systemMessage.parts[0].text) {
-          systemInstructionText = systemMessage.parts[0].text;
-          console.log(`Found system instruction in contents for streaming: ${systemInstructionText}`);
-          
-          // Remove system message from contents as it will be passed separately
-          contents = contents.filter(content => content.role !== 'system');
-        }
+      // Extract system instructions from config
+      const systemInstructionText = config.systemInstruction;
+      
+      // Filter out any system messages from contents
+      // as they're not supported by the JavaScript SDK
+      contents = contents.filter(content => content.role !== 'system');
+      
+      // Log information about system instructions
+      if (systemInstructionText) {
+        console.log(`Using system instruction for streaming: ${systemInstructionText}`);
       }
       
-      // Create model instance
+      // Create model instance with systemInstruction as a configuration parameter
       const genModel = this.genAI.getGenerativeModel({
         model: model,
         generationConfig: {
@@ -437,16 +437,36 @@ class GenAIClient {
     config: LiveConnectConfig
   ): Promise<{ session: AsyncSession }> {
     try {
+      console.log(`Connecting live to model: ${model}`);
+      
+      // IMPORTANT: The JavaScript SDK handles system instructions differently than Python
+      // Filter out any system message content from history
+      let history = [];
+      let systemInstructionText = '';
+      
+      // Check if we have a system instruction
+      if (config.systemInstruction) {
+        // If we have a system instruction, get the text from it
+        const systemMsg = config.systemInstruction;
+        if (systemMsg && 
+            systemMsg.parts && 
+            systemMsg.parts.length > 0 && 
+            systemMsg.parts[0].text) {
+          systemInstructionText = systemMsg.parts[0].text;
+          console.log(`Using system instruction for live connection: ${systemInstructionText}`);
+        }
+      }
+      
       // Create model instance with appropriate configuration
       const genModel = this.genAI.getGenerativeModel({
-        model: model
+        model: model,
+        systemInstruction: systemInstructionText,
+        tools: convertTools(config.tools),
       });
       
-      // Start chat session
+      // Start chat session - don't pass system instruction in history
       const chat = genModel.startChat({
-        history: config.systemInstruction 
-          ? [convertContent(config.systemInstruction)]
-          : undefined,
+        history: [],  // Don't include system instructions in history
         tools: convertTools(config.tools),
       });
       
@@ -520,6 +540,7 @@ export class Gemini extends BaseLlm {
     llmRequest: LlmRequest,
     stream: boolean = false
   ): AsyncGenerator<LlmResponse, void, unknown> {
+    console.log('10- llmRequest', llmRequest)
     // Make sure contents array exists
     if (!llmRequest.contents) {
       llmRequest.contents = [];
@@ -536,15 +557,15 @@ export class Gemini extends BaseLlm {
       console.warn('No user message found in request - this is unusual');
     }
     
-    // Check if system instruction exists and add it to the contents directly as a system message
-    if (llmRequest.config.systemInstruction && 
-        !llmRequest.contents.some(content => content.role === 'system')) {
-      console.log(`Adding system instruction as a system message: ${llmRequest.config.systemInstruction}`);
-      // Insert the system message at the beginning of the contents array
-      llmRequest.contents.unshift({
-        role: 'system',
-        parts: [{ text: llmRequest.config.systemInstruction }]
-      });
+    // IMPORTANT: In the JavaScript SDK for Google Generative AI,
+    // system instructions should NOT be added as a message in contents
+    // with role 'system'. Instead, use the systemInstruction config parameter.
+    // Remove any system messages from contents array
+    llmRequest.contents = llmRequest.contents.filter(content => content.role !== 'system');
+    
+    // Log if we have system instructions in the config
+    if (llmRequest.config.systemInstruction) {
+      console.log(`Using system instruction in config: ${llmRequest.config.systemInstruction}`);
     }
     
     // Only append user content if absolutely necessary

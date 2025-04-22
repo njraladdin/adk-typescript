@@ -1,5 +1,3 @@
-
-
 import { SingleFlow } from '../../../../src/flows/llm_flows/SingleFlow';
 import { LlmAgent } from '../../../../src/agents/LlmAgent';
 import { BaseAgent } from '../../../../src/agents/BaseAgent';
@@ -12,8 +10,11 @@ import { Content, Part } from '../../../../src/models/types';
 import { BaseLlm } from '../../../../src/models/BaseLlm';
 import { LlmResponse } from '../../../../src/models/LlmResponse';
 import { BaseLlmConnection } from '../../../../src/models/BaseLlmConnection';
+import { Session } from '../../../../src/sessions/Session';
 
-// Mock LLM for testing
+/**
+ * Mock LLM implementation for testing
+ */
 class MockLlm extends BaseLlm {
   expectedResponse: Content;
 
@@ -26,13 +27,9 @@ class MockLlm extends BaseLlm {
     _llmRequest: LlmRequest,
     _stream?: boolean
   ): AsyncGenerator<LlmResponse, void, unknown> {
-    yield {
-      response: {
-        candidates: [{
-          content: this.expectedResponse
-        }]
-      }
-    } as LlmResponse;
+    yield new LlmResponse({
+      content: this.expectedResponse
+    });
   }
 
   connect(_request: LlmRequest): BaseLlmConnection {
@@ -40,13 +37,22 @@ class MockLlm extends BaseLlm {
       sendHistory: async () => {},
       sendContent: async () => {},
       sendRealtime: async () => {},
-      receive: async function* () { yield { } },
+      receive: async function* () { 
+        yield new LlmResponse({
+          content: {
+            role: 'model',
+            parts: [{ text: 'Mock live response' }]
+          }
+        });
+      },
       close: async () => {}
     };
   }
 }
 
-// Mock processor that tracks if it was called
+/**
+ * Mock processor that tracks if it was called
+ */
 class MockProcessor implements BaseLlmRequestProcessor {
   wasCalled: boolean = false;
   addToInstruction: string | null = null;
@@ -68,41 +74,32 @@ class MockProcessor implements BaseLlmRequestProcessor {
   }
 }
 
-// Mock session for testing
-class MockSession {
-  id: string = 'test-id';
-  appName: string = 'test_app';
-  userId: string = 'test_user';
-  state: State;
-  events: any[] = [];
-  agents: Map<string, BaseAgent> = new Map();
-  lastUpdateTime: number = Date.now();
-  conversationHistory: any[] = [];
-
-  constructor(stateData: Record<string, any> = {}) {
-    this.state = new State(stateData);
-  }
-
-  addAgent(agent: BaseAgent): void {
-    this.agents.set(agent.name, agent);
-  }
-
-  getAgent(name: string): BaseAgent | undefined {
-    return this.agents.get(name);
-  }
+/**
+ * Helper function to create a proper Session for testing
+ */
+function createTestSession(stateData: Record<string, any> = {}): Session {
+  return new Session({
+    id: 'test-session-id',
+    appName: 'test_app',
+    userId: 'test_user',
+    state: new State(stateData),
+    events: []
+  });
 }
 
-// Helper function to create invocation context
-function createInvocationContext(agent: BaseAgent, session?: MockSession): InvocationContext {
-  const mockSession = session || new MockSession();
+/**
+ * Helper function to create invocation context
+ */
+function createInvocationContext(agent: BaseAgent): InvocationContext {
+  const session = createTestSession();
   
-  // Ensure the agent is registered in the session
-  mockSession.addAgent(agent);
+  // Add the agent to the session
+  session.addAgent(agent);
   
   return new InvocationContext({
     invocationId: 'test_id',
     agent,
-    session: mockSession as any
+    session
   });
 }
 
@@ -126,7 +123,7 @@ describe('SingleFlow', () => {
     // Create an agent with the flow and LLM
     const agent = new LlmAgent('test_agent', {
       flow,
-      llm: mockLlm
+      model: mockLlm
     });
     
     // Create invocation context
@@ -163,7 +160,7 @@ describe('SingleFlow', () => {
     // Create an agent with the flow and LLM
     const agent = new LlmAgent('test_agent', {
       flow,
-      llm: mockLlm
+      model: mockLlm
     });
     
     // Create invocation context
@@ -199,13 +196,12 @@ describe('SingleFlow', () => {
       // Store the system instructions for testing
       capturedInstructions = llmRequest.config.systemInstruction || '';
       
-      yield {
-        response: {
-          candidates: [{
-            content: { role: 'model', parts: [{ text: 'Response' } as Part] }
-          }]
+      yield new LlmResponse({
+        content: {
+          role: 'model',
+          parts: [{ text: 'Response' } as Part]
         }
-      } as LlmResponse;
+      });
     };
     
     // Create a flow with processors in specific order
@@ -214,7 +210,7 @@ describe('SingleFlow', () => {
     // Create an agent with the flow and LLM
     const agent = new LlmAgent('test_agent', {
       flow,
-      llm: mockLlm
+      model: mockLlm
     });
     
     // Create invocation context
@@ -253,7 +249,7 @@ describe('SingleFlow', () => {
     // Create an agent with the flow and LLM
     const agent = new LlmAgent('test_agent', {
       flow,
-      llm: mockLlm
+      model: mockLlm
     });
     
     // Create invocation context
