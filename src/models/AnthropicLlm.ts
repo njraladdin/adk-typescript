@@ -440,10 +440,10 @@ export class Claude extends BaseLlm {
       llmRequest.config &&
       llmRequest.config.tools &&
       llmRequest.config.tools.length > 0 &&
-      llmRequest.config.tools[0].function_declarations &&
-      llmRequest.config.tools[0].function_declarations.length > 0
+      llmRequest.config.tools[0].functionDeclarations &&
+      llmRequest.config.tools[0].functionDeclarations.length > 0
     ) {
-      tools = llmRequest.config.tools[0].function_declarations.map(
+      tools = llmRequest.config.tools[0].functionDeclarations.map(
         functionDeclarationToToolParam
       );
     }

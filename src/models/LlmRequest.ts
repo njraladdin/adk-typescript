@@ -125,14 +125,14 @@ export class LlmRequest {
       // Also check for snake_case format for backward compatibility
       if (!toolEntry) {
         toolEntry = this.config.tools.find(t => 
-          Array.isArray(t.function_declarations)
+          Array.isArray(t.functionDeclarations)
         );
         
         // Convert to camelCase if found
-        if (toolEntry && toolEntry.function_declarations) {
-          (toolEntry as any).functionDeclarations = toolEntry.function_declarations;
+        if (toolEntry && toolEntry.functionDeclarations) {
+          (toolEntry as any).functionDeclarations = toolEntry.functionDeclarations;
           // Use type assertion to avoid TypeScript error
-          (toolEntry as any).function_declarations = undefined;
+          (toolEntry as any).functionDeclarations = undefined;
         }
       }
       

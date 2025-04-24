@@ -66,54 +66,7 @@ export class SingleFlow extends BaseLlmFlow {
     }
   }
 
-  /**
-   * Runs one step of the flow asynchronously.
-   * 
-   * @param invocationContext The invocation context
-   * @returns An async generator of events
-   */
-  protected async *_runOneStepAsync(
-    invocationContext: InvocationContext
-  ): AsyncGenerator<Event, void, unknown> {
-    const llmRequest = new LlmRequest();
-    const modelResponseEvent = new Event({
-      id: Event.newId(),
-      invocationId: invocationContext.invocationId,
-      author: invocationContext.agent.name,
-    });
-
-    console.log('runOneStepAsync modelResponseEvent : ', modelResponseEvent)
-    console.log('runOneStepAsync InvocationContext : ', invocationContext)
-
-    // Preprocess
-    yield* this._preprocessAsync(invocationContext, llmRequest);
-    if (invocationContext.endInvocation) {
-      return;
-    }
-
-    // Call LLM
-    let llmResponse;
-    for await (const response of this._callLlmAsync(
-      invocationContext,
-      llmRequest,
-      modelResponseEvent
-    )) {
-      llmResponse = response;
-    }
-    
-    if (!llmResponse) {
-      return;
-    }
-
-    // Finalize and yield the event
-    const finalEvent = this._finalizeModelResponseEvent(
-      llmRequest,
-      llmResponse,
-      modelResponseEvent
-    );
-    
-    if (finalEvent) {
-      yield finalEvent;
-    }
-  }
+  // The _runOneStepAsync method is intentionally removed to inherit the implementation 
+  // from BaseLlmFlow, which matches the Python implementation and properly handles 
+  // function calls and response processing
 } 

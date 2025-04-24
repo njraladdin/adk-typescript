@@ -27,6 +27,26 @@ const AF_FUNCTION_CALL_ID_PREFIX = 'adk-';
 const REQUEST_EUC_FUNCTION_CALL_NAME = 'adk_request_credential';
 
 /**
+ * Interface for active streaming tool task
+ */
+interface ActiveStreamingTool {
+  task: Promise<void> | null;
+  done?: boolean;
+  cancelled?: boolean;
+}
+
+/**
+ * Safely get an event ID for telemetry purposes
+ * Always returns a valid string
+ * 
+ * @param event The event to get the ID from
+ * @returns A string ID, never undefined
+ */
+function getSafeEventId(event: Event): string {
+  return event.id || Event.newId();
+}
+
+/**
  * Generates a unique client function call ID
  * 
  * @returns A unique function call ID string
@@ -49,6 +69,32 @@ export function populateClientFunctionCallId(event: Event): void {
   for (const functionCall of functionCalls) {
     if (!functionCall.id) {
       functionCall.id = generateClientFunctionCallId();
+    }
+  }
+}
+
+/**
+ * Removes client function call IDs from content parts
+ *
+ * @param content The content object containing parts to clean
+ */
+export function removeClientFunctionCallId(content: any): void {
+  if (content && content.parts) {
+    for (const part of content.parts) {
+      if (
+        part.functionCall &&
+        part.functionCall.id &&
+        part.functionCall.id.startsWith(AF_FUNCTION_CALL_ID_PREFIX)
+      ) {
+        part.functionCall.id = null;
+      }
+      if (
+        part.functionResponse &&
+        part.functionResponse.id &&
+        part.functionResponse.id.startsWith(AF_FUNCTION_CALL_ID_PREFIX)
+      ) {
+        part.functionResponse.id = null;
+      }
     }
   }
 }
@@ -274,7 +320,7 @@ export async function handleFunctionCallsLive(
     try {
       telemetry.traceToolResponse(
         invocationContext,
-        mergedEvent.id,
+        getSafeEventId(mergedEvent),
         mergedEvent
       );
     } finally {
@@ -300,17 +346,110 @@ export async function handleFunctionCallsAsync(
   toolsDict: Record<string, BaseTool>,
   filters?: Set<string>
 ): Promise<Event | undefined> {
-  console.log('handleFunctionCallsAsync');
-  if (!invocationContext.tools) {
+  const agent = invocationContext.agent as LlmAgent;
+  if (!agent) {
     return undefined;
   }
   
-  const functionResults = await invocationContext.tools.runAsync(
-    functionCallEvent,
-    invocationContext
-  );
+  const functionCalls = functionCallEvent.getFunctionCalls();
+  if (!functionCalls || functionCalls.length === 0) {
+    return undefined;
+  }
   
-  return functionResults as Event | undefined;
+  const functionResponseEvents: Event[] = [];
+  
+  for (const functionCall of functionCalls) {
+    // Skip if not in filter list when a filter is provided
+    if (filters && functionCall.id && !filters.has(functionCall.id)) {
+      continue;
+    }
+    
+    try {
+      const { tool, toolContext } = _getToolAndContext(
+        invocationContext,
+        functionCallEvent,
+        functionCall,
+        toolsDict
+      );
+      
+      // Function args
+      const functionArgs = functionCall.args || {};
+      let functionResponse = null;
+      
+      // Call before_tool_callback if exists
+      if (agent.beforeToolCallback) {
+        functionResponse = agent.beforeToolCallback(
+          tool,
+          functionArgs,
+          toolContext
+        );
+      }
+      
+      // Execute the tool if no callback response
+      if (!functionResponse) {
+        functionResponse = await _callToolAsync(
+          tool,
+          functionArgs,
+          toolContext
+        );
+      }
+      
+      // Call after_tool_callback if exists
+      if (agent.afterToolCallback) {
+        const newResponse = agent.afterToolCallback(
+          tool,
+          functionArgs,
+          toolContext,
+          functionResponse
+        );
+        
+        if (newResponse) {
+          functionResponse = newResponse;
+        }
+      }
+      
+      if (tool.isLongRunning) {
+        // Allow long running function to return undefined
+        if (!functionResponse) {
+          continue;
+        }
+      }
+      
+      // Build function response event
+      const responseEvent = _buildResponseEvent(
+        tool,
+        functionResponse,
+        toolContext,
+        invocationContext
+      );
+      
+      functionResponseEvents.push(responseEvent);
+    } catch (error) {
+      console.error(`Error executing function ${functionCall.name}:`, error);
+    }
+  }
+  
+  if (functionResponseEvents.length === 0) {
+    return undefined;
+  }
+  
+  const mergedEvent = mergeParallelFunctionResponseEvents(functionResponseEvents);
+  
+  if (functionResponseEvents.length > 1) {
+    // Trace the merged response for parallel calls
+    const tracingSpan = telemetry.tracer.startAsCurrentSpan('tool_response');
+    try {
+      telemetry.traceToolResponse(
+        invocationContext,
+        getSafeEventId(mergedEvent),
+        mergedEvent
+      );
+    } finally {
+      tracingSpan.end();
+    }
+  }
+  
+  return mergedEvent;
 }
 
 /**
@@ -330,7 +469,16 @@ async function _processFunctionLiveHelper(
   functionArgs: Record<string, any>,
   invocationContext: InvocationContext
 ): Promise<any> {
-  // Execute the tool
+  // We need to implement live streaming support when appropriate interfaces are added
+  // This is a simplified implementation without streaming support
+  
+  // Handle stop_streaming function call
+  if (functionCall.name === 'stop_streaming' && functionArgs.function_name) {
+    const functionName = functionArgs.function_name;
+    return { status: `Stop streaming request received for ${functionName}` };
+  }
+  
+  // For now, execute all tools synchronously
   return await _callToolAsync(tool, functionArgs, toolContext);
 }
 
@@ -371,7 +519,15 @@ function _buildResponseEvent(
   toolContext: ToolContext,
   invocationContext: InvocationContext
 ): Event {
-  // Create a function response event
+  // Ensure function result is a dictionary
+  if (typeof functionResult !== 'object' || functionResult === null) {
+    functionResult = { result: functionResult };
+  }
+  
+  // Get the function call ID or generate a new one
+  const functionCallId = toolContext.functionCall?.id || generateClientFunctionCallId();
+  
+  // Create a function response event with a guaranteed ID
   const responseEvent = new Event({
     invocationId: invocationContext.invocationId,
     author: invocationContext.agent.name,
@@ -382,12 +538,14 @@ function _buildResponseEvent(
         {
           functionResponse: {
             name: tool.name,
-            response: { result: functionResult },
-            id: toolContext.functionCall?.id,
+            response: functionResult,
+            id: functionCallId,
           },
         },
       ],
     },
+    actions: toolContext.actions,
+    id: Event.newId() // Explicitly set an ID
   });
   
   // Trace the tool response
@@ -395,7 +553,7 @@ function _buildResponseEvent(
   try {
     telemetry.traceToolResponse(
       invocationContext,
-      responseEvent.id,
+      getSafeEventId(responseEvent),
       responseEvent
     );
   } finally {

@@ -68,7 +68,7 @@ export interface FunctionDeclaration {
  * Tool type for LLM functions
  */
 export interface Tool {
-  function_declarations: FunctionDeclaration[];
+  functionDeclarations: FunctionDeclaration[];
 }
 
 /**

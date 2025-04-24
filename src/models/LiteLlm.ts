@@ -551,7 +551,7 @@ function buildFunctionDeclarationLog(functionDeclaration: FunctionDeclaration): 
  * @returns The log string
  */
 function buildRequestLog(llmRequest: LlmRequest): string {
-  const functionDecls = llmRequest.config.tools?.[0]?.function_declarations || [];
+  const functionDecls = llmRequest.config.tools?.[0]?.functionDeclarations || [];
   const functionLogs = functionDecls.map(buildFunctionDeclarationLog);
   
   const contentsLogs = (llmRequest.contents || []).map(content => {
@@ -604,9 +604,9 @@ function getCompletionInputs(llmRequest: LlmRequest): [Message[], any[]] {
     llmRequest.config &&
     llmRequest.config.tools &&
     llmRequest.config.tools.length > 0 &&
-    llmRequest.config.tools[0].function_declarations
+    llmRequest.config.tools[0].functionDeclarations
   ) {
-    tools = llmRequest.config.tools[0].function_declarations.map(
+    tools = llmRequest.config.tools[0].functionDeclarations.map(
       tool => functionDeclarationToToolParam(tool)
     );
   }

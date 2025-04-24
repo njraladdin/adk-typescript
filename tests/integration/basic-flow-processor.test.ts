@@ -236,7 +236,7 @@ describe('Basic LLM Flow Request Processor Integration Tests', () => {
         // Verify tool was included
         expect(llmRequest.config.tools).toBeDefined();
         expect(llmRequest.config.tools.length).toBe(1);
-        expect(llmRequest.config.tools[0].function_declarations?.length).toBe(1);
+        expect(llmRequest.config.tools[0].functionDeclarations?.length).toBe(1);
         
         // Verify user content was added
         expect(llmRequest.contents).toHaveLength(1);

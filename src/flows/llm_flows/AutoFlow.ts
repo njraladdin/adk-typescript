@@ -27,6 +27,10 @@ import { BaseLlmRequestProcessor, BaseLlmResponseProcessor } from './BaseLlmProc
  *   next message directly.
  * - If the flow type of the transferee agent is not auto, the active agent will
  *   be reversed back to previous agent.
+ * 
+ * Note: AutoFlow inherits _runOneStepAsync from BaseLlmFlow via SingleFlow, which
+ * properly handles function calls including transfer_to_agent. This matches the 
+ * Python implementation where both classes inherit this method from BaseLlmFlow.
  */
 export class AutoFlow extends SingleFlow {
   /**

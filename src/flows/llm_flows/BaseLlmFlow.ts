@@ -359,6 +359,7 @@ export abstract class BaseLlmFlow {
   async *runAsync(
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
+    console.log('running async flow runAsync')
     while (true) {
       let lastEvent: Event | undefined;
       
@@ -370,7 +371,7 @@ export abstract class BaseLlmFlow {
         }
         return last;
       }
-      
+      console.log('here 1')
       const eventGenerator = getLastEvent(this._runOneStepAsync(invocationContext));
       for await (const event of eventGenerator) {
         lastEvent = event;
@@ -415,6 +416,7 @@ export abstract class BaseLlmFlow {
       llmRequest,
       modelResponseEvent
     )) {
+      console.log('running async flow postprocessAsync')
       // Process each LLM response as it comes in
       yield* this._postprocessAsync(
         invocationContext,
@@ -502,6 +504,7 @@ export abstract class BaseLlmFlow {
   ): AsyncGenerator<Event, void, unknown> {
     // Process the response with response processors
     yield* this._postprocessRunProcessorsAsync(invocationContext, llmResponse);
+
     if (invocationContext.endInvocation) {
       return;
     }
@@ -635,10 +638,13 @@ export abstract class BaseLlmFlow {
     llmRequest: LlmRequest
   ): AsyncGenerator<Event, void, unknown> {
     try {
+      console.log('running async flow postprocessHandleFunctionCallsAsync')
+
       // Handle function calls asynchronously
       // Get tools dictionary if available
       const toolsDict = llmRequest.getToolsDict ? llmRequest.getToolsDict() : {};
-      
+      console.log('toolsDict', toolsDict)
+
       const functionResponseEvent = await functions.handleFunctionCallsAsync(
         invocationContext, 
         functionCallEvent, 
@@ -669,6 +675,7 @@ export abstract class BaseLlmFlow {
         
         // If not transferring to an agent, continue the flow with another step
         // This matches Python implementation of recursively continuing the flow
+        console.log('again running async flow runOneStepAsync because no transfer_to_agent')
         yield* this._runOneStepAsync(invocationContext);
       }
     } catch (error) {

@@ -121,10 +121,10 @@ function convertTools(tools: any[] | undefined): GoogleTool[] {
   }
   
   return tools.map(tool => {
-    // Handle snake_case format (function_declarations)
-    if (tool.function_declarations) {
+    // Handle snake_case format (functionDeclarations)
+    if (tool.functionDeclarations) {
       return {
-        functionDeclarations: tool.function_declarations.map((func: FunctionDeclaration) => ({
+        functionDeclarations: tool.functionDeclarations.map((func: FunctionDeclaration) => ({
           name: func.name,
           description: func.description || '',
           parameters: func.parameters || {},
@@ -853,7 +853,7 @@ export class Gemini extends BaseLlm {
    * @returns A formatted log string
    */
   private _buildRequestLog(req: LlmRequest): string {
-    const functionDecls = req.config.tools?.[0]?.function_declarations || [];
+    const functionDecls = req.config.tools?.[0]?.functionDeclarations || [];
     const functionLogs = functionDecls.map(decl => this._buildFunctionDeclarationLog(decl));
     
     const contentsLogs = req.contents.map(content => {
