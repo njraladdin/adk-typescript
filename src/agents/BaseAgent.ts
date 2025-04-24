@@ -114,7 +114,7 @@ export abstract class BaseAgent {
 
     }
     console.log('8- user message so far: ', invocationContext.userContent)
-    
+    console.log('8- invocationContext : ', invocationContext)
     // Run the agent implementation based on invocation mode
     if (invocationContext.live) {
       yield* this.runLiveImpl(invocationContext);

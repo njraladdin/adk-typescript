@@ -1,6 +1,4 @@
-
-
-import { BaseTool, BaseToolOptions } from './BaseTool';
+import { BaseTool, BaseToolOptions, FunctionDeclaration } from './BaseTool';
 import { ToolContext } from './toolContext';
 
 /**
@@ -51,17 +49,36 @@ export class FunctionTool extends BaseTool {
   }
   
   /**
+   * Internal method to get the function declaration
+   * This overrides the protected method from BaseTool
+   * 
+   * @returns The function declaration
+   */
+  protected _getDeclaration(): FunctionDeclaration | null {
+    if (this.functionDeclaration) {
+      return this.functionDeclaration as FunctionDeclaration;
+    }
+    
+    // Default minimal function declaration
+    return {
+      name: this.name,
+      description: this.description,
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+      }
+    };
+  }
+  
+  /**
    * Get the function declaration for the tool
    * 
    * @returns The function declaration
    */
   getFunctionDeclaration(): Record<string, any> {
-    if (this.functionDeclaration) {
-      return this.functionDeclaration;
-    }
-    
-    // Default minimal function declaration
-    return {
+    const declaration = this._getDeclaration();
+    return declaration || {
       name: this.name,
       description: this.description,
       parameters: {

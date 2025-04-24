@@ -181,6 +181,7 @@ console.log('4- invocationContext', invocationContext)
       }
 
       invocationContext.agent = this._findAgentToRun(session as any, rootAgent);
+      console.log('agent to run : ', invocationContext.agent);
       // Use invoke method which is guaranteed to exist
       for await (const event of invocationContext.agent.invoke(invocationContext)) {
         if (!event.partial) {

@@ -89,7 +89,9 @@ export class LlmRequest {
    * @param tools The tools to append.
    */
   appendTools(tools: BaseTool[]): void {
+    console.log('appendTools : ', tools);
     if (!tools || tools.length === 0) {
+      console.log('no tools to append');
       return;
     }
 
@@ -104,28 +106,60 @@ export class LlmRequest {
       }
       
       if (declaration) {
-        declarations.push(declaration);
+        // Store tool name to avoid duplicates
         this.toolsDict[tool.name] = tool;
+        // Check if we already have this declaration to avoid duplicates
+        const existingDeclaration = declarations.find(d => d.name === declaration?.name);
+        if (!existingDeclaration) {
+          declarations.push(declaration);
+        }
       }
     }
 
     if (declarations.length > 0) {
-      // Find an existing tool entry with function_declarations, or create a new one
+      // Find an existing tool entry with functionDeclarations (camelCase format)
       let toolEntry = this.config.tools.find(t => 
-        Array.isArray(t.function_declarations)
+        Array.isArray((t as any).functionDeclarations)
       );
       
+      // Also check for snake_case format for backward compatibility
+      if (!toolEntry) {
+        toolEntry = this.config.tools.find(t => 
+          Array.isArray(t.function_declarations)
+        );
+        
+        // Convert to camelCase if found
+        if (toolEntry && toolEntry.function_declarations) {
+          (toolEntry as any).functionDeclarations = toolEntry.function_declarations;
+          // Use type assertion to avoid TypeScript error
+          (toolEntry as any).function_declarations = undefined;
+        }
+      }
+      
       if (toolEntry) {
-        // Append to existing function declarations
-        toolEntry.function_declarations = [
-          ...toolEntry.function_declarations,
-          ...declarations
-        ];
+        // We need to use 'as any' since functionDeclarations isn't in the type
+        const existingDeclarations = (toolEntry as any).functionDeclarations || [];
+        
+        // Add new declarations, avoiding duplicates
+        for (const declaration of declarations) {
+          // Check if a declaration with the same name already exists
+          const existingIndex = existingDeclarations.findIndex(
+            (existing: FunctionDeclaration) => existing.name === declaration.name
+          );
+          
+          if (existingIndex === -1) {
+            // Only add if it doesn't exist already
+            existingDeclarations.push(declaration);
+          }
+        }
+        
+        // Update the declarations
+        (toolEntry as any).functionDeclarations = existingDeclarations;
       } else {
-        // Create a new tool entry
+        // Create a new tool entry with camelCase format
         this.config.tools.push({
-          function_declarations: declarations
-        });
+          functionDeclarations: declarations
+        } as any);
       }
     }
   }

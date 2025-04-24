@@ -18,12 +18,62 @@
 import { InvocationContext } from '../../agents/InvocationContext';
 import { LlmAgent } from '../../agents/LlmAgent';
 import { Event } from '../../events/Event';
-import { Content, Part } from '../../models/types';
+import { Content, Part, FunctionCall, FunctionResponse } from '../../models/types';
 import { LlmRequest } from '../../models/LlmRequest';
 import { BaseLlmRequestProcessor } from './BaseLlmProcessor';
 
 // Constants
 const REQUEST_EUC_FUNCTION_CALL_NAME = 'adk_request_credential';
+
+/**
+ * Safely gets function responses from an event
+ * 
+ * @param event The event to get function responses from
+ * @returns An array of function responses
+ */
+function safeGetFunctionResponses(event: Event): FunctionResponse[] {
+  if (typeof event.getFunctionResponses === 'function') {
+    return event.getFunctionResponses();
+  }
+  
+  // Fallback implementation if method doesn't exist
+  if (event.content && event.content.parts) {
+    const responses: FunctionResponse[] = [];
+    for (const part of event.content.parts) {
+      if (part.functionResponse) {
+        responses.push(part.functionResponse);
+      }
+    }
+    return responses;
+  }
+  
+  return [];
+}
+
+/**
+ * Safely gets function calls from an event
+ * 
+ * @param event The event to get function calls from
+ * @returns An array of function calls
+ */
+function safeGetFunctionCalls(event: Event): FunctionCall[] {
+  if (typeof event.getFunctionCalls === 'function') {
+    return event.getFunctionCalls();
+  }
+  
+  // Fallback implementation if method doesn't exist
+  if (event.content && event.content.parts) {
+    const calls: FunctionCall[] = [];
+    for (const part of event.content.parts) {
+      if (part.functionCall) {
+        calls.push(part.functionCall);
+      }
+    }
+    return calls;
+  }
+  
+  return [];
+}
 
 /**
  * Removes client function call IDs from all function calls in content
@@ -96,7 +146,7 @@ function rearrangeEventsForAsyncFunctionResponsesInHistory(
   const functionCallIdToResponseEventsIndex: Map<string, number> = new Map();
   
   for (let i = 0; i < events.length; i++) {
-    const functionResponses = events[i].getFunctionResponses();
+    const functionResponses = safeGetFunctionResponses(events[i]);
     if (functionResponses.length > 0) {
       for (const functionResponse of functionResponses) {
         if (functionResponse.id) {
@@ -109,13 +159,13 @@ function rearrangeEventsForAsyncFunctionResponsesInHistory(
   const resultEvents: Event[] = [];
   
   for (const event of events) {
-    if (event.getFunctionResponses().length > 0) {
+    if (safeGetFunctionResponses(event).length > 0) {
       // function_response should be handled together with function_call below.
       continue;
-    } else if (event.getFunctionCalls().length > 0) {
+    } else if (safeGetFunctionCalls(event).length > 0) {
       const functionResponseEventsIndices = new Set<number>();
       
-      for (const functionCall of event.getFunctionCalls()) {
+      for (const functionCall of safeGetFunctionCalls(event)) {
         const functionCallId = functionCall.id;
         if (functionCallId && functionCallIdToResponseEventsIndex.has(functionCallId)) {
           functionResponseEventsIndices.add(
@@ -168,7 +218,7 @@ function rearrangeEventsForLatestFunctionResponse(
     return events;
   }
 
-  const functionResponses = events[events.length - 1].getFunctionResponses();
+  const functionResponses = safeGetFunctionResponses(events[events.length - 1]);
   if (functionResponses.length === 0) {
     // No need to process, since the latest event is not function_response.
     return events;
@@ -182,7 +232,7 @@ function rearrangeEventsForLatestFunctionResponse(
   }
 
   if (events.length >= 2) {
-    const functionCalls = events[events.length - 2].getFunctionCalls();
+    const functionCalls = safeGetFunctionCalls(events[events.length - 2]);
     
     if (functionCalls.length > 0) {
       for (const functionCall of functionCalls) {
@@ -198,7 +248,7 @@ function rearrangeEventsForLatestFunctionResponse(
   // look for corresponding function call event reversely
   for (let idx = events.length - 2; idx >= 0; idx--) {
     const event = events[idx];
-    const functionCalls = event.getFunctionCalls();
+    const functionCalls = safeGetFunctionCalls(event);
     
     if (functionCalls.length > 0) {
       for (const functionCall of functionCalls) {
@@ -233,7 +283,7 @@ function rearrangeEventsForLatestFunctionResponse(
   
   for (let idx = functionCallEventIdx + 1; idx < events.length - 1; idx++) {
     const event = events[idx];
-    const functionResponses = event.getFunctionResponses();
+    const functionResponses = safeGetFunctionResponses(event);
     
     if (
       functionResponses.length > 0 &&
@@ -252,6 +302,52 @@ function rearrangeEventsForLatestFunctionResponse(
   );
 
   return resultEvents;
+}
+
+/**
+ * Merges multiple function response events into a single event.
+ * 
+ * @param events List of function response events to merge
+ * @returns A merged event containing all function responses
+ */
+function mergeFunctionResponseEvents(events: Event[]): Event {
+  if (!events || events.length === 0) {
+    throw new Error('No events to merge');
+  }
+
+  if (events.length === 1) {
+    return events[0];
+  }
+
+  // Create a new merged event based on the first event
+  const mergedEvent = new Event({
+    id: events[0].id,
+    timestamp: events[0].timestamp,
+    author: events[0].author,
+    invocationId: events[0].invocationId,
+    branch: events[0].branch,
+    content: {
+      role: events[0].content?.role || 'function',
+      parts: []
+    }
+  });
+
+  // Collect all function responses from all events
+  for (const event of events) {
+    const functionResponses = safeGetFunctionResponses(event);
+    
+    if (functionResponses.length > 0) {
+      for (const functionResponse of functionResponses) {
+        if (mergedEvent.content) {
+          mergedEvent.content.parts.push({
+            functionResponse: functionResponse
+          });
+        }
+      }
+    }
+  }
+
+  return mergedEvent;
 }
 
 /**
@@ -371,70 +467,6 @@ function convertForeignEvent(event: Event): Event {
     content: content,
     branch: event.branch,
   });
-}
-
-/**
- * Merges a list of function_response events into one event.
- * 
- * The key goal is to ensure:
- * 1. function_call and function_response are always of the same number.
- * 2. The function_call and function_response are consecutively in the content.
- * 
- * @param functionResponseEvents List of function_response events to merge
- * @returns Merged event
- */
-function mergeFunctionResponseEvents(functionResponseEvents: Event[]): Event {
-  if (!functionResponseEvents || functionResponseEvents.length === 0) {
-    throw new Error('At least one function_response event is required.');
-  }
-
-  // Deep copy the first event
-  const mergedEvent = new Event({
-    invocationId: functionResponseEvents[0].invocationId,
-    author: functionResponseEvents[0].author,
-    actions: JSON.parse(JSON.stringify(functionResponseEvents[0].actions || {})),
-    branch: functionResponseEvents[0].branch,
-    timestamp: functionResponseEvents[0].timestamp,
-    content: JSON.parse(JSON.stringify(functionResponseEvents[0].content || {})),
-  });
-
-  const partsInMergedEvent: Part[] = mergedEvent.content?.parts || [];
-  
-  if (!partsInMergedEvent || partsInMergedEvent.length === 0) {
-    throw new Error('There should be at least one function_response part.');
-  }
-
-  const partIndicesInMergedEvent: Map<string, number> = new Map();
-  
-  for (let idx = 0; idx < partsInMergedEvent.length; idx++) {
-    const part = partsInMergedEvent[idx];
-    if (part.functionResponse && part.functionResponse.id) {
-      partIndicesInMergedEvent.set(part.functionResponse.id, idx);
-    }
-  }
-
-  for (let i = 1; i < functionResponseEvents.length; i++) {
-    const event = functionResponseEvents[i];
-    if (!event.content || !event.content.parts || event.content.parts.length === 0) {
-      throw new Error('There should be at least one function_response part.');
-    }
-
-    for (const part of event.content.parts) {
-      if (part.functionResponse && part.functionResponse.id) {
-        const functionCallId = part.functionResponse.id;
-        if (partIndicesInMergedEvent.has(functionCallId)) {
-          partsInMergedEvent[partIndicesInMergedEvent.get(functionCallId)!] = part;
-        } else {
-          partsInMergedEvent.push(part);
-          partIndicesInMergedEvent.set(functionCallId, partsInMergedEvent.length - 1);
-        }
-      } else {
-        partsInMergedEvent.push(part);
-      }
-    }
-  }
-
-  return mergedEvent;
 }
 
 /**

@@ -9,6 +9,10 @@ import { BaseLlmRequestProcessor, BaseLlmResponseProcessor } from './BaseLlmProc
 import * as basic from './basic';
 import * as identity from './identity';
 import * as instructions from './instructions';
+import * as contents from './contents';
+import * as nlPlanning from './NlPlanning';
+import * as codeExecution from './CodeExecution';
+import * as agentTransfer from './agentTransfer';
 
 /**
  * A simple flow that only executes one LLM call.
@@ -29,11 +33,26 @@ export class SingleFlow extends BaseLlmFlow {
   ) {
     super();
     
-    // Initialize with default request processors (mimicking Python implementation)
+    // Initialize with default request processors (matching Python implementation)
     this.requestProcessors = [
       basic.requestProcessor,               // Adds user content
+      // auth_preprocessor.requestProcessor is not included in TS implementation yet
+      instructions.requestProcessor,        // Adds agent instructions
       identity.requestProcessor,            // Adds agent identity
-      instructions.straightForwardRequestProcessor  // Adds response style instruction
+      contents.requestProcessor,            // Adds content
+      // Some implementations of NL Planning mark planning contents as thoughts
+      // in the post processor. Since these need to be unmarked, NL Planning
+      // should be after contents.
+      nlPlanning.requestProcessor,          // Adds NL planning
+      // Code execution should be after the contents as it mutates the contents
+      // to optimize data files.
+      codeExecution.requestProcessor        // Adds code execution
+    ];
+    
+    // Initialize response processors (matching Python implementation)
+    this.responseProcessors = [
+      nlPlanning.responseProcessor,         // Processes NL planning
+      codeExecution.responseProcessor       // Processes code execution
     ];
     
     // Add any additional request processors
@@ -62,6 +81,9 @@ export class SingleFlow extends BaseLlmFlow {
       invocationId: invocationContext.invocationId,
       author: invocationContext.agent.name,
     });
+
+    console.log('runOneStepAsync modelResponseEvent : ', modelResponseEvent)
+    console.log('runOneStepAsync InvocationContext : ', invocationContext)
 
     // Preprocess
     yield* this._preprocessAsync(invocationContext, llmRequest);

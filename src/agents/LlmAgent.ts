@@ -344,7 +344,7 @@ export class LlmAgent extends BaseAgent {
   protected async *runAsyncImpl(
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
-    console.log('9- running async impl')
+    console.log('9- running async impl, invocationContext : ', invocationContext)
     // Forward to the LLM flow
     for await (const event of this.llmFlow.runAsync(invocationContext)) {
       this.maybeSaveOutputToState(event);

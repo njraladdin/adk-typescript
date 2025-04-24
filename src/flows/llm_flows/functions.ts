@@ -300,6 +300,7 @@ export async function handleFunctionCallsAsync(
   toolsDict: Record<string, BaseTool>,
   filters?: Set<string>
 ): Promise<Event | undefined> {
+  console.log('handleFunctionCallsAsync');
   if (!invocationContext.tools) {
     return undefined;
   }

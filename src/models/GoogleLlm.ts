@@ -113,7 +113,7 @@ function convertContent(content: Content): { role: string, parts: any[] } {
 }
 
 /**
- * Helper function to convert Google GenAI tools to our format
+ * Helper function to convert our tools format to Google GenAI tools format
  */
 function convertTools(tools: any[] | undefined): GoogleTool[] {
   if (!tools || tools.length === 0) {
@@ -121,6 +121,7 @@ function convertTools(tools: any[] | undefined): GoogleTool[] {
   }
   
   return tools.map(tool => {
+    // Handle snake_case format (function_declarations)
     if (tool.function_declarations) {
       return {
         functionDeclarations: tool.function_declarations.map((func: FunctionDeclaration) => ({
@@ -130,8 +131,18 @@ function convertTools(tools: any[] | undefined): GoogleTool[] {
         }))
       };
     }
+    // Handle camelCase format (functionDeclarations)
+    else if (tool.functionDeclarations) {
+      return {
+        functionDeclarations: tool.functionDeclarations.map((func: FunctionDeclaration) => ({
+          name: func.name,
+          description: func.description || '',
+          parameters: func.parameters || {},
+        }))
+      };
+    }
     return {};
-  });
+  }).filter(tool => tool.functionDeclarations && tool.functionDeclarations.length > 0);
 }
 
 /**

@@ -361,10 +361,22 @@ export abstract class BaseLlmFlow {
   ): AsyncGenerator<Event, void, unknown> {
     while (true) {
       let lastEvent: Event | undefined;
-      for await (const event of this._runOneStepAsync(invocationContext)) {
+      
+      async function* getLastEvent(generator: AsyncGenerator<Event, void, unknown>): AsyncGenerator<Event, Event | undefined, unknown> {
+        let last: Event | undefined;
+        for await (const event of generator) {
+          last = event;
+          yield event;
+        }
+        return last;
+      }
+      
+      const eventGenerator = getLastEvent(this._runOneStepAsync(invocationContext));
+      for await (const event of eventGenerator) {
         lastEvent = event;
         yield event;
       }
+      
       if (!lastEvent || lastEvent.isFinalResponse()) {
         break;
       }
@@ -380,7 +392,16 @@ export abstract class BaseLlmFlow {
   protected async *_runOneStepAsync(
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
+    // Create request object first - matching Python implementation
     const llmRequest = new LlmRequest();
+
+    // Preprocess before calling the LLM - yield any events from preprocessing
+    yield* this._preprocessAsync(invocationContext, llmRequest);
+    if (invocationContext.endInvocation) {
+      return;
+    }
+
+    // Create model response event after preprocessing, like in Python
     const modelResponseEvent = new Event({
       id: Event.newId(),
       invocationId: invocationContext.invocationId,
@@ -388,33 +409,20 @@ export abstract class BaseLlmFlow {
       branch: invocationContext.branch,
     });
 
-    // Preprocess
-    yield* this._preprocessAsync(invocationContext, llmRequest);
-    if (invocationContext.endInvocation) {
-      return;
-    }
-
-    // Call LLM
-    let llmResponse: LlmResponse | undefined;
-    for await (const response of this._callLlmAsync(
+    // Call LLM and immediately process each response (like in Python)
+    for await (const llmResponse of this._callLlmAsync(
       invocationContext,
       llmRequest,
       modelResponseEvent
     )) {
-      llmResponse = response;
+      // Process each LLM response as it comes in
+      yield* this._postprocessAsync(
+        invocationContext,
+        llmRequest,
+        llmResponse,
+        modelResponseEvent
+      );
     }
-
-    if (!llmResponse) {
-      return;
-    }
-
-    // Postprocess
-    yield* this._postprocessAsync(
-      invocationContext,
-      llmRequest,
-      llmResponse,
-      modelResponseEvent
-    );
   }
 
   /**
@@ -430,8 +438,17 @@ export abstract class BaseLlmFlow {
   ): AsyncGenerator<Event, void, unknown> {
     const agent = invocationContext.agent;
     
+    // Log starting state
+    console.debug('llmRequest initial state:', llmRequest);
+    
+    // Make sure the agent is an LlmAgent
+    if (!(agent instanceof LlmAgent)) {
+      return;
+    }
+    
     // Run all request processors
     for (const processor of this.requestProcessors) {
+      console.debug(`Running request processor: ${processor.constructor.name}`);
       yield* processor.runAsync(invocationContext, llmRequest);
       if (invocationContext.endInvocation) {
         return;
@@ -439,8 +456,10 @@ export abstract class BaseLlmFlow {
     }
     
     // Run processors for tools
-    if (agent instanceof LlmAgent && agent.canonicalTools) {
+    if (agent.canonicalTools) {
       for (const tool of agent.canonicalTools) {
+        console.debug(`Processing tool: ${tool.name}`);
+        
         // Create a session-like object that meets the ToolContext requirements
         const sessionAdapter = {
           id: invocationContext.session.id,
@@ -462,6 +481,8 @@ export abstract class BaseLlmFlow {
         });
       }
     }
+    
+    console.debug('llmRequest after preprocessing:', llmRequest);
   }
 
   /**
@@ -484,7 +505,7 @@ export abstract class BaseLlmFlow {
     if (invocationContext.endInvocation) {
       return;
     }
-
+    
     // Skip the model response event if there is no content and no error code
     // This is needed for the code executor to trigger another loop
     if (!llmResponse.content && !llmResponse.errorCode && !llmResponse.interrupted) {
@@ -499,12 +520,12 @@ export abstract class BaseLlmFlow {
     
     // Handle any function calls in the response
     if (finalEvent && finalEvent.getFunctionCalls().length > 0) {
+      console.debug('Processing function calls:', finalEvent.getFunctionCalls().map(f => f.name));
       yield* this._postprocessHandleFunctionCallsAsync(
         invocationContext,
         finalEvent,
         llmRequest
       );
-      return;
     }
   }
 
@@ -646,7 +667,8 @@ export abstract class BaseLlmFlow {
           }
         }
         
-        // Continue the flow with the updated request
+        // If not transferring to an agent, continue the flow with another step
+        // This matches Python implementation of recursively continuing the flow
         yield* this._runOneStepAsync(invocationContext);
       }
     } catch (error) {
@@ -715,12 +737,6 @@ export abstract class BaseLlmFlow {
     if (callbackResponse) {
       yield callbackResponse;
       return;
-    }
-    
-    // Automatically append function tools to the request so the model is aware of them
-    const agent = invocationContext.agent;
-    if (agent instanceof LlmAgent) {
-      llmRequest.appendTools(agent.canonicalTools);
     }
     
     const llm = this._getLlm(invocationContext);
