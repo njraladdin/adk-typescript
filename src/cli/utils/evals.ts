@@ -3,7 +3,7 @@
 import { Session } from '../../sessions/interfaces';
 import { Event } from '../../events/Event';
 import { Content } from '../../models/types';
-import { Part } from '../../messages';
+import { Part } from '../../models/types';
 
 /**
  * Agent response during an evaluation

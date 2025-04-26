@@ -1,5 +1,3 @@
-
-
 import { v4 as uuidv4 } from 'uuid';
 import { Event, Session, SessionsList } from './interfaces';
 import { Content, Part } from './types';
@@ -307,6 +305,48 @@ export class VertexAiSessionService extends BaseSessionService {
       });
     } catch (error) {
       console.error('Error appending event:', error);
+    }
+  }
+
+  /**
+   * Updates a session's state.
+   */
+  async updateSessionState(
+    appName: string,
+    userId: string,
+    sessionId: string,
+    stateDelta: Record<string, any>
+  ): Promise<Session> {
+    const reasoningEngineId = this.parseReasoningEngineId(appName);
+
+    try {
+      // Get the current session
+      const session = await this.getSession({
+        appName,
+        userId,
+        sessionId
+      });
+
+      if (!session) {
+        throw new Error(`Session ${sessionId} not found for user ${userId} in app ${appName}`);
+      }
+
+      // Update the session state
+      Object.assign(session.state, stateDelta);
+
+      // Update the session in Vertex AI
+      await this.apiClient.request({
+        httpMethod: 'PATCH',
+        path: `reasoningEngines/${reasoningEngineId}/sessions/${sessionId}`,
+        requestDict: {
+          session_state: session.state
+        }
+      });
+
+      return session;
+    } catch (error) {
+      console.error('Error updating session state:', error);
+      throw error;
     }
   }
 

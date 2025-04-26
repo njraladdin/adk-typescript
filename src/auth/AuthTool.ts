@@ -1,5 +1,3 @@
-
-
 import { BaseTool, BaseToolOptions } from '../tools/BaseTool';
 import { ToolContext } from '../tools/toolContext';
 import { AuthScheme } from './AuthScheme';
@@ -117,7 +115,8 @@ export class AuthTool extends BaseTool {
     params: Record<string, any>,
     context: ToolContext
   ): Promise<any> {
-    const functionCallId = context.get('functionCallId') || '';
+    const contextValue = context.get('functionCallId');
+    const functionCallId = typeof contextValue === 'string' ? contextValue : String(contextValue || '');
     const authScheme = params.authScheme;
     const credentials = params.credentials || {};
     
