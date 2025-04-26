@@ -63,8 +63,17 @@ program
       // Import agent module and get root agent
       const agentParentDir = path.dirname(agent);
       const agentFolderName = path.basename(agent);
-      const agentModule = require(path.join(agentParentDir, agentFolderName));
-      const rootAgent = agentModule.agent.rootAgent;
+      const agentModulePath = path.resolve(process.cwd(), agentParentDir, agentFolderName, 'index.ts');
+      
+      console.log(`Loading agent from: ${agentModulePath}`);
+      const agentModule = require(agentModulePath);
+      
+      // Get the rootAgent from the module
+      const rootAgent = agentModule.rootAgent || (agentModule.default && agentModule.default.rootAgent);
+      
+      if (!rootAgent) {
+        throw new Error(`Could not find rootAgent in module ${agentModulePath}. Make sure it exports a 'rootAgent' property.`);
+      }
       
       // Parse highlight pairs if provided
       const highlightPairs: [string, string][] = [];

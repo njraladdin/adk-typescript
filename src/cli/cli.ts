@@ -196,16 +196,23 @@ export async function runCli({
     userId: 'test_user',
   });
 
-  // Import agent module and get root agent
-  const agentModulePath = path.join(agentParentDir, agentFolderName);
+  // Import agent module directly from index.ts
+  const agentModulePath = path.resolve(process.cwd(), agentParentDir, agentFolderName, 'index.ts');
+  console.log(`Loading agent from: ${agentModulePath}`);
   
   try {
     // Load environment variables for the agent
     envs.loadDotenvForAgent(agentFolderName, agentParentDir);
     
-    // Dynamically import the agent module
+    // Dynamically import the agent module from index.ts
     const agentModule = require(agentModulePath);
-    const rootAgent = agentModule.agent.rootAgent;
+    
+    // Get the rootAgent from the module
+    const rootAgent = agentModule.rootAgent || (agentModule.default && agentModule.default.rootAgent);
+    
+    if (!rootAgent) {
+      throw new Error(`Could not find rootAgent in module ${agentModulePath}. Make sure it exports a 'rootAgent' property.`);
+    }
     
     if (jsonFilePath) {
       if (jsonFilePath.endsWith('.input.json')) {

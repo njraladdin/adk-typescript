@@ -1,0 +1,12 @@
+{
+  "state": {
+    "user_name": "Example User",
+    "session_started": true
+  },
+  "queries": [
+    "Hello! Can you introduce yourself?",
+    "What time is it now?",
+    "What timezone am I in?",
+    "Thank you for the information!"
+  ]
+} 
