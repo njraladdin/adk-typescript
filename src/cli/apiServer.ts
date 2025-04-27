@@ -1,5 +1,3 @@
-
-
 import express from 'express';
 import http from 'http';
 import path from 'path';
@@ -21,6 +19,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Fix for the Event type conflict - import directly from events directory
 import { Event as RunnerEvent } from '../events/Event';
+
+// Import the LiveRequestQueue and LiveRequest interfaces/classes
+import { LiveRequest, LiveRequestQueue } from '../agents/LiveRequestQueue';
+
+// Import agent_graph
+import * as agentGraph from './agent_graph';
 
 // Interface definitions to replace Pydantic models
 interface AgentRunRequest {
@@ -474,11 +478,17 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     }
   });
 
-  // WebSocket support for live interaction
-  io.on('connection', (socket) => {
-    console.log('New WebSocket connection');
+  // Set up WebSocket for live interaction
+  io.on('connection', async (socket) => {
+    console.log(`New WebSocket connection: ${socket.id}`);
     
-    socket.on('run_live', async (data: any) => {
+    // Handle run_live event
+    socket.on('run_live', async (data: { 
+      appName: string, 
+      userId: string, 
+      sessionId: string, 
+      modalities?: string[] 
+    }) => {
       try {
         const { appName, userId, sessionId, modalities = ['TEXT'] } = data;
         
@@ -493,42 +503,74 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
         
         if (!session) {
           socket.emit('error', { error: 'Session not found' });
+          socket.disconnect(true);
           return;
         }
         
-        const runner = await getRunner(appName);
+        // Create a live request queue for this socket
+        const liveRequestQueue = new LiveRequestQueue();
         
-        // Set up message handling
-        socket.on('message', async (messageData: any) => {
+        // Set up two tasks - one for forwarding events and one for processing messages
+        
+        // Task 1: Forward events from the runner to the client
+        const forwardEvents = async () => {
           try {
-            // Forward message to runner
-            // This is a simplified implementation 
-            const response = { 
-              id: uuidv4(),
-              author: 'agent',
-              content: {
-                role: 'assistant',
-                parts: [{ text: `Live response to: ${messageData.text}` }]
-              }
-            };
-            socket.emit('event', response);
+            const runner = await getRunner(appName);
+            for await (const event of runner.runLive({
+              session,
+              liveRequestQueue
+            })) {
+              // Send event to client
+              socket.emit('event', event);
+            }
           } catch (error) {
-            console.error('Error processing WebSocket message:', error);
+            console.error('Error in forwardEvents:', error);
             socket.emit('error', { error: String(error) });
           }
+        };
+        
+        // Task 2: Process incoming messages from the client
+        const processMessages = async () => {
+          // Set up message handler
+          socket.on('message', (messageData: any) => {
+            try {
+              // Validate and forward to the live request queue
+              // Use appropriate method on LiveRequestQueue based on message type
+              if (messageData.content) {
+                liveRequestQueue.sendContent(messageData.content);
+              } else if (messageData.blob) {
+                liveRequestQueue.sendBlob(messageData.blob);
+              } else if (messageData.close) {
+                liveRequestQueue.sendClose();
+              }
+            } catch (error) {
+              console.error('Error processing message:', error);
+              socket.emit('error', { error: String(error) });
+            }
+          });
+        };
+        
+        // Start both tasks
+        forwardEvents().catch(error => {
+          console.error('Error in forward events task:', error);
+          socket.emit('error', { error: String(error) });
         });
         
-        // Initial response
-        socket.emit('ready', { status: 'Agent ready for live interaction' });
+        processMessages().catch(error => {
+          console.error('Error in process messages task:', error);
+          socket.emit('error', { error: String(error) });
+        });
+        
+        // Handle disconnect - cleanup resources
+        socket.on('disconnect', () => {
+          console.log(`WebSocket client disconnected: ${socket.id}`);
+          // Any cleanup needed for the live request queue
+        });
         
       } catch (error) {
-        console.error('Error in WebSocket setup:', error);
+        console.error('Error in run_live setup:', error);
         socket.emit('error', { error: String(error) });
       }
-    });
-    
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
     });
   });
 
@@ -660,6 +702,63 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       res.status(500).json({ error: 'Failed to run eval' });
     }
   });
+
+  // Event graph endpoint
+  app.get('/apps/:appName/users/:userId/sessions/:sessionId/events/:eventId/graph', 
+    async (req: express.Request, res: express.Response) => {
+      const { appName, userId, sessionId, eventId } = req.params;
+      
+      // Connect to managed session if agent_engine_id is set
+      const effectiveAppName = agentEngineId || appName;
+      
+      const session = sessionService.getSession({
+        appName: effectiveAppName,
+        userId,
+        sessionId
+      });
+      
+      if (!session || !session.events) {
+        return res.json({});
+      }
+      
+      const event = session.events.find((e: RunnerEvent) => e.id === eventId);
+      if (!event) {
+        return res.json({});
+      }
+      
+      try {
+        const rootAgent = await getRootAgent(appName);
+        let dotGraph = null;
+        
+        // Check for function calls
+        const functionCalls = event.getFunctionCalls ? event.getFunctionCalls() : [];
+        const functionResponses = event.getFunctionResponses ? event.getFunctionResponses() : [];
+        
+        if (functionCalls && functionCalls.length > 0) {
+          const functionCallHighlights = functionCalls.map((call: any) => 
+            [event.author, call.name] as [string, string]
+          );
+          dotGraph = agentGraph.getAgentGraph(rootAgent, functionCallHighlights);
+        } else if (functionResponses && functionResponses.length > 0) {
+          const functionResponseHighlights = functionResponses.map((response: any) => 
+            [response.name, event.author] as [string, string]
+          );
+          dotGraph = agentGraph.getAgentGraph(rootAgent, functionResponseHighlights);
+        } else {
+          dotGraph = agentGraph.getAgentGraph(rootAgent, [[event.author, '']]);
+        }
+        
+        if (dotGraph) {
+          // For TypeScript, we'll return the dot source directly
+          return res.json({ dot_src: dotGraph.to_string() });
+        } else {
+          return res.json({});
+        }
+      } catch (error) {
+        console.error('Error generating agent graph:', error);
+        return res.status(500).json({ error: 'Error generating agent graph' });
+      }
+    });
 
   // Helper functions for eval set management
   function getEvalSetFilePath(appName: string, evalSetId: string): string {

@@ -8,6 +8,7 @@ import { toCloudRun } from './cliDeploy';
 import { runCmd } from './cliCreate';
 import { getAgentGraph } from './agent_graph';
 import { createApiServer } from './apiServer';
+import { startWebServer } from './webServer';
 import * as fs from 'fs';
 
 const program = new Command();
@@ -157,12 +158,33 @@ program
     });
   });
 
-// web (stub)
+// web command
 program
-  .command('web')
-  .description('Starts a web server for agents (Not implemented in TypeScript yet).')
-  .action(() => {
-    console.log('The "web" command is not implemented in the TypeScript CLI yet.');
+  .command('web [agent]')
+  .description('Starts a web server for agents with Socket.IO for live interaction.')
+  .option('--port <port>', 'Port to run the server on.', '3000')
+  .option('--allow_origin <origins...>', 'Allowed origins for CORS.', ['*'])
+  .action((agent: string | undefined, options: any) => {
+    try {
+      let agentDir = '.';
+      
+      if (agent) {
+        // If specific agent is provided, use it
+        // Resolve to an absolute path to avoid path resolution issues
+        agentDir = path.resolve(process.cwd(), agent);
+        console.log(`Using agent directory: ${agentDir}`);
+      }
+      
+      // Start web server with the specified directory
+      startWebServer({
+        agentDir,
+        port: parseInt(options.port, 10),
+        allowOrigins: options.allow_origin
+      });
+    } catch (error) {
+      console.error('Error starting web server:', error);
+      process.exit(1);
+    }
   });
 
 // api_server - implement this with our new apiServer module

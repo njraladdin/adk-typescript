@@ -12,7 +12,9 @@
     "start": "ts-node src/index.ts",
     "adk": "ts-node src/cli/index.ts",
     "adk:run": "ts-node src/cli/index.ts run",
-    "adk:create": "ts-node src/cli/index.ts create"
+    "adk:create": "ts-node src/cli/index.ts create",
+    "adk:web": "ts-node src/cli/index.ts web",
+    "build-ui": "node scripts/build-ui.js"
   },
   "repository": {
     "type": "git",

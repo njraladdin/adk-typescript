@@ -50,6 +50,24 @@ cd examples/simple_agent
 npm run adk:run -- . --input_file sample.input.json
 ```
 
+## Using the Web Interface
+
+You can interact with the agent through a web browser:
+
+```bash
+# From the project root, start the web server pointing to a specific agent
+npm run adk:web -- examples/simple_agent
+
+# Or start the web server in the current directory to list all available agents
+cd examples
+npm run adk:web
+
+# Or just start from anywhere to browse all agents
+npm run adk:web
+```
+
+Then open your browser to `http://localhost:3000` to interact with the agent.
+
 ## File Structure
 
 The agent consists of these files:
