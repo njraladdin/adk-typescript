@@ -847,7 +847,7 @@ export function createWebServer(params: {
   });
   
   // Serve UI files
-  const uiDir = path.join(__dirname, 'browser_original');
+  const uiDir = path.join(__dirname, 'browser');
   
   if (fs.existsSync(uiDir)) {
     // Serve static files
