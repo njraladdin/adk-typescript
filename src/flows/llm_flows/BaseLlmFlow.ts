@@ -880,6 +880,29 @@ export abstract class BaseLlmFlow {
   ): Event {
     // Merge properties from llmResponse into modelResponseEvent
     if (llmResponse.content) {
+      // Ensure content parts are properly filtered
+      if (llmResponse.content.parts) {
+        llmResponse.content.parts = llmResponse.content.parts.filter(part => {
+          // Keep parts with valid text
+          if (part.text !== undefined && part.text !== null) {
+            return true;
+          }
+          
+          // Keep parts with valid function calls
+          if (part.functionCall && part.functionCall.name) {
+            return true;
+          }
+          
+          // Keep parts with valid function responses
+          if (part.functionResponse && part.functionResponse.name) {
+            return true;
+          }
+          
+          // If we reached here, this part doesn't have valid required fields
+          return false;
+        });
+      }
+      
       modelResponseEvent.content = llmResponse.content;
     }
     if (llmResponse.partial !== undefined) {

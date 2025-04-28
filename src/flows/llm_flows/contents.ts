@@ -398,9 +398,38 @@ export function getContents(
   
   for (const event of filteredEvents) {
     if (event.content) {
+      // Clone the content to avoid modifying the original event
       const content = JSON.parse(JSON.stringify(event.content)) as Content;
-      removeClientFunctionCallId(content);
-      contents.push(content);
+
+      // Ensure there are valid parts and filter out empty ones
+      if (content.parts) {
+        // Filter out empty parts or parts without required fields
+        content.parts = content.parts.filter(part => {
+          // Keep parts with valid text
+          if (part.text !== undefined && part.text !== null) {
+            return true;
+          }
+          
+          // Keep parts with valid function calls
+          if (part.functionCall && part.functionCall.name) {
+            return true;
+          }
+          
+          // Keep parts with valid function responses
+          if (part.functionResponse && part.functionResponse.name) {
+            return true;
+          }
+          
+          // If we reached here, this part doesn't have valid required fields
+          return false;
+        });
+        
+        // Only add content if it has at least one valid part
+        if (content.parts.length > 0) {
+          removeClientFunctionCallId(content);
+          contents.push(content);
+        }
+      }
     }
   }
   

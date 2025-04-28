@@ -44,7 +44,7 @@ const timeToolDefinition = {
 const timeTool = new FunctionTool(timeToolDefinition);
 
 // Create model instance (using LlmRegistry)
-const model = LlmRegistry.newLlm('gemini-1.5-flash'); // Or any other model you prefer
+const model = LlmRegistry.newLlm('gemini-2.0-flash'); // Or any other model you prefer
 
 // Create flow instance
 const flow = new AutoFlow();

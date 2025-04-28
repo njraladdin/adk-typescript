@@ -536,6 +536,7 @@ export class Gemini extends BaseLlm {
       'gemini-1\\.5-flash(-\\d+)?',
       'gemini-1\\.5-pro(-\\d+)?',
       'gemini-2\\.0-flash-exp',
+      'gemini-2\\.0-flash',
       'projects/.+/locations/.+/endpoints/.+', // finetuned vertex gemini endpoint
       'projects/.+/locations/.+/publishers/google/models/gemini.+', // vertex gemini long name
     ];
