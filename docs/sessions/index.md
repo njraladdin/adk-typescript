@@ -37,8 +37,17 @@ ADK provides services to manage these concepts:
 
     * Handles ingesting information (often from completed `Session`s) into the long-term store.  
     * Provides methods to search this stored knowledge based on queries.
+    * Offers key-value storage capabilities for app/user-specific data.
 
-**Implementations**: ADK offers different implementations for both `SessionService` and `MemoryService`, allowing you to choose the storage backend that best fits your application's needs. Notably, **in-memory implementations** are provided for both services; these are designed specifically for **local quick testing and development**. It's important to remember that **all data stored using these in-memory options (sessions, state, or long-term knowledge) is lost when your application restarts**. For persistence and scalability beyond local testing, ADK also offers database and cloud-based service options.
+**Implementations**: ADK offers different implementations for both `SessionService` and `MemoryService`, allowing you to choose the storage backend that best fits your application's needs:
+
+1. **In-memory implementations** (`InMemorySessionService` and `InMemoryMemoryService`) are provided for quick testing and development.
+   * **Important**: All data stored using these in-memory options is lost when your application restarts.
+
+2. **Persistent implementations**:
+   * `DatabaseSessionService`: Uses SQLite or other database engines for persistent session storage.
+   * `VertexAiSessionService`: Leverages Google Cloud for scalable, managed session storage.
+   * `VertexAiRagMemoryService`: Uses Google Cloud's RAG capabilities for semantic long-term memory.
 
 **In Summary:**
 
