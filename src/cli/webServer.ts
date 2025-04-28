@@ -150,6 +150,58 @@ export function createWebServer(params: {
   
   // REST API Endpoints for session management
   
+  // Endpoint to list available agents
+  app.get('/list-apps', (req: Request, res: Response) => {
+    try {
+      // When a specific agent directory is provided on the command line (e.g., examples/simple_agent),
+      // we should list only that agent or agents within that directory, not the entire project structure
+      
+      // If this is a specific agent directory (not the project root), prioritize it
+      const isSpecificAgentDir = !agentDir.endsWith('adk-typescript') && !agentDir.endsWith('src');
+      
+      // Respect the command-line agent directory if specified
+      const basePath = isSpecificAgentDir ? 
+        path.resolve(agentDir) : 
+        (req.query.relative_path ? path.resolve(process.cwd(), req.query.relative_path as string) : path.resolve(agentDir));
+      
+      console.log('List-apps request received');
+      console.log('Agent directory specified:', agentDir);
+      console.log('Resolved path for listing:', basePath);
+      
+      if (!fs.existsSync(basePath)) {
+        return res.status(404).json({ error: 'Path not found' });
+      }
+      
+      if (!fs.statSync(basePath).isDirectory()) {
+        return res.status(400).json({ error: 'Not a directory' });
+      }
+      
+      // If the requested path is a direct agent directory (has index.ts or agent.ts), return just that agent
+      if (isAgentDirectory(basePath)) {
+        const agentName = path.basename(basePath);
+        console.log(`Detected direct agent directory: ${agentName}`);
+        res.json([agentName]);
+        return;
+      }
+      
+      // Otherwise list directories that could be agents
+      const agentNames = fs.readdirSync(basePath)
+        .filter(x => {
+          const fullPath = path.join(basePath, x);
+          return fs.statSync(fullPath).isDirectory() &&
+                !x.startsWith('.') &&
+                x !== 'node_modules';
+        })
+        .sort();
+      
+      console.log('Sending response:', agentNames);
+      res.json(agentNames);
+    } catch (error) {
+      console.error('Error listing agents:', error);
+      res.status(500).json({ error: 'Failed to list agents' });
+    }
+  });
+  
   // Create a new session
   app.post('/apps/:appName/users/:userId/sessions', (req: Request, res: Response) => {
     try {
@@ -158,25 +210,45 @@ export function createWebServer(params: {
       
       console.log(`Creating new session for app: ${appName}, user: ${userId}`);
       
-      // Determine the agent path - use the appName as a subdirectory of agentDir
-      // or use agentDir directly if the appName matches the last part of agentDir
-      let agentPath = appName;
-      if (path.basename(agentDir) !== appName) {
-        agentPath = path.join(agentDir, appName);
-      } else {
-        agentPath = agentDir;
-      }
+      // Check if we're running with a specific agent directory (not the project root)
+      const isSpecificAgentDir = !agentDir.endsWith('adk-typescript') && !agentDir.endsWith('src');
       
-      console.log(`Using agent path: ${agentPath}`);
+      // If using a specific agent directory, use that directly rather than appending appName
+      // This handles the case where we run with "examples/simple_agent" and the UI shows "simple_agent"
+      let agentModulePath;
+      
+      if (isSpecificAgentDir && path.basename(agentDir) === appName) {
+        // If the agent directory name matches the app name, use it directly
+        agentModulePath = agentDir;
+        console.log(`Using agent directory directly: ${agentModulePath}`);
+      } else {
+        // Otherwise follow the standard pattern of appending app name to agent dir
+        agentModulePath = path.join(agentDir, appName);
+        console.log(`Looking for agent module at: ${agentModulePath}`);
+      }
       
       // Try to load the agent to verify it exists
       try {
-        const rootAgent = loadAgent(agentPath);
+        const rootAgent = loadAgent(agentModulePath);
         console.log(`Successfully loaded agent: ${rootAgent.name}`);
       } catch (agentError) {
         console.error('Error loading agent:', agentError);
-        res.status(404).json({ error: `Agent '${appName}' not found or invalid` });
-        return;
+        
+        // If not found in the specific path, try to load directly from agentDir
+        // This is more permissive than the Python version but allows for simpler use cases
+        try {
+          if (agentModulePath !== agentDir) {
+            console.log(`Trying to load agent directly from: ${agentDir}`);
+            const rootAgent = loadAgent(agentDir);
+            console.log(`Successfully loaded agent directly: ${rootAgent.name}`);
+          } else {
+            throw agentError;
+          }
+        } catch (directError: any) {
+          console.error('Error loading agent directly:', directError);
+          res.status(404).json({ error: `Agent '${appName}' not found or invalid` });
+          return;
+        }
       }
       
       // Create a new session using the shared session service
@@ -248,60 +320,144 @@ export function createWebServer(params: {
     }
   });
   
-  // Endpoint to list available agents
-  app.get('/list-apps', (req: Request, res: Response) => {
+  // Regular (non-streaming) agent run endpoint
+  app.post('/run', async (req: Request, res: Response) => {
     try {
-      // If a specific relative path is provided in the query, use that
-      // Otherwise use the agentDir that was passed to createWebServer
-      const relativePath = req.query.relative_path as string || agentDir;
-      const baseDir = path.resolve(process.cwd(), relativePath);
+      const runRequest = req.body as {
+        app_name: string;
+        user_id: string;
+        session_id: string;
+        new_message: Content;
+      };
       
-      console.log('List-apps request received');
-      console.log('Agent directory parameter:', agentDir);
-      console.log('Requested relative path:', relativePath);
-      console.log('Resolved base directory:', baseDir);
+      // Verify the session exists
+      const session = sessionService.getSession({
+        appName: runRequest.app_name,
+        userId: runRequest.user_id,
+        sessionId: runRequest.session_id
+      });
       
-      // Get all agent directories
-      let agentDirs: string[] = [];
-      
-      // First check if the specified directory itself is an agent directory
-      if (isAgentDirectory(baseDir)) {
-        console.log(`Base directory ${baseDir} is itself an agent directory`);
-        agentDirs = [path.basename(baseDir)];
-      } else {
-        // Otherwise look for agent directories inside it
-        console.log(`Looking for agent directories inside ${baseDir}`);
-        const potentialDirs = fs.readdirSync(baseDir);
-        console.log('Potential directories found:', potentialDirs);
-        
-        potentialDirs.forEach(dir => {
-          const fullPath = path.join(baseDir, dir);
-          if (isAgentDirectory(fullPath)) {
-            agentDirs.push(dir);
-          }
-        });
-        
-        console.log('Agent directories found:', agentDirs);
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
       }
       
-      // If no agents were found, add a fallback option - use the directory itself
-      if (agentDirs.length === 0) {
-        console.log('No agent directories found, using fallback');
-        const dirName = path.basename(baseDir);
-        agentDirs = [dirName];
+      // Try to load the agent - first from app_name subdirectory, then directly
+      let rootAgent: BaseAgent;
+      try {
+        const agentModulePath = path.join(agentDir, runRequest.app_name);
+        rootAgent = loadAgent(agentModulePath);
+      } catch (error) {
+        // Try loading directly from agentDir
+        try {
+          rootAgent = loadAgent(agentDir);
+        } catch (directError: any) {
+          res.status(404).json({ error: `Agent not found: ${directError.message}` });
+          return;
+        }
       }
       
-      // Format response
-      const agents = agentDirs.map(dir => ({
-        name: dir,
-        path: dir
-      }));
+      // Create a runner
+      const runner = new Runner({
+        appName: rootAgent.name,
+        agent: rootAgent,
+        sessionService,
+        artifactService
+      });
       
-      console.log('Sending response:', { agents });
-      res.json({ agents });
+      // Collect all events
+      const events = [];
+      for await (const event of runner.runAsync({
+        userId: runRequest.user_id,
+        sessionId: runRequest.session_id,
+        newMessage: runRequest.new_message
+      })) {
+        events.push(event);
+      }
+      
+      // Return all events
+      res.json(events);
     } catch (error) {
-      console.error('Error listing agents:', error);
-      res.status(500).json({ error: 'Failed to list agents' });
+      console.error('Error in run endpoint:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+  // SSE endpoint for streaming responses
+  app.post('/run_sse', async (req: Request, res: Response) => {
+    try {
+      const runRequest = req.body as {
+        app_name: string;
+        user_id: string;
+        session_id: string;
+        new_message: Content;
+        streaming: boolean;
+      };
+      
+      // Verify the session exists
+      const session = sessionService.getSession({
+        appName: runRequest.app_name,
+        userId: runRequest.user_id,
+        sessionId: runRequest.session_id
+      });
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      // Set up SSE headers
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for Nginx
+      
+      // Helper to send SSE data
+      const sendEvent = (data: any) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+      };
+      
+      // Try to load the agent - first from app_name subdirectory, then directly
+      let rootAgent: BaseAgent;
+      try {
+        const agentModulePath = path.join(agentDir, runRequest.app_name);
+        rootAgent = loadAgent(agentModulePath);
+      } catch (error) {
+        // Try loading directly from agentDir
+        try {
+          rootAgent = loadAgent(agentDir);
+        } catch (directError: any) {
+          res.status(404).json({ error: `Agent not found: ${directError.message}` });
+          return;
+        }
+      }
+      
+      // Create a runner
+      const runner = new Runner({
+        appName: rootAgent.name,
+        agent: rootAgent,
+        sessionService,
+        artifactService
+      });
+      
+      // Run and stream events
+      try {
+        for await (const event of runner.runAsync({
+          userId: runRequest.user_id,
+          sessionId: runRequest.session_id,
+          newMessage: runRequest.new_message
+        })) {
+          sendEvent(event);
+        }
+        
+        // End the response
+        res.end();
+      } catch (runError) {
+        console.error('Error in SSE streaming:', runError);
+        sendEvent({ error: String(runError) });
+        res.end();
+      }
+    } catch (error) {
+      console.error('Error in run_sse endpoint:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
   
@@ -381,48 +537,45 @@ export function createWebServer(params: {
     // Handle agent initialization
     socket.on('initialize_agent', async (data: { agentPath: string, sessionId?: string, userId?: string }) => {
       try {
-        const agentPath = data.agentPath || agentDir;
-        console.log(`Initializing agent at path: ${agentPath}`);
+        const agentPath = data.agentPath || path.basename(agentDir);
+        console.log(`Initializing agent with path: ${agentPath}`);
         
-        // Define the effective agent path - using similar logic to runCli function
-        let effectiveAgentPath = agentPath;
-        
-        // Check for possible agent locations in order of priority
-        const possiblePaths = [
-          // Direct path (if absolute)
-          path.isAbsolute(agentPath) ? agentPath : null,
-          
-          // Direct path as subdirectory of current directory
-          path.resolve(process.cwd(), agentPath),
-          
-          // As subdirectory of agentDir
+        // Create paths to try in order of priority
+        const pathsToTry = [
+          // 1. As subdirectory of agentDir (the standard case)
           path.join(agentDir, agentPath),
           
-          // In examples/ subdirectory
-          path.resolve(process.cwd(), 'examples', agentPath)
-        ].filter(p => p !== null);
-        
-        // Find the first path that exists and contains an index.ts file
-        let foundValidPath = false;
-        for (const potentialPath of possiblePaths) {
-          const indexPath = path.join(potentialPath!, 'index.ts');
-          console.log(`Checking for agent at: ${potentialPath}, index: ${indexPath}`);
+          // 2. Direct path if it's absolute
+          path.isAbsolute(agentPath) ? agentPath : null,
           
-          if (fs.existsSync(indexPath)) {
-            effectiveAgentPath = potentialPath!;
-            foundValidPath = true;
-            console.log(`Found valid agent path: ${effectiveAgentPath}`);
+          // 3. Direct path as subdirectory of current directory
+          path.resolve(process.cwd(), agentPath),
+          
+          // 4. The agentDir itself (if it is the agent)
+          agentDir
+        ].filter((p): p is string => p !== null); // Type assertion to make typescript happy
+        
+        console.log('Attempting to load agent from these paths:', pathsToTry);
+        
+        // Try each path in order
+        let rootAgent: BaseAgent | null = null;
+        let effectiveAgentPath: string | null = null;
+        
+        for (const tryPath of pathsToTry) {
+          try {
+            console.log(`Trying to load agent from: ${tryPath}`);
+            rootAgent = loadAgent(tryPath);
+            effectiveAgentPath = tryPath;
+            console.log(`Successfully loaded agent from: ${tryPath}`);
             break;
+          } catch (err: any) { // Type as any to allow message access
+            console.log(`Failed to load agent from ${tryPath}: ${err.message || String(err)}`);
           }
         }
         
-        if (!foundValidPath) {
-          throw new Error(`Could not find agent at any of the potential paths: ${possiblePaths.join(', ')}`);
+        if (!rootAgent || !effectiveAgentPath) {
+          throw new Error(`Could not find agent at any of the paths: ${pathsToTry.join(', ')}`);
         }
-        
-        console.log(`Using effective agent path: ${effectiveAgentPath}`);
-        
-        const rootAgent = loadAgent(effectiveAgentPath);
         
         // Get session ID and user ID from the data or create defaults
         let sessionId = data.sessionId;
@@ -476,6 +629,105 @@ export function createWebServer(params: {
       } catch (error) {
         console.error('Error initializing agent:', error);
         socket.emit('error', { message: 'Failed to initialize agent: ' + (error instanceof Error ? error.message : String(error)) });
+      }
+    });
+    
+    // Handle run_live WebSocket events (similar to Python's /run_live endpoint)
+    socket.on('run_live', async (data: { 
+      app_name: string, 
+      user_id: string, 
+      session_id: string, 
+      modalities?: string[] 
+    }) => {
+      try {
+        const { app_name, user_id, session_id } = data;
+        
+        // Verify the session exists
+        const session = sessionService.getSession({
+          appName: app_name,
+          userId: user_id,
+          sessionId: session_id
+        });
+        
+        if (!session) {
+          socket.emit('error', { error: 'Session not found' });
+          return;
+        }
+        
+        // Try to load the agent
+        let rootAgent: BaseAgent;
+        try {
+          const agentModulePath = path.join(agentDir, app_name);
+          rootAgent = loadAgent(agentModulePath);
+        } catch (error) {
+          // Try loading directly from agentDir
+          try {
+            rootAgent = loadAgent(agentDir);
+          } catch (directError: any) {
+            socket.emit('error', { error: `Agent not found: ${directError.message}` });
+            return;
+          }
+        }
+        
+        // Create a runner
+        const runner = new Runner({
+          appName: rootAgent.name,
+          agent: rootAgent,
+          sessionService,
+          artifactService
+        });
+        
+        // Create a live request queue (simplified version as we don't have full LiveRequestQueue implementation)
+        const messageQueue: any[] = [];
+        let isProcessing = false;
+        
+        // Set up message handler
+        socket.on('message', (messageData: any) => {
+          messageQueue.push(messageData);
+          processNextMessage();
+        });
+        
+        async function processNextMessage() {
+          if (isProcessing || messageQueue.length === 0) return;
+          
+          isProcessing = true;
+          const messageData = messageQueue.shift();
+          
+          try {
+            // Process the message
+            const content: Content = {
+              role: 'user',
+              parts: [{ text: messageData.text || messageData.content || '' }]
+            };
+            
+            // Run the agent
+            for await (const event of runner.runAsync({
+              userId: user_id,
+              sessionId: session_id,
+              newMessage: content
+            })) {
+              // Send event to client
+              socket.emit('event', event);
+            }
+          } catch (error) {
+            console.error('Error processing message:', error);
+            socket.emit('error', { error: String(error) });
+          } finally {
+            isProcessing = false;
+            
+            // Process next message if any
+            if (messageQueue.length > 0) {
+              processNextMessage();
+            }
+          }
+        }
+        
+        // Inform client that live session is ready
+        socket.emit('live_ready');
+        
+      } catch (error) {
+        console.error('Error in run_live:', error);
+        socket.emit('error', { error: String(error) });
       }
     });
     
@@ -595,7 +847,7 @@ export function createWebServer(params: {
   });
   
   // Serve UI files
-  const uiDir = path.join(__dirname, 'browser');
+  const uiDir = path.join(__dirname, 'browser_original');
   
   if (fs.existsSync(uiDir)) {
     // Serve static files

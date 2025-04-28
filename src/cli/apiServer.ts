@@ -861,7 +861,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
   // If web UI is enabled, serve static files
   if (web) {
     const BASE_DIR = path.dirname(__filename);
-    const ANGULAR_DIST_PATH = path.join(BASE_DIR, 'browser');
+    const ANGULAR_DIST_PATH = path.join(BASE_DIR, 'browser_original');
 
     // Root redirect to dev-ui
     app.get('/', (req, res) => {
