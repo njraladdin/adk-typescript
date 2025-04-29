@@ -1,18 +1,18 @@
 # Deploy to GKE
 
-[GKE](https://cloud.google.com/gke) is Google Clouds managed Kubernetes service. It allows you to deploy and manage containerized applications using Kubernetes.
+[GKE](https://cloud.google.com/gke) is Google Cloud's managed Kubernetes service. It allows you to deploy and manage containerized applications using Kubernetes.
 
 To deploy your agent you will need to have a Kubernetes cluster running on GKE. You can create a cluster using the Google Cloud Console or the `gcloud` command line tool.
 
 ## Agent sample
 
-For each of the commands, we will reference a `capital_agent` sample defined in on the [LLM agent](../agents/llm-agents.md) page. We will assume it's in a `capital_agent` directory.
+For each of the commands, we will reference a `capital_agent` sample defined in the [Agent](../agents/index.md) documentation page. We will assume it's in a `capital_agent` directory.
 
 To proceed, confirm that your agent code is configured as follows:
 
-1. Agent code is in a file called `agent.py` within your agent directory.
-2. Your agent variable is named `root_agent`.
-3. `__init__.py` is within your agent directory and contains `from . import agent`.
+1. Agent code is in a file called `index.ts` within your agent directory.
+2. Your agent variable is named `rootAgent`.
+3. The agent is properly exported from the module.
 
 ## Environment variables
 
@@ -21,7 +21,6 @@ Set your environment variables as described in the [Setup and Installation](../g
 ```bash
 export GOOGLE_CLOUD_PROJECT=your-project-id # Your GCP project ID
 export GOOGLE_CLOUD_LOCATION=us-central1 # Or your preferred location
-export GOOGLE_GENAI_USE_VERTEXAI=true # Set to true if using Vertex AI
 export GOOGLE_CLOUD_PROJECT_NUMBER=$(gcloud projects describe --format json $GOOGLE_CLOUD_PROJECT | jq -r ".projectNumber")
 ```
 
@@ -83,84 +82,150 @@ Organize your project files as follows:
 ```txt
 your-project-directory/
 ├── capital_agent/
-│   ├── __init__.py
-│   └── agent.py       # Your agent code (see "Agent sample" tab)
-├── main.py            # FastAPI application entry point
-├── requirements.txt   # Python dependencies
+│   └── index.ts       # Your agent code (TypeScript implementation)
+├── src/
+│   └── server.ts      # Express server entry point
+├── package.json       # Node.js dependencies
+├── tsconfig.json      # TypeScript configuration
 └── Dockerfile         # Container build instructions
 ```
 
-Create the following files (`main.py`, `requirements.txt`, `Dockerfile`) in the root of `your-project-directory/`.
+Create the following files (`src/server.ts`, `package.json`, `tsconfig.json`, `Dockerfile`) in the root of `your-project-directory/`.
 
 ### Code files
 
-1. This file sets up the FastAPI application using `get_fast_api_app()` from ADK:
+1. This file sets up the Express server to serve your ADK agent API:
 
-    ```python title="main.py"
-    import os
+    ```typescript title="src/server.ts"
+    import express from 'express';
+    import path from 'path';
+    import { createApiServer } from 'adk-typescript/dist/cli/apiServer';
 
-    import uvicorn
-    from fastapi import FastAPI
-    from google.adk.cli.fast_api import get_fast_api_app
+    // Get the directory where server.ts is located
+    const AGENT_DIR = path.resolve(__dirname, '..');
+    
+    // Example allowed origins for CORS
+    const ALLOWED_ORIGINS = ['http://localhost', 'http://localhost:8080', '*'];
+    
+    // Set to true if you intend to serve a web interface, false otherwise
+    const SERVE_WEB_INTERFACE = true;
 
-    # Get the directory where main.py is located
-    AGENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    # Example session DB URL (e.g., SQLite)
-    SESSION_DB_URL = "sqlite:///./sessions.db"
-    # Example allowed origins for CORS
-    ALLOWED_ORIGINS = ["http://localhost", "http://localhost:8080", "*"]
-    # Set web=True if you intend to serve a web interface, False otherwise
-    SERVE_WEB_INTERFACE = True
+    // Create the API server 
+    const { app, server } = createApiServer({
+      agentDir: AGENT_DIR,
+      sessionDbUrl: '', // Let it use default in-memory session store
+      allowOrigins: ALLOWED_ORIGINS,
+      web: SERVE_WEB_INTERFACE,
+      port: parseInt(process.env.PORT || '8080', 10)
+    });
 
-    # Call the function to get the FastAPI app instance
-    # Ensure the agent directory name ('capital_agent') matches your agent folder
-    app: FastAPI = get_fast_api_app(
-        agent_dir=AGENT_DIR,
-        session_db_url=SESSION_DB_URL,
-        allow_origins=ALLOWED_ORIGINS,
-        web=SERVE_WEB_INTERFACE,
-    )
+    // You can add more Express routes or configurations below if needed
+    // Example:
+    // app.get('/hello', (req, res) => {
+    //   res.json({ message: 'Hello World' });
+    // });
 
-    # You can add more FastAPI routes or configurations below if needed
-    # Example:
-    # @app.get("/hello")
-    # async def read_root():
-    #     return {"Hello": "World"}
+    // Graceful shutdown handling
+    process.on('SIGINT', () => {
+      console.log('Shutting down API server...');
+      server.close(() => {
+        console.log('API server stopped.');
+        process.exit(0);
+      });
+    });
 
-    if __name__ == "__main__":
-        # Use the PORT environment variable provided by Cloud Run, defaulting to 8080
-        uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    console.log(`Server running on port ${process.env.PORT || 8080}`);
     ```
 
-    *Note: We specify `agent_dir` to the directory `main.py` is in and use `os.environ.get("PORT", 8080)` for Cloud Run compatibility.*
+2. Configure Node.js dependencies:
 
-2. List the necessary Python packages:
-
-    ```txt title="requirements.txt"
-    google_adk
-    # Add any other dependencies your agent needs
+    ```json title="package.json"
+    {
+      "name": "adk-typescript-agent",
+      "version": "1.0.0",
+      "description": "ADK TypeScript Agent for GKE deployment",
+      "main": "dist/server.js",
+      "scripts": {
+        "build": "tsc",
+        "start": "node dist/server.js",
+        "dev": "ts-node src/server.ts"
+      },
+      "dependencies": {
+        "adk-typescript": "^0.1.0",
+        "express": "^4.18.2",
+        "@google-cloud/vertexai": "^0.2.1"
+      },
+      "devDependencies": {
+        "@types/express": "^4.17.17",
+        "@types/node": "^20.4.2",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.1.6"
+      },
+      "engines": {
+        "node": ">=18.0.0"
+      }
+    }
     ```
 
-3. Define the container image:
+3. Configure TypeScript:
+
+    ```json title="tsconfig.json"
+    {
+      "compilerOptions": {
+        "target": "ES2020",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "esModuleInterop": true,
+        "strict": true,
+        "outDir": "dist",
+        "rootDir": ".",
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true
+      },
+      "include": ["src/**/*", "capital_agent/**/*"],
+      "exclude": ["node_modules", "dist"]
+    }
+    ```
+
+4. Define the container image:
 
     ```dockerfile title="Dockerfile"
-    FROM python:3.13-slim
+    FROM node:18-slim
     WORKDIR /app
 
-    COPY requirements.txt .
-    RUN pip install --no-cache-dir -r requirements.txt
+    # Copy package.json and package-lock.json
+    COPY package*.json ./
 
-    RUN adduser --disabled-password --gecos "" myuser && \
-        chown -R myuser:myuser /app
+    # Install dependencies
+    RUN npm ci --only=production
 
-    COPY . .
+    # Copy compiled TypeScript
+    COPY dist/ ./dist/
+    COPY capital_agent/ ./capital_agent/
 
-    USER myuser
+    # Create a non-root user and use it
+    RUN mkdir -p /home/nodeuser/.npm && \
+        chown -R node:node /home/nodeuser/.npm && \
+        chown -R node:node /app
 
-    ENV PATH="/home/myuser/.local/bin:$PATH"
+    USER node
 
-    CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port $PORT"]
+    # Set the PORT environment variable for Cloud Run compatibility
+    ENV PORT=8080
+
+    # Start the application
+    CMD [ "node", "dist/server.js" ]
     ```
+
+### Build steps
+
+Before building the container image, compile your TypeScript code:
+
+```bash
+npm install
+npm run build
+```
 
 ### Build the container image
 
@@ -211,15 +276,15 @@ spec:
       serviceAccount: adk-agent-sa
       containers:
       - name: adk-agent
-        image: $GOOGLE_CLOUD_LOCATION-docker.pkg.dev/$GOOGLE_CLOUD_PROJECT/adk-repo/adk-agent:v0.0.4
+        image: $GOOGLE_CLOUD_LOCATION-docker.pkg.dev/$GOOGLE_CLOUD_PROJECT/adk-repo/adk-agent:latest
         resources:
           limits:
-            memory: "128Mi"
+            memory: "512Mi"
             cpu: "500m"
             ephemeral-storage: "128Mi"
           requests:
-            memory: "128Mi"
-            cpu: "500m"
+            memory: "256Mi"
+            cpu: "250m"
             ephemeral-storage: "128Mi"
         ports:
         - containerPort: 8080
@@ -227,11 +292,11 @@ spec:
           - name: PORT
             value: "8080"
           - name: GOOGLE_CLOUD_PROJECT
-            value: GOOGLE_CLOUD_PROJECT
+            value: "$GOOGLE_CLOUD_PROJECT"
           - name: GOOGLE_CLOUD_LOCATION
-            value: GOOGLE_CLOUD_LOCATION
-          - name: GOOGLE_GENAI_USE_VERTEXAI
-            value: GOOGLE_GENAI_USE_VERTEXAI
+            value: "$GOOGLE_CLOUD_LOCATION"
+          - name: NODE_ENV
+            value: "production"
           # Add any other necessary environment variables your agent might need
 ---
 apiVersion: v1
@@ -311,7 +376,7 @@ Once your agent is deployed to GKE, you can interact with it via the deployed UI
 
     #### Set the application URL
 
-    Replace the example URL with the actual URL of your deployed Cloud Run service.
+    Replace the example URL with the actual URL of your deployed Kubernetes service.
 
     ```bash
     export APP_URL="KUBERNETES_SERVICE_URL"
@@ -335,7 +400,7 @@ Once your agent is deployed to GKE, you can interact with it via the deployed UI
     curl -X POST \
         $APP_URL/apps/capital_agent/users/user_123/sessions/session_abc \
         -H "Content-Type: application/json" \
-        -d '{"state": {"preferred_language": "English", "visit_count": 5}}'
+        -d '{"state": {"preferredLanguage": "English", "visitCount": 5}}'
     ```
 
     #### Run the Agent
