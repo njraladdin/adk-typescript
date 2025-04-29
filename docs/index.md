@@ -1,42 +1,39 @@
----
-hide:
-  - toc
----
+
 
 <div style="text-align: center;">
   <div class="centered-logo-text-group">
     <img src="assets/agent-development-kit.png" alt="Agent Development Kit Logo" width="100">
-    <h1>Agent Development Kit</h1>
+    <h1>Agent Development Kit (ADK) for TypeScript</h1>
   </div>
 </div>
 
 <p style="text-align:center; font-size: 1.2em;">
-  <b>An open-source AI agent framework integrated with Gemini and Google</b><br/>
+  <b>An open-source AI agent framework integrated with Gemini and Google, built for TypeScript/Node.js</b><br/>
 </p>
 
-## What is Agent Development Kit?
+<p style="text-align:center; color: orange; font-weight: bold;">
+  ⚠️ This is a Work-in-Progress TypeScript port of the original Python ADK. Features and stability may vary.
+</p>
 
-Agent Development Kit (ADK) is a flexible and modular framework for **developing
-and deploying AI agents**. ADK can be used with popular LLMs and open-source
-generative AI tools and is designed with a focus on **tight integration with the
-Google ecosystem and Gemini models**. ADK makes it **easy to get started with
-simple agents** powered by Gemini models and Google AI tools while providing the
-control and structure needed for **more complex agent architectures and
-orchestration**.
+## What is ADK TypeScript?
+
+Agent Development Kit (ADK) for TypeScript is a flexible and modular framework for **developing and deploying AI agents using TypeScript**. ADK can be used with popular LLMs like Google's Gemini and is designed with a focus on **tight integration with the Google ecosystem**. ADK TypeScript makes it **easy to get started with simple agents** powered by Gemini models and Google tools, while providing the control and structure needed for **more complex agent architectures and orchestration** within the Node.js environment.
 
 <div class="install-command-container">
   <p style="text-align:center;">
     Get started:
     <br/>
-    <code>pip install google-adk</code>
+    <code>npm install adk-typescript</code>
+    <br/>
+    <span style="font-size: 0.8em;">(Or install globally: <code>npm install -g adk-typescript</code> for CLI)</span>
   </p>
 </div>
 
 <p style="text-align:center;">
   <a href="get-started/quickstart/" class="md-button">Quickstart</a>
   <a href="get-started/tutorial/" class="md-button">Tutorial</a>
-  <a href="http://github.com/google/adk-samples" class="md-button" target="_blank">Sample Agents</a>
-  <a href="api-reference/" class="md-button">API Reference</a>
+  <a href="http://github.com/google/adk-samples" class="md-button" target="_blank">Sample Agents (Python)</a>
+  <!-- <a href="api-reference/" class="md-button">API Reference</a> -->
   <a href="contributing-guide/" class="md-button">Contribute ❤️</a>
 </p>
 
@@ -50,65 +47,55 @@ orchestration**.
 
     ---
 
-    Define workflows using workflow agents (`Sequential`, `Parallel`, `Loop`)
-    for predictable pipelines, or leverage LLM-driven dynamic routing
-    (`LlmAgent` transfer) for adaptive behavior.
+    Define workflows using workflow agents (`SequentialAgent`, `ParallelAgent`, `LoopAgent`) for predictable pipelines, or leverage LLM-driven dynamic routing (`LlmAgent` with `AutoFlow`) for adaptive behavior.
 
-    [**Learn about agents**](agents/index.md)
+    [**Learn about agents**](agents/index.md) <!-- Adjust link if needed -->
 
 -   :material-graph: **Multi-Agent Architecture**
 
     ---
 
-    Build modular and scalable applications by composing multiple specialized
-    agents in a hierarchy. Enable complex coordination and delegation.
+    Build modular and scalable applications by composing multiple specialized agents (`LlmAgent`, `BaseAgent`) in a hierarchy using `subAgents`. Enable complex coordination and delegation.
 
-    [**Explore multi-agent systems**](agents/multi-agents.md)
+    [**Explore multi-agent systems**](agents/multi-agents.md) <!-- Adjust link if needed -->
 
 -   :material-toolbox-outline: **Rich Tool Ecosystem**
 
     ---
 
-    Equip agents with diverse capabilities: use pre-built tools (Search, Code
-    Exec), create custom functions, integrate 3rd-party libraries (LangChain,
-    CrewAI), or even use other agents as tools.
+    Equip agents with diverse capabilities: use pre-built tools (`googleSearch`, `codeExecutionTool`), create custom functions (`FunctionTool`), integrate 3rd-party libraries (LangChain via `LangchainTool`, CrewAI via `CrewaiTool`), or use other agents as tools (`AgentTool`).
 
-    [**Browse tools**](tools/index.md)
+    [**Browse tools**](tools/index.md) <!-- Adjust link if needed -->
 
 -   :material-rocket-launch-outline: **Deployment Ready**
 
     ---
 
-    Containerize and deploy your agents anywhere – run locally, scale with
-    Vertex AI Agent Engine, or integrate into custom infrastructure using Cloud
-    Run or Docker.
+    Containerize and deploy your TypeScript agents anywhere – run locally, scale with Vertex AI Agent Engine (check compatibility), or integrate into custom infrastructure using Cloud Run or Docker.
 
-    [**Deploy agents**](deploy/index.md)
+    [**Deploy agents**](deploy/index.md) <!-- Adjust link if needed -->
 
 -   :material-clipboard-check-outline: **Built-in Evaluation**
 
     ---
 
-    Systematically assess agent performance by evaluating both the final
-    response quality and the step-by-step execution trajectory against
-    predefined test cases.
+    Systematically assess agent performance using the `evaluation` module (`AgentEvaluator`) by evaluating both final responses and execution trajectories against test datasets (`.test.json`).
 
-    [**Evaluate agents**](evaluate/index.md)
+    [**Evaluate agents**](evaluate/index.md) <!-- Adjust link if needed -->
 
 -   :material-console-line: **Building Responsible Agents**
 
     ---
 
-    Learn how to building powerful and trustworthy agents by implementing
-    responsible AI patterns and best practices into your agent's design.
+    Learn how to build powerful and trustworthy agents by implementing responsible AI patterns using features like Callbacks (`beforeModelCallback`, `beforeToolCallback`).
 
-    [**Responsible agents**](guides/responsible-agents.md)
+    [**Responsible agents**](guides/responsible-agents.md) <!-- Adjust link if needed -->
 
 </div>
 
 !!! Preview
 
-    This feature is subject to the "Pre-GA Offerings Terms" in the General
+    ADK (including this TypeScript port) is subject to the "Pre-GA Offerings Terms" in the General
     Service Terms section of the
     [Service Specific Terms](https://cloud.google.com/terms/service-terms#1).
     Pre-GA features are available "as is" and might have limited support. For

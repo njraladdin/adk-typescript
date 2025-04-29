@@ -1,0 +1,162 @@
+# Project information
+site_name: ADK TypeScript # UPDATED
+site_url: https://njraladdin.github.io/adk-typescript/ # UPDATED
+site_description: >- # UPDATED
+  Build powerful multi-agent systems with ADK for TypeScript.
+site_dir: site
+
+# Repository
+repo_name: njraladdin/adk-typescript # UPDATED
+repo_url: https://github.com/njraladdin/adk-typescript # UPDATED
+
+# Custom CSS (Ensure docs/stylesheets/custom.css exists or remove this line)
+extra_css:
+  - stylesheets/custom.css
+
+# Configuration
+theme:
+  name: material
+  font:
+    text: Google Sans
+    code: Roboto Mono
+  # Ensure docs/assets/agent-development-kit.png exists or update/remove these lines
+  logo: assets/agent-development-kit.png
+  favicon: assets/agent-development-kit.png
+  icon:
+    repo: fontawesome/brands/github
+  # custom_dir: overrides # Keep if you have an 'overrides' directory
+  palette:
+    - scheme: default
+      primary: white
+      accent: white
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: white
+      accent: white
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - content.code.select
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.path
+    - navigation.top
+    - navigation.tracking
+    - navigation.indexes
+    - toc.follow
+    - navigation.footer
+
+# Extensions (These Python extensions still work with MkDocs build process)
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      # Use 'typescript' or 'ts' in your code blocks for highlighting
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - toc:
+      permalink: true
+
+
+# Plugins (These Python plugins still work with MkDocs build process)
+plugins:
+  - search
+  - redirects: # Review if these redirects are still needed for your TS doc structure
+      redirect_maps:
+        'get-started/local-testing.md': 'get-started/testing.md'
+        'get-started/tutorial.md': 'tutorials/index.md' # Example: Update if tutorial path changed
+        'guides/responsible-agents.md': 'safety/index.md' # Example: Update if safety path changed
+
+# Navigation (Using the structure from the original Python project)
+# WARNING: This structure MUST exactly match the files and folders within your 'docs/' directory,
+# otherwise the 'mkdocs build' command will fail. Create placeholder files if needed.
+nav:
+  - Home: index.md
+  - Get Started:
+    - get-started/index.md
+    - Installation: get-started/installation.md
+    - Quickstart: get-started/quickstart.md
+    - Quickstart (streaming): get-started/quickstart-streaming.md
+    - Testing: get-started/testing.md
+    - Sample agents: https://github.com/google/adk-samples # External link
+    - About ADK TypeScript: get-started/about.md # Renamed title
+  - Tutorials:
+    - tutorials/index.md
+    - Agent Team: tutorials/agent-team.md # Update content for TS
+  - Agents:
+    - agents/index.md
+    - LLM agents: agents/llm-agents.md
+    - Workflow agents:
+      - agents/workflow-agents/index.md
+      - Sequential agents: agents/workflow-agents/sequential-agents.md
+      - Loop agents: agents/workflow-agents/loop-agents.md
+      - Parallel agents: agents/workflow-agents/parallel-agents.md
+    - Custom agents: agents/custom-agents.md # Needs TS content
+    - Multi-agent systems: agents/multi-agents.md
+    - Models: agents/models.md
+  - Tools:
+    - tools/index.md
+    - Function tools: tools/function-tools.md
+    - Built-in tools: tools/built-in-tools.md
+    - Third party tools: tools/third-party-tools.md
+    - Google Cloud tools: tools/google-cloud-tools.md
+    - MCP tools: tools/mcp-tools.md
+    - OpenAPI tools: tools/openapi-tools.md
+    - Authentication: tools/authentication.md
+  - Deploy:
+    - deploy/index.md
+    - Agent Engine: deploy/agent-engine.md
+    - Cloud Run: deploy/cloud-run.md
+    - GKE: deploy/gke.md
+  - Sessions & Memory:
+    - sessions/index.md
+    - Session: sessions/session.md
+    - State: sessions/state.md
+    - Memory: sessions/memory.md
+  - Artifacts:
+    - artifacts/index.md
+  - Callbacks:
+    - callbacks/index.md
+    - Types of callbacks: callbacks/types-of-callbacks.md
+    - Callback patterns: callbacks/design-patterns-and-best-practices.md
+  - Runtime:
+    - runtime/index.md
+  - Events:
+    - events/index.md
+  - Context:
+    - context/index.md
+  - Evaluate:
+    - evaluate/index.md
+
+  - Safety and Security: safety/index.md
+  - Agent2Agent (A2A) Protocol: https://github.com/google/A2A/ # External link
+  - Community Resources: community.md
+  - Contributing Guide: contributing-guide.md
+  - API Reference: api-reference/index.html # Remove or replace with TypeDoc link later
+
+# Specify the source directory for MkDocs
+docs_dir: docs
