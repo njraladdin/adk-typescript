@@ -1,6 +1,8 @@
-# Agent Development Kit (ADK) - TypeScript Port
+
+# Agent Development Kit (ADK) for TypeScript
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+<!-- Placeholder for TS test badge: [![TypeScript Unit Tests](<URL_TO_YOUR_CI_BADGE>)](<URL_TO_YOUR_CI_WORKFLOW>) -->
 [![r/agentdevelopmentkit](https://img.shields.io/badge/Reddit-r%2Fagentdevelopmentkit-FF4500?style=flat&logo=reddit&logoColor=white)](https://www.reddit.com/r/agentdevelopmentkit/)
 
 <html>
@@ -8,181 +10,172 @@
       <img src="https://raw.githubusercontent.com/google/adk-python/main/assets/agent-development-kit.png" width="256"/>
     </h2>
     <h3 align="center">
-      A TypeScript port of Google's ADK - an open-source, code-first toolkit for building, evaluating, and deploying sophisticated AI agents with flexibility and control.
+      An open-source, code-first TypeScript toolkit for building, evaluating, and deploying sophisticated AI agents with flexibility and control.
     </h3>
     <h3 align="center">
-      Original Python Project:
-      <a href="https://github.com/google/adk-python">ADK-Python</a> &
-      <a href="https://google.github.io/adk-docs/">Docs</a> &
-      <a href="https://github.com/google/adk-samples">Samples</a>.
+      Important Links:
+      <a href="https://google.github.io/adk-docs/">Docs</a> (Note: Primarily Python-focused currently) &
+      <a href="https://github.com/google/adk-samples">Samples</a> (Note: Primarily Python).
     </h3>
 </html>
 
-Agent Development Kit (ADK) is designed for developers seeking fine-grained
-control and flexibility when building advanced AI agents that are tightly
-integrated with services in Google Cloud. It allows you to define agent
-behavior, orchestration, and tool use directly in code, enabling robust
-debugging, versioning, and deployment anywhere – from your laptop to the cloud.
+**⚠️ Work in Progress Notice:** This project is a **TypeScript port** of the original [Google ADK Python library](https://github.com/google/adk-python). It aims to provide similar functionality within the Node.js/TypeScript ecosystem but is currently under active development and should be considered **experimental (alpha)**. Features, APIs, and stability may differ from the Python version, and some components might be incomplete or subject to change.
 
-This repository is a TypeScript port of the original Python ADK project, bringing its powerful
-capabilities to the TypeScript/JavaScript ecosystem.
+Agent Development Kit (ADK) for TypeScript is designed for developers seeking fine-grained control and flexibility when building advanced AI agents using TypeScript. It allows you to define agent behavior, orchestration, and tool use directly in code, enabling robust debugging, versioning, and deployment anywhere – from your laptop to the cloud.
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features (TypeScript Port)
 
-- **Rich Tool Ecosystem**: Utilize pre-built tools, custom functions,
-  OpenAPI specs, or integrate existing tools to give agents diverse
-  capabilities, all for tight integration with the Google ecosystem.
+*(Based on the current codebase)*
 
-- **Code-First Development**: Define agent logic, tools, and orchestration
-  directly in TypeScript for ultimate flexibility, testability, and versioning.
-
-- **Modular Multi-Agent Systems**: Design scalable applications by composing
-  multiple specialized agents into flexible hierarchies.
-
-- **Deploy Anywhere**: Easily containerize and deploy agents on Cloud Run or
-  scale seamlessly with Vertex AI Agent Engine.
-
+-   **Rich Tool Ecosystem**: Utilize pre-built tools (`googleSearch`, `codeExecutionTool`), wrap custom functions easily (`FunctionTool`), integrate external APIs (`RestApiTool`, `APIHubToolset`, `MCPToolset`), or even use other agents as tools (`AgentTool`). Supports long-running operations (`LongRunningFunctionTool`).
+-   **Code-First Development**: Define agent logic (`LlmAgent`), tools (`BaseTool`), flows (`AutoFlow`), and orchestration directly in TypeScript for flexibility, testability, and versioning within the Node.js ecosystem.
+-   **Modular Multi-Agent Systems**: Design scalable applications by composing multiple specialized agents into flexible hierarchies using the `subAgents` property. `AutoFlow` enables automatic delegation.
+-   **Integrated Developer Tooling**: Develop and iterate locally with ease using the included CLI (`adk-ts`) and Developer UI (`adk-ts web`) for running agents, inspecting execution (`Event` stream), debugging, and visualizing agent graphs (`adk-ts graph`).
+-   **Native Streaming Support**: Build real-time, interactive experiences with native support for bidirectional streaming (text, potentially audio/video) using `Runner.runLive` and `LiveRequestQueue`.
+-   **Built-in Agent Evaluation**: Assess agent performance systematically with the `evaluation` module (`AgentEvaluator`). Create multi-turn evaluation datasets (`.test.json` files) and run evaluations locally via the CLI (`adk-ts eval`).
+-   **Broad LLM Support**: Optimized for Google's Gemini models (via `LlmRegistry` and `Gemini`), with flexibility to integrate various LLMs through the `LiteLlm` wrapper or by implementing the `BaseLlm` interface.
+-   **Artifact Management**: Enable agents to handle files and binary data using `BaseArtifactService` implementations (`InMemoryArtifactService`, `GcsArtifactService`) and `ToolContext` methods.
+-   **Extensibility and Interoperability**: ADK TypeScript promotes an open ecosystem, allowing easy integration with tools from frameworks like LangChain (`LangchainTool`) and CrewAI (`CrewaiTool`).
+-   **State and Memory Management**: Handles short-term conversational memory (`State` within a `Session`) managed by `SessionService` (`InMemorySessionService`, `DatabaseSessionService`). Provides integration points for longer-term `Memory` (`BaseMemoryService`).
 
 ## 🚀 Installation
 
-You can install the ADK TypeScript package using `npm`:
+### Using the CLI Globally (Recommended for CLI Usage)
+
+To use the `adk-ts` command directly from your terminal anywhere, install it globally:
 
 ```bash
-npm install adk-typescript
-```
-
-Or using `yarn`:
-
-```bash
-yarn add adk-typescript
-```
-# Global installation
 npm install -g adk-typescript
-adk-ts run examples/simple_agent
-adk-ts web examples/simple_agent
+# or
+# yarn global add adk-typescript
+```
+After global installation, you should be able to run commands like `adk-ts create my-new-agent`.
 
-# Local installation
-npm install adk-typescript
-npx adk-ts run examples/simple_agent
-npx adk-ts web examples/simple_agent
+### Installing Locally in a Project
+
+To use ADK TypeScript as a library within your Node.js project:
+
+1.  **Navigate to your project directory.**
+2.  **Initialize npm (if not already done):** `npm init -y`
+3.  **Install locally:**
+    ```bash
+    npm install adk-typescript
+    # or
+    # yarn add adk-typescript
+    ```
+4.  **Install supporting packages:**
+    ```bash
+    npm install dotenv @types/dotenv typescript @types/node --save-dev
+    # or
+    # yarn add dotenv @types/dotenv typescript @types/node --dev
+    ```
+
+See the [Installation Guide](./installation.md) for more details on setting up your environment.
+
 ## 📚 Documentation
 
-Explore the original Python ADK documentation for general concepts and architecture:
+Explore the full documentation for detailed guides. *Please note that the official documentation currently focuses on the Python version, but many core concepts are similar.*
 
-* **[ADK Python Documentation](https://google.github.io/adk-docs)**
+*   **[Official ADK Documentation](https://google.github.io/adk-docs)** (Primarily Python)
+*   Refer to the `*.md` files within *this* repository (like `quickstart.md`, `tutorial.md`) for TypeScript-specific guidance based on this port.
 
-## 🏁 Feature Highlight
+## ⚙️ Using the CLI (`adk-ts`)
 
-### Define a single agent:
+The ADK TypeScript CLI provides commands to manage and run your agents. *(Ensure you have built the project (`npm run build`) or installed it globally)*.
 
-```typescript
-import { LlmAgent } from 'adk-typescript';
-import { GoogleSearchTool } from 'adk-typescript/tools';
+*(**Note:** Replace `adk-ts` with the actual command if needed, e.g., `node dist/cli/index.js` or similar if running from source/build output)*
 
-const rootAgent = new LlmAgent('search_assistant', {
-  model: 'gemini-2.0-flash', // Or your preferred Gemini model
-  instruction: "You are a helpful assistant. Answer user questions using Google Search when needed.",
-  description: "An assistant that can search the web.",
-  tools: [new GoogleSearchTool()]
-});
-```
+**1. Create a New Agent Project:**
 
-### Define a multi-agent system:
-
-Define a multi-agent system with coordinator agent, greeter agent, and task execution agent. Then ADK engine and the model will guide the agents works together to accomplish the task.
-
-```typescript
-import { LlmAgent } from 'adk-typescript';
-
-// Define individual agents
-const greeter = new LlmAgent('greeter', {
-  model: 'gemini-2.0-flash',
-  // other configurations
-});
-
-const taskExecutor = new LlmAgent('task_executor', {
-  model: 'gemini-2.0-flash',
-  // other configurations
-});
-
-// Create parent agent and assign children via sub_agents
-const coordinator = new LlmAgent('coordinator', {
-  model: 'gemini-2.0-flash',
-  description: "I coordinate greetings and tasks.",
-  subAgents: [ // Assign sub_agents here
-    greeter,
-    taskExecutor
-  ]
-});
-```
-
-### Development UI
-
-A built-in development UI to help you test, evaluate, debug, and showcase your agent(s).
-
-<img src="https://raw.githubusercontent.com/google/adk-python/main/assets/adk-web-dev-ui-function-call.png"/>
-
-###  Evaluate Agents
+Generates a starter agent template with necessary files (`agent.ts`, `package.json`, `tsconfig.json`, `.env`).
 
 ```bash
-npx adk-ts eval \
-    examples/simple_agent \
-    examples/simple_agent/simple_agent_eval_set_001.evalset.json
+adk-ts create <your-agent-name>
+# Example: adk-ts create my_weather_agent
 ```
+Follow the interactive prompts to configure the model and backend.
 
-## Command Line Interface
+**2. Run an Agent Interactively (Terminal):**
 
-ADK TypeScript provides a command-line interface similar to the original Python ADK, but uses `adk-ts` instead of `adk` to avoid conflicts with the Python version:
+Starts a command-line chat interface to interact with your agent.
 
 ```bash
-# Show available commands
-adk-ts --help
+# Navigate to the parent directory of your agent folder
+adk-ts run <your_agent_folder_name>
+# Example: adk-ts run my_weather_agent
 
-# Run an agent
-adk-ts run examples/simple_agent
-
-# Start the web UI for agent development
-adk-ts web examples/simple_agent
-
-# Create a new agent project
-adk-ts create my_new_agent
-
-# Evaluate an agent
-adk-ts eval examples/simple_agent examples/simple_agent/eval_set.json
+# Or navigate into the agent folder and run:
+cd my_weather_agent
+adk-ts run .
 ```
 
-When installing locally in a project, you can use npx:
+**3. Run the Development Web UI:**
+
+Starts a local web server with a chat UI for testing and inspecting agent behavior.
 
 ```bash
-npx adk-ts run examples/simple_agent
+# Navigate to the parent directory of your agent folder(s)
+adk-ts web <your_agent_folder_name>
+# Example: adk-ts web my_weather_agent
+
+# Or run from inside the agent folder:
+cd my_weather_agent
+adk-ts web .
+```
+Access the UI in your browser (usually `http://localhost:3000`).
+
+**4. Run the API Server:**
+
+Starts a local Express.js server exposing REST endpoints to interact with your agent(s) programmatically. Useful for integration testing.
+
+```bash
+# Navigate to the parent directory of your agent folder(s)
+adk-ts api_server --agent_dir <your_agent_folder_name_or_parent_dir>
+# Example (serving one agent): adk-ts api_server --agent_dir my_weather_agent
+# Example (serving all agents in current dir): adk-ts api_server --agent_dir .
 ```
 
-The CLI provides the same commands as the Python version but with the `adk-ts` prefix:
+**5. Evaluate an Agent:**
 
-- `adk-ts run` - Run an agent in interactive mode
-- `adk-ts web` - Start the web development interface
-- `adk-ts create` - Create a new agent project
-- `adk-ts eval` - Evaluate agent performance
-- `adk-ts deploy` - Deploy an agent to cloud services
+Runs evaluations based on predefined datasets (`.test.json` files).
+
+```bash
+adk-ts eval <path_to_agent_folder> <path_to_eval_set.test.json>
+# Example:
+# adk-ts eval ./my_weather_agent ./my_weather_agent/eval_data.test.json
+```
+
+**6. Generate Agent Graph:**
+
+Creates a visual representation of your agent and its tools/sub-agents (requires Graphviz installed).
+
+```bash
+adk-ts graph <path_to_agent_folder> --output graph.png
+# Example: adk-ts graph ./my_weather_agent --output weather_agent_graph.png
+```
+
+**7. Deploy to Cloud Run:**
+
+Packages and deploys your agent to Google Cloud Run. *(Note: This command might require adjustments specific to the TypeScript build/runtime)*.
+
+```bash
+adk-ts deploy cloud_run <path_to_agent_folder> --project <your-gcp-project> --region <gcp-region> --service_name <your-service-name>
+```
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! Whether it's bug reports, feature requests, documentation improvements, or code contributions, please see our [**Contributing Guidelines**](./CONTRIBUTING.md) to get started.
+We welcome contributions from the community! As this is a work-in-progress port, contributions are especially valuable. Whether it's bug reports, feature requests, documentation improvements, or code contributions, please see our [**Contributing Guidelines**](./CONTRIBUTING.md) (Link may need updating for TypeScript specifics) to get started.
 
 ## 📄 License
 
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgements
-
-This project is a TypeScript port of the [original Python ADK](https://github.com/google/adk-python) developed by Google. We are grateful to the original authors for creating such a powerful framework for agent development.
-
 ## Preview
 
-This feature is subject to the "Pre-GA Offerings Terms" in the General Service Terms section of the [Service Specific Terms](https://cloud.google.com/terms/service-terms#1). Pre-GA features are available "as is" and might have limited support. For more information, see the [launch stage descriptions](https://cloud.google.com/products?hl=en#product-launch-stages).
+This software (ADK TypeScript Port) is currently **experimental (alpha)** and not an officially supported Google product. It is subject to the "Pre-GA Offerings Terms" in the General Service Terms section of the [Service Specific Terms](https://cloud.google.com/terms/service-terms#1). Pre-GA features are available "as is" and might have limited support. For more information, see the [launch stage descriptions](https://cloud.google.com/products?hl=en#product-launch-stages).
 
 ---
 
-*Happy Agent Building!*
+*Happy Agent Building with TypeScript!*
