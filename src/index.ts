@@ -4,65 +4,71 @@
  */
 
 // Export agent-related modules
-export * from './agents';
+export { LlmAgent } from './agents/LlmAgent';
+export { BaseAgent } from './agents/BaseAgent';
+export { SequentialAgent } from './agents/SequentialAgent';
+export { ParallelAgent } from './agents/ParallelAgent';
+export { LoopAgent } from './agents/LoopAgent';
 
 // Memory exports
-import { MemoryResult } from './memory';
-export { MemoryResult };
-export * from './memory';
+export { MemoryResult } from './memory';
 
 // Sessions exports
-export * from './sessions';
+export { Session } from './sessions';
 
-// Tools exports - avoid name conflicts with other modules
-import * as toolsModule from './tools';
-export { 
-  toolsModule,
-  // Re-export specific tools that don't cause conflicts
-  // with other modules
-};
+// Tools exports - core tools that are commonly used
+export { BaseTool } from './tools/BaseTool';
+export { FunctionTool } from './tools/FunctionTool';
+export { GoogleSearchTool } from './tools/GoogleSearchTool';
+export { AgentTool } from './tools/AgentTool';
+export { CodeExecutionTool } from './tools/CodeExecutionTool';
+export { LoadWebPageTool } from './tools/LoadWebPageTool';
+export { LoadMemoryTool } from './tools/LoadMemoryTool';
+export { VertexAISearchTool } from './tools/VertexAISearchTool';
+export { ToolContext } from './tools/toolContext';
+
+// Runner exports
+export { Runner, InMemoryRunner } from './runners';
+
+// Models exports
+export { LlmRegistry } from './models';
+
+// Flows exports
+export { AutoFlow } from './flows/llm_flows';
 
 // Utility exports
 export * from './utils';
 
-// Telemetry exports
-export * from './telemetry';
-
-// Runner exports
-export * from './runners';
-
-// Explicitly export other modules to avoid name conflicts
-import * as modelsModule from './models';
-export { modelsModule };
-
-import * as eventsModule from './events';
-export { eventsModule };
-
-import * as flowsModule from './flows';
-export { flowsModule };
-
-import * as artifactsModule from './artifacts';
-export { artifactsModule };
-
-// Re-export the core components for easier access
-import { LlmAgent } from './agents/LlmAgent';
-import { Runner, InMemoryRunner } from './runners';
-
-// Export these as named exports for convenience
-export { LlmAgent, Runner, InMemoryRunner };
-
 // Version information
-export const VERSION = '0.1.0';
+export const VERSION = '0.0.1-alpha.1';
+
+// Import classes for the default export
+import { LlmAgent } from './agents/LlmAgent';
+import { BaseAgent } from './agents/BaseAgent';
+import { SequentialAgent } from './agents/SequentialAgent';
+import { ParallelAgent } from './agents/ParallelAgent';
+import { LoopAgent } from './agents/LoopAgent';
+import { Runner } from './runners';
+import { FunctionTool } from './tools/FunctionTool';
+import { GoogleSearchTool } from './tools/GoogleSearchTool';
+import { AutoFlow } from './flows/llm_flows';
 
 /**
  * The main entry point for the ADK library.
  * This makes it easier to import the most commonly used components.
+ * Following the pattern of the original Python ADK.
  */
 export default {
   // Core classes
   LlmAgent,
-  Runner,
-  InMemoryRunner,
+  BaseAgent,
+  SequentialAgent,
+  ParallelAgent,
+  LoopAgent,
+  Runner,  // Use Runner interface directly, not a specific implementation
+  FunctionTool,
+  GoogleSearchTool,
+  AutoFlow,  // Default flow
   
   // Version info
   VERSION

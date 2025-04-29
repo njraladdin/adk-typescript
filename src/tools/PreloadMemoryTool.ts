@@ -1,5 +1,3 @@
-
-
 import { BaseTool } from './BaseTool';
 import { ToolContext } from './toolContext';
 import { MemoryEvent, MemoryResult } from './LoadMemoryTool';
@@ -66,8 +64,11 @@ export class PreloadMemoryTool extends BaseTool {
       
       // Format timestamp
       const timestamp = memory.events[0].timestamp;
-      const date = new Date(timestamp * 1000); // Convert to milliseconds if timestamp is in seconds
-      const timeStr = date.toISOString();
+      let timeStr = 'Unknown time';
+      if (timestamp !== undefined) {
+        const date = new Date(timestamp * 1000); // Convert to milliseconds if timestamp is in seconds
+        timeStr = date.toISOString();
+      }
       memoryText += `Time: ${timeStr}\n`;
       
       // Add event content

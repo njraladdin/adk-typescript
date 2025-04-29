@@ -27,7 +27,7 @@ import { LlmRegistry } from '../models';
 import * as envs from './utils/envs';
 
 /**
- * Checks if a directory is a valid agent directory (contains index.ts)
+ * Checks if a directory is a valid agent directory (contains agent.ts)
  * 
  * @param dirPath Path to directory to check
  * @returns True if directory is a valid agent directory
@@ -51,28 +51,35 @@ function isAgentDirectory(dirPath: string): boolean {
     return false;
   }
   
-  // Check for index.ts file
-  const indexPath = path.join(absolutePath, 'index.ts');
-  console.log(`Checking for index.ts at ${indexPath}`);
-  const indexExists = fs.existsSync(indexPath);
-  
-  if (indexExists) {
-    console.log(`Found index.ts at ${indexPath}`);
-  } else {
-    console.log(`No index.ts found at ${indexPath}`);
-    
-    // Alternative: look for agent.ts as a fallback
-    const agentPath = path.join(absolutePath, 'agent.ts');
-    console.log(`Checking for agent.ts at ${agentPath}`);
-    const agentExists = fs.existsSync(agentPath);
-    
-    if (agentExists) {
-      console.log(`Found agent.ts at ${agentPath}`);
-      return true;
-    }
+  // First check: Is there a src/agent.ts file (preferred structure)
+  const srcAgentPath = path.join(absolutePath, 'src', 'agent.ts');
+  if (fs.existsSync(srcAgentPath)) {
+    console.log(`Found agent.ts at ${srcAgentPath}`);
+    return true;
   }
   
-  return indexExists;
+  // Second check: Is there a direct agent.ts file
+  const agentPath = path.join(absolutePath, 'agent.ts');
+  if (fs.existsSync(agentPath)) {
+    console.log(`Found agent.ts at ${agentPath}`);
+    return true;
+  }
+  
+  // Third check: Look for the legacy index.ts file
+  const srcIndexPath = path.join(absolutePath, 'src', 'index.ts');
+  if (fs.existsSync(srcIndexPath)) {
+    console.log(`Found index.ts at ${srcIndexPath}`);
+    return true;
+  }
+  
+  const indexPath = path.join(absolutePath, 'index.ts');
+  if (fs.existsSync(indexPath)) {
+    console.log(`Found index.ts at ${indexPath}`);
+    return true;
+  }
+  
+  console.log(`No agent files found in ${absolutePath}`);
+  return false;
 }
 
 /**
@@ -84,9 +91,36 @@ function isAgentDirectory(dirPath: string): boolean {
 function getAgentDirectories(parentDir: string): string[] {
   if (!fs.existsSync(parentDir)) return [];
   
+  // Directories to exclude (similar to Python's __pycache__)
+  const excludeDirs = [
+    'node_modules',
+    'dist',
+    '.git',
+    '.github',
+    '.vscode',
+    '.idea',
+  ];
+  
   return fs.readdirSync(parentDir)
     .filter(name => {
+      // Exclude dot directories (like .git)
+      if (name.startsWith('.')) {
+        return false;
+      }
+      
+      // Exclude specific directories
+      if (excludeDirs.includes(name)) {
+        return false;
+      }
+      
       const dirPath = path.join(parentDir, name);
+      
+      // Must be a directory
+      if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {
+        return false;
+      }
+      
+      // Must contain agent.ts or index.ts files
       return isAgentDirectory(dirPath);
     });
 }
@@ -148,6 +182,81 @@ export function createWebServer(params: {
   // Map of user IDs by socket ID
   const userIdsBySocketId = new Map<string, string>();
   
+  /**
+   * Helper function to find a session, trying multiple app names if needed
+   * 
+   * @param appName The app name to search for
+   * @param userId The user ID
+   * @param sessionId The session ID
+   * @returns The session if found, or null
+   */
+  async function findSession(appName: string, userId: string, sessionId: string): Promise<any | null> {
+    // First try with the provided app name
+    let session = sessionService.getSession({
+      appName,
+      userId,
+      sessionId
+    });
+    
+    // If session not found, try loading the agent to get its actual name
+    if (!session) {
+      try {
+        console.log(`Session not found with app name "${appName}", trying to load agent to get actual name`);
+        
+        // Try to load the agent from either the appName directory or directly
+        let agentModulePath;
+        const isSpecificAgentDir = !agentDir.endsWith('adk-typescript') && !agentDir.endsWith('src');
+        
+        if (isSpecificAgentDir && path.basename(agentDir) === appName) {
+          agentModulePath = agentDir;
+        } else {
+          agentModulePath = path.join(agentDir, appName);
+        }
+        
+        try {
+          const rootAgent = loadAgent(agentModulePath);
+          console.log(`Loaded agent with name: ${rootAgent.name}, trying this as app name`);
+          
+          // Try with the original app name from request instead of agent's name
+          session = sessionService.getSession({
+            appName,
+            userId,
+            sessionId
+          });
+          
+          if (session) {
+            console.log(`Found session using app name: ${appName}`);
+          }
+        } catch (agentError) {
+          // Try loading from agent directory directly as fallback
+          if (agentModulePath !== agentDir) {
+            try {
+              const rootAgent = loadAgent(agentDir);
+              console.log(`Loaded agent directly with name: ${rootAgent.name}, trying this as app name`);
+              
+              // Try with the original app name from request instead of agent's name
+              session = sessionService.getSession({
+                appName,
+                userId,
+                sessionId
+              });
+              
+              if (session) {
+                console.log(`Found session using app name: ${appName}`);
+              }
+            } catch (directError) {
+              console.error('Error loading agent directly:', directError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error while trying agent name fallbacks:', error);
+      }
+    }
+    
+    return session;
+  }
+  
   // REST API Endpoints for session management
   
   // Endpoint to list available agents
@@ -176,7 +285,7 @@ export function createWebServer(params: {
         return res.status(400).json({ error: 'Not a directory' });
       }
       
-      // If the requested path is a direct agent directory (has index.ts or agent.ts), return just that agent
+      // If the requested path is a direct agent directory (has agent.ts or index.ts), return just that agent
       if (isAgentDirectory(basePath)) {
         const agentName = path.basename(basePath);
         console.log(`Detected direct agent directory: ${agentName}`);
@@ -184,16 +293,10 @@ export function createWebServer(params: {
         return;
       }
       
-      // Otherwise list directories that could be agents
-      const agentNames = fs.readdirSync(basePath)
-        .filter(x => {
-          const fullPath = path.join(basePath, x);
-          return fs.statSync(fullPath).isDirectory() &&
-                !x.startsWith('.') &&
-                x !== 'node_modules';
-        })
-        .sort();
+      // Otherwise list directories that are valid agents
+      const agentNames = getAgentDirectories(basePath).sort();
       
+      console.log('Found agent directories:', agentNames);
       console.log('Sending response:', agentNames);
       res.json(agentNames);
     } catch (error) {
@@ -210,24 +313,19 @@ export function createWebServer(params: {
       
       console.log(`Creating new session for app: ${appName}, user: ${userId}`);
       
-      // Check if we're running with a specific agent directory (not the project root)
+      // Load the agent just to verify it exists (same as Python version)
+      let agentModulePath;
       const isSpecificAgentDir = !agentDir.endsWith('adk-typescript') && !agentDir.endsWith('src');
       
-      // If using a specific agent directory, use that directly rather than appending appName
-      // This handles the case where we run with "examples/simple_agent" and the UI shows "simple_agent"
-      let agentModulePath;
-      
       if (isSpecificAgentDir && path.basename(agentDir) === appName) {
-        // If the agent directory name matches the app name, use it directly
         agentModulePath = agentDir;
         console.log(`Using agent directory directly: ${agentModulePath}`);
       } else {
-        // Otherwise follow the standard pattern of appending app name to agent dir
         agentModulePath = path.join(agentDir, appName);
         console.log(`Looking for agent module at: ${agentModulePath}`);
       }
       
-      // Try to load the agent to verify it exists
+      // Try to load the agent to verify it exists (but we don't use its name for session)
       try {
         const rootAgent = loadAgent(agentModulePath);
         console.log(`Successfully loaded agent: ${rootAgent.name}`);
@@ -235,7 +333,6 @@ export function createWebServer(params: {
         console.error('Error loading agent:', agentError);
         
         // If not found in the specific path, try to load directly from agentDir
-        // This is more permissive than the Python version but allows for simpler use cases
         try {
           if (agentModulePath !== agentDir) {
             console.log(`Trying to load agent directly from: ${agentDir}`);
@@ -252,14 +349,16 @@ export function createWebServer(params: {
       }
       
       // Create a new session using the shared session service
+      // IMPORTANT: Use the app name from the request parameters (like Python implementation)
       const session = sessionService.createSession({
-        appName,
+        appName,  // Simply use appName as provided in the URL
         userId,
         state
       });
       
-      console.log(`Created session: ${session.id}`);
+      console.log(`Created session: ${session.id} with app name: ${appName}`);
       
+      // Return the session
       res.json(session);
     } catch (error) {
       console.error('Error creating session:', error);
@@ -272,7 +371,9 @@ export function createWebServer(params: {
     try {
       const { appName, userId, sessionId } = req.params;
       
-      // Fetch the session from the shared service
+      console.log(`Getting session: app=${appName}, user=${userId}, session=${sessionId}`);
+      
+      // Direct lookup without fallbacks (like Python version)
       const session = sessionService.getSession({
         appName,
         userId,
@@ -280,6 +381,7 @@ export function createWebServer(params: {
       });
       
       if (!session) {
+        console.log(`Session not found: ${sessionId}`);
         return res.status(404).json({ error: 'Session not found' });
       }
       
@@ -330,7 +432,9 @@ export function createWebServer(params: {
         new_message: Content;
       };
       
-      // Verify the session exists
+      console.log(`Regular run request for app: ${runRequest.app_name}, user: ${runRequest.user_id}, session: ${runRequest.session_id}`);
+      
+      // Verify the session exists - direct lookup without fallbacks
       const session = sessionService.getSession({
         appName: runRequest.app_name,
         userId: runRequest.user_id,
@@ -358,7 +462,7 @@ export function createWebServer(params: {
       
       // Create a runner
       const runner = new Runner({
-        appName: rootAgent.name,
+        appName: runRequest.app_name, // Use app_name directly from request
         agent: rootAgent,
         sessionService,
         artifactService
@@ -390,10 +494,12 @@ export function createWebServer(params: {
         user_id: string;
         session_id: string;
         new_message: Content;
-        streaming: boolean;
+        streaming?: boolean;
       };
       
-      // Verify the session exists
+      console.log(`SSE run request for app: ${runRequest.app_name}, user: ${runRequest.user_id}, session: ${runRequest.session_id}`);
+      
+      // Verify the session exists - direct lookup without fallbacks
       const session = sessionService.getSession({
         appName: runRequest.app_name,
         userId: runRequest.user_id,
@@ -425,14 +531,15 @@ export function createWebServer(params: {
         try {
           rootAgent = loadAgent(agentDir);
         } catch (directError: any) {
-          res.status(404).json({ error: `Agent not found: ${directError.message}` });
-          return;
+          console.error(`Agent not found: ${directError.message}`);
+          sendEvent({ error: `Agent not found: ${directError.message}` });
+          return res.end();
         }
       }
       
       // Create a runner
       const runner = new Runner({
-        appName: rootAgent.name,
+        appName: runRequest.app_name, // Use app_name directly from request
         agent: rootAgent,
         sessionService,
         artifactService
@@ -457,7 +564,14 @@ export function createWebServer(params: {
       }
     } catch (error) {
       console.error('Error in run_sse endpoint:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      // For SSE, we need to send the error as an event
+      if (!res.headersSent) {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
+      } else {
+        res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
+      }
+      res.end();
     }
   });
   
@@ -476,23 +590,32 @@ export function createWebServer(params: {
       absolutePath = path.resolve(process.cwd(), agentDirectory);
     }
     
-    // Determine the agent file path (either index.ts or agent.ts)
-    let agentModulePath = path.join(absolutePath, 'index.ts');
-    let useAgentTs = false;
+    console.log(`Loading agent from directory: ${absolutePath}`);
     
-    if (!fs.existsSync(agentModulePath)) {
-      // Try agent.ts as a fallback
-      const agentTsPath = path.join(absolutePath, 'agent.ts');
-      if (fs.existsSync(agentTsPath)) {
-        agentModulePath = agentTsPath;
-        useAgentTs = true;
-        console.log(`Using agent.ts instead of index.ts at ${agentModulePath}`);
-      } else {
-        throw new Error(`Could not find either index.ts or agent.ts in ${absolutePath}`);
+    // Check multiple possible locations for the agent file
+    const possibleAgentPaths = [
+      // Check for src/agent.ts first (preferred structure)
+      path.join(absolutePath, 'src', 'agent.ts'),
+      // Then direct agent.ts
+      path.join(absolutePath, 'agent.ts'),
+      // Then legacy src/index.ts
+      path.join(absolutePath, 'src', 'index.ts'),
+      // Finally legacy index.ts
+      path.join(absolutePath, 'index.ts')
+    ];
+    
+    let agentModulePath = null;
+    for (const filePath of possibleAgentPaths) {
+      if (fs.existsSync(filePath)) {
+        agentModulePath = filePath;
+        console.log(`Found agent file at: ${filePath}`);
+        break;
       }
     }
     
-    console.log(`Loading agent from: ${agentModulePath}`);
+    if (!agentModulePath) {
+      throw new Error(`Could not find agent file in ${absolutePath}. Checked: ${possibleAgentPaths.join(', ')}`);
+    }
     
     // Get the base name and parent directory for loading environment variables
     const baseName = path.basename(agentDirectory);
@@ -503,25 +626,40 @@ export function createWebServer(params: {
     
     try {
       // Import agent module
+      console.log(`Requiring agent module from: ${agentModulePath}`);
+      
+      // Use ts-node to handle TypeScript files if needed
+      try {
+        require('ts-node/register');
+      } catch (err) {
+        console.warn('Failed to register ts-node. If agent uses TypeScript, this might cause issues.');
+      }
+      
       const agentModule = require(agentModulePath);
       
       // Get the rootAgent
       let rootAgent;
       
-      if (useAgentTs) {
-        // If using agent.ts, the rootAgent might be exported directly
-        rootAgent = agentModule.rootAgent || 
-                   (typeof agentModule === 'object' && 'name' in agentModule ? agentModule : null);
-      } else {
-        // For index.ts, look for rootAgent or check default export
-        rootAgent = agentModule.rootAgent || 
-                   (agentModule.default && agentModule.default.rootAgent);
+      // Check multiple possible export patterns
+      if (agentModule.rootAgent) {
+        // Direct export of rootAgent
+        rootAgent = agentModule.rootAgent;
+      } else if (agentModule.default && agentModule.default.rootAgent) {
+        // Default export with rootAgent property
+        rootAgent = agentModule.default.rootAgent;
+      } else if (typeof agentModule === 'object' && 'name' in agentModule) {
+        // The module itself might be the agent
+        rootAgent = agentModule;
+      } else if (agentModule.default && typeof agentModule.default === 'object' && 'name' in agentModule.default) {
+        // Default export might be the agent
+        rootAgent = agentModule.default;
       }
       
       if (!rootAgent) {
-        throw new Error(`Could not find rootAgent in module ${agentModulePath}`);
+        throw new Error(`Could not find rootAgent in module ${agentModulePath}. Available exports: ${Object.keys(agentModule).join(', ')}`);
       }
       
+      console.log(`Successfully loaded agent: ${rootAgent.name}`);
       agentsByDir.set(agentDirectory, rootAgent);
       return rootAgent;
     } catch (error) {
@@ -671,7 +809,7 @@ export function createWebServer(params: {
         
         // Create a runner
         const runner = new Runner({
-          appName: rootAgent.name,
+          appName: app_name, // Use app_name directly from request
           agent: rootAgent,
           sessionService,
           artifactService
@@ -747,15 +885,17 @@ export function createWebServer(params: {
           return;
         }
         
-        // Verify the session exists
+        const userId = userIdsBySocketId.get(socket.id) || socket.id;
+        
+        // Verify the session exists - direct lookup without fallbacks
         const session = sessionService.getSession({
           appName: runner.appName,
-          userId: userIdsBySocketId.get(socket.id) || socket.id,
+          userId: userId,
           sessionId
         });
         
         if (!session) {
-          console.error(`Session not found: ${sessionId} for user ${userIdsBySocketId.get(socket.id) || socket.id} and app ${runner.appName}`);
+          console.error(`Session not found: ${sessionId} for user ${userId} and app ${runner.appName}`);
           socket.emit('error', { message: 'Session not found. Try reconnecting.' });
           return;
         }
@@ -766,7 +906,7 @@ export function createWebServer(params: {
           return;
         }
         
-        console.log(`Processing message from ${socket.id} (user ${userIdsBySocketId.get(socket.id) || socket.id}) in session ${sessionId}: "${message}"`);
+        console.log(`Processing message from ${socket.id} (user ${userId}) in session ${sessionId}: "${message}"`);
         
         // Create user message
         const userMessage: Content = {
@@ -782,7 +922,7 @@ export function createWebServer(params: {
         // Stream response events
         try {
           for await (const event of runner.runAsync({
-            userId: userIdsBySocketId.get(socket.id) || socket.id,
+            userId: userId,
             sessionId: sessionId,
             newMessage: userMessage
           })) {
@@ -847,9 +987,23 @@ export function createWebServer(params: {
   });
   
   // Serve UI files
-  const uiDir = path.join(__dirname, 'browser');
-  
-  if (fs.existsSync(uiDir)) {
+  // Check multiple possible locations for browser files
+  const possibleUiDirs = [
+    path.join(__dirname, 'browser'),                    // Regular dist location
+    path.join(__dirname, '..', '..', 'src', 'cli', 'browser'), // Source location
+    path.resolve(process.cwd(), 'src', 'cli', 'browser')      // Current working directory
+  ];
+
+  let uiDir = null;
+  for (const dir of possibleUiDirs) {
+    if (fs.existsSync(dir)) {
+      uiDir = dir;
+      console.log(`Found UI files at: ${dir}`);
+      break;
+    }
+  }
+
+  if (uiDir) {
     // Serve static files
     app.use(express.static(uiDir));
     
@@ -883,8 +1037,12 @@ export function createWebServer(params: {
               <p>Server is running on port ${port}</p>
               <p>Agent directory: ${path.resolve(agentDir)}</p>
               <p>Connect via Socket.IO to interact with the agent</p>
-              <p>No UI is available. UI directory not found at: ${uiDir}</p>
-              <p>Make sure you've built the UI with: <code>npm run build-ui</code></p>
+              <p>No UI is available. UI directory not found.</p>
+              <p>Checked these locations:</p>
+              <ul>
+                ${possibleUiDirs.map(dir => `<li><code>${dir}</code></li>`).join('\n              ')}
+              </ul>
+              <p>This likely means the browser folder was not included in the package.</p>
             </div>
           </body>
         </html>

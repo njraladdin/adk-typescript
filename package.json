@@ -1,11 +1,21 @@
 {
   "name": "adk-typescript",
-  "version": "0.1.0",
+  "version": "0.0.1-alpha.1",
   "description": "TypeScript port of Google's Agent Development Kit (ADK)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "adk-ts": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy-browser",
+    "copy-browser": "copyfiles -u 2 \"src/cli/browser/**/*\" dist/cli",
     "test": "jest",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -14,7 +24,10 @@
     "adk:run": "ts-node src/cli/index.ts run",
     "adk:create": "ts-node src/cli/index.ts create",
     "adk:web": "ts-node src/cli/index.ts web",
-    "build-ui": "node scripts/build-ui.js"
+    "prepublishOnly": "npm run lint && npm test && npm run build",
+    "prepare": "npm run build",
+    "pack:test": "npm run build && npm pack",
+    "clean": "rimraf dist"
   },
   "repository": {
     "type": "git",
@@ -26,7 +39,11 @@
     "development",
     "kit",
     "typescript",
-    "google"
+    "google",
+    "ai",
+    "llm",
+    "agents",
+    "vertex-ai"
   ],
   "author": "",
   "license": "Apache-2.0",
@@ -42,9 +59,11 @@
     "@types/node": "^20.4.5",
     "@typescript-eslint/eslint-plugin": "^6.2.0",
     "@typescript-eslint/parser": "^6.2.0",
+    "copyfiles": "^2.4.1",
     "eslint": "^8.46.0",
     "jest": "^29.6.2",
     "prettier": "^3.0.0",
+    "rimraf": "^6.0.1",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6"
@@ -71,5 +90,8 @@
     "typeorm": "^0.3.22",
     "uuid": "^11.1.0",
     "winston": "^3.17.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -196,58 +196,94 @@ export async function runCli({
     userId: 'test_user',
   });
 
-  // Import agent module directly from index.ts
-  const agentModulePath = path.resolve(process.cwd(), agentParentDir, agentFolderName, 'index.ts');
+  // Resolve the agent path more carefully
+  let agentModulePath: string;
+  
+  // Check if we're in the agent directory or parent directory
+  const currentDir = process.cwd();
+  const tentativeSrcPath = path.resolve(currentDir, agentFolderName, 'src');
+  const directSrcPath = path.resolve(currentDir, 'src');
+  
+  // In TypeScript we use agent.ts directly instead of index.ts
+  // This better matches the Python ADK where agent.py is the main file
+  if (fs.existsSync(path.resolve(tentativeSrcPath, 'agent.ts'))) {
+    // If we're in the parent directory and agent folder has src/agent.ts
+    agentModulePath = path.resolve(tentativeSrcPath, 'agent.ts');
+  } else if (fs.existsSync(path.resolve(directSrcPath, 'agent.ts'))) {
+    // If we're already in the agent directory and src/agent.ts exists
+    agentModulePath = path.resolve(directSrcPath, 'agent.ts');
+  } else {
+    // Fall back to directly looking for agent.ts in the specified path
+    agentModulePath = path.resolve(process.cwd(), agentParentDir, agentFolderName, 'agent.ts');
+  }
+  
   console.log(`Loading agent from: ${agentModulePath}`);
   
   try {
     // Load environment variables for the agent
     envs.loadDotenvForAgent(agentFolderName, agentParentDir);
     
-    // Dynamically import the agent module from index.ts
-    const agentModule = require(agentModulePath);
-    
-    // Get the rootAgent from the module
-    const rootAgent = agentModule.rootAgent || (agentModule.default && agentModule.default.rootAgent);
-    
-    if (!rootAgent) {
-      throw new Error(`Could not find rootAgent in module ${agentModulePath}. Make sure it exports a 'rootAgent' property.`);
-    }
-    
-    if (jsonFilePath) {
-      if (jsonFilePath.endsWith('.input.json')) {
-        // Run with input file
-        await runInputFile(
-          agentFolderName,
-          rootAgent,
-          artifactService,
-          session,
-          sessionService,
-          jsonFilePath
-        );
-      } else if (jsonFilePath.endsWith('.session.json')) {
-        // Load session from file
-        const sessionRaw = await promisify(fs.readFile)(jsonFilePath, 'utf-8');
-        const loadedSession = JSON.parse(sessionRaw);
-        
-        // Merge session data into our session object
-        session.id = loadedSession.id || session.id;
-        session.appName = loadedSession.appName || session.appName;
-        session.userId = loadedSession.userId || session.userId;
-        session.state = loadedSession.state || session.state;
-        session.events = loadedSession.events || session.events;
-        
-        // Print conversation history
-        const contents = getSessionContents(session);
-        for (const content of contents) {
-          if (content.role === 'user') {
-            console.log('user: ', content.parts[0].text);
-          } else {
-            console.log(content.parts[0].text);
+    // Use ts-node to load the TypeScript module
+    try {
+      // First try using ts-node/register to load the module
+      require('ts-node/register');
+      const agentModule = require(agentModulePath);
+      
+      // Get the rootAgent from the module
+      const rootAgent = agentModule.rootAgent || (agentModule.default && agentModule.default.rootAgent);
+      
+      if (!rootAgent) {
+        throw new Error(`Could not find rootAgent in module ${agentModulePath}. Make sure it exports a 'rootAgent' property.`);
+      }
+      
+      if (jsonFilePath) {
+        if (jsonFilePath.endsWith('.input.json')) {
+          // Run with input file
+          await runInputFile(
+            agentFolderName,
+            rootAgent,
+            artifactService,
+            session,
+            sessionService,
+            jsonFilePath
+          );
+        } else if (jsonFilePath.endsWith('.session.json')) {
+          // Load session from file
+          const sessionRaw = await promisify(fs.readFile)(jsonFilePath, 'utf-8');
+          const loadedSession = JSON.parse(sessionRaw);
+          
+          // Merge session data into our session object
+          session.id = loadedSession.id || session.id;
+          session.appName = loadedSession.appName || session.appName;
+          session.userId = loadedSession.userId || session.userId;
+          session.state = loadedSession.state || session.state;
+          session.events = loadedSession.events || session.events;
+          
+          // Print conversation history
+          const contents = getSessionContents(session);
+          for (const content of contents) {
+            if (content.role === 'user') {
+              console.log('user: ', content.parts[0].text);
+            } else {
+              console.log(content.parts[0].text);
+            }
           }
+          
+          // Run interactively
+          await runInteractively(
+            agentFolderName,
+            rootAgent,
+            artifactService,
+            session,
+            sessionService
+          );
+        } else {
+          console.error(`Unsupported file type: ${jsonFilePath}`);
+          process.exit(1);
         }
-        
-        // Run interactively
+      } else {
+        // Run interactively without input file
+        console.log(`Running agent ${rootAgent.name}, type exit to exit.`);
         await runInteractively(
           agentFolderName,
           rootAgent,
@@ -255,55 +291,45 @@ export async function runCli({
           session,
           sessionService
         );
-      } else {
-        console.error(`Unsupported file type: ${jsonFilePath}`);
-        process.exit(1);
       }
-    } else {
-      // Run interactively without input file
-      console.log(`Running agent ${rootAgent.name}, type exit to exit.`);
-      await runInteractively(
-        agentFolderName,
-        rootAgent,
-        artifactService,
-        session,
-        sessionService
-      );
-    }
 
-    // Save session if requested
-    if (saveSession) {
-      let sessionPath: string;
-      if (jsonFilePath) {
-        sessionPath = jsonFilePath.replace('.input.json', '.session.json');
-      } else {
-        // Ask for session ID
-        const rl = readline.createInterface({
-          input: process.stdin,
-          output: process.stdout,
-        });
-        const sessionId = await new Promise<string>(resolve => {
-          rl.question('Session ID to save: ', resolve);
-        });
-        rl.close();
+      // Save session if requested
+      if (saveSession) {
+        let sessionPath: string;
+        if (jsonFilePath) {
+          sessionPath = jsonFilePath.replace('.input.json', '.session.json');
+        } else {
+          // Ask for session ID
+          const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+          });
+          const sessionId = await new Promise<string>(resolve => {
+            rl.question('Session ID to save: ', resolve);
+          });
+          rl.close();
+          
+          sessionPath = path.join(agentModulePath, `${sessionId}.session.json`);
+        }
         
-        sessionPath = path.join(agentModulePath, `${sessionId}.session.json`);
+        // Fetch updated session
+        const updatedSession = sessionService.getSession({
+          appName: session.appName,
+          userId: session.userId,
+          sessionId: session.id,
+        }) || session;
+        
+        // Save session to file
+        await promisify(fs.writeFile)(
+          sessionPath, 
+          JSON.stringify(updatedSession, null, 2)
+        );
+        
+        console.log('Session saved to', sessionPath);
       }
-      
-      // Fetch updated session
-      const updatedSession = sessionService.getSession({
-        appName: session.appName,
-        userId: session.userId,
-        sessionId: session.id,
-      }) || session;
-      
-      // Save session to file
-      await promisify(fs.writeFile)(
-        sessionPath, 
-        JSON.stringify(updatedSession, null, 2)
-      );
-      
-      console.log('Session saved to', sessionPath);
+    } catch (error) {
+      console.error('Error loading agent module:', error);
+      process.exit(1);
     }
   } catch (error) {
     console.error('Error running CLI:', error);

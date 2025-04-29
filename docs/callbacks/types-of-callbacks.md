@@ -15,7 +15,7 @@ These callbacks are available on *any* agent that inherits from `BaseAgent` (inc
 ??? "Code"
 
     ```py
-    --8<-- "examples/python/snippets/callbacks/before_agent_callback.py"
+    --8<-- "examples/typescript/snippets/callbacks/before_agent_callback.py"
     ```
 
 **Note on the `before_agent_callback` Example:**
@@ -39,7 +39,7 @@ These callbacks are available on *any* agent that inherits from `BaseAgent` (inc
 ??? "Code"
 
     ```py
-    --8<-- "examples/python/snippets/callbacks/after_agent_callback.py"
+    --8<-- "examples/typescript/snippets/callbacks/after_agent_callback.py"
     ```
 
 **Note on the `after_agent_callback` Example:**
@@ -69,7 +69,7 @@ If the callback returns `None`, the LLM continues its normal workflow. If the ca
 ??? "Code"
 
     ```py
-    --8<-- "examples/python/snippets/callbacks/before_model_callback.py"
+    --8<-- "examples/typescript/snippets/callbacks/before_model_callback.py"
     ```
 
 ### After Model Callback
@@ -87,7 +87,7 @@ If the callback returns `None`, the LLM continues its normal workflow. If the ca
 ??? "Code"
 
     ```py
-    --8<-- "examples/python/snippets/callbacks/after_model_callback.py"
+    --8<-- "examples/typescript/snippets/callbacks/after_model_callback.py"
     ```
 
 ## Tool Execution Callbacks
@@ -108,7 +108,7 @@ These callbacks are also specific to `LlmAgent` and trigger around the execution
 ??? "Code"
 
     ```py
-    --8<-- "examples/python/snippets/callbacks/before_tool_callback.py"
+    --8<-- "examples/typescript/snippets/callbacks/before_tool_callback.py"
     ```
 
 ### After Tool Callback
@@ -125,5 +125,5 @@ These callbacks are also specific to `LlmAgent` and trigger around the execution
 ??? "Code"
 
     ```py
-    --8<-- "examples/python/snippets/callbacks/after_tool_callback.py"
+    --8<-- "examples/typescript/snippets/callbacks/after_tool_callback.py"
     ```

@@ -14,9 +14,9 @@ import * as fs from 'fs';
 const program = new Command();
 
 program
-  .name('adk')
+  .name('adk-ts')
   .description('Agent Development Kit CLI tools (TypeScript port)')
-  .version('0.1.0');
+  .version('0.0.1-alpha.1');
 
 // create
 program
@@ -43,14 +43,48 @@ program
   .option('--save_session', 'Whether to save the session to a json file on exit.', false)
   .option('--input_file <inputFile>', 'Optional. Path to an input file to use.')
   .action((agent: string, options: any) => {
-    const agentParentDir = path.dirname(agent);
-    const agentFolderName = path.basename(agent);
-    runCli({
-      agentParentDir,
-      agentFolderName,
-      jsonFilePath: options.input_file,
-      saveSession: options.save_session,
-    });
+    try {
+      // Register ts-node to handle TypeScript files
+      try {
+        require('ts-node/register');
+      } catch (error) {
+        console.warn('Failed to register ts-node. If you have TypeScript files, this might cause issues.');
+      }
+      
+      // Resolve the agent path more carefully
+      const cwd = process.cwd();
+      const agentPath = path.resolve(cwd, agent);
+      
+      // If agent is "." (current directory), use current directory name as agent name
+      if (agent === '.') {
+        const agentParentDir = path.dirname(cwd);
+        const agentFolderName = path.basename(cwd);
+        
+        console.log(`Running agent with parent dir: ${agentParentDir}, folder name: ${agentFolderName}`);
+        
+        runCli({
+          agentParentDir,
+          agentFolderName,
+          jsonFilePath: options.input_file,
+          saveSession: options.save_session,
+        });
+      } else {
+        const agentParentDir = path.dirname(agentPath);
+        const agentFolderName = path.basename(agentPath);
+        
+        console.log(`Running agent with parent dir: ${agentParentDir}, folder name: ${agentFolderName}`);
+        
+        runCli({
+          agentParentDir,
+          agentFolderName,
+          jsonFilePath: options.input_file,
+          saveSession: options.save_session,
+        });
+      }
+    } catch (error) {
+      console.error('Error running agent:', error);
+      process.exit(1);
+    }
   });
 
 // graph

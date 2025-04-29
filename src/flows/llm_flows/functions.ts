@@ -197,23 +197,15 @@ function _getToolAndContext(
     throw new Error(`Tool ${functionCall.name} not found`);
   }
   
-  // Create a session-like object that meets the ToolContext requirements
-  const sessionAdapter = {
-    id: invocationContext.session.id,
-    appName: invocationContext.session.appName,
-    userId: invocationContext.session.userId,
-    state: invocationContext.session.state,
-    events: [] // Empty events array to avoid type issues
-  };
+  // Create the tool context directly with invocationContext (matching Python implementation)
+  const toolContext = new ToolContext(
+    invocationContext,
+    functionCall.id
+  );
   
-  // Create tool context with only the needed properties
-  const toolContext = new ToolContext({
-    session: sessionAdapter,
-    invocationId: invocationContext.invocationId,
-    agent: invocationContext.agent,
-    functionCallEvent,
-    functionCall
-  });
+  // Set additional properties needed for tool execution
+  toolContext.functionCallEvent = functionCallEvent;
+  toolContext.functionCall = functionCall;
   
   return { tool, toolContext };
 }

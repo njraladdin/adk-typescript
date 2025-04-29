@@ -1,5 +1,3 @@
-
-
 import { FunctionTool } from './FunctionTool';
 import { ToolContext } from './toolContext';
 
@@ -16,7 +14,7 @@ export interface MemoryEvent {
   };
   
   /** Timestamp of the event */
-  timestamp: number;
+  timestamp?: number;
 }
 
 /**

@@ -7,4 +7,11 @@ TODO:
 - implement the same ui in the original python project (obfuscated js), done 
 - fix message after the agnet responds with tool call being empty and causing 400 error, done 
 
+- prepare npm package, done 
+
+- make sure all cli commands work correctly (adk-ts create, run, web), done 
+
+- add README 
+- fix file names to typescript conventions 
+- publish as npm package 
 - update docs with typescript version 

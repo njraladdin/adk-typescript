@@ -462,20 +462,11 @@ export abstract class BaseLlmFlow {
       for (const tool of agent.canonicalTools) {
         console.debug(`Processing tool: ${tool.name}`);
         
-        // Create a session-like object that meets the ToolContext requirements
-        const sessionAdapter = {
-          id: invocationContext.session.id,
-          appName: invocationContext.session.appName,
-          userId: invocationContext.session.userId,
-          state: invocationContext.session.state,
-          events: [] // Empty events array to avoid type issues
-        };
-        
-        const toolContext = new ToolContext({
-          session: sessionAdapter,
-          invocationId: invocationContext.invocationId,
-          agent: invocationContext.agent
-        });
+        // Create a new ToolContext directly with the invocation context
+        // This matches the Python implementation: tool_context = ToolContext(invocation_context)
+        const toolContext = new ToolContext(
+          invocationContext
+        );
         
         await tool.processLlmRequest({ 
           toolContext, 
