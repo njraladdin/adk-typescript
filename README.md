@@ -7,7 +7,7 @@
 
 <html>
     <h2 align="center">
-      <img src="https://raw.githubusercontent.com/google/adk-python/main/assets/agent-development-kit.png" width="256"/>
+      <img src="assets/agent-development-kit.png" width="256"/>
     </h2>
     <h3 align="center">
       An open-source, code-first TypeScript toolkit for building, evaluating, and deploying sophisticated AI agents with flexibility and control.
