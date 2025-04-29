@@ -6,10 +6,12 @@ on:
       - main  # Set this to your default branch
   workflow_dispatch:  # Allows manual triggering
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
+  deployments: write
 
 # Allow only one concurrent deployment
 concurrency:
@@ -37,6 +39,10 @@ jobs:
       
       - name: Build with MkDocs
         run: mkdocs build
+      
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v4
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
