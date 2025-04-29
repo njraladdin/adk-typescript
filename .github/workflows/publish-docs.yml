@@ -24,5 +24,7 @@ jobs:
           path: .cache
           restore-keys: |
             mkdocs-material-
-      - run: pip install -r requirements.txt
+      - name: Install MkDocs dependencies
+        run: |
+          pip install mkdocs-material==9.6.12 mkdocs-redirects==1.2.2
       - run: mkdocs gh-deploy --force
