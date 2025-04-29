@@ -1,17 +1,15 @@
-# Get Started
 
-Agent Development Kit (ADK) is designed to empower developers
-to build, manage, evaluate and deploy AI-powered agents. It provides a robust
-and flexible environment for creating both conversational and non-conversational
-agents, capable of handling complex tasks and workflows.
+# Get Started with ADK TypeScript
+
+Agent Development Kit (ADK) for TypeScript is designed to empower developers to build, manage, evaluate, and deploy AI-powered agents using TypeScript. It provides a robust and flexible environment for creating both conversational and non-conversational agents, capable of handling complex tasks and workflows.
 
 <div class="grid cards" markdown>
 
--   :material-console-line: **Installation**
+-   :material-nodejs: **Installation**
 
     ---
 
-    Install `google-adk` with `pip` and get up and running in minutes.
+    Install `adk-typescript` with `npm` or `yarn` and get set up in minutes.
 
     [:octicons-arrow-right-24: More information](installation.md)
 
@@ -19,23 +17,23 @@ agents, capable of handling complex tasks and workflows.
 
     ---
 
-    Create your first ADK agent with tools in minutes.
+    Create your first ADK TypeScript agent with tools in minutes.
 
     [:octicons-arrow-right-24: More information](quickstart.md)
 
--   :material-console-line: **Quickstart (streaming)**
+-   :material-web: **Quickstart (Streaming)**
 
     ---
 
-    Create your first streaming ADK agent.
+    Create your first real-time streaming ADK TypeScript agent using Express.js and Socket.IO.
 
     [:octicons-arrow-right-24: More information](quickstart-streaming.md)
 
--   :material-console-line: **Tutorial**
+-   :material-account-group-outline: **Tutorial**
 
     ---
 
-    Create your first ADK multi-agent.
+    Build your first ADK TypeScript multi-agent system with memory and safety features.
 
     [:octicons-arrow-right-24: More information](tutorial.md)
 
@@ -43,15 +41,15 @@ agents, capable of handling complex tasks and workflows.
 
     ---
 
-    Discover sample agents for retail, travel, customer service, and more!
+    Discover sample agents for various use cases. *(Note: Current samples may primarily be in Python, but demonstrate concepts applicable to TypeScript.)*
 
     [:octicons-arrow-right-24: Discover adk-samples](https://github.com/google/adk-samples){:target="_blank"}
 
--   :material-graph: **About**
+-   :material-graph: **About ADK TypeScript**
 
     ---
 
-    Learn about the key components of building and deploying ADK agents.
+    Learn about the key components and concepts for building and deploying ADK TypeScript agents.
 
     [:octicons-arrow-right-24: More information](about.md)
 

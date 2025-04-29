@@ -78,10 +78,10 @@ When the ADK framework encounters a point where a callback can run (e.g., just b
 This example demonstrates the common pattern for a guardrail using `beforeModelCallback`.
 
 ```ts
-import { LlmAgent, CallbackContext, Runner } from '@google/adk';
-import { LlmResponse, LlmRequest } from '@google/adk/models';
-import { Content, Part } from '@google/adk/models/types';
-import { InMemorySessionService } from '@google/adk/sessions';
+import { LlmAgent, CallbackContext, Runner } from 'adk-typescript';
+import { LlmResponse, LlmRequest } from 'adk-typescript';
+import { Content, Part } from 'adk-typescript';
+import { InMemorySessionService } from 'adk-typescript';
 
 const GEMINI_2_FLASH = "gemini-2.0-flash";
 

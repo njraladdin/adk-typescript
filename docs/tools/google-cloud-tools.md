@@ -137,7 +137,7 @@ you only need to follow a subset of these steps.
 ## Application Integration Tools
 
 With **ApplicationIntegrationToolset** you can seamlessly give your agents a
-secure and governed to enterprise applications using Integration Connector's
+secure and governed access to enterprise applications using Integration Connector's
 100+ pre-built connectors for systems like Salesforce, ServiceNow, JIRA, SAP,
 and more. Support for both on-prem and SaaS applications. In addition you can
 turn your existing Application Integration process automations into agentic
@@ -375,7 +375,9 @@ const toolsetTools = toolbox.getToolset('my-toolset-name');
 const singleTool = toolbox.getTool('my-tool-name');
 
 const rootAgent = new Agent({
-    // Agent configuration
+    model: 'gemini-2.0-flash',
+    name: 'database_agent',
+    instruction: 'Help user query and analyze database data using the provided tools',
     tools: toolsetTools // Provide the list of tools to the Agent
 });
 ```

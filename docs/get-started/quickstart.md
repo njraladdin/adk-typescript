@@ -1,244 +1,338 @@
-# Quickstart
 
-This quickstart guides you through installing the Agent Development Kit (ADK),
-setting up a basic agent with multiple tools, and running it locally either in the terminal or in the interactive, browser-based dev UI.
+# Quickstart (ADK TypeScript)
 
-<!-- <img src="../../assets/quickstart.png" alt="Quickstart setup"> -->
+This quickstart guides you through installing the Agent Development Kit (ADK) for TypeScript, setting up a basic agent with multiple tools, and running it locally either in the terminal or in the interactive, browser-based dev UI.
 
-This quickstart assumes a local IDE (VS Code, PyCharm, etc.) with Python 3.9+
-and terminal access. This method runs the application entirely on your machine
-and is recommended for internal development.
+This quickstart assumes a local development environment (VS Code, WebStorm, etc.) with Node.js (v18+ recommended), npm/yarn, and terminal access. This method runs the application entirely on your machine and is recommended for development and testing.
 
-## 1. Set up Environment & Install ADK {#venv-install}
+## 1. Set up Environment & Install ADK TypeScript {#venv-install-typescript}
 
-Create & Activate Virtual Environment (Recommended):
+**Environment Setup:**
 
-```bash
-# Create
-python -m venv .venv
-# Activate (each new terminal)
-# macOS/Linux: source .venv/bin/activate
-# Windows CMD: .venv\Scripts\activate.bat
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-```
+*   Ensure you have Node.js (v18+) and npm (or yarn) installed.
+*   Navigate to the directory where you want to create your project.
 
-Install ADK:
+**Create Project & Install ADK TypeScript:**
 
 ```bash
-pip install google-adk
+# Create a new project directory and navigate into it
+mkdir my-adk-project
+cd my-adk-project
+
+# Initialize npm project (creates package.json)
+npm init -y
+
+# Install ADK TypeScript (replace with actual package name if different)
+npm install adk-typescript
+
+# Install dotenv for environment variable handling
+npm install dotenv @types/dotenv
 ```
 
-## 2. Create Agent Project {#create-agent-project}
+## 2. Create Agent Project {#create-agent-project-typescript}
 
 ### Project structure
 
 You will need to create the following project structure:
 
 ```console
-parent_folder/
-    multi_tool_agent/
-        __init__.py
-        agent.py
-        .env
+my-adk-project/
+├── multi_tool_agent/           # Your agent's code folder
+│   └── agent.ts                # Agent definition lives here
+├── .env                        # API keys and configuration
+├── package.json                # Node.js project manifest
+└── tsconfig.json               # TypeScript configuration
+└── dist/                       # (Created after build) Compiled JavaScript output
 ```
 
-Create the folder `multi_tool_agent`:
+Create the agent folder `multi_tool_agent`:
 
 ```bash
 mkdir multi_tool_agent/
 ```
 
-!!! info "Note for Windows users"
+Create the `tsconfig.json` file in your project root (`my-adk-project/`):
 
-    When using ADK on Windows for the next few steps, we recommend creating
-    Python files using File Explorer or an IDE because the following commands
-    (`mkdir`, `echo`) typically generate files with null bytes and/or incorrect
-    encoding.
-
-### `__init__.py`
-
-Now create an `__init__.py` file in the folder:
-
-```shell
-echo "from . import agent" > multi_tool_agent/__init__.py
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS", // Or "ESNext" if using ES Modules
+    "outDir": "./dist",
+    "rootDir": "./", // Assumes agent.ts is directly in multi_tool_agent
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "declaration": true // Optional: generates .d.ts files
+  },
+  "include": ["multi_tool_agent/**/*.ts"], // Include files in your agent folder
+  "exclude": ["node_modules", "dist"]
+}
 ```
 
-Your `__init__.py` should now look like this:
+Add a build script to your `package.json`:
 
-```python title="multi_tool_agent/__init__.py"
---8<-- "examples/python/snippets/get-started/multi_tool_agent/__init__.py"
+```json title="package.json (add scripts section)"
+{
+  // ... other fields like name, version ...
+  "main": "dist/multi_tool_agent/agent.js", // Point to the compiled agent entry point
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/multi_tool_agent/agent.js", // Example start script
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  // ... dependencies ...
+}
 ```
 
-### `agent.py`
+### `agent.ts`
 
-Create an `agent.py` file in the same folder:
+Create an `agent.ts` file inside the `multi_tool_agent/` folder.
 
-```shell
-touch multi_tool_agent/agent.py
-```
+Copy and paste the following code into `multi_tool_agent/agent.ts`:
 
-Copy and paste the following code into `agent.py`:
+```typescript title="multi_tool_agent/agent.ts"
+import {
+  LlmAgent as Agent, // Alias for convenience
+  FunctionTool,
+  ToolContext,
+  LlmRegistry
+} from 'adk-typescript'; // Adjust import path if library installed locally
 
-```python title="multi_tool_agent/agent.py"
---8<-- "examples/python/snippets/get-started/multi_tool_agent/agent.py"
+// --- Tool Functions ---
+
+/**
+ * Returns current weather information for a specified city
+ * @param params Object containing city name
+ * @param context Optional ToolContext
+ * @returns Promise resolving to weather information or error
+ */
+async function getWeather(
+  params: { city: string },
+  context?: ToolContext
+): Promise<{ status: string; report?: string; error_message?: string }> {
+  const city = params.city;
+  console.log(`--- Tool: getWeather called for city: ${city} ---`);
+  const cityNormalized = city.toLowerCase().trim();
+  const mockWeatherDb: Record<string, { status: string; report: string }> = {
+    "newyork": {status: "success", report: "The weather in New York is sunny with a temperature of 25°C."},
+    "london": {status: "success", report: "It's cloudy in London with a temperature of 15°C."},
+    "tokyo": {status: "success", report: "Tokyo is experiencing light rain and a temperature of 18°C."},
+  };
+  if (mockWeatherDb[cityNormalized]) { return mockWeatherDb[cityNormalized]; }
+  else { return {status: "error", error_message: `Sorry, I don't have weather information for '${city}'.`}; }
+}
+
+/**
+ * Gets the current local time and timezone.
+ * @param params Empty object (no parameters needed)
+ * @param context Optional ToolContext
+ * @returns Promise resolving to time information
+ */
+async function getCurrentTime(
+  params: {}, // No parameters expected
+  context?: ToolContext
+): Promise<{ currentTime: string; timezone: string; }> {
+    console.log(`--- Tool: getCurrentTime called ---`);
+    const now = new Date();
+    return {
+        currentTime: now.toLocaleTimeString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    };
+}
+
+// --- Tool Wrappers ---
+
+const getWeatherTool = new FunctionTool({
+  name: "getWeather",
+  description: "Returns current weather information for a specified city",
+  fn: getWeather,
+  functionDeclaration: {
+    name: "getWeather",
+    description: "Returns current weather information for a specified city",
+    parameters: {
+      type: 'object',
+      properties: {
+        city: { type: 'string', description: 'The name of the city (e.g., "New York")'}
+      },
+      required: ['city']
+    }
+  }
+});
+
+const getCurrentTimeTool = new FunctionTool({
+    name: "getCurrentTime",
+    description: "Gets the current local time and timezone.",
+    fn: getCurrentTime,
+    functionDeclaration: {
+        name: "getCurrentTime",
+        description: "Gets the current local time and timezone.",
+        parameters: { type: 'object', properties: {} } // No parameters
+    }
+});
+
+
+// --- Agent Definition ---
+
+// Use LlmRegistry to get a model instance
+const agentLlm = LlmRegistry.newLlm("gemini-1.5-flash"); // Or another compatible model
+
+// Export the root agent for ADK tools to find
+export const rootAgent = new Agent({
+  name: "weather_time_agent", // Unique agent name
+  model: agentLlm,             // LLM instance
+  description: "Provides current weather and time information for cities.",
+  instruction: "You are a helpful assistant. Use the 'getWeather' tool for weather queries " +
+               "and the 'getCurrentTime' tool for time queries. Provide clear answers based on tool results. " +
+               "If asked for weather AND time, use both tools.",
+  tools: [getWeatherTool, getCurrentTimeTool], // List of available tools
+});
+
+// Optional: Default export if needed by other parts of your application
+// export default { rootAgent };
 ```
 
 ### `.env`
 
-Create a `.env` file in the same folder:
+Create a `.env` file in your project root (`my-adk-project/`):
 
-```shell
-touch multi_tool_agent/.env
+```bash
+touch .env
 ```
 
-More instructions about this file are described in the next section on [Set up the model](#set-up-the-model).
+Add your API key and platform configuration to this file. More instructions are in the next section.
 
-![intro_components.png](../assets/quickstart-flow-tool.png)
+![ADK Components Flow](../assets/quickstart-flow-tool.png)
 
-## 3. Set up the model {#set-up-the-model}
+## 3. Set up the model {#set-up-the-model-typescript}
 
-Your agent's ability to understand user requests and generate responses is
-powered by a Large Language Model (LLM). Your agent needs to make secure calls
-to this external LLM service, which requires authentication credentials. Without
-valid authentication, the LLM service will deny the agent's requests, and the
-agent will be unable to function.
+Your agent needs credentials to securely call the LLM service.
 
 === "Gemini - Google AI Studio"
-    1. Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
-    2. Open the **`.env`** file located inside (`multi_tool_agent/`) and copy-paste the following code.
 
-        ```env title="multi_tool_agent/.env"
-        GOOGLE_GENAI_USE_VERTEXAI=FALSE
+    1.  Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
+    2.  Open the **`.env`** file (in your project root `my-adk-project/`) and add/modify the following lines:
+
+        ```env title=".env"
+        # Use Google AI backend (value 0 or false)
+        GOOGLE_GENAI_USE_VERTEXAI=0
+        # Your API Key
         GOOGLE_API_KEY=PASTE_YOUR_ACTUAL_API_KEY_HERE
         ```
 
-    3. Replace `GOOGLE_API_KEY` with your actual `API KEY`.
+    3.  Replace `PASTE_YOUR_ACTUAL_API_KEY_HERE` with your actual API key.
 
 === "Gemini - Google Cloud Vertex AI"
-    1. You need an existing
-       [Google Cloud](https://cloud.google.com/?e=48754805&hl=en) account and a
-       project.
-        * Set up a
-          [Google Cloud project](https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#setup-gcp)
-        * Set up the
-          [gcloud CLI](https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#setup-local)
-        * Authenticate to Google Cloud, from the terminal by running
-          `gcloud auth login`.
-        * [Enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
-    2. Open the **`.env`** file located inside (`multi_tool_agent/`). Copy-paste
-       the following code and update the project ID and location.
 
-        ```env title="multi_tool_agent/.env"
-        GOOGLE_GENAI_USE_VERTEXAI=TRUE
+    1.  You need an existing [Google Cloud](https://cloud.google.com/?e=48754805&hl=en) account and project.
+        *   Set up a [Google Cloud project](https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#setup-gcp).
+        *   Set up the [gcloud CLI](https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#setup-local).
+        *   Authenticate to Google Cloud for Application Default Credentials (ADC): `gcloud auth application-default login`.
+        *   [Enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
+    2.  Open the **`.env`** file (in your project root `my-adk-project/`). Add/modify the following lines and update the project ID and location.
+
+        ```env title=".env"
+        # Use Vertex AI backend (value 1 or true)
+        GOOGLE_GENAI_USE_VERTEXAI=1
+        # Your Project ID
         GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
-        GOOGLE_CLOUD_LOCATION=LOCATION
+        # Your Project Location (e.g., us-central1)
+        GOOGLE_CLOUD_LOCATION=us-central1
+        # GOOGLE_API_KEY is NOT needed when using Vertex AI with ADC
         ```
 
-## 4. Run Your Agent {#run-your-agent}
+## 4. Run Your Agent {#run-your-agent-typescript}
 
-Using the terminal, navigate to the parent directory of your agent project
-(e.g. using `cd ..`):
+First, **build** your TypeScript code:
 
-```console
-parent_folder/      <-- navigate to this directory
-    multi_tool_agent/
-        __init__.py
-        agent.py
-        .env
+```bash
+# Make sure you are in your project root (my-adk-project/)
+npm run build
 ```
 
-There are multiple ways to interact with your agent:
+Now you can interact with your agent using the ADK TypeScript CLI tools. Make sure you run these commands from your project root directory (`my-adk-project/`).
 
-=== "Dev UI (adk web)"
-    Run the following command to launch the **dev UI**.
+*(**Note:** Replace `adk-ts` with the actual command if needed, e.g., `node node_modules/adk-typescript/dist/cli/index.js`)*
 
-    ```shell
-    adk web
+=== "Dev UI (adk-ts web)"
+
+    Run the following command to launch the **dev UI**, telling it where your agent code resides:
+
+    ```bash
+    adk-ts web multi_tool_agent
     ```
 
-    **Step 1:** Open the URL provided (usually `http://localhost:8000` or
-    `http://127.0.0.1:8000`) directly in your browser.
+    **Step 1:** Open the URL provided (usually `http://localhost:3000`) directly in your browser.
 
-    **Step 2.** In the top-left corner of the UI, you can select your agent in
-    the dropdown. Select "multi_tool_agent".
+    **Step 2.** In the top-left corner of the UI, select your agent: "multi\_tool\_agent".
 
     !!!note "Troubleshooting"
 
-        If you do not see "multi_tool_agent" in the dropdown menu, make sure you
-        are running `adk web` in the **parent folder** of your agent folder
-        (i.e. the parent folder of multi_tool_agent).
+        If you do not see "multi_tool_agent" in the dropdown menu, ensure you ran `adk-ts web` from the **correct directory** (`my-adk-project/` in this example) and specified the correct agent folder name (`multi_tool_agent`).
 
-    **Step 3.** Now you can chat with your agent using the textbox:
+    **Step 3.** Chat with your agent using the textbox:
 
-    ![adk-web-dev-ui-chat.png](../assets/adk-web-dev-ui-chat.png)
+    ![ADK Web Dev UI Chat](../assets/adk-web-dev-ui-chat.png)
 
-    **Step 4.** You can also inspect individual function calls, responses and
-    model responses by clicking on the actions:
+    **Step 4.** Inspect individual function calls, responses, and model interactions by clicking on the interaction steps:
 
-    ![adk-web-dev-ui-function-call.png](../assets/adk-web-dev-ui-function-call.png)
+    ![ADK Web Dev UI Function Call](../assets/adk-web-dev-ui-function-call.png)
 
-    **Step 5.** You can also enable your microphone and talk to your agent:
-    
+    **Step 5.** (Optional) Try voice interaction if the UI supports it and your model/setup allows:
+
     !!!note "Model support for voice/video streaming"
-    
-        In order to use voice/video streaming in ADK, you will need to use Gemini models that support the Live API. You can find the **model ID(s)** that supports the Gemini Live API in the documentation:
 
-        - [Google AI Studio: Gemini Live API](https://ai.google.dev/gemini-api/docs/models#live-api)
-        - [Vertex AI: Gemini Live API](https://cloud.google.com/vertex-ai/generative-ai/docs/live-api)
+        Using voice/video streaming requires Gemini models that support the necessary APIs (see [Streaming Quickstart](./quickstart-streaming.md) and model documentation). You would also need to adjust the agent configuration and potentially the UI.
 
-        You can then replace the `model` string in `root_agent` in the `agent.py` file you created earlier ([jump to section](#agentpy)). Your code should look something like:
-        
-        ```py
-        root_agent = Agent(
-            name="weather_time_agent",
-            model="replace-me-with-model-id", #e.g. gemini-2.0-flash-live-001
-            ...
-        ```
+    ![ADK Web Dev UI Audio](../assets/adk-web-dev-ui-audio.png)
 
-    ![adk-web-dev-ui-audio.png](../assets/adk-web-dev-ui-audio.png)
+=== "Terminal (adk-ts run)"
 
-=== "Terminal (adk run)"
+    Run the following command to chat with your agent directly in the terminal, specifying the agent folder:
 
-    Run the following command, to chat with your Google Search agent.
-
-    ```
-    adk run multi_tool_agent
+    ```bash
+    adk-ts run multi_tool_agent
     ```
 
-    ![adk-run.png](../assets/adk-run.png)
+    ![ADK Run Terminal](../assets/adk-run.png)
 
-    To exit, use Cmd/Ctrl+C.
+    Type your prompts and press Enter. To exit, use Cmd/Ctrl+C.
 
-=== "API Server (adk api_server)"
+=== "API Server (adk-ts api_server)"
 
-    `adk api_server` enables you to create a local FastAPI server in a single
-    command, enabling you to test local cURL requests before you deploy your
-    agent.
+    `adk-ts api_server` starts a local Express.js server, allowing you to test API requests before deployment. Specify the directory containing *all* your agent folders (if you have multiple) or the specific agent folder.
 
-    ![adk-api-server.png](../assets/adk-api-server.png)
+    ```bash
+    # If multi_tool_agent is the only agent in the current dir
+    adk-ts api_server --agent_dir .
 
-    To learn how to use `adk api_server` for testing, refer to the
-    [documentation on testing](testing.md).
+    # Or specify the agent folder directly
+    adk-ts api_server --agent_dir multi_tool_agent
+    ```
+
+    ![ADK API Server](../assets/adk-api-server.png)
+
+    To learn how to use `adk-ts api_server` for testing, refer to the [documentation on testing](./testing.md).
 
 ### 📝 Example prompts to try
 
-* What is the weather in New York?
-* What is the time in New York?
-* What is the weather in Paris?
-* What is the time in Paris?
+*   What is the weather in New York?
+*   What is the time in New York?
+*   What is the weather in Paris?
+*   What is the time in Paris?
+*   What time is it in London and what's the weather like?
 
 ## 🎉 Congratulations!
 
-You've successfully created and interacted with your first agent using ADK!
+You've successfully created and interacted with your first agent using ADK TypeScript!
 
 ---
 
 ## 🛣️ Next steps
 
-* **Go to the tutorial**: Learn how to add memory, session, state to your agent:
-  [tutorial](tutorial.md).
-* **Delve into advanced configuration:** Explore the [setup](installation.md)
-  section for deeper dives into project structure, configuration, and other
-  interfaces.
-* **Understand Core Concepts:** Learn about
-  [agents concepts](../agents/index.md).
+*   **Go to the tutorial**: Learn how to build a multi-agent system, add memory, session state, and safety guardrails: [tutorial](./tutorial.md).
+*   **Delve into advanced configuration:** Explore the [setup](./installation.md) section for deeper dives into project structure and configuration.
+*   **Understand Core Concepts:** Learn about [ADK TypeScript Concepts](../agents/index.md) (Link needs update for TS).

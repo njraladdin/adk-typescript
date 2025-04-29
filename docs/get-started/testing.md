@@ -1,173 +1,257 @@
-# Testing your Agents
 
-Before you deploy your agent, you should test it to ensure that it is working as
-intended. The easiest way to test your agent in your development environment is
-to use the `adk api_server` command. This command will launch a local FastAPI
-server, where you can run cURL commands or send API requests to test your agent.
+# Testing your Agents (ADK TypeScript)
+
+Before you deploy your agent, you should test it to ensure that it is working as intended. The easiest way to test your agent in your development environment is to use the `adk-ts api_server` command (or the relevant command based on your package installation/linking, e.g., `node dist/cli/index.js api_server`). This command will launch a local Express.js server, where you can run cURL commands or send API requests to test your agent.
 
 ## Local testing
 
-Local testing involves launching a local API server, creating a session, and
-sending queries to your agent. First, ensure you are in the correct working
-directory:
+Local testing involves launching a local API server, creating a session, and sending queries to your agent.
+
+**1. Directory Structure**
+
+Ensure you are in the correct working directory relative to your agent code. The testing commands often expect to be run from the parent directory containing your agent folder(s), or within the agent folder itself if specifying `.` as the agent directory.
+
+A common structure might be:
 
 ```console
-parent_folder  <-- you should be here
-|- my_sample_agent
-  |- __init__.py
-  |- .env
-  |- agent.py
+parent_folder/  <-- Run commands from here, specifying '--agent_dir my_sample_agent' or '.'
+|- my_sample_agent/
+  |- src/
+  |  |- agent.ts       <-- Your main agent definition
+  |- .env             <-- Environment variables (optional)
+  |- package.json
+  |- tsconfig.json
 ```
 
-**Launch the Local Server**
+Or, if running commands *inside* the agent folder:
 
-Next, launch the local FastAPI server:
-
-```shell
-adk api_server
+```console
+my_sample_agent/ <-- Run commands from here, specifying '--agent_dir .'
+|- src/
+|  |- agent.ts
+|- .env
+|- package.json
+|- tsconfig.json
 ```
+
+**2. Launch the Local Server**
+
+Navigate to your project's root or the appropriate directory and launch the local API server using the ADK TypeScript CLI command. You need to specify the directory containing your agent modules.
+
+```bash
+# If run from the parent_folder containing 'my_sample_agent':
+adk-ts api_server --agent_dir my_sample_agent
+
+# Or, if run from inside the 'my_sample_agent' directory:
+adk-ts api_server --agent_dir .
+```
+
+*(**Note:** The exact command might be `node dist/cli/index.js api_server ...` or similar depending on how you've built and linked the `adk-typescript` package during development. Replace `adk-ts` if necessary).*
 
 The output should appear similar to:
 
-```shell
+```text
+API server started on port 8000
+Agent directory: /path/to/your/project/parent_folder/my_sample_agent
 INFO:     Started server process [12345]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 ```
 
-Your server is now running locally at `http://0.0.0.0:8000`.
+*(Note: The logging format might differ slightly from the Python version as it uses Node.js/Express)*
 
-**Create a new session**
+Your server is now running locally, typically at `http://localhost:8000` (the default port can be changed with `--port`).
 
-With the API server still running, open a new terminal window or tab and create
-a new session with the agent using:
+**3. Create a new session**
 
-```shell
-curl -X POST http://0.0.0.0:8000/apps/my_sample_agent/users/u_123/sessions/s_123 \
+With the API server still running, open a new terminal window or tab and create a new session with the agent using `curl` or a similar tool:
+
+```bash
+curl -X POST http://localhost:8000/apps/my_sample_agent/users/u_123/sessions/s_123 \
   -H "Content-Type: application/json" \
   -d '{"state": {"key1": "value1", "key2": 42}}'
 ```
 
 Let's break down what's happening:
 
-* `http://0.0.0.0:8000/apps/my_sample_agent/users/u_123/sessions/s_123`: This
-  creates a new session for your agent `my_sample_agent`, which is the name of
-  the agent folder, for a user ID (`u_123`) and for a session ID (`s_123`). You
-  can replace `my_sample_agent` with the name of your agent folder. You can
-  replace `u_123` with a specific user ID, and `s_123` with a specific session
-  ID.
-* `{"state": {"key1": "value1", "key2": 42}}`: This is optional. You can use
-  this to customize the agent's pre-existing state (dict) when creating the
-  session.
+*   `http://localhost:8000/apps/my_sample_agent/users/u_123/sessions/s_123`: This API endpoint (matching the implementation in `apiServer.ts`) creates a new session for your agent `my_sample_agent` (which should match the folder name specified in `--agent_dir`), for a user ID (`u_123`) and for a session ID (`s_123`).
+*   `{"state": {"key1": "value1", "key2": 42}}`: This optional JSON body sets the initial state for the session. The ADK TypeScript library uses a `State` class internally, but the API accepts a plain JavaScript object.
 
-This should return the session information if it was created successfully. The
-output should appear similar to:
+This should return the session information if it was created successfully. The output will be a JSON representation of the `Session` object (see `src/sessions/interfaces.ts`):
 
-```shell
-{"id":"s_123","app_name":"my_sample_agent","user_id":"u_123","state":{"state":{"key1":"value1","key2":42}},"events":[],"last_update_time":1743711430.022186}
+```json
+{
+  "id": "s_123",
+  "appName": "my_sample_agent",
+  "userId": "u_123",
+  "state": {
+    "key1": "value1",
+    "key2": 42
+  },
+  "events": []
+}
 ```
+
+*(Note: The exact structure, especially for `state`, might depend slightly on the session service implementation, but `InMemorySessionService` returns a plain object)*.
 
 !!! info
 
-    You cannot create multiple sessions with exactly the same user ID and
-    session ID. If you try to, you may see a response, like:
-    `{"detail":"Session already exists: s_123"}`. To fix this, you can either
-    delete that session (e.g., `s_123`), or choose a different session ID.
+    You cannot create multiple sessions with exactly the same `appName`, `userId`, and `sessionId`. If you try to, the API server (depending on the session service implementation) might return an error like `{"error":"Session already exists: s_123"}`. To fix this, you can either delete that session (if the API supports it) or choose a different `sessionId`.
 
-**Send a query**
+**4. Send a query**
 
-There are two ways to send queries via POST to your agent, via the `/run` or
-`/run_sse` routes.
+There are two ways to send queries via POST to your agent, via the `/run` or `/run_sse` routes, similar to the Python version.
 
-* `POST http://0.0.0.0:8000/run`: collects all events as a list and returns the
-  list all at once. Suitable for most users (if you are unsure, we recommend
-  using this one).
-* `POST http://0.0.0.0:8000/run_sse`: returns as Server-Sent-Events, which is a
-  stream of event objects. Suitable for those who want to be notified as soon as
-  the event is available. With `/run_sse`, you can also set `streaming` to
-  `true` to enable token-level streaming.
+*   `POST http://localhost:8000/run`: Collects all events generated during the agent's turn and returns them as a JSON array in the response body.
+*   `POST http://localhost:8000/run_sse`: Returns a stream of Server-Sent Events (SSE). Each event object is sent as soon as it's generated by the agent. Suitable for real-time updates. With `/run_sse`, you can also set `"streaming": true` in the request body to enable token-level streaming from the LLM (if the underlying model and flow support it).
 
 **Using `/run`**
 
-```shell
-curl -X POST http://0.0.0.0:8000/run \
--H "Content-Type: application/json" \
--d '{
-"app_name": "my_sample_agent",
-"user_id": "u_123",
-"session_id": "s_123",
-"new_message": {
-    "role": "user",
-    "parts": [{
-    "text": "Hey whats the weather in new york today"
-    }]
-}
-}'
+Send a POST request with your query:
+
+```bash
+curl -X POST http://localhost:8000/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "appName": "my_sample_agent",
+    "userId": "u_123",
+    "sessionId": "s_123",
+    "newMessage": {
+      "role": "user",
+      "parts": [{
+        "text": "Hey whats the weather in new york today"
+      }]
+    }
+  }'
 ```
 
-If using `/run`, you will see the full output of events at the same time, as a
-list, which should appear similar to:
+*(Note: The keys in the JSON body are `appName`, `userId`, `sessionId`, `newMessage`)*
 
-```shell
-[{"content":{"parts":[{"functionCall":{"id":"af-e75e946d-c02a-4aad-931e-49e4ab859838","args":{"city":"new york"},"name":"get_weather"}}],"role":"model"},"invocation_id":"e-71353f1e-aea1-4821-aa4b-46874a766853","author":"weather_time_agent","actions":{"state_delta":{},"artifact_delta":{},"requested_auth_configs":{}},"long_running_tool_ids":[],"id":"2Btee6zW","timestamp":1743712220.385936},{"content":{"parts":[{"functionResponse":{"id":"af-e75e946d-c02a-4aad-931e-49e4ab859838","name":"get_weather","response":{"status":"success","report":"The weather in New York is sunny with a temperature of 25 degrees Celsius (41 degrees Fahrenheit)."}}}],"role":"user"},"invocation_id":"e-71353f1e-aea1-4821-aa4b-46874a766853","author":"weather_time_agent","actions":{"state_delta":{},"artifact_delta":{},"requested_auth_configs":{}},"id":"PmWibL2m","timestamp":1743712221.895042},{"content":{"parts":[{"text":"OK. The weather in New York is sunny with a temperature of 25 degrees Celsius (41 degrees Fahrenheit).\n"}],"role":"model"},"invocation_id":"e-71353f1e-aea1-4821-aa4b-46874a766853","author":"weather_time_agent","actions":{"state_delta":{},"artifact_delta":{},"requested_auth_configs":{}},"id":"sYT42eVC","timestamp":1743712221.899018}]
+The response will be a JSON array containing all the `Event` objects generated during that turn. Each event object follows the structure defined in `src/events/Event.ts`.
+
+```json
+[
+  {
+    "invocationId": "inv-abcdef12",
+    "author": "weather_agent_v1",
+    "actions": {
+      "stateDelta": {},
+      "artifactDelta": {},
+      "requestedAuthConfigs": {}
+    },
+    "id": "Evt1AbCd",
+    "timestamp": 1710000100.123,
+    "content": {
+      "role": "model",
+      "parts": [
+        {
+          "functionCall": {
+            "name": "getWeather",
+            "args": { "city": "new york" },
+            "id": "adk-uuid-..."
+          }
+        }
+      ]
+    },
+    "longRunningToolIds": []
+  },
+  {
+    "invocationId": "inv-abcdef12",
+    "author": "weather_agent_v1",
+    "actions": {
+      "stateDelta": {},
+      "artifactDelta": {},
+      "requestedAuthConfigs": {}
+    },
+    "id": "Evt2EfGh",
+    "timestamp": 1710000101.456,
+    "content": {
+      "role": "user",
+      "parts": [
+        {
+          "functionResponse": {
+            "name": "getWeather",
+            "response": {
+              "status": "success",
+              "report": "The weather in New York is sunny with a temperature of 25°C."
+            },
+            "id": "adk-uuid-..."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "invocationId": "inv-abcdef12",
+    "author": "weather_agent_v1",
+    "actions": {
+      "stateDelta": {
+         "last_weather_report": "The weather in New York is sunny with a temperature of 25°C."
+       },
+      "artifactDelta": {},
+      "requestedAuthConfigs": {}
+    },
+    "id": "Evt3IjKl",
+    "timestamp": 1710000102.789,
+    "content": {
+      "role": "model",
+      "parts": [
+        {
+          "text": "The weather in New York is sunny with a temperature of 25°C."
+        }
+      ]
+    },
+    "partial": false,
+    "turnComplete": false
+  }
+]
 ```
 
 **Using `/run_sse`**
 
-```shell
-curl -X POST http://0.0.0.0:8000/run_sse \
--H "Content-Type: application/json" \
--d '{
-"app_name": "my_sample_agent",
-"user_id": "u_123",
-"session_id": "s_123",
-"new_message": {
-    "role": "user",
-    "parts": [{
-    "text": "Hey whats the weather in new york today"
-    }]
-},
-"streaming": false
-}'
+```bash
+curl -X POST http://localhost:8000/run_sse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "appName": "my_sample_agent",
+    "userId": "u_123",
+    "sessionId": "s_123",
+    "newMessage": {
+      "role": "user",
+      "parts": [{
+        "text": "Hey whats the weather in new york today"
+      }]
+    },
+    "streaming": false
+  }'
 ```
 
-You can set `streaming` to `true` to enable token-level streaming, which means
-the response will be returned to you in multiple chunks and the output should
-appear similar to:
+You can set `"streaming": true` to attempt token-level streaming from the LLM. The output will be a stream of Server-Sent Events:
 
+```text
+data: {"invocationId":"inv-abcdef12","author":"weather_agent_v1", ... ,"content":{"role":"model","parts":[{"functionCall":{...}}]}}
 
-```shell
-data: {"content":{"parts":[{"functionCall":{"id":"af-f83f8af9-f732-46b6-8cb5-7b5b73bbf13d","args":{"city":"new york"},"name":"get_weather"}}],"role":"model"},"invocation_id":"e-3f6d7765-5287-419e-9991-5fffa1a75565","author":"weather_time_agent","actions":{"state_delta":{},"artifact_delta":{},"requested_auth_configs":{}},"long_running_tool_ids":[],"id":"ptcjaZBa","timestamp":1743712255.313043}
+data: {"invocationId":"inv-abcdef12","author":"weather_agent_v1", ... ,"content":{"role":"user","parts":[{"functionResponse":{...}}]}}
 
-data: {"content":{"parts":[{"functionResponse":{"id":"af-f83f8af9-f732-46b6-8cb5-7b5b73bbf13d","name":"get_weather","response":{"status":"success","report":"The weather in New York is sunny with a temperature of 25 degrees Celsius (41 degrees Fahrenheit)."}}}],"role":"user"},"invocation_id":"e-3f6d7765-5287-419e-9991-5fffa1a75565","author":"weather_time_agent","actions":{"state_delta":{},"artifact_delta":{},"requested_auth_configs":{}},"id":"5aocxjaq","timestamp":1743712257.387306}
+data: {"invocationId":"inv-abcdef12","author":"weather_agent_v1", ... ,"content":{"role":"model","parts":[{"text":"The weather in New York is sunny with a temperature of 25°C."}]}}
 
-data: {"content":{"parts":[{"text":"OK. The weather in New York is sunny with a temperature of 25 degrees Celsius (41 degrees Fahrenheit).\n"}],"role":"model"},"invocation_id":"e-3f6d7765-5287-419e-9991-5fffa1a75565","author":"weather_time_agent","actions":{"state_delta":{},"artifact_delta":{},"requested_auth_configs":{}},"id":"rAnWGSiV","timestamp":1743712257.391317}
 ```
 
 !!! info
 
-    If you are using `/run_sse`, you should see each event as soon as it becomes
-    available.
+    With `/run_sse`, each `data:` line represents a complete JSON `Event` object sent as soon as it's available from the agent. If token streaming (`"streaming": true`) is enabled, you might receive multiple events with `partial: true` for text content before the final non-partial text event.
 
 ## Integrations
 
-ADK uses [Callbacks](../callbacks/index.md) to integrate with third-party
-observability tools. These integrations capture detailed traces of agent calls
-and interactions, which are crucial for understanding behavior, debugging
-issues, and evaluating performance.
+ADK TypeScript utilizes **Callbacks** (like `beforeModelCallback`, `afterModelCallback`, `beforeToolCallback`, `afterToolCallback`) to hook into the agent execution lifecycle. The library also includes basic OpenTelemetry tracing capabilities (see `src/telemetry.ts`).
 
-* [Comet Opik](https://github.com/comet-ml/opik) is an open-source LLM
-  observability and evaluation platform that
-  [natively supports ADK](https://www.comet.com/docs/opik/tracing/integrations/adk).
+These mechanisms allow integration with third-party observability tools. While specific integrations like Comet Opik aren't explicitly built into this codebase version, the callback and tracing foundation enables you to capture detailed traces of agent calls and interactions for understanding behavior, debugging, and evaluation. You can implement custom callbacks to send data to your preferred observability platform.
 
 ## Deploying your agent
 
-Now that you've verified the local operation of your agent, you're ready to move
-on to deploying your agent! Here are some ways you can deploy your agent:
+Now that you've verified the local operation of your agent, you're ready to move on to deploying your agent! Here are some ways you can deploy your ADK TypeScript agent:
 
-* Deploy to [Agent Engine](../deploy/agent-engine.md), the easiest way to deploy
-  your ADK agents to a managed service in Vertex AI on Google Cloud.
-* Deploy to [Cloud Run](../deploy/cloud-run.md) and have full control over how
-  you scale and manage your agents using serverless architecture on Google
-  Cloud.
+*   Deploy to **[Agent Engine on Vertex AI](https://cloud.google.com/vertex-ai/docs/agent-engine/docs/overview)** (if compatible): Check the official Agent Engine documentation for compatibility with custom ADK TypeScript agents.
+*   Deploy to **[Cloud Run](../deploy/cloud-run.md)**: Use the `adk-ts deploy cloud_run` command (see `src/cli/cliDeploy.ts`) to containerize and deploy your agent as a serverless application on Google Cloud, giving you full control over scaling and management.
+
