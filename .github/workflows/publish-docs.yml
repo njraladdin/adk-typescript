@@ -25,5 +25,20 @@ jobs:
           path: .cache 
           restore-keys: |
             mkdocs-material-
-      - run: pip install mkdocs-material 
-      - run: mkdocs gh-deploy --force
+      - name: Install MkDocs dependencies
+        run: |
+          pip install mkdocs-material mkdocs-redirects
+      - name: Debug directory structure
+        run: |
+          echo "Checking if overrides directory exists:"
+          if [ -d "docs/overrides" ]; then
+            echo "✅ docs/overrides directory exists"
+            ls -la docs/overrides/
+          else
+            echo "❌ docs/overrides directory does not exist"
+            echo "Creating it..."
+            mkdir -p docs/overrides
+            echo "{% extends 'base.html' %}" > docs/overrides/main.html
+          fi
+      - name: Deploy documentation
+        run: mkdocs gh-deploy --force
