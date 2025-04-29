@@ -1,6 +1,6 @@
 # Project information
 site_name: Agent Development Kit
-site_url: https://njraladdin.github.io/adk-typescript
+site_url: https://njraladdin.github.io/adk-typescript/
 site_description: >-
   Build powerful multi-agent systems with Agent Development Kit
 site_dir: site
@@ -15,7 +15,7 @@ copyright: Copyright Google 2025
 
 # Custom CSS
 extra_css:
-  - stylesheets/custom.css
+  - docs/stylesheets/custom.css
 
 # Configuration
 theme:
@@ -27,7 +27,7 @@ theme:
   favicon: assets/agent-development-kit.png
   icon:
     repo: fontawesome/brands/github
-  custom_dir: overrides
+  custom_dir: docs/overrides
   palette:
     - scheme: default
       primary: white

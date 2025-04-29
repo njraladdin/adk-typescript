@@ -1,4 +1,7 @@
-
+---
+hide:
+  - toc
+---
 
 <div style="text-align: center;">
   <div class="centered-logo-text-group">
@@ -43,59 +46,60 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 
 <div class="grid cards" markdown>
 
--   :material-transit-connection-variant: **Flexible Orchestration**
+- ![Material](assets/icons/graph.svg){ .lg .middle } **Flexible Orchestration**
 
     ---
 
     Define workflows using workflow agents (`SequentialAgent`, `ParallelAgent`, `LoopAgent`) for predictable pipelines, or leverage LLM-driven dynamic routing (`LlmAgent` with `AutoFlow`) for adaptive behavior.
 
-    [**Learn about agents**](agents/index.md) <!-- Adjust link if needed -->
+    [:octicons-arrow-right-24: Learn about agents](agents/index.md)
 
--   :material-graph: **Multi-Agent Architecture**
+- ![Material](assets/icons/transit.svg){ .lg .middle } **Multi-Agent Architecture**
 
     ---
 
     Build modular and scalable applications by composing multiple specialized agents (`LlmAgent`, `BaseAgent`) in a hierarchy using `subAgents`. Enable complex coordination and delegation.
 
-    [**Explore multi-agent systems**](agents/multi-agents.md) <!-- Adjust link if needed -->
+    [:octicons-arrow-right-24: Explore multi-agent systems](agents/multi-agents.md)
 
--   :material-toolbox-outline: **Rich Tool Ecosystem**
+- ![Material](assets/icons/tools.svg){ .lg .middle } **Rich Tool Ecosystem**
 
     ---
 
     Equip agents with diverse capabilities: use pre-built tools (`googleSearch`, `codeExecutionTool`), create custom functions (`FunctionTool`), integrate 3rd-party libraries (LangChain via `LangchainTool`, CrewAI via `CrewaiTool`), or use other agents as tools (`AgentTool`).
 
-    [**Browse tools**](tools/index.md) <!-- Adjust link if needed -->
+    [:octicons-arrow-right-24: Browse tools](tools/index.md)
 
--   :material-rocket-launch-outline: **Deployment Ready**
+- ![Material](assets/icons/rocket.svg){ .lg .middle } **Deployment Ready**
 
     ---
 
     Containerize and deploy your TypeScript agents anywhere – run locally, scale with Vertex AI Agent Engine (check compatibility), or integrate into custom infrastructure using Cloud Run or Docker.
 
-    [**Deploy agents**](deploy/index.md) <!-- Adjust link if needed -->
+    [:octicons-arrow-right-24: Deploy agents](deploy/index.md)
 
--   :material-clipboard-check-outline: **Built-in Evaluation**
+- ![Material](assets/icons/check.svg){ .lg .middle } **Built-in Evaluation**
 
     ---
 
     Systematically assess agent performance using the `evaluation` module (`AgentEvaluator`) by evaluating both final responses and execution trajectories against test datasets (`.test.json`).
 
-    [**Evaluate agents**](evaluate/index.md) <!-- Adjust link if needed -->
+    [:octicons-arrow-right-24: Evaluate agents](evaluate/index.md)
 
--   :material-console-line: **Building Responsible Agents**
+- ![Material](assets/icons/console.svg){ .lg .middle } **Building Responsible Agents**
 
     ---
 
     Learn how to build powerful and trustworthy agents by implementing responsible AI patterns using features like Callbacks (`beforeModelCallback`, `beforeToolCallback`).
 
-    [**Responsible agents**](guides/responsible-agents.md) <!-- Adjust link if needed -->
+    [:octicons-arrow-right-24: Responsible agents](safety/index.md)
 
 </div>
 
+
 !!! Preview
 
-    ADK (including this TypeScript port) is subject to the "Pre-GA Offerings Terms" in the General
+    This feature is subject to the "Pre-GA Offerings Terms" in the General
     Service Terms section of the
     [Service Specific Terms](https://cloud.google.com/terms/service-terms#1).
     Pre-GA features are available "as is" and might have limited support. For

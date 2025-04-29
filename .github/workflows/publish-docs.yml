@@ -10,31 +10,60 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
       - name: Configure Git Credentials
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-      - uses: actions/setup-python@v5
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.x
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
-      - uses: actions/cache@v4
+          python-version: 3.11
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
         with:
-          key: mkdocs-material-${{ env.cache_id }}
+          key: mkdocs-material-${{ hashFiles('**/requirements*.txt') }}
           path: .cache
-          restore-keys: |
-            mkdocs-material-
-      - name: Install MkDocs dependencies
+      
+      - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install mkdocs-material==9.6.12 mkdocs-redirects==1.2.2 pillow cairosvg
-      - name: Create overrides directory if it doesn't exist
+          pip install pygments pymdown-extensions
+          
+      - name: Debug environment
         run: |
-          if [ -d "docs/overrides" ]; then
-            mkdir -p overrides
-            cp -r docs/overrides/* overrides/ 2>/dev/null || true
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "Docs directory contents:"
+          ls -la docs/
+          echo "Overrides directory contents:"
+          ls -la docs/overrides/ || echo "No overrides directory found"
+          echo "Python version:"
+          python --version
+          echo "Installed packages:"
+          pip list
+          
+      - name: Ensure overrides directory exists
+        run: |
+          if [ ! -d "docs/overrides" ]; then
+            mkdir -p docs/overrides
+            echo "{% extends 'base.html' %}" > docs/overrides/main.html
           fi
-      - name: Build and deploy documentation
+          
+      - name: Test building documentation
         run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)
-          mkdocs build --clean
+          mkdocs build --verbose
+          echo "Site directory contents after build:"
+          ls -la site/
+          echo "CSS files:"
+          find site/ -name "*.css" | xargs ls -la
+          
+      - name: Deploy documentation
+        run: |
           mkdocs gh-deploy --force --verbose 
