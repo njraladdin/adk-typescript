@@ -21,48 +21,32 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.x
       
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          key: mkdocs-material-${{ hashFiles('**/requirements*.txt') }}
+          key: mkdocs-material-cache
           path: .cache
       
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mkdocs-material==9.6.12 mkdocs-redirects==1.2.2 pillow cairosvg
-          pip install pygments pymdown-extensions
-          
-      - name: Debug environment
+          pip install mkdocs==1.5.3 mkdocs-material==9.6.12 mkdocs-redirects==1.2.2
+      
+      - name: Debug and fix directory structure
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Directory contents:"
+          echo "Current directory structure:"
           ls -la
           echo "Docs directory contents:"
           ls -la docs/
-          echo "Overrides directory contents:"
-          ls -la docs/overrides/ || echo "No overrides directory found"
-          echo "Python version:"
-          python --version
-          echo "Installed packages:"
-          pip list
           
-      - name: Ensure overrides directory exists
-        run: |
-          if [ ! -d "docs/overrides" ]; then
-            mkdir -p docs/overrides
-            echo "{% extends 'base.html' %}" > docs/overrides/main.html
-          fi
+          # Create the proper overrides directory
+          mkdir -p overrides
+          cp -r docs/overrides/* overrides/ 2>/dev/null || echo "No files to copy"
           
-      - name: Test building documentation
-        run: |
-          mkdocs build --verbose
-          echo "Site directory contents after build:"
-          ls -la site/
-          echo "CSS files:"
-          find site/ -name "*.css" | xargs ls -la
+          # If mkdocs.yml contains both docs_dir and needs the overrides directly in it
+          echo "Structure created. Running build..."
           
       - name: Deploy documentation
         run: |

@@ -15,7 +15,7 @@ copyright: Copyright Google 2025
 
 # Custom CSS
 extra_css:
-  - docs/stylesheets/custom.css
+  - stylesheets/custom.css
 
 # Configuration
 theme:
@@ -27,7 +27,7 @@ theme:
   favicon: assets/agent-development-kit.png
   icon:
     repo: fontawesome/brands/github
-  custom_dir: docs/overrides
+  custom_dir: overrides
   palette:
     - scheme: default
       primary: white
@@ -64,6 +64,9 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      options:
+        custom_icons:
+          - overrides/.icons
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span

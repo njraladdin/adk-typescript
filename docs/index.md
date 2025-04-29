@@ -46,7 +46,7 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 
 <div class="grid cards" markdown>
 
-- ![Material](assets/icons/graph.svg){ .lg .middle } **Flexible Orchestration**
+-   :material-transit-connection-variant: **Flexible Orchestration**
 
     ---
 
@@ -54,7 +54,7 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 
     [:octicons-arrow-right-24: Learn about agents](agents/index.md)
 
-- ![Material](assets/icons/transit.svg){ .lg .middle } **Multi-Agent Architecture**
+-   :material-graph: **Multi-Agent Architecture**
 
     ---
 
@@ -62,7 +62,7 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 
     [:octicons-arrow-right-24: Explore multi-agent systems](agents/multi-agents.md)
 
-- ![Material](assets/icons/tools.svg){ .lg .middle } **Rich Tool Ecosystem**
+-   :material-toolbox-outline: **Rich Tool Ecosystem**
 
     ---
 
@@ -70,7 +70,7 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 
     [:octicons-arrow-right-24: Browse tools](tools/index.md)
 
-- ![Material](assets/icons/rocket.svg){ .lg .middle } **Deployment Ready**
+-   :material-rocket-launch-outline: **Deployment Ready**
 
     ---
 
@@ -78,7 +78,7 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 
     [:octicons-arrow-right-24: Deploy agents](deploy/index.md)
 
-- ![Material](assets/icons/check.svg){ .lg .middle } **Built-in Evaluation**
+-   :material-clipboard-check-outline: **Built-in Evaluation**
 
     ---
 
@@ -86,7 +86,7 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 
     [:octicons-arrow-right-24: Evaluate agents](evaluate/index.md)
 
-- ![Material](assets/icons/console.svg){ .lg .middle } **Building Responsible Agents**
+-   :material-console-line: **Building Responsible Agents**
 
     ---
 
