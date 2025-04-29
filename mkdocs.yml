@@ -4,7 +4,6 @@ site_url: https://njraladdin.github.io/adk-typescript/ # UPDATED
 site_description: >- # UPDATED
   Build powerful multi-agent systems with ADK for TypeScript.
 site_dir: site
-use_directory_urls: true
 
 # Repository
 repo_name: njraladdin/adk-typescript # UPDATED
@@ -12,7 +11,7 @@ repo_url: https://github.com/njraladdin/adk-typescript # UPDATED
 
 # Custom CSS (Ensure docs/stylesheets/custom.css exists or remove this line)
 extra_css:
-  - stylesheets/custom.css
+  - /adk-typescript/stylesheets/custom.css
 
 # Configuration
 theme:
