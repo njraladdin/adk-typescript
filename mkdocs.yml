@@ -4,6 +4,7 @@ site_url: https://njraladdin.github.io/adk-typescript/ # UPDATED
 site_description: >- # UPDATED
   Build powerful multi-agent systems with ADK for TypeScript.
 site_dir: site
+use_directory_urls: true
 
 # Repository
 repo_name: njraladdin/adk-typescript # UPDATED

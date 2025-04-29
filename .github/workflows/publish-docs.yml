@@ -13,24 +13,57 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper versioning
+      
       - name: Configure Git Credentials
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
+      
       - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+      
       - uses: actions/cache@v4
         with:
           key: mkdocs-material-${{ env.cache_id }}
           path: .cache
           restore-keys: |
             mkdocs-material-
+      
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mkdocs-material
+          pip install mkdocs-material==9.6.12  # Pin to specific version
           pip install mkdocs-redirects
           pip install pymdown-extensions
-      - run: mkdocs gh-deploy --force 
+      
+      # Debug: Print mkdocs version and configuration
+      - name: Debug MkDocs setup
+        run: |
+          mkdocs --version
+          echo "MkDocs configuration:"
+          cat mkdocs.yml
+          
+      # Build with explicit site_url for GitHub Pages
+      - name: Build documentation
+        run: |
+          echo "Building documentation with explicit GitHub Pages URL"
+          mkdocs build --verbose --config-file mkdocs.yml --site-dir site
+          echo "Content of site directory after build:"
+          ls -la site
+          echo "Content of site/stylesheets directory:"
+          ls -la site/stylesheets || echo "Stylesheets directory not found"
+          echo "Content of index.html stylesheet references:"
+          grep -A 5 "<link" site/index.html || echo "Index file not found or pattern not matched"
+          echo "Verifying favicon:"
+          grep -A 2 "favicon" site/index.html || echo "Favicon not found in index.html"
+      
+      # Deploy to GitHub Pages with explicit path configuration
+      - name: Deploy with MkDocs
+        run: |
+          echo "Deploying with mkdocs gh-deploy"
+          mkdocs gh-deploy --force --verbose --config-file mkdocs.yml 
