@@ -27,4 +27,8 @@ jobs:
       - name: Install MkDocs dependencies
         run: |
           pip install mkdocs-material==9.6.12 mkdocs-redirects==1.2.2
+      - name: Create overrides directory if it doesn't exist
+        run: |
+          mkdir -p overrides
+          cp -r docs/overrides/* overrides/ 2>/dev/null || true
       - run: mkdocs gh-deploy --force
