@@ -1,17 +1,20 @@
 # Project information
-site_name: ADK TypeScript # UPDATED
-site_url: https://njraladdin.github.io/adk-typescript/ # UPDATED
-site_description: >- # UPDATED
-  Build powerful multi-agent systems with ADK for TypeScript.
+site_name: Agent Development Kit
+site_url: https://njraladdin.github.io/adk-typescript
+site_description: >-
+  Build powerful multi-agent systems with Agent Development Kit
 site_dir: site
 
 # Repository
-repo_name: njraladdin/adk-typescript # UPDATED
-repo_url: https://github.com/njraladdin/adk-typescript # UPDATED
+repo_name: adk-typescript
+repo_url: https://github.com/njraladdin/adk-typescript
 
-# Custom CSS (Ensure docs/stylesheets/custom.css exists or remove this line)
+# Copyright
+copyright: Copyright Google 2025
+
+# Custom CSS
 extra_css:
-  - /adk-typescript/stylesheets/custom.css
+  - stylesheets/custom.css
 
 # Configuration
 theme:
@@ -19,12 +22,11 @@ theme:
   font:
     text: Google Sans
     code: Roboto Mono
-  # Ensure docs/assets/agent-development-kit.png exists or update/remove these lines
   logo: assets/agent-development-kit.png
   favicon: assets/agent-development-kit.png
   icon:
     repo: fontawesome/brands/github
-  # custom_dir: overrides # Keep if you have an 'overrides' directory
+  custom_dir: overrides
   palette:
     - scheme: default
       primary: white
@@ -52,7 +54,7 @@ theme:
     - toc.follow
     - navigation.footer
 
-# Extensions (These Python extensions still work with MkDocs build process)
+# Extensions
 markdown_extensions:
   - admonition
   - attr_list
@@ -65,7 +67,6 @@ markdown_extensions:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
-      # Use 'typescript' or 'ts' in your code blocks for highlighting
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences:
@@ -82,18 +83,16 @@ markdown_extensions:
       permalink: true
 
 
-# Plugins (These Python plugins still work with MkDocs build process)
+# Plugins
 plugins:
   - search
-  - redirects: # Review if these redirects are still needed for your TS doc structure
+  - redirects:
       redirect_maps:
         'get-started/local-testing.md': 'get-started/testing.md'
-        'get-started/tutorial.md': 'tutorials/index.md' # Example: Update if tutorial path changed
-        'guides/responsible-agents.md': 'safety/index.md' # Example: Update if safety path changed
+        'get-started/tutorial.md': 'tutorials/index.md'
+        'guides/responsible-agents.md': 'safety/index.md'
 
-# Navigation (Using the structure from the original Python project)
-# WARNING: This structure MUST exactly match the files and folders within your 'docs/' directory,
-# otherwise the 'mkdocs build' command will fail. Create placeholder files if needed.
+# Navigation
 nav:
   - Home: index.md
   - Get Started:
@@ -102,11 +101,11 @@ nav:
     - Quickstart: get-started/quickstart.md
     - Quickstart (streaming): get-started/quickstart-streaming.md
     - Testing: get-started/testing.md
-    - Sample agents: https://github.com/google/adk-samples # External link
-    - About ADK TypeScript: get-started/about.md # Renamed title
+    - Sample agents: https://github.com/google/adk-samples
+    - About ADK: get-started/about.md
   - Tutorials:
     - tutorials/index.md
-    - Agent Team: tutorials/agent-team.md # Update content for TS
+    - Agent Team: tutorials/agent-team.md
   - Agents:
     - agents/index.md
     - LLM agents: agents/llm-agents.md
@@ -115,7 +114,7 @@ nav:
       - Sequential agents: agents/workflow-agents/sequential-agents.md
       - Loop agents: agents/workflow-agents/loop-agents.md
       - Parallel agents: agents/workflow-agents/parallel-agents.md
-    - Custom agents: agents/custom-agents.md # Needs TS content
+    - Custom agents: agents/custom-agents.md
     - Multi-agent systems: agents/multi-agents.md
     - Models: agents/models.md
   - Tools:
@@ -153,10 +152,7 @@ nav:
     - evaluate/index.md
 
   - Safety and Security: safety/index.md
-  - Agent2Agent (A2A) Protocol: https://github.com/google/A2A/ # External link
+  - Agent2Agent (A2A) Protocol: https://github.com/google/A2A/
   - Community Resources: community.md
   - Contributing Guide: contributing-guide.md
-  - API Reference: api-reference/index.html # Remove or replace with TypeDoc link later
-
-# Specify the source directory for MkDocs
-docs_dir: docs
+  - API Reference: api-reference/index.html
