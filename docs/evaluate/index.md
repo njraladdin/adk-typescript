@@ -2,7 +2,7 @@
 
 In traditional software development, unit tests and integration tests provide confidence that code functions as expected and remains stable through changes. These tests provide a clear "pass/fail" signal, guiding further development. However, LLM agents introduce a level of variability that makes traditional testing approaches insufficient.
 
-Due to the probabilistic nature of models, deterministic "pass/fail" assertions are often unsuitable for evaluating agent performance. Instead, we need qualitative evaluations of both the final output and the agent's trajectory \- the sequence of steps taken to reach the solution. This involves assessing the quality of the agent's decisions, its reasoning process, and the final result.
+Due to the probabilistic nature of models, deterministic "pass/fail" assertions are often unsuitable for evaluating agent performance. Instead, we need qualitative evaluations of both the final output and the agent's trajectory - the sequence of steps taken to reach the solution. This involves assessing the quality of the agent's decisions, its reasoning process, and the final result.
 
 This may seem like a lot of extra work to set up, but the investment of automating evaluations pays off quickly. If you intend to progress beyond prototype, this is a highly recommended best practice.
 
@@ -29,14 +29,14 @@ The trajectory is just a list of steps the agent took before it returned to the 
 
 ### Evaluating trajectory and tool use
 
-Before responding to a user, an agent typically performs a series of actions, which we refer to as a 'trajectory.' It might compare the user input with session history to disambiguate a term, or lookup a policy document, search a knowledge base or invoke an API to save a ticket. We call this a ‘trajectory’ of actions. Evaluating an agent's performance requires comparing its actual trajectory to an expected, or ideal, one. This comparison can reveal errors and inefficiencies in the agent's process. The expected trajectory represents the ground truth \-- the list of steps we anticipate the agent should take.
+Before responding to a user, an agent typically performs a series of actions, which we refer to as a 'trajectory.' It might compare the user input with session history to disambiguate a term, or lookup a policy document, search a knowledge base or invoke an API to save a ticket. We call this a 'trajectory' of actions. Evaluating an agent's performance requires comparing its actual trajectory to an expected, or ideal, one. This comparison can reveal errors and inefficiencies in the agent's process. The expected trajectory represents the ground truth -- the list of steps we anticipate the agent should take.
 
 For example:
 
-```py
+```typescript
 // Trajectory evaluation will compare
-expected_steps = ["determine_intent", "use_tool", "review_results", "report_generation"]
-actual_steps = ["determine_intent", "use_tool", "review_results", "report_generation"]
+const expectedSteps = ["determine_intent", "use_tool", "review_results", "report_generation"];
+const actualSteps = ["determine_intent", "use_tool", "review_results", "report_generation"];
 ```
 
 Several ground-truth-based trajectory evaluations exist:
@@ -192,8 +192,8 @@ Creating evalsets manually can be complex, therefore UI tools are provided to he
 
 The evaluation criteria define how the agent's performance is measured against the evalset. The following metrics are supported:
 
-* `tool_trajectory_avg_score`: This metric compares the agent's actual tool usage during the evaluation against the expected tool usage defined in the `expected_tool_use` field. Each matching tool usage step receives a score of 1, while a mismatch receives a score of 0\. The final score is the average of these matches, representing the accuracy of the tool usage trajectory.  
-* `response_match_score`: This metric compares the agent's final natural language response to the expected final response, stored in the `reference` field. We use the [ROUGE](https://en.wikipedia.org/wiki/ROUGE_\(metric\)) metric to calculate the similarity between the two responses.
+* `tool_trajectory_avg_score`: This metric compares the agent's actual tool usage during the evaluation against the expected tool usage defined in the `expected_tool_use` field. Each matching tool usage step receives a score of 1, while a mismatch receives a score of 0. The final score is the average of these matches, representing the accuracy of the tool usage trajectory.  
+* `response_match_score`: This metric compares the agent's final natural language response to the expected final response, stored in the `reference` field. We use the [ROUGE](https://en.wikipedia.org/wiki/ROUGE_(metric)) metric to calculate the similarity between the two responses.
 
 If no evaluation criteria are provided, the following default configuration is used:
 
@@ -215,52 +215,49 @@ Here is an example of a `test_config.json` file specifying custom evaluation cri
 
 As a developer, you can evaluate your agents using the ADK in the following ways:
 
-1. **Web-based UI (**`adk web`**):** Evaluate agents interactively through a web-based interface.  
-2. **Programmatically (**`pytest`**)**: Integrate evaluation into your testing pipeline using `pytest` and test files.  
-3. **Command Line Interface (**`adk eval`**):** Run evaluations on an existing evaluation set file directly from the command line.
+1. **Web-based UI (`npx adk-ts web`):** Evaluate agents interactively through a web-based interface.  
+2. **Programmatically:** Integrate evaluation into your testing pipeline using testing frameworks like Jest or Mocha.  
+3. **Command Line Interface (`npx adk-ts eval`):** Run evaluations on an existing evaluation set file directly from the command line.
 
-### 1\. `adk web` \- Run Evaluations via the Web UI
+### 1. `npx adk-ts web` - Run Evaluations via the Web UI
 
 The web UI provides an interactive way to evaluate agents and generate evaluation datasets.
 
 Steps to run evaluation via the web ui:
 
-1. Start the web server by running: `bash adk web samples_for_testing`  
+1. Start the web server by running: `npx adk-ts web samples_for_testing`  
 2. In the web interface:  
     * Select an agent (e.g., `hello_world`).  
     * Interact with the agent to create a session that you want to save as a test case.  
-    * Click the **“Eval tab”** on the right side of the interface.  
+    * Click the **"Eval tab"** on the right side of the interface.  
     * If you already have an existing eval set, select that or create a new one by clicking on **"Create new eval set"** button. Give your eval set a contextual name. Select the newly created evaluation set.  
     * Click **"Add current session"** to save the current session as an eval in the eval set file. You will be asked to provide a name for this eval, again give it a contextual name.  
     * Once created, the newly created eval will show up in the list of available evals in the eval set file. You can run all or select specific ones to run the eval.  
     * The status of each eval will be shown in the UI.
 
-### 2\.  `pytest` \- Run Tests Programmatically
+### 2. Programmatic Evaluation with Testing Frameworks
 
-You can also use **`pytest`** to run test files as part of your integration tests.
+You can integrate agent evaluation into your testing pipeline using testing frameworks like Jest or Mocha.
 
-#### Example Command
+#### Example Jest Test
 
-```shell
-pytest tests/integration/
+```typescript
+import { AgentEvaluator } from 'adk-typescript';
+import path from 'path';
+
+describe('Agent Evaluation', () => {
+  test('Basic functionality test', async () => {
+    await AgentEvaluator.evaluate({
+      agentModule: 'tests/integration/fixture/home_automation_agent',
+      evalDataset: 'tests/integration/fixture/home_automation_agent/simple_test.test.json',
+    });
+  });
+});
 ```
 
-#### Example Test Code
+This approach allows you to integrate agent evaluations into your CI/CD pipelines or larger test suites. If you want to specify the initial session state for your tests, you can do that by storing the session details in a file and passing that to the `AgentEvaluator.evaluate` method.
 
-Here is an example of a `pytest` test case that runs a single test file:
-
-```py
-def test_with_single_test_file():
-    """Test the agent's basic ability via a session file."""
-    AgentEvaluator.evaluate(
-        agent_module="tests.integration.fixture.home_automation_agent",
-        eval_dataset="tests/integration/fixture/home_automation_agent/simple_test.test.json",
-    )
-```
-
-This approach allows you to integrate agent evaluations into your CI/CD pipelines or larger test suites. If you want to specify the initial session state for your tests, you can do that by storing the session details in a file and passing that to `AgentEvaluator.evaluate` method.
-
-Here is a sample session json file:
+Here is a sample session JSON file:
 
 ```json
 {
@@ -269,11 +266,9 @@ Here is a sample session json file:
   "user_id": "test_user",
   "state": {
     "origin": "San Francisco",
-    "interests": "Moutains, Hikes",
+    "interests": "Mountains, Hikes",
     "range": "1000 miles",
     "cities": ""
-
-
   },
   "events": [],
   "last_update_time": 1741218714.258285
@@ -282,24 +277,26 @@ Here is a sample session json file:
 
 And the sample code will look like this:
 
-```py
-def test_with_single_test_file():
-    """Test the agent's basic ability via a session file."""
-    AgentEvaluator.evaluate(
-        agent_module="tests.integration.fixture.trip_planner_agent",
-        eval_dataset="tests/integration/fixture/trip_planner_agent/simple_test.test.json",
-        initial_session_file="tests/integration/fixture/trip_planner_agent/initial.session.json"
-    )
+```typescript
+import { AgentEvaluator } from 'adk-typescript';
+
+test('Trip planner with initial state', async () => {
+  await AgentEvaluator.evaluate({
+    agentModule: 'tests/integration/fixture/trip_planner_agent',
+    evalDataset: 'tests/integration/fixture/trip_planner_agent/simple_test.test.json',
+    initialSessionFile: 'tests/integration/fixture/trip_planner_agent/initial.session.json'
+  });
+});
 ```
 
-### 3\. `adk eval` \- Run Evaluations via the cli
+### 3. `npx adk-ts eval` - Run Evaluations via the CLI
 
 You can also run evaluation of an eval set file through the command line interface (CLI). This runs the same evaluation that runs on the UI, but it helps with automation, i.e. you can add this command as a part of your regular build generation and verification process.
 
 Here is the command:
 
 ```shell
-adk eval \
+npx adk-ts eval \
     <AGENT_MODULE_FILE_PATH> \
     <EVAL_SET_FILE_PATH> \
     [--config_file_path=<PATH_TO_TEST_JSON_CONFIG_FILE>] \
@@ -309,15 +306,15 @@ adk eval \
 For example:
 
 ```shell
-adk eval \
+npx adk-ts eval \
     samples_for_testing/hello_world \
     samples_for_testing/hello_world/hello_world_eval_set_001.evalset.json
 ```
 
 Here are the details for each command line argument:
 
-* `AGENT_MODULE_FILE_PATH`: The path to the `__init__.py` file that contains a module by the name "agent". "agent" module contains a `root_agent`.  
-* `EVAL_SET_FILE_PATH`: The path to evaluations file(s). You can specify one or more eval set file paths. For each file, all evals will be run by default. If you want to run only specific evals from a eval set, first create a comma separated list of eval names and then add that as a suffix to the eval set file name, demarcated by a colon `:` .
+* `AGENT_MODULE_FILE_PATH`: The path to the entry point file that exports the agent. This is typically the file that contains the root agent.  
+* `EVAL_SET_FILE_PATH`: The path to evaluations file(s). You can specify one or more eval set file paths. For all evals in the file will be run by default. If you want to run only specific evals from an eval set, first create a comma-separated list of eval names and then add that as a suffix to the eval set file name, demarcated by a colon `:` .
 * For example: `sample_eval_set_file.json:eval_1,eval_2,eval_3`  
   `This will only run eval_1, eval_2 and eval_3 from sample_eval_set_file.json`  
 * `CONFIG_FILE_PATH`: The path to the config file.  
