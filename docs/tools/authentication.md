@@ -6,43 +6,41 @@ Many tools need to access protected resources (like user data in Google Calendar
 
 The key components involved are:
 
-1. **`AuthScheme`**: Defines *how* an API expects authentication credentials (e.g., as an API Key in a header, an OAuth 2.0 Bearer token). ADK supports the same types of authentication schemes as OpenAPI 3.0. To know more about what each type of credential is, refer to [OpenAPI doc: Authentication](https://swagger.io/docs/specification/v3_0/authentication/). ADK uses specific classes like `APIKey`, `HTTPBearer`, `OAuth2`, `OpenIdConnectWithConfig`.  
-2. **`AuthCredential`**: Holds the *initial* information needed to *start* the authentication process (e.g., your application's OAuth Client ID/Secret, an API key value). It includes an `auth_type` (like `API_KEY`, `OAUTH2`, `SERVICE_ACCOUNT`) specifying the credential type.
+1. **`AuthScheme`**: Defines *how* an API expects authentication credentials (e.g., as an API Key in a header, an OAuth 2.0 Bearer token). ADK supports the same types of authentication schemes as OpenAPI 3.0. To know more about what each type of credential is, refer to [OpenAPI doc: Authentication](https://swagger.io/docs/specification/v3_0/authentication/). ADK uses classes like `ApiKeyAuthScheme`, `BearerAuthScheme`, and interfaces like `OpenIdConnectWithConfig`.  
+2. **`AuthCredential`**: Holds the *initial* information needed to *start* the authentication process (e.g., your application's OAuth Client ID/Secret, an API key value). It includes an `authType` property (like `API_KEY`, `OAUTH2`, `SERVICE_ACCOUNT`) specifying the credential type.
 
 The general flow involves providing these details when configuring a tool. ADK then attempts to automatically exchange the initial credential for a usable one (like an access token) before the tool makes an API call. For flows requiring user interaction (like OAuth consent), a specific interactive process involving the Agent Client application is triggered.
 
 ## Supported Initial Credential Types
 
-* **API\_KEY:** For simple key/value authentication. Usually requires no exchange.  
+* **API_KEY:** For simple key/value authentication. Usually requires no exchange.  
 * **HTTP:** Can represent Basic Auth (not recommended/supported for exchange) or already obtained Bearer tokens. If it's a Bearer token, no exchange is needed.  
 * **OAUTH2:** For standard OAuth 2.0 flows. Requires configuration (client ID, secret, scopes) and often triggers the interactive flow for user consent.  
-* **OPEN\_ID\_CONNECT:** For authentication based on OpenID Connect. Similar to OAuth2, often requires configuration and user interaction.  
-* **SERVICE\_ACCOUNT:** For Google Cloud Service Account credentials (JSON key or Application Default Credentials). Typically exchanged for a Bearer token.
+* **OPEN_ID_CONNECT:** For authentication based on OpenID Connect. Similar to OAuth2, often requires configuration and user interaction.  
+* **SERVICE_ACCOUNT:** For Google Cloud Service Account credentials (JSON key or Application Default Credentials). Typically exchanged for a Bearer token.
 
 ## Configuring Authentication on Tools
 
 You set up authentication when defining your tool:
 
-* **RestApiTool / OpenAPIToolset**: Pass `auth_scheme` and `auth_credential` during initialization
+* **RestApiTool / OpenAPIToolset**: Pass `authScheme` and `authCredential` during initialization
 
-* **GoogleApiToolSet Tools**: ADK has built-in 1st party tools like Google Calendar, BigQuery etc,. Use the toolset's specific method.
+* **GoogleApiToolSet Tools**: ADK has built-in 1st party tools like Google Calendar, BigQuery etc. Use the toolset's specific configuration method.
 
-* **APIHubToolset / ApplicationIntegrationToolset**: Pass `auth_scheme` and `auth_credential`during initialization, if the API managed in API Hub / provided by Application Integration requires authentication.
+* **APIHubToolset / ApplicationIntegrationToolset**: Pass `authScheme` and `authCredential` during initialization, if the API managed in API Hub / provided by Application Integration requires authentication.
 
 !!! tip "WARNING" 
     Storing sensitive credentials like access tokens and especially refresh tokens directly in the session state might pose security risks depending on your session storage backend (`SessionService`) and overall application security posture.
 
     *   **`InMemorySessionService`:** Suitable for testing and development, but data is lost when the process ends. Less risk as it's transient.
-    *   **Database/Persistent Storage:** **Strongly consider encrypting** the token data before storing it in the database using a robust encryption library (like `cryptography`) and managing encryption keys securely (e.g., using a key management service).
+    *   **Database/Persistent Storage:** **Strongly consider encrypting** the token data before storing it in the database using a robust encryption library and managing encryption keys securely (e.g., using a key management service).
     *   **Secure Secret Stores:** For production environments, storing sensitive credentials in a dedicated secret manager (like Google Cloud Secret Manager or HashiCorp Vault) is the **most recommended approach**. Your tool could potentially store only short-lived access tokens or secure references (not the refresh token itself) in the session state, fetching the necessary secrets from the secure store when needed.
 
 ---
 
 ## Journey 1: Building Agentic Applications with Authenticated Tools
 
-This section focuses on using pre-existing tools (like those from `RestApiTool/ OpenAPIToolset`, `APIHubToolset`, `GoogleApiToolSet`, or custom `FunctionTools`) that require authentication within your agentic application. Your main responsibility is configuring the tools and handling the client-side part of interactive authentication flows (if required by the tool).
-
-![Authentication](../assets/auth_part1.svg)
+This section focuses on using pre-existing tools (like those from `RestApiTool/ OpenAPIToolset`, `APIHubToolset`, `GoogleApiToolSet`) that require authentication within your agentic application. Your main responsibility is configuring the tools and handling the client-side part of interactive authentication flows (if required by the tool).
 
 ### 1. Configuring Tools with Authentication
 
@@ -56,109 +54,152 @@ Pass the scheme and credential during toolset initialization. The toolset applie
 
       Create a tool requiring an API Key.
 
-      ```py
-      from google.adk.tools.openapi_tool.auth.auth_helpers import token_to_scheme_credential
-      from google.adk.tools.apihub_tool.apihub_toolset import APIHubToolset
-      auth_scheme, auth_credential = token_to_scheme_credential(
-         "apikey", "query", "apikey", YOUR_API_KEY_STRING
-      )
-      sample_api_toolset = APIHubToolset(
-         name="sample-api-requiring-api-key",
-         description="A tool using an API protected by API Key",
-         apihub_resource_name="...",
-         auth_scheme=auth_scheme,
-         auth_credential=auth_credential,
-      )
+      ```typescript
+      import { APIHubToolset } from 'adk-typescript';
+      
+      // Creating an API Key auth scheme
+      const authScheme = {
+        type: 'apiKey',
+        name: 'apikey',
+        in: 'query'
+      };
+      
+      // Creating the credential with the actual API key
+      const authCredential = {
+        authType: 'API_KEY',
+        apiKey: {
+          apiKey: 'YOUR_API_KEY_STRING'
+        }
+      };
+      
+      // Create the toolset with authentication
+      const sampleApiToolset = new APIHubToolset({
+        name: 'sample-api-requiring-api-key',
+        description: 'A tool using an API protected by API Key',
+        apihubResourceName: '...',
+        authScheme: authScheme,
+        authCredential: authCredential
+      });
       ```
 
 === "OAuth2"
 
       Create a tool requiring OAuth2.
 
-      ```py
-      from google.adk.tools.openapi_tool.openapi_spec_parser.openapi_toolset import OpenAPIToolset
-      from fastapi.openapi.models import OAuth2
-      from fastapi.openapi.models import OAuthFlowAuthorizationCode
-      from fastapi.openapi.models import OAuthFlows
-      from google.adk.auth import AuthCredential
-      from google.adk.auth import AuthCredentialTypes
-      from google.adk.auth import OAuth2Auth
-
-      auth_scheme = OAuth2(
-         flows=OAuthFlows(
-            authorizationCode=OAuthFlowAuthorizationCode(
-                  authorizationUrl="https://accounts.google.com/o/oauth2/auth",
-                  tokenUrl="https://oauth2.googleapis.com/token",
-                  scopes={
-                     "https://www.googleapis.com/auth/calendar": "calendar scope"
-                  },
-            )
-         )
-      )
-      auth_credential = AuthCredential(
-         auth_type=AuthCredentialTypes.OAUTH2,
-         oauth2=OAuth2Auth(
-            client_id=YOUR_OAUTH_CLIENT_ID, 
-            client_secret=YOUR_OAUTH_CLIENT_SECRET
-         ),
-      )
-
-      calendar_api_toolset = OpenAPIToolset(
-         spec_str=google_calendar_openapi_spec_str, # Fill this with an openapi spec
-         spec_str_type='yaml',
-         auth_scheme=auth_scheme,
-         auth_credential=auth_credential,
-      )
+      ```typescript
+      import { 
+        OpenAPIToolset, 
+        AuthCredential, 
+        AuthCredentialTypes, 
+        OAuth2Auth 
+      } from 'adk-typescript';
+      
+      // Define the OAuth2 auth scheme with flow configuration
+      const authScheme = {
+        type: 'oauth2',
+        flows: {
+          authorizationCode: {
+            authorizationUrl: 'https://accounts.google.com/o/oauth2/auth',
+            tokenUrl: 'https://oauth2.googleapis.com/token',
+            scopes: {
+              'https://www.googleapis.com/auth/calendar': 'calendar scope'
+            }
+          }
+        }
+      };
+      
+      // Define the initial OAuth2 credentials (client ID and secret)
+      const authCredential = {
+        authType: AuthCredentialTypes.OAUTH2,
+        oauth2: {
+          clientId: 'YOUR_OAUTH_CLIENT_ID',
+          clientSecret: 'YOUR_OAUTH_CLIENT_SECRET'
+        }
+      };
+      
+      // Create the OpenAPI toolset with OAuth2 authentication
+      const calendarApiToolset = new OpenAPIToolset({
+        specStr: googleCalendarOpenApiSpecStr, // Fill this with an OpenAPI spec
+        specStrType: 'yaml',
+        authScheme: authScheme,
+        authCredential: authCredential
+      });
       ```
 
 === "Service Account"
 
-      Create a tool requiring Service Account.
+      Create a tool requiring Google Service Account.
 
-      ```py
-      from google.adk.tools.openapi_tool.auth.auth_helpers import service_account_dict_to_scheme_credential
-      from google.adk.tools.openapi_tool.openapi_spec_parser.openapi_toolset import OpenAPIToolset
-
-      service_account_cred = json.loads(service_account_json_str)auth_scheme, auth_credential = service_account_dict_to_scheme_credential(
-         config=service_account_cred,
-         scopes=["https://www.googleapis.com/auth/cloud-platform"],
-      )
-      sample_toolset = OpenAPIToolset(
-         spec_str=sa_openapi_spec_str, # Fill this with an openapi spec
-         spec_str_type='json',
-         auth_scheme=auth_scheme,
-         auth_credential=auth_credential,
-      )
+      ```typescript
+      import { 
+        OpenAPIToolset, 
+        AuthCredential, 
+        AuthCredentialTypes 
+      } from 'adk-typescript';
+      
+      // Parse the service account JSON key file
+      const serviceAccountCred = JSON.parse(serviceAccountJsonStr);
+      
+      // Define the auth scheme for service account authentication
+      const authScheme = {
+        type: 'http',
+        scheme: 'bearer'
+      };
+      
+      // Configure the service account credential
+      const authCredential = {
+        authType: AuthCredentialTypes.SERVICE_ACCOUNT,
+        serviceAccount: {
+          credentials: serviceAccountCred,
+          scopes: ['https://www.googleapis.com/auth/cloud-platform']
+        }
+      };
+      
+      // Create the OpenAPI toolset with service account authentication
+      const sampleToolset = new OpenAPIToolset({
+        specStr: serviceAccountOpenApiSpecStr, // Fill this with an OpenAPI spec
+        specStrType: 'json',
+        authScheme: authScheme,
+        authCredential: authCredential
+      });
       ```
 
-=== "OpenID connect"
+=== "OpenID Connect"
 
-      Create a tool requiring OpenID connect.
+      Create a tool requiring OpenID Connect.
 
-      ```py
-      from google.adk.auth.auth_schemes import OpenIdConnectWithConfig
-      from google.adk.auth.auth_credential import AuthCredential, AuthCredentialTypes, OAuth2Auth
-      from google.adk.tools.openapi_tool.openapi_spec_parser.openapi_toolset import OpenAPIToolset
-
-      auth_scheme = OpenIdConnectWithConfig(
-         authorization_endpoint=OAUTH2_AUTH_ENDPOINT_URL,
-         token_endpoint=OAUTH2_TOKEN_ENDPOINT_URL,
-         scopes=['openid', 'YOUR_OAUTH_SCOPES"]
-      )
-      auth_credential = AuthCredential(
-      auth_type=AuthCredentialTypes.OPEN_ID_CONNECT,
-      oauth2=OAuth2Auth(
-         client_id="...",
-         client_secret="...",
-      )
-      )
-
-      userinfo_toolset = OpenAPIToolset(
-         spec_str=content, # Fill in an actual spec
-         spec_str_type='yaml',
-         auth_scheme=auth_scheme,
-         auth_credential=auth_credential,
-      )
+      ```typescript
+      import { 
+        OpenAPIToolset, 
+        OpenIdConnectWithConfig,
+        AuthCredential, 
+        AuthCredentialTypes 
+      } from 'adk-typescript';
+      
+      // Define the OpenID Connect auth scheme
+      const authScheme = {
+        type: 'openIdConnect',
+        authorization_endpoint: 'https://your-endpoint.okta.com/oauth2/v1/authorize',
+        token_endpoint: 'https://your-endpoint.okta.com/oauth2/v1/token',
+        scopes: ['openid', 'email', 'profile']
+      };
+      
+      // Configure the OAuth2 credentials for OpenID Connect
+      const authCredential = {
+        authType: AuthCredentialTypes.OPEN_ID_CONNECT,
+        oauth2: {
+          clientId: 'YOUR_CLIENT_ID',
+          clientSecret: 'YOUR_CLIENT_SECRET'
+        }
+      };
+      
+      // Create the OpenAPI toolset with OpenID Connect authentication
+      const userinfoToolset = new OpenAPIToolset({
+        specStr: oidcSpecContent, // Fill with an actual OpenAPI spec
+        specStrType: 'yaml',
+        authScheme: authScheme,
+        authCredential: authCredential
+      });
       ```
 
 **B. Using Google API Toolsets (e.g., `calendar_tool_set`)**
@@ -167,227 +208,273 @@ These toolsets often have dedicated configuration methods.
 
 Tip: For how to create a Google OAuth Client ID & Secret, see this guide: [Get your Google API Client ID](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid#get_your_google_api_client_id)
 
-```py
-# Example: Configuring Google Calendar Tools
-from google.adk.tools.google_api_tool import calendar_tool_set
+```typescript
+// Example: Configuring Google Calendar Tools
+import { GoogleApiToolSet } from 'adk-typescript';
 
-client_id = "YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com"
-client_secret = "YOUR_GOOGLE_OAUTH_CLIENT_SECRET"
+const clientId = 'YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com';
+const clientSecret = 'YOUR_GOOGLE_OAUTH_CLIENT_SECRET';
 
-calendar_tools = calendar_tool_set.get_tools()
-for tool in calendar_tools:
-    # Use the specific configure method for this tool type
-    tool.configure_auth(client_id=client_id, client_secret=client_secret)
+// Initialize calendar tools with OAuth2 authentication
+const calendarTools = GoogleApiToolSet.calendarTools({
+  authConfig: {
+    clientId: clientId,
+    clientSecret: clientSecret
+  }
+});
 
-# agent = LlmAgent(..., tools=calendar_tools)
+// Add the tools to your agent
+// agent = new LlmAgent(..., tools: calendarTools.getTools());
 ```
+
+The sequence diagram of auth request flow (where tools are requesting auth credentials) looks like below:
+
+![Authentication](../assets/auth_part1.svg) 
+
 
 ### 2. Handling the Interactive OAuth/OIDC Flow (Client-Side)
 
-If a tool requires user login/consent (typically OAuth 2.0 or OIDC), the ADK framework pauses execution and signals your **Agent Client** application (the code calling `runner.run_async`, like your UI backend, CLI app, or Spark job) to handle the user interaction.
+If a tool requires user login/consent (typically OAuth 2.0 or OIDC), the ADK framework pauses execution and signals your **Agent Client** application. There are two cases:
+
+* **Agent Client** application runs the agent directly (via `runner.run()` or `runner.runAsync()`) in the same process. e.g. UI backend, CLI app, or Spark job etc.
+* **Agent Client** application interacts with ADK's Express server via `/run` or `/run_sse` endpoint. While ADK's Express server could be setup on the same server or different server as **Agent Client** application
+
+The second case is a special case of first case, because `/run` or `/run_sse` endpoint also invokes `runner.runAsync()`. The only differences are:
+
+* Whether to call a TypeScript function to run the agent (first case) or call a service endpoint to run the agent (second case).
+* Whether the result events are in-memory objects (first case) or serialized JSON string in HTTP response (second case).
+
+Below sections focus on the first case and you should be able to map it to the second case very straightforward. We will also describe some differences to handle for the second case if necessary.
 
 Here's the step-by-step process for your client application:
 
 **Step 1: Run Agent & Detect Auth Request**
 
-* Initiate the agent interaction using `runner.run_async`.  
-* Iterate through the yielded events.  
-* Look for a specific event where the agent calls the special function `adk_request_credential`. This event signals that user interaction is needed. Use helper functions to identify this event and extract necessary information.
+* Initiate the agent interaction using `runner.runAsync()`.
+* Iterate through the yielded events.
+* Look for a specific event that contains a function call with a special name: `adk_request_credential`. This event signals that user interaction is needed. You can use helper functions to identify this event and extract necessary information.
 
-```py
+```typescript
+import { Runner, Session, Event, Content, isPendingAuthEvent } from 'adk-typescript';
 
-# runner = Runner(...)
-# session = session_service.create_session(...)
-# content = types.Content(...) # User's initial query
+// runner = new Runner(...);
+// session = await sessionService.createSession(...);
+// content = new Content(...); // User's initial query
 
-print("\nRunning agent...")
-events_async = runner.run_async(
-    session_id=session.id, user_id='user', new_message=content
-)
+console.log("\nRunning agent...");
+const eventsAsync = runner.runAsync({
+  sessionId: session.id,
+  userId: 'user',
+  newMessage: content
+});
 
-auth_request_event_id, auth_config = None, None
+let authRequestFunctionCallId: string | undefined;
+let authConfig: any | undefined;
 
-async for event in events_async:
-    # Use helper to check for the specific auth request event
-    if is_pending_auth_event(event):
-        print("--> Authentication required by agent.")
-        # Store the ID needed to respond later
-        auth_request_event_id = get_function_call_id(event)
-        # Get the AuthConfig containing the auth_uri etc.
-        auth_config = get_function_call_auth_config(event)
-        break # Stop processing events for now, need user interaction
+// Iterate through events asynchronously
+for await (const event of eventsAsync) {
+  // Check if this is an auth request event
+  if (isPendingAuthEvent(event)) {
+    console.log("--> Authentication required by agent.");
+    
+    // Get the function call from the event (implementation depends on your event structure)
+    const functionCall = event.content?.parts?.[0]?.functionCall;
+    
+    if (!functionCall || !functionCall.id) {
+      throw new Error('Cannot get function call ID from auth request event');
+    }
+    
+    // Store the ID needed to respond later
+    authRequestFunctionCallId = functionCall.id;
+    
+    // Get the AuthConfig from the function call arguments
+    authConfig = functionCall.args?.auth_config;
+    
+    break; // Stop processing events, need user interaction
+  }
+}
 
-if not auth_request_event_id:
-    print("\nAuth not required or agent finished.")
-    # return # Or handle final response if received
-
-```
-
-*Helper functions `helpers.py`:*
-
-```py
-from google.adk.events import Event
-from google.adk.auth import AuthConfig # Import necessary type
-
-def is_pending_auth_event(event: Event) -> bool:
-  # Checks if the event is the special auth request function call
-  return (
-      event.content and event.content.parts and event.content.parts[0]
-      and event.content.parts[0].function_call
-      and event.content.parts[0].function_call.name == 'adk_request_credential'
-      # Check if it's marked as long running (optional but good practice)
-      and event.long_running_tool_ids
-      and event.content.parts[0].function_call.id in event.long_running_tool_ids
-  )
-
-def get_function_call_id(event: Event) -> str:
-  # Extracts the ID of the function call (works for any call, including auth)
-  if ( event and event.content and event.content.parts and event.content.parts[0]
-      and event.content.parts[0].function_call and event.content.parts[0].function_call.id ):
-    return event.content.parts[0].function_call.id
-  raise ValueError(f'Cannot get function call id from event {event}')
-
-def get_function_call_auth_config(event: Event) -> AuthConfig:
-    # Extracts the AuthConfig object from the arguments of the auth request event
-    auth_config_dict = None
-    try:
-        auth_config_dict = event.content.parts[0].function_call.args.get('auth_config')
-        if auth_config_dict and isinstance(auth_config_dict, dict):
-            # Reconstruct the AuthConfig object
-            return AuthConfig.model_validate(auth_config_dict)
-        else:
-            raise ValueError("auth_config missing or not a dict in event args")
-    except (AttributeError, IndexError, KeyError, TypeError, ValueError) as e:
-        raise ValueError(f'Cannot get auth config from event {event}') from e
-
+if (!authRequestFunctionCallId) {
+  console.log("\nAuth not required or agent finished.");
+  // return or handle final response
+}
 ```
 
 **Step 2: Redirect User for Authorization**
 
-* Get the authorization URL (`auth_uri`) from the `auth_config` extracted in the previous step.  
-* **Crucially, append your application's**  redirect\_uri as a query parameter to this `auth_uri`. This `redirect_uri` must be pre-registered with your OAuth provider (e.g., [Google Cloud Console](https://developers.google.com/identity/protocols/oauth2/web-server#creatingcred), [Okta admin panel](https://developer.okta.com/docs/guides/sign-into-web-app-redirect/spring-boot/main/#create-an-app-integration-in-the-admin-console)).  
+* Get the authorization URL (`auth_uri`) from the `authConfig` extracted in the previous step.
+* **Crucially, append your application's** redirect_uri as a query parameter to this `auth_uri`. This `redirect_uri` must be pre-registered with your OAuth provider (e.g., [Google Cloud Console](https://developers.google.com/identity/protocols/oauth2/web-server#creatingcred), [Okta admin panel](https://developer.okta.com/docs/guides/sign-into-web-app-redirect/spring-boot/main/#create-an-app-integration-in-the-admin-console)).
 * Direct the user to this complete URL (e.g., open it in their browser).
 
-```py
-# (Continuing after detecting auth needed)
+```typescript
+// (Continuing after detecting auth needed)
 
-if auth_request_event_id and auth_config:
-    # Get the base authorization URL from the AuthConfig
-    base_auth_uri = auth_config.exchanged_auth_credential.oauth2.auth_uri
+if (authRequestFunctionCallId && authConfig) {
+  // Get the base authorization URL from the AuthConfig
+  const baseAuthUri = authConfig.exchanged_auth_credential?.oauth2?.auth_uri;
 
-    if base_auth_uri:
-        redirect_uri = 'http://localhost:8000/callback' # MUST match your OAuth client config
-        # Append redirect_uri (use urlencode in production)
-        auth_request_uri = base_auth_uri + f'&redirect_uri={redirect_uri}'
-
-        print("\n--- User Action Required ---")
-        print(f'1. Please open this URL in your browser:\n   {auth_request_uri}\n')
-        print(f'2. Log in and grant the requested permissions.')
-        print(f'3. After authorization, you will be redirected to: {redirect_uri}')
-        print(f'   Copy the FULL URL from your browser\'s address bar (it includes a `code=...`).')
-        # Next step: Get this callback URL from the user (or your web server handler)
-    else:
-         print("ERROR: Auth URI not found in auth_config.")
-         # Handle error
-
+  if (baseAuthUri) {
+    const redirectUri = 'http://localhost:8000/callback'; // MUST match your OAuth client app config
+    
+    // Append redirect_uri (use URLSearchParams in production for proper encoding)
+    const authRequestUri = baseAuthUri + `&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    
+    console.log(`\nPlease open this URL in your browser to authorize the application:\n${authRequestUri}`);
+    
+    // In a web app, you would redirect the user to this URL:
+    // window.location.href = authRequestUri;
+    
+    // Note: The auth provider will ask the user to log in and authorize your application
+    // Then redirect back to your redirect_uri with an authorization code
+  } else {
+    console.error("ERROR: Auth URI not found in authConfig.");
+    // Handle error
+  }
+}
 ```
-
-![Authentication](../assets/auth_part2.svg)
 
 **Step 3. Handle the Redirect Callback (Client):**
 
-* Your application must have a mechanism (e.g., a web server route at the `redirect_uri`) to receive the user after they authorize the application with the provider.  
-* The provider redirects the user to your `redirect_uri` and appends an `authorization_code` (and potentially `state`, `scope`) as query parameters to the URL.  
-* Capture the **full callback URL** from this incoming request.  
+* Your application must have a mechanism (e.g., a web server route at the `redirect_uri`) to receive the user after they authorize the application with the provider.
+* The provider redirects the user to your `redirect_uri` and appends an `authorization_code` (and potentially `state`, `scope`) as query parameters to the URL.
+* Capture the **full callback URL** from this incoming request.
 * (This step happens outside the main agent execution loop, in your web server or equivalent callback handler.)
+
+Here's an example using Express:
+
+```typescript
+import express from 'express';
+
+const app = express();
+const port = 8000;
+
+// This route handles the OAuth callback
+app.get('/callback', (req, res) => {
+  // Get the full URL including query parameters (authorization code)
+  const fullCallbackUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  
+  // Display for manual copy-paste in CLI apps
+  res.send(`
+    <html>
+      <body>
+        <h1>Authorization Successful</h1>
+        <p>Please copy this URL and paste it back in your application:</p>
+        <textarea rows="3" cols="100" onclick="this.select()">${fullCallbackUrl}</textarea>
+      </body>
+    </html>
+  `);
+  
+  // In a web app, you might store the URL in a session or database
+  // and redirect back to your main application automatically
+});
+
+app.listen(port, () => {
+  console.log(`Auth callback server listening on port ${port}`);
+});
+```
 
 **Step 4. Send Authentication Result Back to ADK (Client):**
 
-* Once you have the full callback URL (containing the authorization code), retrieve the `auth_request_event_id` and the `AuthConfig` object saved in Client Step 1\.  
-* **Update the**  Set the captured callback URL into the `exchanged_auth_credential.oauth2.auth_response_uri` field. Also ensure `exchanged_auth_credential.oauth2.redirect_uri` contains the redirect URI you used.  
-* **Construct a**  Create a `types.Content` object containing a `types.Part` with a `types.FunctionResponse`.  
-      * Set `name` to `"adk_request_credential"`. (Note: This is a special name for ADK to proceed with authentication. Do not use other names.)  
-      * Set `id` to the `auth_request_event_id` you saved.  
-      * Set `response` to the *serialized* (e.g., `.model_dump()`) updated `AuthConfig` object.  
-* Call `runner.run_async` **again** for the same session, passing this `FunctionResponse` content as the `new_message`.
+* Once you have the full callback URL (containing the authorization code), retrieve the `authRequestFunctionCallId` and the `authConfig` object saved in Client Step 1.
+* Set the captured callback URL into the `exchanged_auth_credential.oauth2.auth_response_uri` field. Also ensure `exchanged_auth_credential.oauth2.redirect_uri` contains the redirect URI you used.
+* Create a `Content` object containing a `Part` with a `FunctionResponse`.
+* Set `name` to `"adk_request_credential"`. (Note: This is a special name for ADK to proceed with authentication. Do not use other names.)
+* Set `id` to the `authRequestFunctionCallId` you saved.
+* Set `response` to the serialized (e.g., `.stringify()` or `.toJSON()`) updated `authConfig` object.
+* Call `runner.runAsync()` **again** for the same session, passing this `FunctionResponse` content as the `newMessage`.
 
-```py
-# (Continuing after user interaction)
+```typescript
+import { Content, Part, FunctionResponse, getUserInput } from 'adk-typescript';
 
-    # Simulate getting the callback URL (e.g., from user paste or web handler)
-    auth_response_uri = await get_user_input(
-        f'Paste the full callback URL here:\n> '
-    )
-    auth_response_uri = auth_response_uri.strip() # Clean input
+// (Continuing after user has authorized and been redirected)
 
-    if not auth_response_uri:
-        print("Callback URL not provided. Aborting.")
-        return
+// Get the callback URL - in a CLI app, prompt the user to paste it
+// In a web app, you might retrieve it from a session or temporary storage
+async function handleAuthCallback() {
+  // Simulate getting the callback URL (e.g., from user paste or web handler)
+  const authResponseUri = await getUserInput('Paste the full callback URL here:\n> ');
+  
+  if (!authResponseUri || authResponseUri.trim() === '') {
+    console.log("Callback URL not provided. Aborting.");
+    return;
+  }
+  
+  // Update the received AuthConfig with the callback details
+  authConfig.exchanged_auth_credential.oauth2.auth_response_uri = authResponseUri.trim();
+  // Also include the redirect_uri used, as the token exchange might need it
+  authConfig.exchanged_auth_credential.oauth2.redirect_uri = redirectUri;
+  
+  // Construct the FunctionResponse Content object
+  const authContent = new Content({
+    role: 'user', // Role must be 'user' when sending a FunctionResponse
+    parts: [
+      new Part({
+        functionResponse: new FunctionResponse({
+          id: authRequestFunctionCallId,       // Link to the original request
+          name: 'adk_request_credential',      // Special framework function name
+          response: JSON.stringify(authConfig) // Send back the *updated* AuthConfig
+        })
+      })
+    ]
+  });
+  
+  // --- Resume Execution ---
+  console.log("\nSubmitting authentication details back to the agent...");
+  const eventsAsyncAfterAuth = runner.runAsync({
+    sessionId: session.id,
+    userId: 'user',
+    newMessage: authContent // Send the FunctionResponse back
+  });
+  
+  // --- Process Final Agent Output ---
+  console.log("\n--- Agent Response after Authentication ---");
+  for await (const event of eventsAsyncAfterAuth) {
+    // Process events normally, expecting the tool call to succeed now
+    console.log(event); // Print the full event for inspection
+  }
+}
 
-    # Update the received AuthConfig with the callback details
-    auth_config.exchanged_auth_credential.oauth2.auth_response_uri = auth_response_uri
-    # Also include the redirect_uri used, as the token exchange might need it
-    auth_config.exchanged_auth_credential.oauth2.redirect_uri = redirect_uri
-
-    # Construct the FunctionResponse Content object
-    auth_content = types.Content(
-        role='user', # Role can be 'user' when sending a FunctionResponse
-        parts=[
-            types.Part(
-                function_response=types.FunctionResponse(
-                    id=auth_request_event_id,       # Link to the original request
-                    name='adk_request_credential', # Special framework function name
-                    response=auth_config.model_dump() # Send back the *updated* AuthConfig
-                )
-            )
-        ],
-    )
-
-    # --- Resume Execution ---
-    print("\nSubmitting authentication details back to the agent...")
-    events_async_after_auth = runner.run_async(
-        session_id=session.id,
-        user_id='user',
-        new_message=auth_content, # Send the FunctionResponse back
-    )
-
-    # --- Process Final Agent Output ---
-    print("\n--- Agent Response after Authentication ---")
-    async for event in events_async_after_auth:
-        # Process events normally, expecting the tool call to succeed now
-        print(event) # Print the full event for inspection
-
+// Call the function to handle the callback
+handleAuthCallback();
 ```
 
 **Step 5: ADK Handles Token Exchange & Tool Retry and gets Tool result**
 
-* ADK receives the `FunctionResponse` for `adk_request_credential`.  
-* It uses the information in the updated `AuthConfig` (including the callback URL containing the code) to perform the OAuth **token exchange** with the provider's token endpoint, obtaining the access token (and possibly refresh token).  
-* ADK internally makes these tokens available (often via `tool_context.get_auth_response()` or by updating session state).  
-* ADK **automatically retries** the original tool call (the one that initially failed due to missing auth).  
-* This time, the tool finds the valid tokens and successfully executes the authenticated API call.  
+* ADK receives the `FunctionResponse` for `adk_request_credential`.
+* It uses the information in the updated `authConfig` (including the callback URL containing the code) to perform the OAuth **token exchange** with the provider's token endpoint, obtaining the access token (and possibly refresh token).
+* ADK internally makes these tokens available by setting them in the session state).
+* ADK **automatically retries** the original tool call (the one that initially failed due to missing auth).
+* This time, the tool finds the valid tokens (via `toolContext.getAuthResponse()`) and successfully executes the authenticated API call.
 * The agent receives the actual result from the tool and generates its final response to the user.
 
 ---
 
+The sequence diagram of auth response flow (where Agent Client sends back the auth response and ADK retries tool calling) looks like below:
+
+![Authentication](../assets/auth_part2.svg)
+
 ## Journey 2: Building Custom Tools (`FunctionTool`) Requiring Authentication
 
-This section focuses on implementing the authentication logic *inside* your custom Python function when creating a new ADK Tool. We will implement a `FunctionTool` as an example.
+This section focuses on implementing the authentication logic *inside* your custom TypeScript function when creating a new ADK Tool. We will implement a `FunctionTool` as an example.
 
 ### Prerequisites
 
-Your function signature *must* include [`tool_context: ToolContext`](../tools/index.md#tool-context). ADK automatically injects this object, providing access to state and auth mechanisms.
+Your function signature *must* include [`toolContext: ToolContext`](../tools/index.md#tool-context). ADK automatically injects this object, providing access to state and auth mechanisms.
 
-```py
-from google.adk.tools import FunctionTool, ToolContext
-from typing import Dict
+```typescript
+import { FunctionTool, ToolContext } from 'adk-typescript';
 
-def my_authenticated_tool_function(param1: str, ..., tool_context: ToolContext) -> dict:
-    # ... your logic ...
-    pass
+function myAuthenticatedToolFunction(
+  param1: string, 
+  ..., 
+  toolContext: ToolContext
+): Record<string, any> {
+  // ... your logic ...
+}
 
-my_tool = FunctionTool(func=my_authenticated_tool_function)
-
+const myTool = new FunctionTool({
+  func: myAuthenticatedToolFunction
+});
 ```
 
 ### Authentication Logic within the Tool Function
@@ -396,257 +483,306 @@ Implement the following steps inside your function:
 
 **Step 1: Check for Cached & Valid Credentials:**
 
-Inside your tool function, first check if valid credentials (e.g., access/refresh tokens) are already stored from a previous run in this session. Credentials for the current sessions should be stored in `tool_context.invocation_context.session.state` (a dictionary of state) Check existence of existing credentials by checking `tool_context.invocation_context.session.state.get(credential_name, None)`.
+Inside your tool function, first check if valid credentials (e.g., access/refresh tokens) are already stored from a previous run in this session. Credentials for the current sessions should be stored in `toolContext.state` (a dictionary of state). Check existence of existing credentials using `toolContext.state.get(credentialName)`.
 
-```py
-# Inside your tool function
-TOKEN_CACHE_KEY = "my_tool_tokens" # Choose a unique key
-SCOPES = ["scope1", "scope2"] # Define required scopes
+```typescript
+// Inside your tool function
+const TOKEN_CACHE_KEY = "my_tool_tokens"; // Choose a unique key
+const SCOPES = ["scope1", "scope2"]; // Define required scopes
 
-creds = None
-cached_token_info = tool_context.state.get(TOKEN_CACHE_KEY)
-if cached_token_info:
-    try:
-        creds = Credentials.from_authorized_user_info(cached_token_info, SCOPES)
-        if not creds.valid and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-            tool_context.state[TOKEN_CACHE_KEY] = json.loads(creds.to_json()) # Update cache
-        elif not creds.valid:
-            creds = None # Invalid, needs re-auth
-            tool_context.state.pop(TOKEN_CACHE_KEY, None)
-    except Exception as e:
-        print(f"Error loading/refreshing cached creds: {e}")
-        creds = None
-        tool_context.state.pop(TOKEN_CACHE_KEY, None)
+let creds = null;
+const cachedTokenInfo = toolContext.state.get(TOKEN_CACHE_KEY);
 
-if creds and creds.valid:
-    # Skip to Step 5: Make Authenticated API Call
-    pass
-else:
-    # Proceed to Step 2...
-    pass
+if (cachedTokenInfo) {
+  try {
+    // This example uses a hypothetical OAuth library - adapt to your OAuth library
+    creds = Credentials.fromAuthInfo(cachedTokenInfo, SCOPES);
+    
+    if (!creds.valid && creds.expired && creds.refreshToken) {
+      // Token expired but can be refreshed
+      await creds.refresh();
+      // Update cache with refreshed tokens
+      toolContext.state.set(TOKEN_CACHE_KEY, creds.toJSON());
+    } else if (!creds.valid) {
+      // Invalid token that can't be refreshed
+      creds = null;
+      toolContext.state.set(TOKEN_CACHE_KEY, null);
+    }
+  } catch (error) {
+    console.error("Error loading/refreshing cached creds:", error);
+    creds = null;
+    toolContext.state.set(TOKEN_CACHE_KEY, null);
+  }
+}
 
+if (creds && creds.valid) {
+  // Skip to Step 5: Make Authenticated API Call
+  // ...
+} else {
+  // Proceed to Step 2...
+  // ...
+}
 ```
 
 **Step 2: Check for Auth Response from Client**
 
-* If Step 1 didn't yield valid credentials, check if the client just completed the interactive flow by calling `auth_response_config = tool_context.get_auth_response()`.  
-* This returns the updated `AuthConfig` object sent back by the client (containing the callback URL in `auth_response_uri`).
+* If Step 1 didn't yield valid credentials, check if the client just completed the interactive flow by calling `exchangedCredential = toolContext.getAuthResponse()`.
+* This returns the updated `exchangedCredential` object sent back by the client (containing the callback URL in `auth_response_uri`).
 
-```py
-# Use auth_scheme and auth_credential configured in the tool.
-# exchanged_credential: AuthCredential|None
+```typescript
+// Use authScheme and authCredential configured in the tool
+// exchangedCredential: AuthCredential | null
 
-exchanged_credential = tool_context.get_auth_response(AuthConfig(
-  auth_scheme=auth_scheme,
-  raw_auth_credential=auth_credential,
-))
-# If exchanged_credential is not None, then there is already an exchanged credetial from the auth response. Use it instea, and skip to step 5
+const exchangedCredential = toolContext.getAuthResponse({
+  authScheme: authScheme,
+  rawAuthCredential: authCredential
+});
+
+// If exchangedCredential is not null, then there is already an exchanged credential from the auth response
+if (exchangedCredential) {
+  // ADK exchanged the access token already for us
+  const accessToken = exchangedCredential.oauth2?.accessToken;
+  const refreshToken = exchangedCredential.oauth2?.refreshToken;
+  
+  // Create credentials object using your OAuth library
+  creds = new Credentials({
+    token: accessToken,
+    refreshToken: refreshToken,
+    tokenUri: authScheme.flows?.authorizationCode?.tokenUrl,
+    clientId: authCredential.oauth2?.clientId,
+    clientSecret: authCredential.oauth2?.clientSecret,
+    scopes: Object.keys(authScheme.flows?.authorizationCode?.scopes || {})
+  });
+  
+  // Cache the token in session state and proceed to Step 5
+  // ...
+}
 ```
 
 **Step 3: Initiate Authentication Request**
 
-If no valid credentials (Step 1.) and no auth response (Step 2.) are found, the tool needs to start the OAuth flow. Define the AuthScheme and initial AuthCredential and call `tool_context.request_credential()`. Return a status indicating authorization is needed.
+If no valid credentials (Step 1) and no auth response (Step 2) are found, the tool needs to start the OAuth flow. Define the AuthScheme and initial AuthCredential and call `toolContext.requestCredential()`. Return a response indicating authorization is needed.
 
-```py
-# Use auth_scheme and auth_credential configured in the tool.
+```typescript
+// Use the authScheme and authCredential configured for the tool
 
-  tool_context.request_credential(AuthConfig(
-    auth_scheme=auth_scheme,
-    raw_auth_credential=auth_credential,
-  ))
-  return {'pending': true, 'message': 'Awaiting user authentication.'}
+toolContext.requestCredential({
+  authScheme: authScheme,
+  rawAuthCredential: authCredential
+});
 
-# By setting request_credential, ADK detects a pending authentication event. It pauses execution and ask end user to login.
+// By calling requestCredential, ADK detects a pending authentication event.
+// It pauses execution and asks the end user to login.
+return {
+  pending: true, 
+  message: 'Awaiting user authentication.'
+};
 ```
 
 **Step 4: Exchange Authorization Code for Tokens**
 
-ADK automatically generates oauth authorization URL and presents it to your Agent Client application. Once a user completes the login flow following the authorization URL, ADK extracts the authentication callback url from Agent Client applications, automatically parses the auth code, and generates auth token. At the next Tool call, `tool_context.get_auth_response` in step 2 will contain a valid credential to use in subsequent API calls.
+ADK automatically generates an OAuth authorization URL and presents it to your Agent Client application. Your Agent Client application should follow the same process described in Journey 1 to redirect the user to the authorization URL (with `redirect_uri` appended). Once a user completes the login flow following the authorization URL and ADK extracts the authentication callback URL from the Agent Client application, it automatically parses the auth code and generates an auth token. At the next Tool call, `toolContext.getAuthResponse` in Step 2 will contain a valid credential to use in subsequent API calls.
 
 **Step 5: Cache Obtained Credentials**
 
-After successfully obtaining the token from ADK (Step 2\) or if the token is still valid (Step 1), **immediately store** the new `Credentials` object in `tool_context.state` (serialized, e.g., as JSON) using your cache key.
+After successfully obtaining the token from ADK (Step 2) or if the token is still valid (Step 1), **immediately store** the new `Credentials` object in `toolContext.state` (serialized, e.g., as JSON) using your cache key.
 
-```py
-# Inside your tool function, after obtaining 'creds' (either refreshed or newly exchanged)
-# Cache the new/refreshed tokens
-tool_context.state[TOKEN_CACHE_KEY] = json.loads(creds.to_json())
-print(f"DEBUG: Cached/updated tokens under key: {TOKEN_CACHE_KEY}")
-# Proceed to Step 6 (Make API Call)
-
+```typescript
+// Inside your tool function, after obtaining 'creds' (either refreshed or newly exchanged)
+// Cache the new/refreshed tokens
+toolContext.state.set(TOKEN_CACHE_KEY, creds.toJSON());
+console.log(`DEBUG: Cached/updated tokens under key: ${TOKEN_CACHE_KEY}`);
+// Proceed to Step 6 (Make API Call)
 ```
 
 **Step 6: Make Authenticated API Call**
 
-* Once you have a valid `Credentials` object (`creds` from Step 1 or Step 4), use it to make the actual call to the protected API using the appropriate client library (e.g., `googleapiclient`, `requests`). Pass the `credentials=creds` argument.  
-* Include error handling, especially for `HttpError` 401/403, which might mean the token expired or was revoked between calls. If you get such an error, consider clearing the cached token (`tool_context.state.pop(...)`) and potentially returning the `auth_required` status again to force re-authentication.
+* Once you have a valid `Credentials` object (`creds` from Step 1 or Step 4), use it to make the actual call to the protected API using the appropriate client library (e.g., Google APIs, Axios, etc.). Pass the necessary authorization headers or credentials.
+* Include error handling, especially for 401/403 responses, which might mean the token expired or was revoked between calls. If you get such an error, consider clearing the cached token (`toolContext.state.delete(...)`) and potentially returning the `auth_required` status again to force re-authentication.
 
-```py
-# Inside your tool function, using the valid 'creds' object
-# Ensure creds is valid before proceeding
-if not creds or not creds.valid:
-   return {"status": "error", "error_message": "Cannot proceed without valid credentials."}
+```typescript
+// Inside your tool function, using the valid 'creds' object
+// Ensure creds is valid before proceeding
+if (!creds || !creds.valid) {
+  return { 
+    status: "error", 
+    error_message: "Cannot proceed without valid credentials." 
+  };
+}
 
-try:
-   service = build("calendar", "v3", credentials=creds) # Example
-   api_result = service.events().list(...).execute()
-   # Proceed to Step 7
-except Exception as e:
-   # Handle API errors (e.g., check for 401/403, maybe clear cache and re-request auth)
-   print(f"ERROR: API call failed: {e}")
-   return {"status": "error", "error_message": f"API call failed: {e}"}
+try {
+  // Example using an API client library
+  const service = new CalendarService(creds);
+  const apiResult = await service.events.list({ /* params */ });
+  // Proceed to Step 7
+} catch (error) {
+  // Handle API errors (e.g., check for 401/403, maybe clear cache and re-request auth)
+  console.error("API call failed:", error);
+  
+  // If it's an auth error, clear cached credentials
+  if (error.status === 401 || error.status === 403) {
+    toolContext.state.delete(TOKEN_CACHE_KEY);
+    // Consider re-initiating auth flow
+  }
+  
+  return { 
+    status: "error", 
+    error_message: `API call failed: ${error.message}` 
+  };
+}
 ```
 
 **Step 7: Return Tool Result**
 
-* After a successful API call, process the result into a dictionary format that is useful for the LLM.  
-* **Crucially, include a**  along with the data.
+* After a successful API call, process the result into a format that is useful for the LLM.
+* Include a status along with the data.
 
-```py
-# Inside your tool function, after successful API call
-    processed_result = [...] # Process api_result for the LLM
-    return {"status": "success", "data": processed_result}
-
+```typescript
+// Inside your tool function, after successful API call
+const processedResult = [...]; // Process apiResult for the LLM
+return { 
+  status: "success", 
+  data: processedResult 
+};
 ```
 
 ??? "Full Code"
 
     === "Tools and Agent"
 
-         ```py title="tools_and_agent.py"
-         --8<-- "examples/python/snippets/tools/auth/agent_cli.py"
+         ```typescript title="tools_and_agent.ts"
+         --8<-- "docs/examples/typescript/snippets/tools/auth/tools-and-agent.ts"
          ```
     === "Agent CLI"
 
-         ```py title="agent_cli.py"
-         --8<-- "examples/python/snippets/tools/auth/agent_cli.py"
+         ```typescript title="agent_cli.ts"
+         --8<-- "docs/examples/typescript/snippets/tools/auth/agent-cli.ts"
          ```
     === "Helper"
 
-         ```py title="helpers.py"
-         --8<-- "examples/python/snippets/tools/auth/helpers.py"
+         ```typescript title="helpers.ts"
+         --8<-- "docs/examples/typescript/snippets/tools/auth/helpers.ts"
          ```
     === "Spec"
 
          ```yaml
          openapi: 3.0.1
          info:
-         title: Okta User Info API
-         version: 1.0.0
-         description: |-
-            API to retrieve user profile information based on a valid Okta OIDC Access Token.
-            Authentication is handled via OpenID Connect with Okta.
-         contact:
-            name: API Support
-            email: support@example.com # Replace with actual contact if available
+           title: Okta User Info API
+           version: 1.0.0
+           description: |-
+             API to retrieve user profile information based on a valid Okta OIDC Access Token.
+             Authentication is handled via OpenID Connect with Okta.
+           contact:
+             name: API Support
+             email: support@example.com # Replace with actual contact if available
          servers:
          - url: <substitute with your server name>
-            description: Production Environment
+           description: Production Environment
          paths:
-         /okta-jwt-user-api:
-            get:
+           /okta-jwt-user-api:
+             get:
                summary: Get Authenticated User Info
                description: |-
-               Fetches profile details for the user
+                 Fetches profile details for the user
                operationId: getUserInfo
                tags:
                - User Profile
                security:
                - okta_oidc:
-                     - openid
-                     - email
-                     - profile
+                   - openid
+                   - email
+                   - profile
                responses:
-               '200':
-                  description: Successfully retrieved user information.
-                  content:
+                 '200':
+                   description: Successfully retrieved user information.
+                   content:
                      application/json:
-                     schema:
-                        type: object
-                        properties:
+                       schema:
+                         type: object
+                         properties:
                            sub:
-                           type: string
-                           description: Subject identifier for the user.
-                           example: "abcdefg"
+                             type: string
+                             description: Subject identifier for the user.
+                             example: "abcdefg"
                            name:
-                           type: string
-                           description: Full name of the user.
-                           example: "Example LastName"
+                             type: string
+                             description: Full name of the user.
+                             example: "Example LastName"
                            locale:
-                           type: string
-                           description: User's locale, e.g., en-US or en_US.
-                           example: "en_US"
+                             type: string
+                             description: User's locale, e.g., en-US or en_US.
+                             example: "en_US"
                            email:
-                           type: string
-                           format: email
-                           description: User's primary email address.
-                           example: "username@example.com"
+                             type: string
+                             format: email
+                             description: User's primary email address.
+                             example: "username@example.com"
                            preferred_username:
-                           type: string
-                           description: Preferred username of the user (often the email).
-                           example: "username@example.com"
+                             type: string
+                             description: Preferred username of the user (often the email).
+                             example: "username@example.com"
                            given_name:
-                           type: string
-                           description: Given name (first name) of the user.
-                           example: "Example"
+                             type: string
+                             description: Given name (first name) of the user.
+                             example: "Example"
                            family_name:
-                           type: string
-                           description: Family name (last name) of the user.
-                           example: "LastName"
+                             type: string
+                             description: Family name (last name) of the user.
+                             example: "LastName"
                            zoneinfo:
-                           type: string
-                           description: User's timezone, e.g., America/Los_Angeles.
-                           example: "America/Los_Angeles"
+                             type: string
+                             description: User's timezone, e.g., America/Los_Angeles.
+                             example: "America/Los_Angeles"
                            updated_at:
-                           type: integer
-                           format: int64 # Using int64 for Unix timestamp
-                           description: Timestamp when the user's profile was last updated (Unix epoch time).
-                           example: 1743617719
+                             type: integer
+                             format: int64 # Using int64 for Unix timestamp
+                             description: Timestamp when the user's profile was last updated (Unix epoch time).
+                             example: 1743617719
                            email_verified:
-                           type: boolean
-                           description: Indicates if the user's email address has been verified.
-                           example: true
-                        required:
-                           - sub
-                           - name
-                           - locale
-                           - email
-                           - preferred_username
-                           - given_name
-                           - family_name
-                           - zoneinfo
-                           - updated_at
-                           - email_verified
-               '401':
-                  description: Unauthorized. The provided Bearer token is missing, invalid, or expired.
-                  content:
+                             type: boolean
+                             description: Indicates if the user's email address has been verified.
+                             example: true
+                         required:
+                         - sub
+                         - name
+                         - locale
+                         - email
+                         - preferred_username
+                         - given_name
+                         - family_name
+                         - zoneinfo
+                         - updated_at
+                         - email_verified
+                 '401':
+                   description: Unauthorized. The provided Bearer token is missing, invalid, or expired.
+                   content:
                      application/json:
-                     schema:
-                        $ref: '#/components/schemas/Error'
-               '403':
-                  description: Forbidden. The provided token does not have the required scopes or permissions to access this resource.
-                  content:
+                       schema:
+                         $ref: '#/components/schemas/Error'
+                 '403':
+                   description: Forbidden. The provided token does not have the required scopes or permissions to access this resource.
+                   content:
                      application/json:
-                     schema:
-                        $ref: '#/components/schemas/Error'
+                       schema:
+                         $ref: '#/components/schemas/Error'
          components:
-         securitySchemes:
-            okta_oidc:
+           securitySchemes:
+             okta_oidc:
                type: openIdConnect
                description: Authentication via Okta using OpenID Connect. Requires a Bearer Access Token.
                openIdConnectUrl: https://your-endpoint.okta.com/.well-known/openid-configuration
-         schemas:
-            Error:
+           schemas:
+             Error:
                type: object
                properties:
-               code:
-                  type: string
-                  description: An error code.
-               message:
-                  type: string
-                  description: A human-readable error message.
+                 code:
+                   type: string
+                   description: An error code.
+                 message:
+                   type: string
+                   description: A human-readable error message.
                required:
-                  - code
-                  - message
+                 - code
+                 - message
          ```

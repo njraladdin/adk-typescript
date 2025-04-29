@@ -1,6 +1,6 @@
 # Google Cloud Tools
 
-Google Cloud tools make it easier to connect your agents to Google Cloud’s
+Google Cloud tools make it easier to connect your agents to Google Cloud's
 products and services. With just a few lines of code you can use these tools to
 connect your agents with:
 
@@ -34,9 +34,12 @@ project_root_folder
  |
  `-- my_agent
      |-- .env
-     |-- __init__.py
-     |-- agent.py
-     `__ tool.py
+     |-- package.json
+     |-- tsconfig.json
+     |-- src
+         |-- index.ts
+         |-- agent.ts
+         `__ tools.ts
 ```
 
 ### Create an API Hub Toolset
@@ -62,70 +65,69 @@ you only need to follow a subset of these steps.
     5. apihub.versions.list (optional)
     6. apihub.specs.list (optional)
 
-3. Create a tool with `APIHubToolset`. Add the below to `tools.py`
+3. Create a tool with `APIHubToolset`. Add the below to `tools.ts`
 
     If your API requires authentication, you must configure authentication for
     the tool. The following code sample demonstrates how to configure an API
     key. ADK supports token based auth (API Key, Bearer token), service account,
     and OpenID Connect. We will soon add support for various OAuth2 flows.
 
-    ```py
-    from google.adk.tools.openapi_tool.auth.auth_helpers import token_to_scheme_credential
-    from google.adk.tools.apihub_tool.apihub_toolset import APIHubToolset
+    ```typescript
+    import { tokenToSchemeCredential, APIHubToolset } from 'adk-typescript';
 
-    # Provide authentication for your APIs. Not required if your APIs don't required authentication.
-    auth_scheme, auth_credential = token_to_scheme_credential(
-        "apikey", "query", "apikey", apikey_credential_str
-    )
+    // Provide authentication for your APIs. Not required if your APIs don't required authentication.
+    const { authScheme, authCredential } = tokenToSchemeCredential(
+        "apikey", "query", "apikey", apikeyCredentialStr
+    );
 
-    sample_toolset_with_auth = APIHubToolset(
-        name="apihub-sample-tool",
-        description="Sample Tool",
-        access_token="...",  # Copy your access token generated in step 1
-        apihub_resource_name="...", # API Hub resource name
-        auth_scheme=auth_scheme,
-        auth_credential=auth_credential,
-    )
+    const sampleToolsetWithAuth = new APIHubToolset({
+        name: "apihub-sample-tool",
+        description: "Sample Tool",
+        accessToken: "...",  // Copy your access token generated in step 1
+        apihubResourceName: "...", // API Hub resource name
+        authScheme: authScheme,
+        authCredential: authCredential,
+    });
     ```
 
     For production deployment we recommend using a service account instead of an
     access token. In the code snippet above, use
-    `service_account_json=service_account_cred_json_str` and provide your
+    `serviceAccountJson: serviceAccountCredJsonStr` and provide your
     security account credentials instead of the token.
 
-    For apihub\_resource\_name, if you know the specific ID of the OpenAPI Spec
+    For apihubResourceName, if you know the specific ID of the OpenAPI Spec
     being used for your API, use
     `` `projects/my-project-id/locations/us-west1/apis/my-api-id/versions/version-id/specs/spec-id` ``.
     If you would like the Toolset to automatically pull the first available spec
     from the API, use
     `` `projects/my-project-id/locations/us-west1/apis/my-api-id` ``
 
-4. Create your agent file [Agent.py](http://Agent.py) and add the created tools
+4. Create your agent file `agent.ts` and add the created tools
    to your agent definition:
 
-    ```py
-    from google.adk.agents.llm_agent import LlmAgent
-    from .tools import sample_toolset
+    ```typescript
+    import { Agent } from 'adk-typescript';
+    import { sampleToolset } from './tools';
 
-    root_agent = LlmAgent(
-        model='gemini-2.0-flash',
-        name='enterprise_assistant',
-        instruction='Help user, leverage the tools you have access to',
-        tools=sample_toolset.get_tools(),
-    )
+    export const rootAgent = new Agent({
+        model: 'gemini-2.0-flash',
+        name: 'enterprise_assistant',
+        instruction: 'Help user, leverage the tools you have access to',
+        tools: sampleToolset.getTools(),
+    });
     ```
 
-5. Configure your \`\_\_init\_\_.py\` to expose your agent
+5. Configure your `index.ts` to export your agent
 
-    ```py
-    from . import agent
+    ```typescript
+    export { rootAgent } from './agent';
     ```
 
-6. Start the Google ADK Web UI and try your agent:
+6. Start the ADK Web UI and try your agent:
 
     ```shell
-    # make sure to run `adk web` from your project_root_folder
-    adk web
+    # Make sure to run from your project_root_folder
+    npx adk-typescript web
     ```
 
    Then go to [http://localhost:8000](http://localhost:8000) to try your agent from the Web UI.
@@ -135,7 +137,7 @@ you only need to follow a subset of these steps.
 ## Application Integration Tools
 
 With **ApplicationIntegrationToolset** you can seamlessly give your agents a
-secure and governed to enterprise applications using Integration Connector’s
+secure and governed to enterprise applications using Integration Connector's
 100+ pre-built connectors for systems like Salesforce, ServiceNow, JIRA, SAP,
 and more. Support for both on-prem and SaaS applications. In addition you can
 turn your existing Application Integration process automations into agentic
@@ -167,12 +169,15 @@ agents.
     project_root_folder
     |-- .env
     `-- my_agent
-        |-- __init__.py
-        |-- agent.py
-        `__ tools.py
+        |-- package.json
+        |-- tsconfig.json
+        |-- src
+            |-- index.ts
+            |-- agent.ts
+            `__ tools.ts
     ```
 
-When running the agent, make sure to run adk web in project\_root\_folder
+When running the agent, make sure to run `npx adk-typescript web` in project\_root\_folder
 
 ### Use Integration Connectors
 
@@ -205,19 +210,22 @@ Connect your agent to enterprise applications using
 
 1.  Create a tool with `ApplicationIntegrationToolset`
 
-    ```py
-    from google.adk.tools.application_integration_tool.application_integration_toolset import ApplicationIntegrationToolset
+    ```typescript
+    import { ApplicationIntegrationToolset } from 'adk-typescript';
 
-    connector_tool = ApplicationIntegrationToolset(
-        project="test-project", # TODO: replace with GCP project of the connection
-        location="us-central1", #TODO: replace with location of the connection
-        connection="test-connection", #TODO: replace with connection name
-        entity_operations={"Entity_One": ["LIST","CREATE"], "Entity_Two": []},#empty list for actions means all operations on the entity are supported.
-        actions=["action1"], #TODO: replace with actions
-        service_account_credentials='{...}', # optional
-        tool_name="tool_prefix2",
-        tool_instructions="..."
-    )
+    const connectorTool = new ApplicationIntegrationToolset({
+        project: "test-project", // TODO: replace with GCP project of the connection
+        location: "us-central1", //TODO: replace with location of the connection
+        connection: "test-connection", //TODO: replace with connection name
+        entityOperations: {
+            "Entity_One": ["LIST","CREATE"], 
+            "Entity_Two": [] // empty array for actions means all operations on the entity are supported.
+        },
+        actions: ["action1"], //TODO: replace with actions
+        serviceAccountCredentials: '{...}', // optional
+        toolName: "tool_prefix2",
+        toolInstructions: "..."
+    });
     ```
 
     Note:
@@ -228,31 +236,31 @@ Connect your agent to enterprise applications using
         [listEntityTypes](https://cloud.google.com/integration-connectors/docs/reference/rest/v1/projects.locations.connections.connectionSchemaMetadata/listEntityTypes)
 
 
-2. Add the tool to your agent. Update your `agent.py` file
+2. Add the tool to your agent. Update your `agent.ts` file
 
-    ```py
-    from google.adk.agents.llm_agent import LlmAgent
-    from .tools import connector_tool
+    ```typescript
+    import { Agent } from 'adk-typescript';
+    import { connectorTool } from './tools';
 
-    root_agent = LlmAgent(
-        model='gemini-2.0-flash',
-        name='connector_agent',
-        instruction="Help user, leverage the tools you have access to",
-        tools=connector_tool.get_tools(),
-    )
+    export const rootAgent = new Agent({
+        model: 'gemini-2.0-flash',
+        name: 'connector_agent',
+        instruction: "Help user, leverage the tools you have access to",
+        tools: connectorTool.getTools(),
+    });
     ```
 
-3. Configure your  \`\_\_init\_\_.py\` to expose your agent
+3. Configure your `index.ts` to export your agent
 
-    ```py
-    from . import agent
+    ```typescript
+    export { rootAgent } from './agent';
     ```
 
-4. Start the Google ADK Web UI and try your agent.
+4. Start the ADK Web UI and try your agent.
 
     ```shell
-    # make sure to run `adk web` from your project_root_folder
-    adk web
+    # make sure to run from your project_root_folder
+    npx adk-typescript web
     ```
 
    Then go to [http://localhost:8000](http://localhost:8000), and choose
@@ -268,45 +276,47 @@ workflow as a tool for your agent or create a new one.
 
 1. Create a tool with `ApplicationIntegrationToolset`
 
-    ```py
-    integration_tool = ApplicationIntegrationToolset(
-        project="test-project", # TODO: replace with GCP project of the connection
-        location="us-central1", #TODO: replace with location of the connection
-        integration="test-integration", #TODO: replace with integration name
-        trigger="api_trigger/test_trigger",#TODO: replace with trigger id
-        service_account_credentials='{...}', #optional
-        tool_name="tool_prefix1",
-        tool_instructions="..."
-    )
+    ```typescript
+    import { ApplicationIntegrationToolset } from 'adk-typescript';
+
+    const integrationTool = new ApplicationIntegrationToolset({
+        project: "test-project", // TODO: replace with GCP project of the connection
+        location: "us-central1", //TODO: replace with location of the connection
+        integration: "test-integration", //TODO: replace with integration name
+        trigger: "api_trigger/test_trigger",//TODO: replace with trigger id
+        serviceAccountCredentials: '{...}', //optional
+        toolName: "tool_prefix1",
+        toolInstructions: "..."
+    });
     ```
 
     Note: You can provide service account to be used instead of using default credentials
 
-2. Add the tool to your agent. Update your `agent.py` file
+2. Add the tool to your agent. Update your `agent.ts` file
 
-    ```py
-    from google.adk.agents.llm_agent import LlmAgent
-    from .tools import integration_tool, connector_tool
+    ```typescript
+    import { Agent } from 'adk-typescript';
+    import { integrationTool, connectorTool } from './tools';
 
-    root_agent = LlmAgent(
-        model='gemini-2.0-flash',
-        name='integration_agent',
-        instruction="Help user, leverage the tools you have access to",
-        tools=integration_tool.get_tools(),
-    )
+    export const rootAgent = new Agent({
+        model: 'gemini-2.0-flash',
+        name: 'integration_agent',
+        instruction: "Help user, leverage the tools you have access to",
+        tools: integrationTool.getTools(),
+    });
     ```
 
-3. Configure your \`\_\_init\_\_.py\` to expose your agent
+3. Configure your `index.ts` to export your agent
 
-    ```py
-    from . import agent
+    ```typescript
+    export { rootAgent } from './agent';
     ```
 
-4. Start the Google ADK Web UI and try your agent.
+4. Start the ADK Web UI and try your agent.
 
     ```shell
-    # make sure to run `adk web` from your project_root_folder
-    adk web
+    # make sure to run from your project_root_folder
+    npx adk-typescript web
     ```
 
     Then go to [http://localhost:8000](http://localhost:8000), and choose
@@ -322,7 +332,7 @@ production-quality in mind. It enables you to develop tools easier, faster, and
 more securely by handling the complexities such as connection pooling,
 authentication, and more.
 
-Google’s Agent Development Kit (ADK) has built in support for Toolbox. For more
+Google's Agent Development Kit (ADK) has built in support for Toolbox. For more
 information on
 [getting started](https://googleapis.github.io/genai-toolbox/getting-started) or
 [configuring](https://googleapis.github.io/genai-toolbox/getting-started/configure/)
@@ -342,33 +352,32 @@ documentation:
 
 ### Install client SDK
 
-ADK relies on the `toolbox-langchain` python package to use Toolbox. Install the
+ADK relies on the Toolbox client SDK to use Toolbox. Install the
 package before getting started:
 
 ```shell
-pip install toolbox-langchain langchain
+npm install toolbox-langchain langchain
 ```
 
 ### Loading Toolbox Tools
 
-Once you’ve Toolbox server is configured and up and running, you can load tools
+Once your Toolbox server is configured and up and running, you can load tools
 from your server using the ADK:
 
-```py
-from google.adk.tools.toolbox_tool import ToolboxTool
+```typescript
+import { ToolboxTool, Agent } from 'adk-typescript';
 
-toolbox = ToolboxTool("https://127.0.0.1:5000")
+const toolbox = new ToolboxTool("https://127.0.0.1:5000");
 
-# Load a specific set of tools
-tools = toolbox.get_toolset(toolset_name='my-toolset-name'),
-# Load single tool
-tools = toolbox.get_tool(tool_name='my-tool-name'),
+// Load a specific set of tools
+const toolsetTools = toolbox.getToolset('my-toolset-name');
+// Or, load a single tool
+const singleTool = toolbox.getTool('my-tool-name');
 
-root_agent = Agent(
-    ...,
-    tools=tools # Provide the list of tools to the Agent
-
-)
+const rootAgent = new Agent({
+    // Agent configuration
+    tools: toolsetTools // Provide the list of tools to the Agent
+});
 ```
 
 ### Advanced Toolbox Features

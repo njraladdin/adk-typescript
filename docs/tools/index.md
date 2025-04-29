@@ -57,7 +57,7 @@ ADK offers flexibility by supporting several types of tools:
 
 Navigate to the respective documentation pages linked above for detailed information and examples for each tool type.
 
-## Referencing Tool in Agent’s Instructions
+## Referencing Tool in Agent's Instructions
 
 Within an agent's instructions, you can directly reference a tool by using its **function name.** If the tool's **function name** and **docstring** are sufficiently descriptive, your instructions can primarily focus on **when the Large Language Model (LLM) should utilize the tool**. This promotes clarity and helps the model understand the intended use of each tool.
 
@@ -69,8 +69,8 @@ Furthermore, ADK supports the sequential use of tools, where the output of one t
 
 The following example showcases how an agent can use tools by **referencing their function names in its instructions**. It also demonstrates how to guide the agent to **handle different return values from tools**, such as success or error messages, and how to orchestrate the **sequential use of multiple tools** to accomplish a task.
 
-```py
---8<-- "examples/python/snippets/tools/overview/weather_sentiment.py"
+```typescript
+--8<-- "docs/examples/typescript/snippets/tools/overview/weather-sentiment.ts"
 ```
 
 ## Tool Context
@@ -109,8 +109,8 @@ The `tool_context.state` attribute provides direct read and write access to the 
 
     * `temp:*`: Temporary, not persisted across invocations (useful for passing data within a single run call but generally less useful inside a tool context which operates between LLM calls).
 
-```py
---8<-- "examples/python/snippets/tools/overview/user_preference.py"
+```typescript
+--8<-- "docs/examples/typescript/snippets/tools/overview/user-preference.ts"
 ```
 
 ### **Controlling Agent Flow**
@@ -125,8 +125,8 @@ The `tool_context.actions` attribute holds an **EventActions** object. Modifying
 
 #### Example
 
-```py
---8<-- "examples/python/snippets/tools/overview/customer_support_agent.py"
+```typescript
+--8<-- "docs/examples/typescript/snippets/tools/overview/customer-support-agent.ts"
 ```
 
 ##### Explanation
@@ -166,8 +166,8 @@ These methods provide convenient ways for your tool to interact with persistent 
 
 #### Example
 
-```py
---8<-- "examples/python/snippets/tools/overview/doc_analysis.py"
+```typescript
+--8<-- "docs/examples/typescript/snippets/tools/overview/doc-analysis.ts"
 ```
 
 By leveraging the **ToolContext**, developers can create more sophisticated and context-aware custom tools that seamlessly integrate with ADK's architecture and enhance the overall capabilities of their agents.
@@ -206,9 +206,9 @@ Here are key guidelines for defining effective tool functions:
 
     **Example of a good definition:**
 
-    ```python
-    def lookup_order_status(order_id: str) -> dict:
-      """Fetches the current status of a customer's order using its ID.
+    ```typescript
+    function lookup_order_status(order_id: string) -> dict {
+      /** Fetches the current status of a customer's order using its ID.
 
       Use this tool ONLY when a user explicitly asks for the status of
       a specific order and provides the order ID. Do not use it for
@@ -222,13 +222,14 @@ Here are key guidelines for defining effective tool functions:
           Possible statuses: 'shipped', 'processing', 'pending', 'error'.
           Example success: {'status': 'shipped', 'tracking_number': '1Z9...'}
           Example error: {'status': 'error', 'error_message': 'Order ID not found.'}
-      """
-      # ... function implementation to fetch status ...
-      if status := fetch_status_from_backend(order_id):
-           return {"status": status.state, "tracking_number": status.tracking} # Example structure
-      else:
-           return {"status": "error", "error_message": f"Order ID {order_id} not found."}
-
+      */
+      // ... function implementation to fetch status ...
+      if (status = fetch_status_from_backend(order_id)) {
+           return {"status": status.state, "tracking_number": status.tracking} // Example structure
+      } else {
+           return {"status": "error", "error_message": `Order ID ${order_id} not found.`}
+      }
+    }
     ```
 
 * **Simplicity and Focus:**

@@ -10,6 +10,7 @@ TODO:
 - prepare npm package, done 
 
 - make sure all cli commands work correctly (adk-ts create, run, web), done 
+- convert docs exampels to typescript 
 
 - add README 
 - fix file names to typescript conventions 
