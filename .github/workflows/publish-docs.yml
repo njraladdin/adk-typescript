@@ -26,9 +26,15 @@ jobs:
             mkdocs-material-
       - name: Install MkDocs dependencies
         run: |
-          pip install mkdocs-material==9.6.12 mkdocs-redirects==1.2.2
+          pip install mkdocs-material==9.6.12 mkdocs-redirects==1.2.2 pillow cairosvg
       - name: Create overrides directory if it doesn't exist
         run: |
-          mkdir -p overrides
-          cp -r docs/overrides/* overrides/ 2>/dev/null || true
-      - run: mkdocs gh-deploy --force
+          if [ -d "docs/overrides" ]; then
+            mkdir -p overrides
+            cp -r docs/overrides/* overrides/ 2>/dev/null || true
+          fi
+      - name: Build and deploy documentation
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          mkdocs build --clean
+          mkdocs gh-deploy --force --verbose 
