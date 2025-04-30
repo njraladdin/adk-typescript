@@ -52,7 +52,5 @@ package-lock.json
 test-adk
 docs_python
 
-# TypeDoc generated files
-docs/api-reference/*
-!docs/api-reference/README.md
+
 

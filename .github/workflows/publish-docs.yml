@@ -25,25 +25,8 @@ jobs:
           cache: 'npm'
       
       # Install dependencies and generate TypeDoc documentation
-      # Note: We'll skip the build step and just generate the docs directly
-      - name: Debug file structure and install dependencies
-        run: |
-          echo "Debugging source file structure..."
-          ls -la src/
-          echo "Installing dependencies..."
-          npm install --no-fund --ignore-scripts
-      
-      # Generate API docs directly with TypeDoc, bypassing the npm script
-      # Using skipLibCheck and skipErrorChecking to ignore missing module errors
-      - name: Generate API documentation
-        run: |
-          echo "Generating API documentation..."
-          # Create empty files for missing modules to satisfy imports
-          mkdir -p src/tools src/sessions
-          touch src/tools/ToolContext.ts src/sessions/State.ts src/sessions/BaseSessionService.ts
-          
-          # Run TypeDoc with error checking disabled
-          npx typedoc --entryPointStrategy "expand" --entryPoints "./src" --out docs/api-reference --skipLibCheck --skipErrorChecking
+      # Note: We generate the API reference docs during the build process
+      # rather than committing them to the repository
       
       # Now set up Python for MkDocs
       - uses: actions/setup-python@v5
