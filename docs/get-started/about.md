@@ -6,7 +6,7 @@
 
 ADK for TypeScript is designed to empower developers to build, manage, evaluate, and deploy AI-powered agents using TypeScript. It provides a robust and flexible environment for creating both conversational and non-conversational agents, capable of handling complex tasks and workflows.
 
-![ADK Components](../assets/adk-components.png) *(Note: Asset path might need adjustment)*
+![ADK Components](../assets/adk-components.png) 
 
 ## Core Concepts
 
@@ -43,7 +43,7 @@ ADK TypeScript offers several key advantages for developers building agentic app
 9.  **Extensibility and Interoperability:** ADK TypeScript promotes an open ecosystem. Easily integrate and reuse tools from other popular agent frameworks like LangChain (`LangchainTool`) and CrewAI (`CrewaiTool`).
 10. **State and Memory Management:** Automatically handles short-term conversational memory (`State` within a `Session`) managed by the `SessionService`. Provides integration points for longer-term `Memory` services (`BaseMemoryService`) for cross-session recall. `ToolContext` provides access to state within tools.
 
-![ADK Lifecycle](../assets/adk-lifecycle.png) *(Note: Asset path might need adjustment)*
+![ADK Lifecycle](../assets/adk-lifecycle.png) 
 
 ## Get Started
 
