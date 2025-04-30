@@ -25,12 +25,19 @@ jobs:
           cache: 'npm'
       
       # Install dependencies and generate TypeDoc documentation
-      # Note: We generate the API reference docs during the build process
-      # rather than committing them to the repository
-      - name: Install Node.js dependencies and generate API docs
+      # Note: We'll skip the build step and just generate the docs directly
+      - name: Debug file structure and install dependencies
         run: |
-          npm install
-          npm run docs
+          echo "Debugging source file structure..."
+          find src -type f -name "*.ts" | sort
+          echo "Installing dependencies..."
+          npm install --no-fund --ignore-scripts
+      
+      # Generate API docs directly with TypeDoc, bypassing the npm script
+      - name: Generate API documentation
+        run: |
+          echo "Generating API documentation..."
+          npx typedoc --entryPointStrategy "expand" --entryPoints "./src" --out docs/api-reference
       
       # Now set up Python for MkDocs
       - uses: actions/setup-python@v5
