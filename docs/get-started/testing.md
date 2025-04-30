@@ -1,7 +1,6 @@
-
 # Testing your Agents (ADK TypeScript)
 
-Before you deploy your agent, you should test it to ensure that it is working as intended. The easiest way to test your agent in your development environment is to use the `adk-ts api_server` command (or the relevant command based on your package installation/linking, e.g., `node dist/cli/index.js api_server`). This command will launch a local Express.js server, where you can run cURL commands or send API requests to test your agent.
+Before you deploy your agent, you should test it to ensure that it is working as intended. The easiest way to test your agent in your development environment is to use the `adk-ts api_server` command. This command will launch a local Express.js server, where you can run cURL commands or send API requests to test your agent.
 
 ## Local testing
 
@@ -46,20 +45,12 @@ adk-ts api_server --agent_dir my_sample_agent
 adk-ts api_server --agent_dir .
 ```
 
-*(**Note:** The exact command might be `node dist/cli/index.js api_server ...` or similar depending on how you've built and linked the `adk-typescript` package during development. Replace `adk-ts` if necessary).*
-
 The output should appear similar to:
 
 ```text
 API server started on port 8000
 Agent directory: /path/to/your/project/parent_folder/my_sample_agent
-INFO:     Started server process [12345]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 ```
-
-*(Note: The logging format might differ slightly from the Python version as it uses Node.js/Express)*
 
 Your server is now running locally, typically at `http://localhost:8000` (the default port can be changed with `--port`).
 
@@ -78,7 +69,7 @@ Let's break down what's happening:
 *   `http://localhost:8000/apps/my_sample_agent/users/u_123/sessions/s_123`: This API endpoint (matching the implementation in `apiServer.ts`) creates a new session for your agent `my_sample_agent` (which should match the folder name specified in `--agent_dir`), for a user ID (`u_123`) and for a session ID (`s_123`).
 *   `{"state": {"key1": "value1", "key2": 42}}`: This optional JSON body sets the initial state for the session. The ADK TypeScript library uses a `State` class internally, but the API accepts a plain JavaScript object.
 
-This should return the session information if it was created successfully. The output will be a JSON representation of the `Session` object (see `src/sessions/interfaces.ts`):
+This should return the session information if it was created successfully. The output will be a JSON representation of the `Session` object (see `src/sessions/types.ts`):
 
 ```json
 {
@@ -92,8 +83,6 @@ This should return the session information if it was created successfully. The o
   "events": []
 }
 ```
-
-*(Note: The exact structure, especially for `state`, might depend slightly on the session service implementation, but `InMemorySessionService` returns a plain object)*.
 
 !!! info
 
