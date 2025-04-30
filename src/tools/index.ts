@@ -1,5 +1,3 @@
-
-
 /**
  * Tools module - Provides utility functions and interfaces for agent tools
  */
@@ -14,6 +12,7 @@ export * from './toolActions';
 
 // Additional tool exports
 export * from './GoogleSearchTool';
+export { googleSearch } from './GoogleSearchTool';
 export * from './LoadWebPageTool';
 export * from './LongRunningTool';
 export * from './TransferToAgentTool';

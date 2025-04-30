@@ -1,6 +1,4 @@
-
-
-import { Session } from '../../sessions/interfaces';
+import { Session } from '../../sessions/Session';
 import { Event } from '../../events/Event';
 import { Content } from '../../models/types';
 import { Part } from '../../models/types';

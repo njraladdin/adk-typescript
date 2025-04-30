@@ -3,73 +3,90 @@
  * A TypeScript port of Google's ADK Python library
  */
 
-// Export agent-related modules
-export { LlmAgent } from './agents/LlmAgent';
-export { BaseAgent } from './agents/BaseAgent';
-export { SequentialAgent } from './agents/SequentialAgent';
-export { ParallelAgent } from './agents/ParallelAgent';
-export { LoopAgent } from './agents/LoopAgent';
-
-// Memory exports
-export { MemoryResult } from './memory';
-
-// Sessions exports
-export { Session } from './sessions';
-
-// Tools exports - core tools that are commonly used
-export { BaseTool } from './tools/BaseTool';
-export { FunctionTool } from './tools/FunctionTool';
-export { GoogleSearchTool } from './tools/GoogleSearchTool';
-export { AgentTool } from './tools/AgentTool';
-export { CodeExecutionTool } from './tools/CodeExecutionTool';
-export { LoadWebPageTool } from './tools/LoadWebPageTool';
-export { LoadMemoryTool } from './tools/LoadMemoryTool';
-export { VertexAISearchTool } from './tools/VertexAISearchTool';
-export { ToolContext } from './tools/ToolContext';
-
-// Runner exports
-export { Runner, InMemoryRunner } from './runners';
-
-// Models exports
-export { LlmRegistry } from './models';
-
-// Flows exports
-export { AutoFlow } from './flows/llm_flows';
-
-// Utility exports
-export * from './utils';
-
 // Version information
 export const VERSION = '0.0.1-alpha.1';
 
-// Import classes for the default export
+// Import key modules
+import * as agentsModule from './agents';
+import * as toolsModule from './tools';
+import * as modelsModule from './models';
+import * as flowsModule from './flows/llm_flows';
+import * as runnersModule from './runners';
+import * as sessionsModule from './sessions';
+import * as memoryModule from './memory';
+import * as utilsModule from './utils';
+
+// Import specific components for direct export
 import { LlmAgent } from './agents/LlmAgent';
 import { BaseAgent } from './agents/BaseAgent';
-import { SequentialAgent } from './agents/SequentialAgent';
-import { ParallelAgent } from './agents/ParallelAgent';
-import { LoopAgent } from './agents/LoopAgent';
-import { Runner } from './runners';
-import { FunctionTool } from './tools/FunctionTool';
-import { GoogleSearchTool } from './tools/GoogleSearchTool';
-import { AutoFlow } from './flows/llm_flows';
+import { googleSearch } from './tools/GoogleSearchTool';
+import { LlmRegistry } from './models/LlmRegistry';
+import { AutoFlow } from './flows/llm_flows/AutoFlow';
+import { Runner, InMemoryRunner } from './runners';
+
+// Export namespaced modules (like Python's organization)
+export const agents = agentsModule;
+export const tools = toolsModule;
+export const models = modelsModule;
+export const flows = flowsModule;
+export const runners = runnersModule;
+export const sessions = sessionsModule;
+export const memory = memoryModule;
+export const utils = utilsModule;
+
+// Export core functionality directly for convenience
+// Most commonly used classes and functions
+export { LlmAgent };
+export { BaseAgent };
+export { googleSearch };
+export { LlmRegistry };
+export { AutoFlow };
+export { Runner, InMemoryRunner };
 
 /**
  * The main entry point for the ADK library.
- * This makes it easier to import the most commonly used components.
- * Following the pattern of the original Python ADK.
+ * Provides both flat direct exports and namespaced exports,
+ * similar to Python's import structure.
+ * 
+ * Users can import in different ways:
+ * 
+ * 1. Default flat import:
+ *    import ADK from 'adk-typescript';
+ *    const agent = new ADK.LlmAgent({...});
+ * 
+ * 2. Named flat import (for common components):
+ *    import { LlmAgent, googleSearch } from 'adk-typescript';
+ *    const agent = new LlmAgent({...});
+ * 
+ * 3. Namespaced import (like Python):
+ *    import { agents, tools } from 'adk-typescript';
+ *    const agent = new agents.LlmAgent({...});
+ *    tools.googleSearch({...});
+ * 
+ * 4. Direct submodule import:
+ *    import { LlmAgent } from 'adk-typescript/agents';
+ *    import { googleSearch } from 'adk-typescript/tools';
  */
 export default {
-  // Core classes
+  // Directly expose most commonly used classes
   LlmAgent,
   BaseAgent,
-  SequentialAgent,
-  ParallelAgent,
-  LoopAgent,
-  Runner,  // Use Runner interface directly, not a specific implementation
-  FunctionTool,
-  GoogleSearchTool,
-  AutoFlow,  // Default flow
+  googleSearch,
+  LlmRegistry,
+  AutoFlow,
+  Runner,
+  InMemoryRunner,
   
-  // Version info
+  // Namespaced modules (organized access)
+  agents,
+  tools,
+  models,
+  flows,
+  runners,
+  sessions,
+  memory,
+  utils,
+  
+  // Version information
   VERSION
 }; 

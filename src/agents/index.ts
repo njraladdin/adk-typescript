@@ -15,6 +15,7 @@ export { ActiveStreamingTool } from './ActiveStreamingTool';
 export { TranscriptionEntry } from './TranscriptionEntry';
 
 // Agent implementations
+export { LlmAgent } from './LlmAgent'; // Main LLM-based Agent
 export { SequentialAgent } from './SequentialAgent';
 export { RemoteAgent } from './RemoteAgent';
 export { LoopAgent } from './LoopAgent';

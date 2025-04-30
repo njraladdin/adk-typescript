@@ -1,5 +1,3 @@
-
-
 /**
  * Implementation of an agent that uses an LLM flow.
  */
@@ -26,7 +24,6 @@ import { BaseCodeExecutor } from '../code-executors/BaseCodeExecutor';
 import { v4 as uuidv4 } from 'uuid';
 import { State } from '../sessions/State';
 
-// Type definitions for missing imports
 /**
  * Base interface for example providers
  */
@@ -74,6 +71,9 @@ type AfterToolCallback = (
  * Extended options for LLM agents.
  */
 export interface LlmAgentOptions extends AgentOptions {
+  /** The name of the agent */
+  name: string;
+  
   /** The LLM flow to use */
   flow?: BaseLlmFlow;
   
@@ -208,11 +208,14 @@ export class LlmAgent extends BaseAgent {
   /**
    * Creates a new LLM agent.
    * 
-   * @param name The name of the agent
-   * @param options Options for the agent
+   * @param options Options for the agent including name
    */
-  constructor(name: string, options: LlmAgentOptions = {}) {
-    super(name, options);
+  constructor(options: LlmAgentOptions) {
+    if (!options.name) {
+      throw new Error('Agent name is required');
+    }
+    
+    super(options.name, options);
     
     // Set properties from options
     this.customFlow = options.flow;
@@ -465,7 +468,7 @@ export class LlmAgent extends BaseAgent {
       event.content &&
       event.content.parts
     ) {
-      let result = event.content.parts
+      let result: string | Record<string, any> = event.content.parts
         .filter(part => part.text !== undefined)
         .map(part => part.text)
         .join('');
@@ -473,10 +476,50 @@ export class LlmAgent extends BaseAgent {
       if (this.outputSchema) {
         try {
           // Parse JSON and validate against schema
-          const parsed = JSON.parse(result);
-          // In TypeScript we'd use a validation library here
-          // but for now just assign the parsed value
-          result = parsed;
+          const parsed = JSON.parse(result as string);
+          
+          // Validate against the schema if it's provided
+          // In TypeScript we don't have Pydantic's model_validate_json,
+          // so we do basic validation based on the schema type
+          if (typeof this.outputSchema === 'function') {
+            // Assuming outputSchema is a constructor function or class
+            try {
+              // Try to instantiate using the schema class/constructor
+              const validated = new this.outputSchema(parsed);
+              result = validated;
+            } catch (validationError) {
+              console.warn(`Schema validation failed: ${validationError}`);
+              // Still use the parsed result, even if validation failed
+              result = parsed;
+            }
+          } else if (typeof this.outputSchema === 'object') {
+            // Basic property validation if schema is an object with properties
+            const schemaProps = Object.keys(this.outputSchema.properties || {});
+            const requiredProps = this.outputSchema.required || [];
+            
+            // Check required properties
+            for (const prop of requiredProps) {
+              if (parsed[prop] === undefined) {
+                console.warn(`Schema validation failed: missing required property '${prop}'`);
+              }
+            }
+            
+            // Remove properties not in schema if strict
+            if (this.outputSchema.additionalProperties === false) {
+              const filteredResult: Record<string, any> = {};
+              for (const key of schemaProps) {
+                if (parsed[key] !== undefined) {
+                  filteredResult[key] = parsed[key];
+                }
+              }
+              result = filteredResult;
+            } else {
+              result = parsed;
+            }
+          } else {
+            // If we can't determine schema type, just use parsed JSON
+            result = parsed;
+          }
         } catch (error) {
           console.warn(`Failed to parse output as JSON: ${error}`);
         }

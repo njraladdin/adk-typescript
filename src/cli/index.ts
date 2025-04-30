@@ -6,7 +6,7 @@ import { runCli, runInputFile } from './cli';
 import { runEvals, getEvaluationCriteriaOrDefault, getRootAgent, tryGetResetFunc, parseAndGetEvalsToRun, EvalMetric } from './cliEval';
 import { toCloudRun } from './cliDeploy';
 import { runCmd } from './cliCreate';
-import { getAgentGraph } from './agent_graph';
+import { getAgentGraph } from './agentGraph';
 import { createApiServer } from './apiServer';
 import { startWebServer } from './webServer';
 import * as fs from 'fs';

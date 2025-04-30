@@ -1,7 +1,6 @@
-
 # ADK TypeScript Streaming Quickstart {#adk-typescript-streaming-quickstart}
 
-With this quickstart, you'll learn to create a simple agent and use ADK TypeScript Streaming to enable voice and video communication with it that is low-latency and bidirectional. We will install ADK TypeScript, set up a basic "Google Search" agent, try running the agent with Streaming using the `adk-ts web` tool, and then explain how to build a simple asynchronous web app using ADK TypeScript Streaming, Express.js, and Socket.IO.
+With this quickstart, you'll learn to create a simple agent and use ADK TypeScript Streaming to enable voice and video communication with it that is low-latency and bidirectional. We will install ADK TypeScript, set up a basic "Google Search" agent, try running the agent with Streaming using the `adk-ts web` tool.
 
 **Note:** This guide assumes you have experience using a terminal and Node.js/npm in Windows, Mac, or Linux environments.
 
@@ -9,84 +8,83 @@ With this quickstart, you'll learn to create a simple agent and use ADK TypeScri
 
 In order to use voice/video streaming in ADK TypeScript, you will need to use Gemini models that support the necessary APIs for bidirectional streaming. You can find the **model ID(s)** that support these capabilities in the documentation:
 
-*   [Google AI Studio: Gemini API Models](https://ai.google.dev/gemini-api/docs/models#model-variations) (Look for models supporting streaming/multimodal features)
-*   [Vertex AI: Gemini API Models](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models#gemini_models) (Look for models supporting streaming/multimodal features)
+- [Google AI Studio: Gemini API Models](https://ai.google.dev/gemini-api/docs/models#model-variations) (Look for models supporting streaming/multimodal features)
+- [Vertex AI: Gemini API Models](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models#gemini_models) (Look for models supporting streaming/multimodal features)
 
 ## 1. Setup Environment & Install ADK TypeScript {#1.-setup-installation-typescript}
 
 **Environment:** Ensure you have Node.js (version 18 or higher recommended) and npm installed.
 
-**Install ADK TypeScript:**
+Create a new project:
 
 ```bash
-# Navigate to your project directory
-# Install the ADK library (replace with actual package name if different)
-npm install adk-typescript
+# Create project folders
+mkdir -p adk-streaming/app/google_search_agent
+cd adk-streaming/app
 
-# Install dotenv for environment variables
-npm install dotenv @types/dotenv
+# Initialize npm project
+npm init -y
+
+# Install ADK TypeScript and dependencies
+npm install adk-typescript dotenv
 ```
 
 ## 2. Project Structure {#2.-project-structure-typescript}
 
-Create the following folder structure for your project:
+Your project should have the following structure:
 
 ```console
-adk-streaming/          # Project folder
-└── app/                # Your application source folder
-    ├── .env            # API keys and environment variables
+adk-streaming/  # Project folder
+└── app/        # Your application source folder
+    ├── .env    # API keys and environment variables
     └── google_search_agent/ # Agent folder
-        └── agent.ts    # Agent definition (e.g., src/agent.ts if using src layout)
-    # (Optional: Add server.ts and static/index.html later for custom app)
-    ├── package.json      # Project dependencies and scripts
-    └── tsconfig.json     # TypeScript configuration
+        └── agent.ts        # Agent definition
+    ├── package.json        # Created by npm init
 ```
 
-Initialize your npm project if you haven't already:
+When working with TypeScript, you'll need a `tsconfig.json` file. You can generate one with:
 
 ```bash
-cd adk-streaming/app
-npm init -y
-# Now install dependencies as shown in step 1
+npx tsc --init
 ```
 
-Create `tsconfig.json`:
+Modify the generated `tsconfig.json` to include:
 
 ```json
-// tsconfig.json
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS", // Match common Node.js module system
+    "module": "Node16",
     "outDir": "./dist",
-    "rootDir": "./",     // Adjust if using a src directory
+    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true // Important for potential config files
+    "moduleResolution": "node16",
+    "resolveJsonModule": true
   },
-  "include": ["**/*.ts"], // Adjust if using a src directory (e.g., "src/**/*.ts")
+  "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
 ```
 
 ### agent.ts
 
-Create the agent definition file (e.g., `google_search_agent/agent.ts` or `src/agent.ts`).
+Create the agent definition file (`google_search_agent/agent.ts`).
 
 Copy-paste the following code block. For `model`, please double-check the model ID as described earlier in the [Models section](#supported-models).
 
 ```typescript
-// google_search_agent/agent.ts (or src/agent.ts)
-import { LlmAgent as Agent, LlmRegistry, googleSearch } from 'adk-typescript'; // Correct imports
+// google_search_agent/agent.ts
+import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { LlmRegistry } from 'adk-typescript/models';
+import { googleSearch } from 'adk-typescript/tools';
 
 // Get the model instance using LlmRegistry
 const geminiModel = LlmRegistry.newLlm(
-   "gemini-1.5-flash" // Or another compatible model like "gemini-1.5-pro"
-   // Note: Ensure the model chosen supports the Google Search tool.
-   // Check Google AI / Vertex AI documentation for model capabilities.
+   "gemini-1.5-flash" // Or another compatible model 
+   // Note: Ensure the model chosen supports the Google Search tool and streaming.
 );
 
 export const rootAgent = new Agent({
@@ -97,20 +95,17 @@ export const rootAgent = new Agent({
    // A short description of the agent's purpose.
    description: "Agent to answer questions using Google Search.",
    // Instructions to set the agent's behavior.
-   instruction: "You are an expert researcher. You always stick to the facts provided by the search tool. Answer the user's question based *only* on the search results provided.",
-   // Add the imported googleSearch tool to perform grounding.
+   instruction: "You are an expert researcher. You always stick to the facts provided by the search tool.",
+   // Add google_search tool to perform grounding with Google search.
    tools: [googleSearch]
 });
-
-// Optional: Export the agent as default for easier importing elsewhere if needed
-// export default { rootAgent };
 ```
 
-**Note:** To enable both text and audio/video input, the model must support bidirectional streaming and the relevant grounding/tool capabilities. Verify these capabilities by referring to the official Google AI / Vertex AI documentation for your chosen model. This quickstart uses `gemini-1.5-flash` which generally supports the Google Search tool.
+**Note:** To enable both text and audio/video input, the model must support bidirectional streaming. Verify these capabilities by referring to the official Google AI / Vertex AI documentation for your chosen model.
 
 `agent.ts` is where your agent's logic is defined. You must export a `rootAgent` for the ADK tools to find it.
 
-Notice how easily you integrated grounding with Google Search. The `Agent` class and the imported `googleSearch` tool handle the complex interactions.
+Notice how easily you integrated grounding with Google Search. The `Agent` class and the imported `googleSearch` tool handle the complex interactions with the LLM and grounding with the search API.
 
 ## 3\. Set up the platform {#3.-set-up-the-platform-typescript}
 
@@ -119,7 +114,7 @@ To run the agent, choose a platform (Google AI Studio or Google Cloud Vertex AI)
 === "Gemini - Google AI Studio"
 
     1.  Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
-    2.  Open the **`.env`** file (located inside `app/`) and add/modify the following lines:
+    2.  Open the **`.env`** file (located inside `app/`) and add the following lines:
 
         ```env title=".env"
         # Use Google AI backend (not Vertex AI)
@@ -137,7 +132,7 @@ To run the agent, choose a platform (Google AI Studio or Google Cloud Vertex AI)
         *   Set up the [gcloud CLI](https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#setup-local).
         *   Authenticate to Google Cloud from the terminal by running `gcloud auth application-default login`.
         *   [Enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
-    2.  Open the **`.env`** file (located inside `app/`). Add/modify the following lines and update the project ID and location.
+    2.  Open the **`.env`** file (located inside `app/`). Add the following lines:
 
         ```env title=".env"
         # Use Vertex AI backend
@@ -151,45 +146,41 @@ To run the agent, choose a platform (Google AI Studio or Google Cloud Vertex AI)
 
 ## 4. Try the agent with `adk-ts web` {#4.-try-it-adk-web-typescript}
 
-Now, let's try the agent using the built-in development UI.
+Now, it's time to try the agent using the built-in development UI.
 
-1.  **Build your code:** If you haven't already, compile your TypeScript code:
+1.  **Build your code:** Compile your TypeScript code:
     ```bash
-    cd app # Navigate to your app directory if not already there
-    npm run build # Or your configured build script (e.g., tsc)
+    # Add a build script to package.json first
+    npm pkg set scripts.build="tsc"
+    
+    # Build the project
+    npm run build
     ```
-    *(This assumes you have a `build` script in your `package.json` like `"build": "tsc"`)*
 
 2.  **Run the Dev UI:** Make sure you are in the `app` directory.
     ```bash
-    # Command might be 'adk-ts web .' or node path depending on setup
-    adk-ts web .
-    # OR (if adk-ts is not in PATH or linked)
-    # node ../node_modules/adk-typescript/dist/cli/index.js web .
+    npx adk-ts web .
     ```
-    Specify `.` to indicate the current directory contains the agent structure (or provide the path to the `google_search_agent` directory if running from outside `app`).
+    This launches the web UI with the agent in your current directory.
 
-3.  **Access the UI:** Open the URL provided (usually `http://localhost:3000` or similar) **directly in your browser**. Select `google_search_agent` (or the name of the directory containing `agent.ts`).
+3.  **Access the UI:** Open the URL provided (typically `http://localhost:3000`) **directly in your browser**. Select `google_search_agent` from the available agents.
 
 ### Try with text
 
-Try the following prompts by typing them in the UI's chat input:
+Try the following prompts by typing them in the UI:
 
-*   What is the weather in New York?
-*   What is the time in New York?
-*   What is the weather in Paris?
-*   What is the time in Paris?
+* What is the weather in New York?
+* What is the time in New York?
+* What is the weather in Paris?
+* What is the time in Paris?
 
-The agent should use the `googleSearch` tool automatically (you might not see explicit tool logs unless you add detailed logging) to get the latest information to answer these questions.
+The agent will use the Google Search tool to get the latest information to answer these questions.
 
 ### Try with voice and video
 
-The ADK TypeScript `webServer` includes Socket.IO, enabling real-time features. The provided UI might support voice/video if configured:
+If the UI shows a microphone button, click it to enable voice input and ask a question aloud. You should hear the answer streamed back.
 
-*   **Voice:** If the UI shows a microphone button, click it to enable voice input and ask a question aloud. You should hear the answer streamed back.
-*   **Video:** If the UI shows a camera button, click it to enable video input. Ask questions like "What do you see?". The agent should describe the video feed (requires a model with vision capabilities).
-
-*(Note: Voice/video support depends heavily on the specific UI implementation served by `adk-ts web` and the chosen LLM's capabilities. The default UI included might have basic support.)*
+If the UI shows a camera button, click it to enable video input. Ask questions like "What do you see?". The agent should describe the video feed (requires a model with vision capabilities).
 
 ### Stop the tool
 
@@ -201,34 +192,42 @@ The `runLive` method in the `Runner` and the `LiveRequestQueue` class provide th
 
 ## 5. Building a Custom Streaming App (Optional) {#5.-build-custom-app-typescript}
 
-While `adk-ts web` is great for development, let's see how to build a custom web application using **Express.js** and **Socket.IO** (which ADK TypeScript uses internally).
+In the previous section, we have checked that our basic search agent works with the ADK TypeScript Streaming using `adk-ts web` tool. In this section, we will learn how to build your own web application capable of the streaming communication using [Express.js](https://expressjs.com/) and [Socket.IO](https://socket.io/).
 
-Modify your project structure:
+Add `static` directory under `app`, and add `server.ts` and `index.html` as empty files, as in the following structure:
 
 ```console
-adk-streaming/          # Project folder
-└── app/                # Your application source folder
-    ├── server.ts       # NEW: Express/Socket.IO server
-    ├── static/         # NEW: Static content folder
-    │   └── index.html  # NEW: The web client page
-    ├── .env
-    ├── google_search_agent/
-    │   └── agent.ts
-    ├── package.json
-    └── tsconfig.json
-    └── dist/           # Default output directory after building
+adk-streaming/  # Project folder
+└── app/        # the web app folder
+    ├── server.ts       # Express.js web app
+    └── static/         # Static content folder
+        └── index.html  # The web client page
 ```
 
-Install necessary dependencies:
+By adding the directories and files above, the entire directory structure and files will look like:
 
-```bash
-npm install express socket.io
-npm install @types/express
+```console
+adk-streaming/  # Project folder
+└── app/        # the web app folder
+    ├── server.ts       # Express.js web app
+    ├── static/         # Static content folder
+    |   └── index.html  # The web client page
+    ├── .env            # Gemini API key
+    ├── package.json    # Node.js package file
+    └── google_search_agent/ # Agent folder
+        └── agent.ts    # Agent definition
 ```
 
 **server.ts**
 
-Create `server.ts` in your `app` directory. This replaces the Python `main.py`.
+First, install the additional dependencies we'll need:
+
+```bash
+npm install express socket.io
+npm install @types/express --save-dev
+```
+
+Copy-paste the following code block to the server.ts file.
 
 ```typescript
 // server.ts
@@ -238,316 +237,288 @@ import * as path from 'path';
 import * as dotenv from 'dotenv';
 import { Server as SocketIOServer } from 'socket.io';
 
-// Load environment variables first
+// Load Gemini API Key
 dotenv.config();
 
-import {
-  Runner,
-  InMemorySessionService,
-  LiveRequestQueue,
-  Content,
-  Part,
-  RunConfig, // Import RunConfig if needed
-  Event // Import Event type
-} from 'adk-typescript';
+// Import from specific modules
+import { Runner } from 'adk-typescript/runners';
+import { Content, Part } from 'adk-typescript/models';
+import { RunConfig } from 'adk-typescript/agents/run_config';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { LiveRequestQueue } from 'adk-typescript/agents';
 
-// Import your agent (adjust path if needed)
-import { rootAgent } from './google_search_agent/agent'; // Assuming agent.ts exports rootAgent
+import { rootAgent } from './google_search_agent/agent';
 
-const APP_NAME = "ADK_Streaming_Custom_App";
+//
+// ADK Streaming
+//
+
+const APP_NAME = "ADK Streaming example";
 const sessionService = new InMemorySessionService();
-const runner = new Runner({ // Use the standard Runner
+
+function startAgentSession(sessionId: string) {
+  // Create a Session
+  const session = sessionService.createSession({
+    appName: APP_NAME,
+    userId: sessionId,
+    sessionId: sessionId,
+  });
+
+  // Create a Runner
+  const runner = new Runner({
     appName: APP_NAME,
     agent: rootAgent,
     sessionService: sessionService,
-});
+  });
+
+  // Set response modality = TEXT
+  const runConfig = new RunConfig({ responseModalities: ["TEXT"] });
+
+  // Create a LiveRequestQueue for this session
+  const liveRequestQueue = new LiveRequestQueue();
+
+  // Start agent session
+  const liveEvents = runner.runLive({
+    session: session,
+    liveRequestQueue: liveRequestQueue,
+    runConfig: runConfig,
+  });
+  
+  return { liveEvents, liveRequestQueue };
+}
+
+async function agentToClientMessaging(socket: any, liveEvents: AsyncIterable<any>) {
+  try {
+    for await (const event of liveEvents) {
+      // turn_complete
+      if (event.turnComplete) {
+        socket.emit('message', JSON.stringify({ turn_complete: true }));
+        console.log("[TURN COMPLETE]");
+      }
+
+      if (event.interrupted) {
+        socket.emit('message', JSON.stringify({ interrupted: true }));
+        console.log("[INTERRUPTED]");
+      }
+
+      // Read the Content and its first Part
+      const part = (
+        event.content && event.content.parts && event.content.parts[0]
+      );
+      if (!part || !event.partial) {
+        continue;
+      }
+
+      // Get the text
+      const text = event.content && event.content.parts && event.content.parts[0].text;
+      if (!text) {
+        continue;
+      }
+
+      // Send the text to the client
+      socket.emit('message', JSON.stringify({ message: text }));
+      console.log(`[AGENT TO CLIENT]: ${text}`);
+    }
+  } catch (error) {
+    console.error("Error in agent to client messaging:", error);
+  }
+}
+
+async function clientToAgentMessaging(socket: any, liveRequestQueue: LiveRequestQueue) {
+  socket.on('message', (message: string) => {
+    const content: Content = {
+      role: "user",
+      parts: [{ text: message } as Part]
+    };
+    liveRequestQueue.sendContent(content);
+    console.log(`[CLIENT TO AGENT]: ${message}`);
+  });
+}
+
+//
+// Express web app
+//
 
 const app = express();
 const server = http.createServer(app);
-const io = new SocketIOServer(server, {
-    cors: {
-        origin: "*", // Configure allowed origins appropriately for production
-        methods: ["GET", "POST"]
-    }
-});
+const io = new SocketIOServer(server);
 
-const STATIC_DIR = path.join(__dirname, 'static'); // Assuming server.ts is in app/
+const STATIC_DIR = path.join(__dirname, 'static');
 app.use('/static', express.static(STATIC_DIR));
 
-console.log(`Serving static files from: ${STATIC_DIR}`);
-
-app.get("/", (req, res) => {
-    res.sendFile(path.join(STATIC_DIR, "index.html"));
+app.get("/", (_req, res) => {
+  return res.sendFile(path.join(STATIC_DIR, "index.html"));
 });
 
-// --- WebSocket Logic ---
 io.on('connection', (socket) => {
-    const sessionId = socket.handshake.query.sessionId as string || `session_${socket.id}`;
-    const userId = `user_${socket.id}`;
-    console.log(`Client connected: ${socket.id} | Session: ${sessionId}`);
-
-    // Ensure session exists
-    let session = sessionService.getSession({ appName: APP_NAME, userId, sessionId });
-    if (!session) {
-        session = sessionService.createSession({ appName: APP_NAME, userId, sessionId });
-        console.log(`Created new session for ${socket.id}: ${sessionId}`);
-    }
-
-    const liveRequestQueue = new LiveRequestQueue();
-
-    // Task 1: Agent -> Client Communication
-    const agentToClientTask = async () => {
-        console.log(`Starting agent processing for session: ${sessionId}`);
-        try {
-            // runLive yields events from the agent's execution
-            const eventStream = runner.runLive({
-                session: session!, // Use non-null assertion as we ensured it exists
-                liveRequestQueue,
-                // runConfig: new RunConfig({ responseModalities: ["TEXT"] }) // Example config
-            });
-
-            for await (const event of eventStream) {
-                 // console.log("Event from agent:", event); // Debug log
-
-                 if (event.turnComplete) {
-                    socket.emit('turn_complete', { turn_complete: true });
-                    console.log(`[S->C] Turn Complete for ${sessionId}`);
-                 }
-                 if (event.interrupted) {
-                    socket.emit('interrupted', { interrupted: true });
-                     console.log(`[S->C] Interrupted for ${sessionId}`);
-                 }
-
-                 // Extract text from the first part if available
-                 const part = event.content?.parts?.[0];
-                 if (part?.text && event.partial) {
-                     socket.emit('message_chunk', { message: part.text });
-                     // console.log(`[S->C Chunk] ${part.text}`); // Verbose log
-                 } else if (part?.text && event.isFinalResponse()) {
-                     // Send final non-partial text response
-                     socket.emit('final_message', { message: part.text });
-                     console.log(`[S->C Final] ${part.text}`);
-                 }
-                 // Add handling for other event types (function calls, etc.) if needed
-            }
-            console.log(`Agent processing finished for session: ${sessionId}`);
-        } catch (error) {
-            console.error(`Error in agent_to_client_task for ${sessionId}:`, error);
-            socket.emit('server_error', { error: `Agent processing error: ${error instanceof Error ? error.message : String(error)}` });
-        }
-    };
-
-    // Task 2: Client -> Agent Communication
-    socket.on('client_message', (text: string) => {
-        if (typeof text !== 'string' || !text.trim()) {
-            console.warn(`Received invalid message from ${socket.id}:`, text);
-            return;
-        }
-        console.log(`[C->S] Received: ${text} from ${sessionId}`);
-        const content: Content = {
-            role: "user",
-            parts: [{ text: text.trim() } as Part] // Cast to Part
-        };
-        liveRequestQueue.sendContent(content);
-    });
-
-    // Handle client disconnection
-    socket.on('disconnect', () => {
-        console.log(`Client disconnected: ${socket.id} | Session: ${sessionId}`);
-        liveRequestQueue.sendClose(); // Signal agent to potentially clean up
-        // Optional: Add logic to clean up resources associated with the session
-    });
-
-    // Start the agent processing loop
-    agentToClientTask();
-
-    // Optionally send an initial message or prompt
-    // liveRequestQueue.sendContent({ role: "user", parts: [{ text: "Start" }] });
+  const sessionId = `session_${Date.now()}`;
+  console.log(`Client #${sessionId} connected`);
+  
+  // Start agent session
+  const { liveEvents, liveRequestQueue } = startAgentSession(sessionId);
+  
+  // Start tasks
+  agentToClientMessaging(socket, liveEvents);
+  clientToAgentMessaging(socket, liveRequestQueue);
+  
+  socket.on('disconnect', () => {
+    console.log(`Client #${sessionId} disconnected`);
+    liveRequestQueue.sendClose();
+  });
 });
 
-const PORT = process.env.PORT || 8080; // Use a different port than adk-ts web default
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
-    console.log(`Custom ADK Streaming Server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });
-
 ```
 
-This `server.ts` sets up an Express server with Socket.IO:
+This code creates a real-time chat application using ADK TypeScript and Express.js with Socket.IO. It sets up a WebSocket endpoint where clients can connect and interact with a Google Search Agent.
 
-*   It serves a static `index.html` file.
-*   It handles WebSocket connections on the root path (`/`).
-*   When a client connects, it initializes an ADK `Runner` session using `runLive`.
-*   It uses `async/await` and `for await...of` to handle the asynchronous event stream from `runner.runLive`.
-*   It relays agent text responses (`message_chunk`, `final_message`) and status updates (`turn_complete`, `interrupted`) to the client via Socket.IO events.
-*   It listens for `client_message` events from the client and forwards the text to the agent via the `LiveRequestQueue`.
+Key functionalities:
 
-**static/index.html**
+* Loads the Gemini API key.
+* Uses ADK TypeScript to manage agent sessions and run the `google_search_agent`.
+* `startAgentSession` initializes an agent session with a live request queue for real-time communication.
+* `agentToClientMessaging` asynchronously streams the agent's text responses and status updates (turn complete, interrupted) to the connected WebSocket client.
+* `clientToAgentMessaging` asynchronously receives text messages from the WebSocket client and sends them as user input to the agent.
+* Express.js serves a static frontend and handles WebSocket connections.
+* When a client connects, it starts an agent session and creates functions for bidirectional communication between the client and the agent via WebSockets.
 
-Create `static/index.html` in your `app` directory.
+Copy-paste the following code block to the `index.html` file.
 
 ```html
-<!-- static/index.html -->
 <!doctype html>
 <html>
   <head>
     <title>ADK TypeScript Streaming Test</title>
-    <script src="/socket.io/socket.io.js"></script> <!-- Include Socket.IO client -->
-    <style>
-        body { font-family: sans-serif; margin: 20px; }
-        #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9; }
-        #messages p { margin: 5px 0; }
-        #messages p.user { font-weight: bold; color: blue; }
-        #messages p.agent { color: green; }
-        form { display: flex; }
-        input[type="text"] { flex-grow: 1; padding: 8px; margin-right: 5px; }
-        button { padding: 8px 15px; }
-    </style>
+    <script src="/socket.io/socket.io.js"></script>
   </head>
+
   <body>
     <h1>ADK TypeScript Streaming Test</h1>
-    <div id="messages"><p><i>Connecting...</i></p></div>
+    <div
+      id="messages"
+      style="height: 300px; overflow-y: auto; border: 1px solid black"></div>
+    <br />
+
     <form id="messageForm">
-      <input type="text" id="messageInput" autocomplete="off" placeholder="Type your message..." />
+      <label for="message">Message:</label>
+      <input type="text" id="message" name="message" />
       <button type="submit" id="sendButton" disabled>Send</button>
     </form>
-
-    <script>
-      const messagesDiv = document.getElementById("messages");
-      const messageForm = document.getElementById("messageForm");
-      const messageInput = document.getElementById("messageInput");
-      const sendButton = document.getElementById("sendButton");
-      let currentAgentMessageP = null;
-
-      // --- Socket.IO Connection ---
-      // Connect to the server hosting this page
-      const socket = io(); // Defaults to connecting to the server that served the page
-
-      socket.on('connect', () => {
-        console.log("Connected to server via Socket.IO", socket.id);
-        messagesDiv.innerHTML = '<p><i>Connected! Ask the agent something.</i></p>'; // Clear connecting message
-        sendButton.disabled = false;
-      });
-
-      // --- Receiving Messages from Server ---
-      socket.on('message_chunk', (data) => {
-        console.log('Received chunk:', data);
-        if (!currentAgentMessageP) {
-            currentAgentMessageP = document.createElement('p');
-            currentAgentMessageP.classList.add('agent');
-            messagesDiv.appendChild(currentAgentMessageP);
-        }
-        currentAgentMessageP.textContent += data.message;
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll down
-      });
-
-      socket.on('final_message', (data) => {
-          console.log('Received final:', data);
-          if (!currentAgentMessageP) { // Handle case where final message is the only message
-              currentAgentMessageP = document.createElement('p');
-              currentAgentMessageP.classList.add('agent');
-              messagesDiv.appendChild(currentAgentMessageP);
-              currentAgentMessageP.textContent = data.message; // Set directly if no chunks received
-          }
-          // Final message might already be complete from chunks, or this contains the full text
-          // If currentAgentMessageP exists, its content should already be complete or near complete
-          if(currentAgentMessageP && currentAgentMessageP.textContent !== data.message) {
-             // Update if the final text differs significantly (e.g., if chunks were missed)
-             currentAgentMessageP.textContent = data.message;
-          }
-          currentAgentMessageP = null; // Reset for the next agent turn
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      });
-
-       socket.on('turn_complete', (data) => {
-          console.log('Turn complete received');
-          if (currentAgentMessageP) { // If there was a partial message being built
-             currentAgentMessageP = null; // Reset paragraph element for the next agent turn
-          }
-          // Optionally add a visual separator or indicator
-          // const separator = document.createElement('hr');
-          // messagesDiv.appendChild(separator);
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-       });
-
-       socket.on('interrupted', (data) => {
-           console.log('Agent interrupted');
-           if (currentAgentMessageP) {
-               currentAgentMessageP = null;
-           }
-           const interruptMsg = document.createElement('p');
-           interruptMsg.innerHTML = '<i>Agent interaction interrupted.</i>';
-           messagesDiv.appendChild(interruptMsg);
-           messagesDiv.scrollTop = messagesDiv.scrollHeight;
-       });
-
-       socket.on('server_error', (data) => {
-           console.error('Server error:', data.error);
-           const errorMsg = document.createElement('p');
-           errorMsg.innerHTML = `<strong style="color: red;">Server Error:</strong> ${data.error}`;
-           messagesDiv.appendChild(errorMsg);
-           messagesDiv.scrollTop = messagesDiv.scrollHeight;
-       });
-
-
-      // --- Sending Messages to Server ---
-      messageForm.onsubmit = (e) => {
-        e.preventDefault();
-        const message = messageInput.value.trim();
-        if (message && socket.connected) {
-          // Display user message
-          const userMsgP = document.createElement('p');
-          userMsgP.classList.add('user');
-          userMsgP.textContent = `You: ${message}`;
-          messagesDiv.appendChild(userMsgP);
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-          // Send message to server
-          socket.emit('client_message', message);
-          console.log(`Sent: ${message}`);
-          messageInput.value = ""; // Clear input
-          currentAgentMessageP = null; // Expect a new agent message paragraph
-        }
-      };
-
-      // --- Handling Disconnection ---
-      socket.on('disconnect', () => {
-        console.log("Disconnected from server.");
-        messagesDiv.innerHTML += '<p><i>Disconnected. Attempting to reconnect...</i></p>';
-        sendButton.disabled = true;
-        currentAgentMessageP = null;
-      });
-
-      socket.on('connect_error', (err) => {
-        console.error('Connection error:', err);
-        messagesDiv.innerHTML += `<p><i>Connection error: ${err.message}. Please check the server.</i></p>`;
-        sendButton.disabled = true;
-      });
-
-    </script>
   </body>
+
+  <script>
+    // Connect the server with a WebSocket connection
+    const socket = io();
+
+    // Get DOM elements
+    const messageForm = document.getElementById("messageForm");
+    const messageInput = document.getElementById("message");
+    const messagesDiv = document.getElementById("messages");
+    let currentMessageId = null;
+
+    // Socket.IO handlers
+    socket.on('connect', function () {
+      console.log("Socket.IO connection opened.");
+      document.getElementById("sendButton").disabled = false;
+      document.getElementById("messages").textContent = "Connection opened";
+    });
+
+    socket.on('message', function (eventData) {
+      // Parse the incoming message
+      const packet = JSON.parse(eventData);
+      console.log(packet);
+
+      // Check if the turn is complete
+      // if turn complete, reset current message
+      if (packet.turn_complete && packet.turn_complete == true) {
+        currentMessageId = null;
+        return;
+      }
+
+      // add a new message for a new turn
+      if (currentMessageId == null && packet.message) {
+        currentMessageId = Math.random().toString(36).substring(7);
+        const message = document.createElement("p");
+        message.id = currentMessageId;
+        // Append the message element to the messagesDiv
+        messagesDiv.appendChild(message);
+      }
+
+      // Add message text to the existing message element
+      if (packet.message) {
+        const message = document.getElementById(currentMessageId);
+        message.textContent += packet.message;
+
+        // Scroll down to the bottom of the messagesDiv
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+    });
+
+    // When the connection is closed, try reconnecting
+    socket.on('disconnect', function () {
+      console.log("Socket.IO connection closed.");
+      document.getElementById("sendButton").disabled = true;
+      document.getElementById("messages").textContent = "Connection closed";
+    });
+
+    socket.on('error', function (e) {
+      console.log("Socket.IO error: ", e);
+    });
+
+    // Add submit handler to the form
+    messageForm.onsubmit = function (e) {
+      e.preventDefault();
+      const message = messageInput.value;
+      if (message) {
+        const p = document.createElement("p");
+        p.textContent = "> " + message;
+        messagesDiv.appendChild(p);
+        socket.emit('message', message);
+        messageInput.value = "";
+      }
+      return false;
+    };
+  </script>
 </html>
 ```
 
-This HTML file uses the **Socket.IO client library** (included via `<script src="/socket.io/socket.io.js"></script>`, which is automatically served by the Socket.IO server) to establish a real-time connection. It listens for `message_chunk`, `final_message`, `turn_complete`, and `interrupted` events from the server and updates the chat display accordingly. When the user sends a message, it emits a `client_message` event to the server.
+This HTML file sets up a basic webpage with:
+
+* A form (`messageForm`) with an input field for typing messages and a "Send" button.
+* JavaScript that:
+  * Connects to the Socket.IO server.
+  * Enables the "Send" button upon successful connection.
+  * Appends received messages from the server to the `messages` div, handling streaming responses and turn completion.
+  * Sends the text entered in the input field to the Socket.IO server when the form is submitted.
 
 ## 6\. Interact with Your Streaming app {#6.-interact-with-your-streaming-app-typescript}
 
-1.  **Build your TypeScript code:**
-    ```bash
-    cd app
-    npm run build # Or: tsc
-    ```
+1\. **Navigate to the Correct Directory:**
 
-2.  **Start the Custom Server:** Run your `server.ts` file using Node.js (referencing the compiled JavaScript output in `dist/`):
-    ```bash
-    node dist/server.js
-    ```
+   To run your agent effectively, you need to be in the **app folder (`adk-streaming/app`)**
 
-3.  **Access the UI:** Open your browser to the URL shown (e.g., `http://localhost:8080`).
+2\. **Build and Start the Express Server**: Run the following commands to build and start the server:
 
-You should see the UI from `index.html`. Try asking a question like `What is Gemini?`. The agent will use Google Search, and you'll see the response streamed into the chat box. You can interrupt by sending another message while it's responding.
+```console
+# Build the TypeScript files
+npm run build
 
-This demonstrates building a custom application with bidirectional streaming using ADK TypeScript, Express.js, and Socket.IO.
+# Run the server
+node dist/server.js
+```
+
+3\. **Access the UI:** Once the UI server starts, the terminal will display a local URL (e.g., [http://localhost:8080](http://localhost:8080)). Click this link to open the UI in your browser.
+
+Try asking a question `What is Gemini?`. The agent will use Google Search to respond to your queries. You would notice that the UI shows the agent's response as streaming text. You can also send messages to the agent at any time, even while the agent is still responding. This demonstrates the bidirectional communication capability of ADK TypeScript Streaming.
+
+Benefits over conventional synchronous web apps:
+
+* Real-time two-way communication: Seamless interaction.
+* More responsive and engaging: No need to wait for full responses or constant refreshing. Feels like a live conversation.
+* Can be extended to multimodal apps with audio, image and video streaming support.
 
 Congratulations! You've successfully created and interacted with your first Streaming agent using ADK TypeScript!
 

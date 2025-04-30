@@ -11,14 +11,14 @@ export {
   ApiKeyCredential,
   BearerCredential,
   BasicCredential
-} from './auth_credential';
+} from './AuthCredential';
 
 export {
   AuthScheme as SimpleAuthScheme,
   ApiKeyAuthScheme,
   BearerAuthScheme,
   BasicAuthScheme
-} from './auth_schemes';
+} from './AuthSchemes';
 
 // Export auth components - consolidate exports to avoid naming conflicts
 export * from './AuthCredential';

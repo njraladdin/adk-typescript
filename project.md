@@ -17,8 +17,9 @@ TODO:
 
 
 - fix file names to typescript conventions, done 
-- update docs api reference 
-- go thourgh docs and fix issues 
+- go thourgh docs and fix issues : get-started
+- go thourgh docs and fix issues : tutorials
+- update docs api reference
 
 
 - publish as npm package alpha version + release on github (or action for that where it autoamtically updates npm package when release is created)

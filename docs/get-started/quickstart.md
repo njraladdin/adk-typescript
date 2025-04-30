@@ -1,4 +1,3 @@
-
 # Quickstart (ADK TypeScript)
 
 This quickstart guides you through installing the Agent Development Kit (ADK) for TypeScript, setting up a basic agent with multiple tools, and running it locally either in the terminal or in the interactive, browser-based dev UI.
@@ -51,22 +50,24 @@ Create the agent folder `multi_tool_agent`:
 mkdir multi_tool_agent/
 ```
 
+### TypeScript Configuration
+
 Create the `tsconfig.json` file in your project root (`my-adk-project/`):
 
 ```json title="tsconfig.json"
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS", // Or "ESNext" if using ES Modules
+    "module": "Node16",      // Required for proper module resolution
     "outDir": "./dist",
-    "rootDir": "./", // Assumes agent.ts is directly in multi_tool_agent
+    "rootDir": "./",         // Assumes agent.ts is directly in multi_tool_agent
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node16", // Required for subpath imports
     "resolveJsonModule": true,
-    "declaration": true // Optional: generates .d.ts files
+    "declaration": true      // Optional: generates .d.ts files
   },
   "include": ["multi_tool_agent/**/*.ts"], // Include files in your agent folder
   "exclude": ["node_modules", "dist"]
@@ -95,12 +96,9 @@ Create an `agent.ts` file inside the `multi_tool_agent/` folder.
 Copy and paste the following code into `multi_tool_agent/agent.ts`:
 
 ```typescript title="multi_tool_agent/agent.ts"
-import {
-  LlmAgent as Agent, // Alias for convenience
-  FunctionTool,
-  ToolContext,
-  LlmRegistry
-} from 'adk-typescript'; // Adjust import path if library installed locally
+import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { LlmRegistry } from 'adk-typescript/models';
+import { FunctionTool, ToolContext } from 'adk-typescript/tools';
 
 // --- Tool Functions ---
 
