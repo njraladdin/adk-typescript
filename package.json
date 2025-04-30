@@ -38,11 +38,11 @@
     "adk:run": "ts-node src/cli/index.ts run",
     "adk:create": "ts-node src/cli/index.ts create",
     "adk:web": "ts-node src/cli/index.ts web",
-    "docs": "typedoc --out docs/api-reference src/index.ts --skipLibCheck --ignoreCompilerErrors",
     "prepublishOnly": "npm run lint && npm test && npm run build",
     "prepare": "npm run build",
     "pack:test": "npm run build && npm pack",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "docs": "typedoc --entryPointStrategy \"expand\" --entryPoints \"./src\" --out docs/api-reference"
   },
   "repository": {
     "type": "git",
@@ -78,10 +78,11 @@
     "eslint": "^8.46.0",
     "jest": "^29.6.2",
     "prettier": "^3.0.0",
-    "rimraf": "^5.0.5",
+    "rimraf": "^6.0.1",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
-    "typedoc": "^0.25.12",
+    "typedoc": "^0.28.3",
+    "typedoc-plugin-markdown": "^4.6.3",
     "typescript": "^5.1.6"
   },
   "dependencies": {
@@ -108,6 +109,6 @@
     "winston": "^3.17.0"
   },
   "engines": {
-    "node": ">=18.0.0 <21.0.0"
+    "node": ">=18.0.0"
   }
 }

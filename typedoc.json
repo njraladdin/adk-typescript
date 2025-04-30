@@ -1,22 +1,54 @@
 {
-  "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["src/index.ts"],
+  "entryPointStrategy": "expand",
   "out": "docs/api-reference",
+  "includeVersion": true,
   "excludePrivate": true,
   "excludeProtected": false,
   "excludeExternals": true,
-  "includeVersion": true,
-  "disableSources": false,
-  "sourceLinkTemplate": "https://github.com/njraladdin/adk-typescript/blob/{gitRevision}/{path}#L{line}",
-  "htmlLang": "en-US",
-  "gitRevision": "main",
+  "externalPattern": ["**/node_modules/**"],
+  "readme": "README.md",
+  "name": "ADK TypeScript API Reference",
+  "sort": ["static-first", "alphabetical"],
+  "categoryOrder": ["Core", "Agents", "Models", "Tools", "Sessions", "Memory", "*"],
   "cleanOutputDir": true,
-  "categorizeByGroup": true,
+  "validation": {
+    "invalidLink": true,
+    "notDocumented": true
+  },
+  "visibilityFilters": {
+    "protected": true,
+    "private": false,
+    "inherited": true,
+    "external": false
+  },
+  "plugin": ["typedoc-plugin-markdown"],
+  "theme": "default",
+  "treatWarningsAsErrors": false,
+  "searchInComments": true,
+  "disableSources": false,
+  "sourceLinkTemplate": "https://github.com/njraladdin/adk-typescript/blob/main/{path}#L{line}",
   "navigationLinks": {
-    "Home": "https://njraladdin.github.io/adk-typescript/",
-    "GitHub": "https://github.com/njraladdin/adk-typescript"
+    "GitHub": "https://github.com/njraladdin/adk-typescript",
+    "Examples": "https://github.com/njraladdin/adk-typescript/tree/main/examples"
   },
   "sidebarLinks": {
-    "API": "https://njraladdin.github.io/adk-typescript/api-reference/"
-  }
+    "Home": "https://github.com/njraladdin/adk-typescript#readme"
+  },
+  "categorizeByGroup": true,
+  "searchCategoryBoosts": {
+    "Core": 1.5,
+    "Agent": 1.3,
+    "Tool": 1.2
+  },
+  "jsDocCompatibility": true,
+  "excludeNotDocumented": false,
+  "groupOrder": [
+    "Classes",
+    "Interfaces",
+    "Enumerations",
+    "Functions",
+    "Variables",
+    "TypeAliases"
+  ]
 } 
