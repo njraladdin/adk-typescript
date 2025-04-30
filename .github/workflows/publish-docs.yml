@@ -17,16 +17,19 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
       
       # Set up Node.js for TypeDoc generation
+      # Note: We need Node.js 20+ for some of our dev dependencies
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
       
       # Install dependencies and generate TypeDoc documentation
+      # Note: We generate the API reference docs during the build process
+      # rather than committing them to the repository
       - name: Install Node.js dependencies and generate API docs
         run: |
-          npm ci
+          npm install
           npm run docs
       
       # Now set up Python for MkDocs
