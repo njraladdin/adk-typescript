@@ -17,7 +17,7 @@ TODO:
 
 
 - fix file names to typescript conventions, done 
-- go thourgh docs and fix issues : get-started
+- go thourgh docs and fix issues : get-started, done 
 - go thourgh docs and fix issues : tutorials
 - update docs api reference
 

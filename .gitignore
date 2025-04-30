@@ -52,3 +52,7 @@ package-lock.json
 test-adk
 docs_python
 
+# TypeDoc generated files - Commented out to allow committing API docs
+# docs/api-reference/*
+# !docs/api-reference/README.md
+

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api-reference",
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeExternals": true,
+  "includeVersion": true,
+  "disableSources": false,
+  "sourceLinkTemplate": "https://github.com/njraladdin/adk-typescript/blob/{gitRevision}/{path}#L{line}",
+  "htmlLang": "en-US",
+  "gitRevision": "main",
+  "cleanOutputDir": true,
+  "categorizeByGroup": true,
+  "navigationLinks": {
+    "Home": "https://njraladdin.github.io/adk-typescript/",
+    "GitHub": "https://github.com/njraladdin/adk-typescript"
+  },
+  "sidebarLinks": {
+    "API": "https://njraladdin.github.io/adk-typescript/api-reference/"
+  }
+} 
