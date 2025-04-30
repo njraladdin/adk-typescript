@@ -14,7 +14,7 @@ import { BaseLlmConnection } from '../../models/BaseLlmConnection';
 import { CallbackContext } from '../../agents/CallbackContext';
 import { BaseLlmRequestProcessor, BaseLlmResponseProcessor } from './BaseLlmProcessor';
 import { Blob } from '../../models/types';
-import { ToolContext } from '../../tools/toolContext';
+import { ToolContext } from '../../tools/ToolContext';
 import * as telemetry from '../../telemetry';
 import { StreamingMode } from '../../agents/RunConfig';
 import { LiveRequestQueue } from '../../agents/LiveRequestQueue';

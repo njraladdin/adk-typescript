@@ -18,7 +18,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Event } from '../../events/Event';
 import { InvocationContext } from '../../agents/InvocationContext';
-import { ToolContext } from '../../tools/toolContext';
+import { ToolContext } from '../../tools/ToolContext';
 import { BaseTool } from '../../tools/BaseTool';
 import * as telemetry from '../../telemetry';
 import { LlmAgent } from '../../agents/LlmAgent';

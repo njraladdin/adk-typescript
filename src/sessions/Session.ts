@@ -5,7 +5,7 @@
  */
 import { BaseAgent } from '../agents/BaseAgent';
 import { Content } from '../models/types';
-import { State } from './state';
+import { State } from './State';
 import { Event } from '../events/Event';
 
 /**

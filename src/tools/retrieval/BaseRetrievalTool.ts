@@ -1,7 +1,7 @@
 
 
 import { BaseTool, BaseToolOptions } from '../BaseTool';
-import { ToolContext } from '../toolContext';
+import { ToolContext } from '../ToolContext';
 
 /**
  * Options for creating a retrieval tool

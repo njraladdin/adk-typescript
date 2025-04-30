@@ -13,8 +13,12 @@ TODO:
 - convert docs examples to typescript, done  
 - add README, done 
 - update all docs, done 
-- host docs on github pages
+- host docs on github pages, done 
+
 
 - fix file names to typescript conventions 
-- publish as npm package alpha version 
-- update docs with typescript version 
+- update docs api reference 
+- go thourgh docs and fix issues 
+
+
+- publish as npm package alpha version + release on github (or action for that where it autoamtically updates npm package when release is created)

@@ -1,7 +1,7 @@
 
 
 import { BaseRetrievalTool, RetrievalToolOptions } from './BaseRetrievalTool';
-import { ToolContext } from '../toolContext';
+import { ToolContext } from '../ToolContext';
 
 /**
  * RAG resource interface (placeholder)

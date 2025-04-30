@@ -18,7 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import cors from 'cors';
 import { Server as SocketIOServer } from 'socket.io';
-import { InMemorySessionService } from '../sessions/inMemorySessionService';
+import { InMemorySessionService } from '../sessions/InMemorySessionService';
 import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 import { Runner } from '../runners';
 import { BaseAgent } from '../agents/BaseAgent';

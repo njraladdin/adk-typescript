@@ -1,7 +1,7 @@
 
 
 import { BaseTool } from './BaseTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 
 /**
  * Options for the Vertex AI Search tool

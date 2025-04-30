@@ -16,7 +16,7 @@ import { Content, Part } from '../models/types';
 import { InvocationContext } from './InvocationContext';
 import { ReadonlyContext } from './ReadonlyContext';
 import { EventActions } from '../events/EventActions';
-import { State } from '../sessions/state';
+import { State } from '../sessions/State';
 
 /**
  * Callback context for agent invocations.

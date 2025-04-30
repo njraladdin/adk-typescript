@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Event, Session } from '../sessions/interfaces';
+import { Event, SessionInterface as Session } from '../sessions/types';
 
 /**
  * Represents a single memory retrieval result.

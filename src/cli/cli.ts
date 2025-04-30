@@ -22,9 +22,9 @@ import { BaseArtifactService } from '../artifacts/BaseArtifactService';
 import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 import { Content, Part } from '../models/types';
 import { Runner } from '../runners';
-import { BaseSessionService } from '../sessions/baseSessionService';
-import { InMemorySessionService } from '../sessions/inMemorySessionService';
-import { Session } from '../sessions/interfaces';
+import { BaseSessionService } from '../sessions/BaseSessionService';
+import { InMemorySessionService } from '../sessions/InMemorySessionService';
+import { SessionInterface as Session } from '../sessions/types';
 import * as envs from './utils/envs';
 
 interface InputFile {

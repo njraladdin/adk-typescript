@@ -2,7 +2,7 @@
 
 import axios, { AxiosRequestConfig, Method } from 'axios';
 import { BaseTool } from '../../BaseTool';
-import { ToolContext } from '../../toolContext';
+import { ToolContext } from '../../ToolContext';
 import { ApiParameter, OperationEndpoint, Schema, toSnakeCase } from '../common/common';
 import { ParsedOperation } from './OpenApiSpecParser';
 import { AuthCredential, AuthScheme } from '../auth/AuthTypes';

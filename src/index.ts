@@ -25,7 +25,7 @@ export { CodeExecutionTool } from './tools/CodeExecutionTool';
 export { LoadWebPageTool } from './tools/LoadWebPageTool';
 export { LoadMemoryTool } from './tools/LoadMemoryTool';
 export { VertexAISearchTool } from './tools/VertexAISearchTool';
-export { ToolContext } from './tools/toolContext';
+export { ToolContext } from './tools/ToolContext';
 
 // Runner exports
 export { Runner, InMemoryRunner } from './runners';

@@ -1,5 +1,3 @@
-
-
 // Make sure we import reflect-metadata first
 import 'reflect-metadata';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,10 +15,10 @@ import {
   Repository
 } from 'typeorm';
 
-import { Event, Session, SessionsList } from './interfaces';
+import { Event, SessionInterface as Session, SessionsList } from './types';
 import { Content, Part } from './types';
-import { BaseSessionService, ListEventsResponse } from './baseSessionService';
-import { StatePrefix } from './state';
+import { BaseSessionService, ListEventsResponse } from './BaseSessionService';
+import { StatePrefix } from './State';
 
 /**
  * Extract state delta from a state object, categorizing into app, user, and session state

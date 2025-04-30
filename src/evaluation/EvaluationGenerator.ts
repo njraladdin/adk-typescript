@@ -20,12 +20,12 @@ import { Content, Part, FunctionCall } from '../models/types';
 import { BaseAgent } from '../agents/BaseAgent';
 import { LlmAgent } from '../agents/LlmAgent';
 import { Runner } from '../runners';
-import { Session } from '../sessions/interfaces';
-import { InMemorySessionService } from '../sessions/inMemorySessionService';
+import { SessionInterface as Session } from '../sessions/types';
+import { InMemorySessionService } from '../sessions/InMemorySessionService';
 import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 import { Event } from '../events/Event';
 import { BaseTool } from '../tools/BaseTool';
-import { ToolContext } from '../tools/toolContext';
+import { ToolContext } from '../tools/ToolContext';
 
 /**
  * Type for tool callback function

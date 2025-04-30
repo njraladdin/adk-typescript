@@ -1,7 +1,7 @@
 
 
 import { FunctionTool, ToolFunction } from './FunctionTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 
 /**
  * Interface for a basic Langchain tool

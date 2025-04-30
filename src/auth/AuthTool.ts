@@ -1,5 +1,5 @@
 import { BaseTool, BaseToolOptions } from '../tools/BaseTool';
-import { ToolContext } from '../tools/toolContext';
+import { ToolContext } from '../tools/ToolContext';
 import { AuthScheme } from './AuthScheme';
 import { AuthCredential } from './AuthCredential';
 

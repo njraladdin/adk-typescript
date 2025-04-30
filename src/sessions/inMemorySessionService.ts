@@ -1,10 +1,8 @@
-
-
 import { v4 as uuidv4 } from 'uuid';
-import { Event, Session, SessionsList } from './interfaces';
+import { Event, SessionInterface as Session, SessionsList } from './types';
 import { Content, Part } from './types';
-import { BaseSessionService, ListEventsResponse } from './baseSessionService';
-import { State, StatePrefix } from './state';
+import { BaseSessionService, ListEventsResponse } from './BaseSessionService';
+import { State, StatePrefix } from './State';
 
 export class InMemorySessionService extends BaseSessionService {
   // Store sessions by app/user/session ID

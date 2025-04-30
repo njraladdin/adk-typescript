@@ -22,9 +22,9 @@ import { TranscriptionEntry } from './TranscriptionEntry';
 import { Session } from '../sessions/Session';
 import { BaseArtifactService } from '../artifacts/BaseArtifactService';
 import { BaseMemoryService } from '../memory/BaseMemoryService';
-import { BaseSessionService } from '../sessions/baseSessionService';
+import { BaseSessionService } from '../sessions/BaseSessionService';
 import { BaseLlm } from '../models/BaseLlm';
-import { ToolContext } from '../tools/toolContext';
+import { ToolContext } from '../tools/ToolContext';
 
 /**
  * Error thrown when the number of LLM calls exceed the limit.

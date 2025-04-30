@@ -22,14 +22,14 @@ import { EventActions } from '../../events/EventActions';
 import { LlmRequest } from '../../models/LlmRequest';
 import { LlmResponse } from '../../models/LlmResponse';
 import { Content, Part } from '../../models/types';
-import { BaseCodeExecutor } from '../../code_executors/baseCodeExecutor';
+import { BaseCodeExecutor } from '../../code-executors/BaseCodeExecutor';
 import { 
   CodeExecutionInput, 
   CodeExecutionResult, 
   CodeExecutionUtils, 
   File 
-} from '../../code_executors/codeExecutionUtils';
-import { CodeExecutorContext } from '../../code_executors/codeExecutorContext';
+} from '../../code-executors/CodeExecutionUtils';
+import { CodeExecutorContext } from '../../code-executors/CodeExecutorContext';
 import { LlmAgent } from '../../agents/LlmAgent';
 import { BaseLlmRequestProcessor, BaseLlmResponseProcessor } from './BaseLlmProcessor';
 

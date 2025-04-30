@@ -9,7 +9,7 @@ export * from './BaseTool';
 export * from './FunctionTool';
 export * from './AgentTool';
 export * from './CrewaiTool';
-export * from './toolContext';
+export * from './ToolContext';
 export * from './toolActions';
 
 // Additional tool exports
@@ -29,16 +29,16 @@ export * from './ToolboxTool';
 export * from './LangchainTool';
 
 // Export MCP tools
-export * from './mcp_tool';
+export * from './mcp-tool';
 
 // Export Google API tools
-export * from './google_api_tool';
+export * from './google-api-tool';
 
 // Export OpenAPI tools
-export { OpenAPIToolset, RestApiTool } from './openapi_tool';
+export { OpenAPIToolset, RestApiTool } from './openapi-tool';
 
 // Export APIHub tools
-export * from './apihub_tool';
+export * from './apihub-tool';
 
 // Re-export specific tool directories
 export * from './retrieval/BaseRetrievalTool';

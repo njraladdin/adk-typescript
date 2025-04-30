@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Session, Event } from '../sessions/interfaces';
+import { SessionInterface as Session, Event } from '../sessions/types';
 import { BaseMemoryService, MemoryResult, SearchMemoryResponse } from './BaseMemoryService';
 
 /**

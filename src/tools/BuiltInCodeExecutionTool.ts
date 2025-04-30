@@ -1,7 +1,7 @@
 
 
 import { BaseTool } from './BaseTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 
 /**
  * A built-in code execution tool that is automatically invoked by Gemini 2 models.

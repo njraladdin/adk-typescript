@@ -19,12 +19,12 @@ import { LlmResponse } from '../models/LlmResponse';
 import { LlmRegistry } from '../models/LlmRegistry';
 import { BaseTool } from '../tools/BaseTool';
 import { FunctionTool, FunctionToolOptions } from '../tools/FunctionTool';
-import { ToolContext } from '../tools/toolContext';
+import { ToolContext } from '../tools/ToolContext';
 import { Session, SessionOptions } from '../sessions/Session';
 import { BasePlanner } from '../planners/BasePlanner';
-import { BaseCodeExecutor } from '../code_executors/baseCodeExecutor';
+import { BaseCodeExecutor } from '../code-executors/BaseCodeExecutor';
 import { v4 as uuidv4 } from 'uuid';
-import { State } from '../sessions/state';
+import { State } from '../sessions/State';
 
 // Type definitions for missing imports
 /**

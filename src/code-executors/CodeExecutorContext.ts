@@ -4,8 +4,8 @@
  * The persistent context used to configure the code executor.
  */
 
-import { State } from "../sessions/state";
-import { File } from "./codeExecutionUtils";
+import { State } from "../sessions/State";
+import { File } from "./CodeExecutionUtils";
 
 const CONTEXT_KEY = '_code_execution_context';
 const SESSION_ID_KEY = 'execution_session_id';

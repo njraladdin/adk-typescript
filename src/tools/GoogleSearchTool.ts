@@ -1,7 +1,7 @@
 
 
 import { BaseTool } from './BaseTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 
 /**
  * A built-in tool that is automatically invoked by Gemini models to retrieve search results from Google Search.

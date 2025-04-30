@@ -1,7 +1,7 @@
 
 
 import { BaseTool, FunctionDeclaration } from '../BaseTool';
-import { ToolContext } from '../toolContext';
+import { ToolContext } from '../ToolContext';
 import { ClientSession, McpBaseTool, MCPSessionManager } from './MCPSessionManager';
 import { AuthCredential, AuthScheme } from '../../auth'; // Assuming these types are exported from auth module
 

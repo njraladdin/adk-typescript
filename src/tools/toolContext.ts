@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Session } from '../';
+import { Session } from '..';
 import { CallbackContext } from '../agents/CallbackContext';
 import { InvocationContext } from '../agents/InvocationContext';
 import { EventActions } from '../events/EventActions';

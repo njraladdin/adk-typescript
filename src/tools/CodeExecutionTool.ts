@@ -1,7 +1,7 @@
 
 
 import { FunctionTool } from './FunctionTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 import * as child_process from 'child_process';
 import * as os from 'os';
 import * as fs from 'fs';

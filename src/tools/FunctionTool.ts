@@ -1,5 +1,5 @@
 import { BaseTool, BaseToolOptions, FunctionDeclaration } from './BaseTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 
 /**
  * Function to be executed by the FunctionTool

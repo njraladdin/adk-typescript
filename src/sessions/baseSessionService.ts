@@ -1,7 +1,5 @@
-
-
-import { Event, Session, SessionsList, SessionService } from './interfaces';
-import { StatePrefix } from './state';
+import { Event, SessionInterface as Session, SessionsList, SessionService } from './types';
+import { StatePrefix } from './State';
 
 /**
  * Optional configuration for getting a session

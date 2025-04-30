@@ -9,11 +9,11 @@ import { LlmAgent } from '../agents/LlmAgent';
 import { RunConfig, StreamingMode } from '../agents/RunConfig';
 import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 import { InMemoryMemoryService } from '../memory/InMemoryMemoryService';
-import { DatabaseSessionService } from '../sessions/databaseSessionService';
-import { InMemorySessionService } from '../sessions/inMemorySessionService';
+import { DatabaseSessionService } from '../sessions/DatabaseSessionService';
+import { InMemorySessionService } from '../sessions/InMemorySessionService';
 import { Runner } from '../runners';
 import { Content } from '../models/types';
-import { Session } from '../sessions/interfaces';
+import { SessionInterface as Session } from '../sessions/types';
 import { createEmptyState, loadDotenvForAgent, convertSessionToEvalFormat } from './utils';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -24,7 +24,7 @@ import { Event as RunnerEvent } from '../events/Event';
 import { LiveRequest, LiveRequestQueue } from '../agents/LiveRequestQueue';
 
 // Import agent_graph
-import * as agentGraph from './agent_graph';
+import * as agentGraph from './agentGraph';
 
 // Interface definitions to replace Pydantic models
 interface AgentRunRequest {

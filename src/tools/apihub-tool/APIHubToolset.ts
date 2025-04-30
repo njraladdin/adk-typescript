@@ -2,9 +2,9 @@
 
 import * as yaml from 'js-yaml';
 import { APIHubClient } from './clients';
-import { OpenAPIToolset, RestApiTool } from '../openapi_tool';
-import { toSnakeCase } from '../openapi_tool/common/common';
-import { AuthCredential, AuthScheme } from '../openapi_tool/auth/AuthTypes';
+import { OpenAPIToolset, RestApiTool } from '../openapi-tool';
+import { toSnakeCase } from '../openapi-tool/common/common';
+import { AuthCredential, AuthScheme } from '../openapi-tool/auth/AuthTypes';
 
 /**
  * APIHubToolset generates tools from a given API Hub resource.

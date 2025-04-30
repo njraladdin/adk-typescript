@@ -1,5 +1,5 @@
 import { BaseTool } from './BaseTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 import { MemoryEvent, MemoryResult } from './LoadMemoryTool';
 
 /**

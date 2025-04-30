@@ -6,7 +6,7 @@ import { ReadonlyContext } from '../../agents/ReadonlyContext';
 import { LlmAgent } from '../../agents/LlmAgent';
 import { Event } from '../../events/Event';
 import { LlmRequest } from '../../models/LlmRequest';
-import { StatePrefix } from '../../sessions/state';
+import { StatePrefix } from '../../sessions/State';
 import { BaseLlmRequestProcessor } from './BaseLlmProcessor';
 import { ArtifactParams } from '../../artifacts/BaseArtifactService';
 

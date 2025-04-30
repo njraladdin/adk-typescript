@@ -1,5 +1,5 @@
 import { BaseTool, BaseToolOptions } from './BaseTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 import { LlmAgent } from '../';
 
 // Define a type that can be either Agent or LlmAgent

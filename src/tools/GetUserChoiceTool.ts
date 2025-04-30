@@ -1,7 +1,7 @@
 
 
 import { LongRunningFunctionTool } from './LongRunningTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 import { ToolActions } from './toolActions';
 
 /**

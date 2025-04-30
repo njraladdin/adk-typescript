@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Event, Session, SessionsList } from './interfaces';
+import { Event, SessionInterface as Session, SessionsList } from './types';
 import { Content, Part } from './types';
-import { BaseSessionService, ListEventsResponse } from './baseSessionService';
-import { State } from './state';
+import { BaseSessionService, ListEventsResponse } from './BaseSessionService';
+import { State } from './State';
 
 // Interface for the Vertex AI client
 interface VertexAiClient {

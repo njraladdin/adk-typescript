@@ -1,7 +1,7 @@
 
 
 import { FunctionTool } from './FunctionTool';
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 
 /**
  * Interface for tool actions

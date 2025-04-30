@@ -1,6 +1,6 @@
 
 
-import { ToolContext } from './toolContext';
+import { ToolContext } from './ToolContext';
 
 /**
  * Function declaration schema

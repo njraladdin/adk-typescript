@@ -3,8 +3,8 @@
  */
 
 import { InvocationContext } from "../agents/InvocationContext";
-import { BaseCodeExecutor } from "./baseCodeExecutor";
-import { CodeExecutionInput, CodeExecutionResult, File } from "./codeExecutionUtils";
+import { BaseCodeExecutor } from "./BaseCodeExecutor";
+import { CodeExecutionInput, CodeExecutionResult, File } from "./CodeExecutionUtils";
 
 // Interface for the Vertex AI Extension client
 interface Extension {
