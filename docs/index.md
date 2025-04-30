@@ -26,9 +26,9 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
   <p style="text-align:center;">
     Get started:
     <br/>
-    <code>npm install adk-typescript</code>
+    <code>npm install -g adk-typescript</code>
     <br/>
-    <span style="font-size: 0.8em;">(Or install globally: <code>npm install -g adk-typescript</code> for CLI)</span>
+    <span style="font-size: 0.8em;">(This installs the CLI tool for creating and running agents)</span>
   </p>
 </div>
 
@@ -86,13 +86,6 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 
     [:octicons-arrow-right-24: Evaluate agents](evaluate/index.md)
 
--   :material-console-line: **Building Responsible Agents**
-
-    ---
-
-    Learn how to build powerful and trustworthy agents by implementing responsible AI patterns using features like Callbacks (`beforeModelCallback`, `beforeToolCallback`).
-
-    [:octicons-arrow-right-24: Responsible agents](safety/index.md)
 
 </div>
 

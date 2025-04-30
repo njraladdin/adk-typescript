@@ -16,7 +16,7 @@ TODO:
 - host docs on github pages, done 
 
 
-- fix file names to typescript conventions 
+- fix file names to typescript conventions, done 
 - update docs api reference 
 - go thourgh docs and fix issues 
 

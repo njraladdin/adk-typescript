@@ -1,4 +1,3 @@
-
 # Agent Development Kit (ADK) for TypeScript
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
@@ -42,20 +41,23 @@ Agent Development Kit (ADK) for TypeScript is designed for developers seeking fi
 
 ## 🚀 Installation
 
-### Using the CLI Globally (Recommended for CLI Usage)
+### Using the CLI Globally (Recommended)
 
-To use the `adk-ts` command directly from your terminal anywhere, install it globally:
+For most users, installing the ADK TypeScript CLI globally is the recommended approach. This allows you to create and manage agents from anywhere on your system:
 
 ```bash
 npm install -g adk-typescript
 # or
 # yarn global add adk-typescript
 ```
-After global installation, you should be able to run commands like `adk-ts create my-new-agent`.
 
-### Installing Locally in a Project
+After global installation, you can use commands like `adk-ts create my-new-agent` to create new agent projects. When you create an agent with the CLI, the necessary dependencies (including the ADK library itself) are automatically added to the agent project's `package.json`.
 
-To use ADK TypeScript as a library within your Node.js project:
+> **Note:** This differs from the Python ADK installation pattern because TypeScript/Node.js has a clearer separation between global CLI tools and local project dependencies. The global installation here is only for the CLI tool that helps you create and manage agents.
+
+### Installing as a Library (For Advanced Use Cases)
+
+If you're building a custom agent without using the CLI or integrating ADK into an existing application, you can install it as a library:
 
 1.  **Navigate to your project directory.**
 2.  **Initialize npm (if not already done):** `npm init -y`

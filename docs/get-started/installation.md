@@ -29,7 +29,6 @@ npm install adk-typescript
 # yarn add adk-typescript
 ```
 
-*(**Note:** Replace `adk-typescript` with the actual published package name if it differs)*.
 
 You'll also likely need `dotenv` for managing environment variables (like API keys):
 
@@ -39,36 +38,6 @@ npm install dotenv @types/dotenv
 
 # Or using yarn
 # yarn add dotenv @types/dotenv
-```
-
-### (Optional) Verify your installation
-
-You can check if the package was added to your `package.json` dependencies:
-
-```json
-// Example package.json excerpt
-{
-  // ... other fields
-  "dependencies": {
-    "adk-typescript": "^0.0.1-alpha.1", // Version might differ
-    "dotenv": "^...",
-    // ... other dependencies
-  },
-  "devDependencies": {
-    "@types/dotenv": "^..."
-    // ... other dev dependencies like typescript, @types/node
-  }
-}
-```
-
-Or list installed packages:
-
-```bash
-# Using npm
-npm list adk-typescript
-
-# Or using yarn
-# yarn list --pattern adk-typescript
 ```
 
 ## Next steps
