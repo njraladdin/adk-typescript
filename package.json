@@ -28,7 +28,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "tsc && npm run copy-browser && npm run docs",
+    "build": "tsc && npm run copy-browser",
     "copy-browser": "copyfiles -u 2 \"src/cli/browser/**/*\" dist/cli",
     "test": "jest",
     "lint": "eslint src --ext .ts",
@@ -41,9 +41,8 @@
     "prepublishOnly": "npm run lint && npm test && npm run build",
     "prepare": "npm run build",
     "pack:test": "npm run build && npm pack",
-    "clean": "rimraf dist",
-    "docs": "typedoc --entryPointStrategy \"expand\" --entryPoints \"./src\" --out docs/api-reference"
-  },
+    "clean": "rimraf dist"
+    },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/njraladdin/adk-typescript.git"
