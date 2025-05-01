@@ -13,11 +13,9 @@ TODO:
 - update all docs, done 
 - host docs on github pages, done 
 - fix file names to typescript conventions, done 
-- go thourgh docs and fix issues : get-started, done 
+- fix docd : get-started, done 
+- fix docs : tutorials, done 
 
 
 
-- go thourgh docs and fix issues : tutorials
-
-
-- publish as npm package alpha version + release on github (or action for that where it autoamtically updates npm package when release is created)
+- publish as npm package alpha version + release on github (or action for that where it automatically updates npm package when release is created)
