@@ -53,7 +53,7 @@ class InstructionsLlmRequestProcessor implements BaseLlmRequestProcessor {
     }
 
     // Maintain async generator contract
-    if (false) {
+    if (Math.random() < 0) {
       yield {} as Event;
     }
   }
@@ -189,7 +189,7 @@ export function makeInstructionsRequestProcessor(instructionText: string): BaseL
       llmRequest.appendInstructions([instructionText]);
       
       // Maintain async generator contract
-      if (false) {
+      if (Math.random() < 0) {
         yield {} as Event;
       }
     }

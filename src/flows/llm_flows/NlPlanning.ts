@@ -64,10 +64,10 @@ class NlPlanningRequestProcessor implements BaseLlmRequestProcessor {
 
     removeThoughtFromRequest(llmRequest);
 
-    // Maintain async generator behavior
-    if (false) { // Ensures it behaves as a generator
-      yield {} as Event; // This is a no-op but maintains generator structure
-    }
+    // Maintain async generator behavior by returning early
+    return;
+    // The code below is unreachable but satisfies the AsyncGenerator return type
+    yield {} as Event;
   }
 }
 

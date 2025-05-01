@@ -119,10 +119,14 @@ export async function runInteractively(
   
   const ask = (q: string) => new Promise<string>(resolve => rl.question(q, resolve));
   
-  while (true) {
+  let isRunning = true;
+  while (isRunning) {
     const query = (await ask('user: ')).trim();
     if (!query) continue;
-    if (query === 'exit') break;
+    if (query === 'exit') {
+      isRunning = false;
+      break;
+    }
     
     const content: Content = { 
       role: 'user', 
@@ -191,7 +195,7 @@ export async function runCli({
   // Initialize services
   const artifactService = new InMemoryArtifactService();
   const sessionService = new InMemorySessionService();
-  let session = sessionService.createSession({
+  const session = sessionService.createSession({
     appName: agentFolderName,
     userId: 'test_user',
   });

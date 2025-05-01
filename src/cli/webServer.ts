@@ -819,13 +819,8 @@ export function createWebServer(params: {
         const messageQueue: any[] = [];
         let isProcessing = false;
         
-        // Set up message handler
-        socket.on('message', (messageData: any) => {
-          messageQueue.push(messageData);
-          processNextMessage();
-        });
-        
-        async function processNextMessage() {
+        // Function to process the next message in the queue
+        const processNextMessage = async () => {
           if (isProcessing || messageQueue.length === 0) return;
           
           isProcessing = true;
@@ -858,7 +853,13 @@ export function createWebServer(params: {
               processNextMessage();
             }
           }
-        }
+        };
+        
+        // Set up event handler for messages
+        socket.on('message', (messageData: any) => {
+          messageQueue.push(messageData);
+          processNextMessage();
+        });
         
         // Inform client that live session is ready
         socket.emit('live_ready');

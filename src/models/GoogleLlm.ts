@@ -131,16 +131,6 @@ function convertTools(tools: any[] | undefined): GoogleTool[] {
         }))
       };
     }
-    // Handle camelCase format (functionDeclarations)
-    else if (tool.functionDeclarations) {
-      return {
-        functionDeclarations: tool.functionDeclarations.map((func: FunctionDeclaration) => ({
-          name: func.name,
-          description: func.description || '',
-          parameters: func.parameters || {},
-        }))
-      };
-    }
     return {};
   }).filter(tool => tool.functionDeclarations && tool.functionDeclarations.length > 0);
 }
@@ -452,7 +442,7 @@ class GenAIClient {
       
       // IMPORTANT: The JavaScript SDK handles system instructions differently than Python
       // Filter out any system message content from history
-      let history = [];
+      const history = [];
       let systemInstructionText = '';
       
       // Check if we have a system instruction

@@ -1,5 +1,3 @@
-
-
 import axios from 'axios';
 
 /**
@@ -70,7 +68,7 @@ export class APIHubClient implements BaseAPIHubClient {
       const apiVersionResourceName = versions[0];
     }
 
-    let localApiVersionResourceName = apiVersionResourceName;
+    const localApiVersionResourceName = apiVersionResourceName;
     let localApiSpecResourceName = apiSpecResourceName;
 
     if (localApiVersionResourceName && !localApiSpecResourceName) {

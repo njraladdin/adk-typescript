@@ -122,7 +122,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
   const memoryService = new InMemoryMemoryService();
 
   // Build the Session service
-  let agentEngineId = '';
+  const agentEngineId = '';
   let sessionService: any; // Temporary any type to fix linter error
 
   if (sessionDbUrl) {

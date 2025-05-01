@@ -1,5 +1,3 @@
-
-
 import * as fs from 'fs';
 import * as path from 'path';
 import { GoogleApiToOpenApiConverter } from './GoogleApiToolSet';
@@ -222,7 +220,7 @@ export class GoogleApiToOpenApiConverterImpl implements GoogleApiToOpenApiConver
   private _convertSecuritySchemes(): void {
     const auth = this.googleApiSpec.auth || {};
     const oauth2 = auth.oauth2 || {};
-    let formattedScopes: Record<string, string> = {};
+    const formattedScopes: Record<string, string> = {};
 
     if (oauth2) {
       // Handle OAuth2

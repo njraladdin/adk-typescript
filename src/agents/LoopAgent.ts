@@ -76,8 +76,9 @@ export class LoopAgent extends BaseAgent {
   protected async* runLiveImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
     throw new Error('The behavior for runLive is not defined yet for LoopAgent.');
     
-    // AsyncGenerator requires having at least one yield statement
-    if (false) yield* [];
+    // Return early - this code is unreachable but satisfies TypeScript's return type
+    return;
+    yield {} as Event; // Unreachable code to satisfy AsyncGenerator type
   }
 
   /**

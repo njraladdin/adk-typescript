@@ -1,5 +1,3 @@
-
-
 /**
  * Implementation of agent transfer processor.
  * 
@@ -47,10 +45,10 @@ class AgentTransferLlmRequestProcessor implements BaseLlmRequestProcessor {
     // Add the function definition for transfer_to_agent
     this.addTransferFunction(llmRequest);
     
-    // An empty generator function that yields nothing but maintains the generator structure
-    if (false) {
-      yield {} as Event;
-    }
+    // Return early - no events to yield
+    return;
+    // The code below is unreachable but satisfies the AsyncGenerator return type
+    yield {} as Event;
   }
 
   /**

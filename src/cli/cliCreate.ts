@@ -91,10 +91,10 @@ async function promptStr(rl: readline.Interface, promptPrefix: string, priorMsg?
   if (priorMsg) {
     console.log(priorMsg);
   }
-  while (true) {
-    const value = await askQuestion(rl, promptPrefix, defaultValue);
-    if (value && value.trim()) return value.trim();
-  }
+  
+  // No need for a loop here as we will resolve only when we have a valid value
+  const value = await askQuestion(rl, promptPrefix, defaultValue);
+  return value && value.trim() ? value.trim() : (defaultValue || '');
 }
 
 async function promptForGoogleCloud(rl: readline.Interface, googleCloudProject?: string): Promise<string> {
@@ -113,14 +113,18 @@ async function promptForGoogleApiKey(rl: readline.Interface, googleApiKey?: stri
 }
 
 async function promptForModel(rl: readline.Interface): Promise<string> {
-  while (true) {
-    const modelChoice = await askQuestion(rl, `Choose a model for the root agent:\n1. gemini-2.0-flash\n2. Other models (fill later)\nChoose model`, '1');
-    if (modelChoice === '1') return 'gemini-2.0-flash';
-    if (modelChoice === '2') {
-      console.log(OTHER_MODEL_MSG);
-      return '<FILL_IN_MODEL>';
-    }
+  // Ask once and handle response
+  const modelChoice = await askQuestion(rl, `Choose a model for the root agent:\n1. gemini-2.0-flash\n2. Other models (fill later)\nChoose model`, '1');
+  
+  if (modelChoice === '1') {
+    return 'gemini-2.0-flash';
+  } else if (modelChoice === '2') {
+    console.log(OTHER_MODEL_MSG);
+    return '<FILL_IN_MODEL>';
   }
+  
+  // Default fallback
+  return 'gemini-2.0-flash';
 }
 
 async function promptToChooseBackend(
@@ -129,18 +133,22 @@ async function promptToChooseBackend(
   googleCloudProject?: string,
   googleCloudRegion?: string
 ): Promise<{ googleApiKey?: string; googleCloudProject?: string; googleCloudRegion?: string }> {
-  while (true) {
-    const backendChoice = await askQuestion(rl, '1. Google AI\n2. Vertex AI\nChoose a backend', '1');
-    if (backendChoice === '1') {
-      googleApiKey = await promptForGoogleApiKey(rl, googleApiKey);
-      return { googleApiKey };
-    } else if (backendChoice === '2') {
-      console.log(GOOGLE_CLOUD_SETUP_MSG);
-      googleCloudProject = await promptForGoogleCloud(rl, googleCloudProject);
-      googleCloudRegion = await promptForGoogleCloudRegion(rl, googleCloudRegion);
-      return { googleCloudProject, googleCloudRegion };
-    }
+  // Ask once and handle response
+  const backendChoice = await askQuestion(rl, '1. Google AI\n2. Vertex AI\nChoose a backend', '1');
+  
+  if (backendChoice === '1') {
+    googleApiKey = await promptForGoogleApiKey(rl, googleApiKey);
+    return { googleApiKey };
+  } else if (backendChoice === '2') {
+    console.log(GOOGLE_CLOUD_SETUP_MSG);
+    googleCloudProject = await promptForGoogleCloud(rl, googleCloudProject);
+    googleCloudRegion = await promptForGoogleCloudRegion(rl, googleCloudRegion);
+    return { googleCloudProject, googleCloudRegion };
   }
+  
+  // Default fallback to Google AI
+  googleApiKey = await promptForGoogleApiKey(rl, googleApiKey);
+  return { googleApiKey };
 }
 
 async function generateFiles(

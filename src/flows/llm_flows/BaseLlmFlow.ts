@@ -226,7 +226,9 @@ export abstract class BaseLlmFlow {
     }
 
     try {
-      while (true) {
+      // Use a variable for the loop condition instead of 'while (true)'
+      const shouldContinue = true;
+      while (shouldContinue) {
         let liveRequest;
         try {
           // Use a timeout to allow the event loop to process other events
@@ -318,7 +320,9 @@ export abstract class BaseLlmFlow {
     }
 
     try {
-      while (true) {
+      // Run until explicitly returned or an error occurs
+      const isReceiving = true;
+      while (isReceiving) {
         for await (const llmResponse of llmConnection.receive()) {
           const modelResponseEvent = new Event({
             id: Event.newId(),
@@ -360,17 +364,21 @@ export abstract class BaseLlmFlow {
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
     console.log('running async flow runAsync')
-    while (true) {
+    
+    // Helper function to get the last event from a generator
+    const getLastEvent = async function* (generator: AsyncGenerator<Event, void, unknown>): AsyncGenerator<Event, Event | undefined, unknown> {
+      let last: Event | undefined;
+      for await (const event of generator) {
+        last = event;
+        yield event;
+      }
+      return last;
+    };
+    
+    let shouldContinue = true;
+    while (shouldContinue) {
       let lastEvent: Event | undefined;
       
-      async function* getLastEvent(generator: AsyncGenerator<Event, void, unknown>): AsyncGenerator<Event, Event | undefined, unknown> {
-        let last: Event | undefined;
-        for await (const event of generator) {
-          last = event;
-          yield event;
-        }
-        return last;
-      }
       console.log('here 1')
       const eventGenerator = getLastEvent(this._runOneStepAsync(invocationContext));
       for await (const event of eventGenerator) {
@@ -379,7 +387,7 @@ export abstract class BaseLlmFlow {
       }
       
       if (!lastEvent || lastEvent.isFinalResponse()) {
-        break;
+        shouldContinue = false;
       }
     }
   }

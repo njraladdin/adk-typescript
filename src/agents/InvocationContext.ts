@@ -180,7 +180,7 @@ export class InvocationContext {
     
     // Copy any additional properties
     for (const [key, value] of Object.entries(options)) {
-      if (!this.hasOwnProperty(key)) {
+      if (!Object.prototype.hasOwnProperty.call(this, key)) {
         (this as any)[key] = value;
       }
     }

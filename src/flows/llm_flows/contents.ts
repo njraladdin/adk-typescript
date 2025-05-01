@@ -122,10 +122,10 @@ class ContentLlmRequestProcessor implements BaseLlmRequestProcessor {
       );
     }
 
-    // Maintain async generator contract
-    if (false) {
-      yield {} as Event;
-    }
+    // Maintain async generator contract without using constant condition
+    return;
+    // The following is unreachable but satisfies TypeScript's return type
+    yield {} as Event;
   }
 }
 

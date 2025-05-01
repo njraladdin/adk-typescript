@@ -67,7 +67,9 @@ async function resolveProject(projectInOption?: string): Promise<string> {
       console.log(`Use default project: ${project}`);
       return project;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.log('Error getting default project:', e);
+  }
   throw new Error('Could not resolve Google Cloud project.');
 }
 

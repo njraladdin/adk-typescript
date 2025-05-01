@@ -115,10 +115,10 @@ class ContentLlmRequestProcessor implements BaseLlmRequestProcessor {
       console.debug('Added tools to request:', agent.canonicalTools.map(t => t.name));
     }
     
-    // Ensure async generator contract but don't yield anything
-    if (false) {
-      yield {} as Event;
-    }
+    // Return early - no events to yield
+    return;
+    // The code below is unreachable but satisfies the AsyncGenerator return type
+    yield {} as Event;
   }
 }
 
