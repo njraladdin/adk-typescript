@@ -9,7 +9,6 @@ import { Event } from '../events/Event';
 import { EventActions } from '../events/EventActions';
 import { BaseLlmFlow } from '../flows/llm_flows/BaseLlmFlow';
 import { SingleFlow } from '../flows/llm_flows/SingleFlow';
-import { AutoFlow } from '../flows/llm_flows/AutoFlow';
 import { Content, Part, MessageRole, Message } from '../models/types';
 import { BaseLlm } from '../models/BaseLlm';
 import { LlmRequest } from '../models/LlmRequest';
@@ -440,7 +439,7 @@ export class LlmAgent extends BaseAgent {
   }
   
   /**
-   * Gets the appropriate LLM flow based on agent configuration.
+   * Returns the LLM flow to use for this agent.
    */
   private get llmFlow(): BaseLlmFlow {
     // Use custom flow if configured
@@ -455,6 +454,9 @@ export class LlmAgent extends BaseAgent {
     ) {
       return new SingleFlow();
     }
+    // Dynamic import of AutoFlow to break circular dependency
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { AutoFlow } = require('../flows/llm_flows/AutoFlow');
     return new AutoFlow();
   }
   

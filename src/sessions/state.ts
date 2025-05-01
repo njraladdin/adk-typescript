@@ -1,5 +1,3 @@
-
-
 /**
  * Constants for state key prefixes
  */
@@ -11,13 +9,11 @@ export class StatePrefix {
 
 /**
  * A class for managing session state.
- */
-
-/**
- * Represents the state of a session.
+ * This is a dictionary-like object with methods similar to the Python version.
  */
 export class State {
-  private state: Map<string, any> = new Map();
+  // Add index signature to allow property access
+  [key: string]: any;
   
   /**
    * Creates a new state.
@@ -25,19 +21,19 @@ export class State {
    * @param initialState Initial state values
    */
   constructor(initialState: Record<string, any> = {}) {
-    for (const [key, value] of Object.entries(initialState)) {
-      this.state.set(key, value);
-    }
+    // Copy all properties from initialState to this object
+    Object.assign(this, initialState);
   }
   
   /**
    * Gets a value from the state.
+   * Similar to Python's dictionary get method.
    * 
    * @param key The key of the value
    * @returns The value, or undefined if not found
    */
   get(key: string): any {
-    return this.state.get(key);
+    return this[key];
   }
   
   /**
@@ -47,7 +43,7 @@ export class State {
    * @param value The value to set
    */
   set(key: string, value: any): void {
-    this.state.set(key, value);
+    this[key] = value;
   }
   
   /**
@@ -57,7 +53,7 @@ export class State {
    * @returns True if the state has a value for the key, false otherwise
    */
   has(key: string): boolean {
-    return this.state.has(key);
+    return key in this;
   }
   
   /**
@@ -67,7 +63,11 @@ export class State {
    * @returns True if the value was deleted, false otherwise
    */
   delete(key: string): boolean {
-    return this.state.delete(key);
+    if (key in this) {
+      delete this[key];
+      return true;
+    }
+    return false;
   }
   
   /**
@@ -76,10 +76,29 @@ export class State {
    * @returns The state as a record
    */
   getAll(): Record<string, any> {
-    const record: Record<string, any> = {};
-    for (const [key, value] of this.state.entries()) {
-      record[key] = value;
+    const result: Record<string, any> = {};
+    for (const key in this) {
+      if (typeof this[key] !== 'function' && Object.prototype.hasOwnProperty.call(this, key)) {
+        result[key] = this[key];
+      }
     }
-    return record;
+    return result;
+  }
+  
+  /**
+   * Update state with new key-value pairs.
+   * Similar to Python's dictionary update method.
+   * 
+   * @param data The data to update
+   */
+  update(data: Record<string, any>): void {
+    Object.assign(this, data);
+  }
+  
+  /**
+   * Custom implementation for JSON serialization
+   */
+  toJSON(): Record<string, any> {
+    return this.getAll();
   }
 } 

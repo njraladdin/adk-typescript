@@ -347,10 +347,15 @@ export abstract class BaseLlmFlow {
         }
       }
     } catch (error) {
-      // Handle connection errors
-      if ((error as any)?.code !== 'CONNECTION_CLOSED') {
-        console.error('Error in receive task:', error);
+      // Handle connection errors - use a specific check similar to Python's ConnectionClosedOK
+      // The Python version uses 'except ConnectionClosedOK:' which is a normal connection closure
+      if ((error as any)?.name === 'ConnectionClosedOK' || 
+          (error as any)?.code === 'CONNECTION_CLOSED' ||
+          (error as any)?.message?.includes('connection closed')) {
+        // Normal connection close, just return
+        return;
       }
+      console.error('Error in receive task:', error);
     }
   }
 
@@ -363,31 +368,16 @@ export abstract class BaseLlmFlow {
   async *runAsync(
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
-    console.log('running async flow runAsync')
-    
-    // Helper function to get the last event from a generator
-    const getLastEvent = async function* (generator: AsyncGenerator<Event, void, unknown>): AsyncGenerator<Event, Event | undefined, unknown> {
-      let last: Event | undefined;
-      for await (const event of generator) {
-        last = event;
-        yield event;
-      }
-      return last;
-    };
-    
-    let shouldContinue = true;
-    while (shouldContinue) {
+    while (true) {
       let lastEvent: Event | undefined;
       
-      console.log('here 1')
-      const eventGenerator = getLastEvent(this._runOneStepAsync(invocationContext));
-      for await (const event of eventGenerator) {
+      for await (const event of this._runOneStepAsync(invocationContext)) {
         lastEvent = event;
         yield event;
       }
       
       if (!lastEvent || lastEvent.isFinalResponse()) {
-        shouldContinue = false;
+        break;
       }
     }
   }
@@ -637,12 +627,9 @@ export abstract class BaseLlmFlow {
     llmRequest: LlmRequest
   ): AsyncGenerator<Event, void, unknown> {
     try {
-      console.log('running async flow postprocessHandleFunctionCallsAsync')
-
       // Handle function calls asynchronously
       // Get tools dictionary if available
       const toolsDict = llmRequest.getToolsDict ? llmRequest.getToolsDict() : {};
-      console.log('toolsDict', toolsDict)
 
       const functionResponseEvent = await functions.handleFunctionCallsAsync(
         invocationContext, 
@@ -674,7 +661,6 @@ export abstract class BaseLlmFlow {
         
         // If not transferring to an agent, continue the flow with another step
         // This matches Python implementation of recursively continuing the flow
-        console.log('again running async flow runOneStepAsync because no transfer_to_agent')
         yield* this._runOneStepAsync(invocationContext);
       }
     } catch (error) {
@@ -877,68 +863,60 @@ export abstract class BaseLlmFlow {
     llmResponse: LlmResponse,
     modelResponseEvent: Event
   ): Event {
-    // Merge properties from llmResponse into modelResponseEvent
-    if (llmResponse.content) {
-      // Ensure content parts are properly filtered
-      if (llmResponse.content.parts) {
-        llmResponse.content.parts = llmResponse.content.parts.filter(part => {
-          // Keep parts with valid text
-          if (part.text !== undefined && part.text !== null) {
-            return true;
-          }
-          
-          // Keep parts with valid function calls
-          if (part.functionCall && part.functionCall.name) {
-            return true;
-          }
-          
-          // Keep parts with valid function responses
-          if (part.functionResponse && part.functionResponse.name) {
-            return true;
-          }
-          
-          // If we reached here, this part doesn't have valid required fields
-          return false;
-        });
-      }
-      
-      modelResponseEvent.content = llmResponse.content;
-    }
-    if (llmResponse.partial !== undefined) {
-      modelResponseEvent.partial = llmResponse.partial;
-    }
-    if (llmResponse.turnComplete !== undefined) {
-      modelResponseEvent.turnComplete = llmResponse.turnComplete;
-    }
-    if (llmResponse.errorCode) {
-      modelResponseEvent.errorCode = llmResponse.errorCode;
-    }
-    if (llmResponse.errorMessage) {
-      modelResponseEvent.errorMessage = llmResponse.errorMessage;
-    }
-    if (llmResponse.interrupted !== undefined) {
-      modelResponseEvent.interrupted = llmResponse.interrupted;
-    }
-    if (llmResponse.customMetadata) {
-      modelResponseEvent.customMetadata = llmResponse.customMetadata;
+    // In Python, this is done via model_validate which merges properties
+    // Let's first ensure content parts are properly filtered, similar to Python
+    if (llmResponse.content && llmResponse.content.parts) {
+      llmResponse.content.parts = llmResponse.content.parts.filter(part => {
+        // Keep parts with valid text
+        if (part.text !== undefined && part.text !== null) {
+          return true;
+        }
+        
+        // Keep parts with valid function calls
+        if (part.functionCall && part.functionCall.name) {
+          return true;
+        }
+        
+        // Keep parts with valid function responses
+        if (part.functionResponse && part.functionResponse.name) {
+          return true;
+        }
+        
+        // If we reached here, this part doesn't have valid required fields
+        return false;
+      });
     }
 
+    // Create a new event with properties from both sources
+    // This simulates Python's model_validate approach
+    const finalEvent = new Event({
+      ...modelResponseEvent, // Spread existing event properties
+      // Add properties from llmResponse that aren't undefined
+      content: llmResponse.content || modelResponseEvent.content,
+      partial: llmResponse.partial !== undefined ? llmResponse.partial : modelResponseEvent.partial,
+      turnComplete: llmResponse.turnComplete !== undefined ? llmResponse.turnComplete : modelResponseEvent.turnComplete,
+      errorCode: llmResponse.errorCode || modelResponseEvent.errorCode,
+      errorMessage: llmResponse.errorMessage || modelResponseEvent.errorMessage,
+      interrupted: llmResponse.interrupted !== undefined ? llmResponse.interrupted : modelResponseEvent.interrupted,
+      customMetadata: llmResponse.customMetadata || modelResponseEvent.customMetadata
+    });
+
     // Process function calls if present
-    if (modelResponseEvent.content) {
-      const functionCalls = modelResponseEvent.getFunctionCalls();
+    if (finalEvent.content) {
+      const functionCalls = finalEvent.getFunctionCalls();
       if (functionCalls.length > 0) {
-        functions.populateClientFunctionCallId(modelResponseEvent);
+        functions.populateClientFunctionCallId(finalEvent);
         
         // Get tools dictionary if available
         const toolsDict = llmRequest.getToolsDict ? llmRequest.getToolsDict() : {};
-        modelResponseEvent.longRunningToolIds = functions.getLongRunningFunctionCalls(
+        finalEvent.longRunningToolIds = functions.getLongRunningFunctionCalls(
           functionCalls, 
           toolsDict
         );
       }
     }
 
-    return modelResponseEvent;
+    return finalEvent;
   }
 
   /**
@@ -953,19 +931,15 @@ export abstract class BaseLlmFlow {
       return invocationContext.llm;
     }
     
-    // If not set in context, try to get from agent
+    // If not in context, get from agent (matching Python implementation)
     const agent = invocationContext.agent;
     if (agent instanceof LlmAgent) {
-      try {
-        // Try to access canonicalModel from LlmAgent
-        const llm = agent.canonicalModel;
-        if (llm) {
-          // Save it in the context for future use
-          invocationContext.llm = llm;
-          return llm;
-        }
-      } catch (error) {
-        console.error('Error getting LLM from agent.canonicalModel:', error);
+      // Python directly accesses agent.canonical_model without extra checks
+      const llm = agent.canonicalModel;
+      if (llm) {
+        // Cache in context for future use
+        invocationContext.llm = llm;
+        return llm;
       }
     }
     

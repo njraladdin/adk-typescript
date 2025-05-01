@@ -50,7 +50,8 @@ const model = LlmRegistry.newLlm('gemini-2.0-flash'); // Or any other model you 
 const flow = new AutoFlow();
 
 // Define the root agent - this is the key object that the CLI will look for
-export const rootAgent = new LlmAgent('simple_agent', {
+export const rootAgent = new LlmAgent({
+  name: 'simple_agent',
   model: model, // Pass the model instance or name string
   flow: flow,
   instruction: `You are a helpful assistant that can tell people the current time.

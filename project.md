@@ -18,7 +18,13 @@ TODO:
 
 - fix linting, done 
 
-- make unit tests pass 
+- make unit tests pass, done 
+
 - make integration tests pass 
 
+
+
+git tag -f v0.0.1
+ git push
+   git push origin v0.0.1 
 - publish as npm package and create github release

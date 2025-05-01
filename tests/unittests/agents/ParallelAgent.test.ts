@@ -4,7 +4,7 @@ import { ParallelAgent } from '../../../src/agents/ParallelAgent';
 import { BaseAgent } from '../../../src/agents/BaseAgent';
 import { InvocationContext } from '../../../src/agents/InvocationContext';
 import { Event } from '../../../src/events/Event';
-import { InMemorySessionService } from '../../../src/sessions/inMemorySessionService';
+import { InMemorySessionService } from '../../../src/sessions';
 import { Content, Part } from '../../../src/models/types';
 import { Session } from '../../../src/sessions/Session';
 

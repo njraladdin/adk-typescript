@@ -1,5 +1,3 @@
-
-
 /**
  * Represents a session for managing agents and their state.
  */
@@ -22,7 +20,7 @@ export interface SessionOptions {
   userId?: string;
   
   /** The initial state of the session */
-  state?: State;
+  state?: Record<string, any>;
   
   /** Initial events for the session */
   events?: Event[];
@@ -65,7 +63,7 @@ export class Session {
     this.id = options.id || generateUuid();
     this.appName = options.appName || 'app';
     this.userId = options.userId || 'user';
-    this.state = options.state || new State();
+    this.state = new State(options.state);
     
     if (options.events) {
       this.events = [...options.events];

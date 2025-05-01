@@ -34,14 +34,23 @@ export class InMemorySessionService extends BaseSessionService {
     }
     
     // Update the session state
-    for (const [key, value] of Object.entries(stateDelta)) {
-      session.state[key] = value;
+    if (session.state.update) {
+      session.state.update(stateDelta);
+    } else {
+      for (const [key, value] of Object.entries(stateDelta)) {
+        session.state.set(key, value);
+      }
     }
     
     // Update the stored session
     if (this.sessions[appName] && this.sessions[appName][userId] && this.sessions[appName][userId][sessionId]) {
-      for (const [key, value] of Object.entries(stateDelta)) {
-        this.sessions[appName][userId][sessionId].state[key] = value;
+      const storageSession = this.sessions[appName][userId][sessionId];
+      if (storageSession.state.update) {
+        storageSession.state.update(stateDelta);
+      } else {
+        for (const [key, value] of Object.entries(stateDelta)) {
+          storageSession.state.set(key, value);
+        }
       }
     }
     
@@ -63,7 +72,7 @@ export class InMemorySessionService extends BaseSessionService {
       id: sessionId,
       appName,
       userId,
-      state: { ...state },
+      state: new State(state),
       events: [],
     };
     
@@ -75,7 +84,7 @@ export class InMemorySessionService extends BaseSessionService {
       this.sessions[appName][userId] = {};
     }
     
-    // Store the session
+    // Store the session (use deepCopy to avoid references)
     this.sessions[appName][userId][sessionId] = this.deepCopy(session);
     
     // Create a deep copy of the session and merge state before returning
@@ -120,7 +129,7 @@ export class InMemorySessionService extends BaseSessionService {
     const sessionsWithoutEvents = Object.values(this.sessions[appName][userId]).map(session => {
       const copiedSession = this.deepCopy(session);
       copiedSession.events = []; // Clear events
-      copiedSession.state = {}; // Clear state
+      copiedSession.state = new State(); // Use State instance instead of empty object
       return copiedSession;
     });
     
@@ -216,12 +225,17 @@ export class InMemorySessionService extends BaseSessionService {
     const storageEvent = this.copyEventPreservingSpecialTypes(event);
     const storageSession = this.sessions[appName][userId][sessionId];
     
+    // Ensure storageSession.state is a State instance
+    if (!(storageSession.state instanceof State)) {
+      storageSession.state = new State(storageSession.state);
+    }
+    
     // Use a special event appending that doesn't try to deep copy
     if (!storageEvent.partial) {
       if (storageEvent.actions?.stateDelta) {
         for (const [key, value] of Object.entries(storageEvent.actions.stateDelta)) {
           if (!key.startsWith(StatePrefix.TEMP_PREFIX)) {
-            storageSession.state[key] = value;
+            storageSession.state.set(key, value);
           }
         }
       }
@@ -236,17 +250,22 @@ export class InMemorySessionService extends BaseSessionService {
    * Merges app and user state into the session
    */
   private mergeState(appName: string, userId: string, session: Session): Session {
+    // Ensure session.state is a State object
+    if (!(session.state instanceof State)) {
+      session.state = new State(session.state);
+    }
+    
     // Merge app state
     if (this.appState[appName]) {
       for (const [key, value] of Object.entries(this.appState[appName])) {
-        session.state[StatePrefix.APP_PREFIX + key] = value;
+        session.state.set(StatePrefix.APP_PREFIX + key, value);
       }
     }
     
     // Merge user state
     if (this.userState[appName] && this.userState[appName][userId]) {
       for (const [key, value] of Object.entries(this.userState[appName][userId])) {
-        session.state[StatePrefix.USER_PREFIX + key] = value;
+        session.state.set(StatePrefix.USER_PREFIX + key, value);
       }
     }
     

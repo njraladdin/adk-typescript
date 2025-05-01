@@ -1,7 +1,5 @@
-
-
 import { Event, Session } from '../../../src/sessions';
-import { VertexAiSessionService } from '../../../src/sessions/vertexAiSessionService';
+import { VertexAiSessionService } from '../../../src/sessions/VertexAiSessionService';
 import { Content, Part } from '../../../src/sessions/types';
 
 // Mock session data
@@ -319,13 +317,13 @@ describe('VertexAiSessionService', () => {
       timestamp: Date.now() / 1000
     };
     
-    await sessionService.appendEvent({ session, event });
+    await sessionService.appendEvent({ session: session as any, event });
     
     // Check that the event was added to the in-memory session
     expect(session.events.length).toBe(initialEventCount + 1);
     expect(session.events[initialEventCount].invocationId).toBe('456');
     expect(session.events[initialEventCount].author).toBe('assistant');
-    expect(session.events[initialEventCount].content.parts[0].text).toBe('new event response');
+    expect(session.events[initialEventCount].content?.parts[0].text).toBe('new event response');
   });
 
   test('parse reasoning engine ID', async () => {

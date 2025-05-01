@@ -1,8 +1,8 @@
-import { LlmAgent } from '../../../src/agents/LlmAgent';
+import { LlmAgent } from '../../../src/agents';
 import { CallbackContext } from '../../../src/agents/CallbackContext';
 import { InvocationContext } from '../../../src/agents/InvocationContext';
 import { Event } from '../../../src/events/Event';
-import { InMemorySessionService } from '../../../src/sessions/inMemorySessionService';
+import { InMemorySessionService } from '../../../src/sessions';
 import { Content, Part } from '../../../src/models/types';
 import { LlmRequest } from '../../../src/models/LlmRequest';
 import { Session } from '../../../src/sessions/Session';
@@ -10,7 +10,7 @@ import { BaseLlm } from '../../../src/models/BaseLlm';
 import { LlmResponse } from '../../../src/models/LlmResponse';
 import { BaseLlmFlow } from '../../../src/flows/llm_flows/BaseLlmFlow';
 import { BaseLlmConnection } from '../../../src/models/BaseLlmConnection';
-import { State } from '../../../src/sessions/state';
+import { State } from '../../../src/sessions';
 
 // Extended options for LLM agents with callbacks
 interface LlmAgentExtendedOptions {
@@ -19,104 +19,7 @@ interface LlmAgentExtendedOptions {
   afterModelCallback?: (callbackContext: CallbackContext, llmResponse: LlmResponse) => Content | void;
 }
 
-/**
- * A simple implementation of a BaseLlmFlow that properly handles callbacks
- * like the implementation in the Python code
- */
-class TestLlmFlow extends BaseLlmFlow {
-  private beforeModelCallback?: (callbackContext: CallbackContext, llmRequest: LlmRequest) => Content | void;
-  private afterModelCallback?: (callbackContext: CallbackContext, llmResponse: LlmResponse) => Content | void;
-  
-  constructor(options?: {
-    beforeModelCallback?: (callbackContext: CallbackContext, llmRequest: LlmRequest) => Content | void;
-    afterModelCallback?: (callbackContext: CallbackContext, llmResponse: LlmResponse) => Content | void;
-  }) {
-    super();
-    this.beforeModelCallback = options?.beforeModelCallback;
-    this.afterModelCallback = options?.afterModelCallback;
-  }
-  
-  async *runAsync(
-    invocationContext: InvocationContext
-  ): AsyncGenerator<Event, void, unknown> {
-    // Get the agent
-    const agent = invocationContext.agent;
-    
-    // Create a request
-    const llmRequest = new LlmRequest();
-    if (invocationContext.userContent) {
-      llmRequest.contents = [invocationContext.userContent];
-    }
-    
-    // Create callback context
-    const callbackContext = new CallbackContext(invocationContext);
-    
-    // Execute before model callback if present
-    if (this.beforeModelCallback) {
-      try {
-        const beforeCallbackResult = this.beforeModelCallback(
-          callbackContext,
-          llmRequest
-        );
-        
-        if (beforeCallbackResult) {
-          // If callback returns content, use it instead of calling model
-          yield new Event({
-            author: agent.name,
-            invocationId: invocationContext.invocationId,
-            content: beforeCallbackResult
-          });
-          return;
-        }
-      } catch (error) {
-        console.error('Error in before model callback:', error);
-      }
-    }
-    
-    // Simulate model response
-    const modelResponse = new LlmResponse();
-    modelResponse.content = {
-      role: 'model',
-      parts: [{ text: 'Model response' }]
-    };
-    
-    // Execute after model callback if present
-    if (this.afterModelCallback) {
-      try {
-        const afterCallbackResult = this.afterModelCallback(
-          callbackContext,
-          modelResponse
-        );
-        
-        if (afterCallbackResult) {
-          // If callback returns content, use it instead of model response
-          yield new Event({
-            author: agent.name,
-            invocationId: invocationContext.invocationId,
-            content: afterCallbackResult
-          });
-          return;
-        }
-      } catch (error) {
-        console.error('Error in after model callback:', error);
-      }
-    }
-    
-    // Return the model response if no callback modified it
-    yield new Event({
-      author: agent.name,
-      invocationId: invocationContext.invocationId,
-      content: modelResponse.content
-    });
-  }
-  
-  async *runLive(
-    invocationContext: InvocationContext
-  ): AsyncGenerator<Event, void, unknown> {
-    // For simplicity, just delegate to runAsync
-    yield* this.runAsync(invocationContext);
-  }
-}
+
 
 /**
  * Mock LLM for testing
@@ -157,24 +60,6 @@ function createSession(
   });
 }
 
-/**
- * Helper function to create an invocation context for testing
- */
-function createInvocationContext(
-  agent: LlmAgent,
-  userContent?: Content
-): InvocationContext {
-  const session = createSession(agent.name);
-  const sessionService = new InMemorySessionService();
-  
-  return new InvocationContext({
-    invocationId: 'test_invocation_id',
-    agent,
-    session,
-    sessionService,
-    userContent
-  });
-}
 
 /**
  * MockModel implementation that returns predefined responses
@@ -342,7 +227,8 @@ describe('LlmAgent Callbacks', () => {
     
     const beforeModelCallback = new MockBeforeModelCallback('before_model_callback');
     
-    const agent = new LlmAgent('root_agent', {
+    const agent = new LlmAgent( {
+      name: 'root_agent',
       model: mockModel,
       beforeModelCallback: beforeModelCallback.call.bind(beforeModelCallback)
     });
@@ -359,7 +245,8 @@ describe('LlmAgent Callbacks', () => {
     const responses = ['model_response'];
     const mockModel = MockModel.create({ responses });
     
-    const agent = new LlmAgent('root_agent', {
+    const agent = new LlmAgent({
+      name: 'root_agent',
       model: mockModel,
       beforeModelCallback: noopCallback
     });
@@ -378,7 +265,8 @@ describe('LlmAgent Callbacks', () => {
     
     const beforeModelCallback = new MockBeforeModelCallback('before_model_callback');
     
-    const agent = new LlmAgent('root_agent', {
+    const agent = new LlmAgent({
+      name: 'root_agent',
       model: mockModel,
       beforeModelCallback: beforeModelCallback.call.bind(beforeModelCallback)
     });
@@ -397,7 +285,8 @@ describe('LlmAgent Callbacks', () => {
     
     const afterModelCallback = new MockAfterModelCallback('after_model_callback');
     
-    const agent = new LlmAgent('root_agent', {
+    const agent = new LlmAgent({
+      name: 'root_agent',
       model: mockModel,
       afterModelCallback: afterModelCallback.call.bind(afterModelCallback)
     });
@@ -417,7 +306,8 @@ describe('LlmAgent Callbacks', () => {
     const beforeModelCallback = new MockBeforeModelCallback('before_model_callback');
     const afterModelCallback = new MockAfterModelCallback('after_model_callback');
     
-    const agent = new LlmAgent('root_agent', {
+    const agent = new LlmAgent({
+      name: 'root_agent',
       model: mockModel,
       beforeModelCallback: beforeModelCallback.call.bind(beforeModelCallback),
       afterModelCallback: afterModelCallback.call.bind(afterModelCallback)
@@ -439,7 +329,8 @@ describe('LlmAgent Callbacks', () => {
     
     const afterModelCallback = new MockAfterModelCallback('after_model_callback');
     
-    const agent = new LlmAgent('root_agent', {
+      const agent = new LlmAgent({
+      name: 'root_agent',
       model: mockModel,
       beforeModelCallback: noopCallback,
       afterModelCallback: afterModelCallback.call.bind(afterModelCallback)

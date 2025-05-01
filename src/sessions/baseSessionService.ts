@@ -185,12 +185,23 @@ export abstract class BaseSessionService implements SessionService {
       return;
     }
     
+    const statesToUpdate: Record<string, any> = {};
+    
     for (const [key, value] of Object.entries(event.actions.stateDelta)) {
       if (key.startsWith(StatePrefix.TEMP_PREFIX)) {
         continue;
       }
-      
-      session.state[key] = value;
+      statesToUpdate[key] = value;
+    }
+    
+    // Use the update method if available (similar to Python's dict.update())
+    if (session.state.update) {
+      session.state.update(statesToUpdate);
+    } else {
+      // Fallback to using set method
+      for (const [key, value] of Object.entries(statesToUpdate)) {
+        session.state.set(key, value);
+      }
     }
   }
 } 

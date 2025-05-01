@@ -1,4 +1,4 @@
-import { LlmAgent, LlmAgentOptions } from '../../../src/agents/LlmAgent';
+import { LlmAgent } from '../../../src/agents';
 import { ReadonlyContext } from '../../../src/agents/ReadonlyContext';
 import { InvocationContext } from '../../../src/agents/InvocationContext';
 import { BaseLlm } from '../../../src/models/BaseLlm';
@@ -10,7 +10,7 @@ import { GenerateContentConfig } from '../../../src/models/types';
 import { Content, Part, Blob } from '../../../src/models/types';
 import { Event } from '../../../src/events/Event';
 import { BaseAgent } from '../../../src/agents/BaseAgent';
-import { State } from '../../../src/sessions/state';
+import { State } from '../../../src/sessions';
 import { BaseLlmConnection } from '../../../src/models/BaseLlmConnection';
 import { Session } from '../../../src/sessions/Session';
 
@@ -116,8 +116,9 @@ describe('LlmAgent', () => {
     test('should initialize with default settings when created with minimal options', () => {
       const flow = new MockLlmFlow();
       
-      const agent = new LlmAgent('test_agent', {
-        flow
+      const agent = new LlmAgent({
+        name: 'test_agent',
+        flow  
       });
       
       // Check default values
@@ -134,7 +135,8 @@ describe('LlmAgent', () => {
       const llm = new MockLlm('gemini-pro');
       const flow = new MockLlmFlow();
       
-      const agent = new LlmAgent('test_agent', {
+      const agent = new LlmAgent({
+        name: 'test_agent',
         model: llm,
         flow
       });
@@ -147,13 +149,15 @@ describe('LlmAgent', () => {
       const llm = new MockLlm('gemini-pro');
       const flow = new MockLlmFlow();
       
-      const parentAgent = new LlmAgent('parent_agent', {
+      const parentAgent = new LlmAgent({
+        name: 'parent_agent',
         model: llm,
         flow
       });
       
       const childFlow = new MockLlmFlow();
-      const childAgent = new LlmAgent('child_agent', {
+      const childAgent = new LlmAgent({
+        name: 'child_agent',
         flow: childFlow
       });
       
@@ -184,7 +188,8 @@ describe('LlmAgent', () => {
     test('should store instruction when provided as string', () => {
       const flow = new MockLlmFlow();
       
-      const agent = new LlmAgent('test_agent', {
+      const agent = new LlmAgent({
+        name: 'test_agent',
         flow,
         instruction: 'Test instruction'
       });
@@ -199,7 +204,8 @@ describe('LlmAgent', () => {
       const flow = new MockLlmFlow();
       const mockTool = { name: 'test_tool' } as any;
       
-      const agent = new LlmAgent('test_agent', {
+      const agent = new LlmAgent({
+        name: 'test_agent',
         flow,
         tools: [mockTool]
       });
@@ -213,7 +219,8 @@ describe('LlmAgent', () => {
     test('should not disallow transfer by default', () => {
       const flow = new MockLlmFlow();
       
-      const agent = new LlmAgent('test_agent', {
+      const agent = new LlmAgent({
+        name: 'test_agent',
         flow
       });
       
@@ -223,7 +230,8 @@ describe('LlmAgent', () => {
     test('should respect disallowTransferToPeers setting', () => {
       const flow = new MockLlmFlow();
       
-      const agent = new LlmAgent('test_agent', {
+      const agent = new LlmAgent({
+        name: 'test_agent',
         flow,
         disallowTransferToPeers: true
       });
@@ -237,7 +245,8 @@ describe('LlmAgent', () => {
     test('should set user content on invocation context', () => {
       const flow = new MockLlmFlow();
       
-      const agent = new LlmAgent('test_agent', {
+        const agent = new LlmAgent({
+        name: 'test_agent',
         flow
       });
       

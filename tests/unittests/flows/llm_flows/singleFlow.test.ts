@@ -239,10 +239,10 @@ describe('SingleFlow', () => {
     const errorProcessor = new MockProcessor();
     Object.defineProperty(errorProcessor, 'runAsync', {
       value: async function* () {
-        // This yield is unreachable but satisfies TypeScript generator requirements
-        return 
-        yield {} as Event;
+        // Remove the return statement so the error gets thrown
         throw new Error('Test processor error');
+        // This yield is now unreachable but keeps TypeScript happy
+        yield {} as Event;
       }
     });
     

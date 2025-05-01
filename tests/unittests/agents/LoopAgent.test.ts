@@ -5,10 +5,10 @@ import { LlmAgent, LlmAgentOptions } from '../../../src/agents/LlmAgent';
 import { BaseAgent } from '../../../src/agents/BaseAgent';
 import { InvocationContext } from '../../../src/agents/InvocationContext';
 import { Event } from '../../../src/events/Event';
-import { InMemorySessionService } from '../../../src/sessions/inMemorySessionService';
+import { InMemorySessionService } from '../../../src/sessions';
 import { Content } from '../../../src/models/types';
 import { EventActions } from '../../../src/events/EventActions';
-import { State } from '../../../src/sessions/state';
+import { State } from '../../../src/sessions';
 
 // Define a Session type that matches the expected shape in InvocationContext
 interface TestSession {

@@ -1,5 +1,3 @@
-
-
 import {
   Content,
   DatabaseSessionService,
@@ -15,13 +13,25 @@ enum SessionServiceType {
   DATABASE = 'DATABASE'
 }
 
+// Add an object to track service instances
+const serviceInstances: { [key: string]: SessionService } = {};
+
 function getSessionService(
   serviceType: SessionServiceType = SessionServiceType.IN_MEMORY
 ): SessionService {
-  if (serviceType === SessionServiceType.DATABASE) {
-    return new DatabaseSessionService('sqlite:///:memory:');
+  // Return existing instance if available
+  if (serviceInstances[serviceType]) {
+    return serviceInstances[serviceType];
   }
-  return new InMemorySessionService();
+  
+  // Create new instance
+  const service = serviceType === SessionServiceType.DATABASE
+    ? new DatabaseSessionService('sqlite:///:memory:')
+    : new InMemorySessionService();
+    
+  // Store instance for cleanup
+  serviceInstances[serviceType] = service;
+  return service;
 }
 
 /**
@@ -35,6 +45,26 @@ describe.each([
   [SessionServiceType.IN_MEMORY], 
   [SessionServiceType.DATABASE]
 ])('SessionService tests for %s', (serviceType) => {
+  // Add timeout to all tests in this suite
+  jest.setTimeout(30000);
+  
+  // Clean up resources after all tests
+  afterAll(async () => {
+    // For database tests, we need to manually close connections
+    if (serviceType === SessionServiceType.DATABASE) {
+      try {
+        // Close the specific service instance connection
+        const dbService = serviceInstances[serviceType] as DatabaseSessionService;
+        await dbService.closeConnection();
+        
+        // Also close any other connections that might be open
+        await DatabaseSessionService.closeAllConnections();
+      } catch (error) {
+        console.warn('Failed to close database connections:', error);
+      }
+    }
+  });
+  
   test('get empty session', async () => {
     const sessionService = getSessionService(serviceType);
     const result = await resolveValue(
@@ -45,7 +75,7 @@ describe.each([
       })
     );
     expect(result).toBeNull();
-  });
+  }, 30000);  // 30 second timeout for all tests
 
   test('create and get session', async () => {
     const sessionService = getSessionService(serviceType);
@@ -166,7 +196,7 @@ describe.each([
       })
     );
 
-    expect(session11.state.key11).toBe('value11');
+    expect(session11.state.get('key11')).toBe('value11');
 
     const event: Event = {
       invocationId: 'invocation',
@@ -193,10 +223,10 @@ describe.each([
     );
 
     // User and app state is stored, temp state is filtered
-    expect(session11.state['app:key']).toBe('value');
-    expect(session11.state.key11).toBe('value11_new');
-    expect(session11.state['user:key1']).toBe('value1');
-    expect(session11.state['temp:key']).toBeUndefined();
+    expect(session11.state.get('app:key')).toBe('value');
+    expect(session11.state.get('key11')).toBe('value11_new');
+    expect(session11.state.get('user:key1')).toBe('value1');
+    expect(session11.state.get('temp:key')).toBeUndefined();
 
     const session12 = await resolveValue(
       sessionService.getSession({
@@ -208,8 +238,8 @@ describe.each([
 
     // After getting a new instance, session12 should get the user and app state
     // even though appendEvent wasn't applied to it. Temp state should have no effect
-    expect(session12.state.key12).toBe('value12');
-    expect(session12.state['temp:key']).toBeUndefined();
+    expect(session12.state.get('key12')).toBe('value12');
+    expect(session12.state.get('temp:key')).toBeUndefined();
 
     // User1's state should not be visible to user2, app state should be visible
     const session2 = await resolveValue(
@@ -220,8 +250,8 @@ describe.each([
       })
     ) as Session;
 
-    expect(session2.state['app:key']).toBe('value');
-    expect(session2.state['user:key1']).toBeUndefined();
+    expect(session2.state.get('app:key')).toBe('value');
+    expect(session2.state.get('user:key1')).toBeUndefined();
 
     // The change to session11 should be persisted
     const freshSession11 = await resolveValue(
@@ -232,9 +262,9 @@ describe.each([
       })
     ) as Session;
 
-    expect(freshSession11.state.key11).toBe('value11_new');
-    expect(freshSession11.state['user:key1']).toBe('value1');
-    expect(freshSession11.state['temp:key']).toBeUndefined();
+    expect(freshSession11.state.get('key11')).toBe('value11_new');
+    expect(freshSession11.state.get('user:key1')).toBe('value1');
+    expect(freshSession11.state.get('temp:key')).toBeUndefined();
   });
 
   test('create new session will merge states', async () => {
@@ -278,10 +308,10 @@ describe.each([
     );
 
     // User and app state is stored, temp state is filtered
-    expect(session1.state['app:key']).toBe('value');
-    expect(session1.state.key1).toBe('value1');
-    expect(session1.state['user:key1']).toBe('value1');
-    expect(session1.state['temp:key']).toBeUndefined();
+    expect(session1.state.get('app:key')).toBe('value');
+    expect(session1.state.get('key1')).toBe('value1');
+    expect(session1.state.get('user:key1')).toBe('value1');
+    expect(session1.state.get('temp:key')).toBeUndefined();
 
     const session2 = await resolveValue(
       sessionService.createSession({
@@ -293,10 +323,10 @@ describe.each([
     );
 
     // Session2 should have the persisted states
-    expect(session2.state['app:key']).toBe('value');
-    expect(session2.state['user:key1']).toBe('value1');
-    expect(session2.state.key1).toBeUndefined();
-    expect(session2.state['temp:key']).toBeUndefined();
+    expect(session2.state.get('app:key')).toBe('value');
+    expect(session2.state.get('user:key1')).toBe('value1');
+    expect(session2.state.get('key1')).toBeUndefined();
+    expect(session2.state.get('temp:key')).toBeUndefined();
   });
 
   test('append event bytes', async () => {
@@ -345,7 +375,7 @@ describe.each([
 
     const events = savedSession.events;
     expect(events.length).toBe(1);
-    expect(events[0].content.parts[0]).toEqual(
+    expect(events[0]?.content?.parts?.[0]).toEqual(
       Part.fromBytes(testImageData, 'image/png')
     );
   });

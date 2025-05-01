@@ -1,3 +1,5 @@
+import { State } from './State';
+
 export interface Part {
   text?: string;
   data?: Uint8Array;
@@ -60,7 +62,7 @@ export interface SessionInterface {
   id: string;
   appName: string;
   userId: string;
-  state: Record<string, any>;
+  state: State;
   events: Event[];
 }
 

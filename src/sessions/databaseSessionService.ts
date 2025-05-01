@@ -18,7 +18,7 @@ import {
 import { Event, SessionInterface as Session, SessionsList } from './types';
 import { Content, Part } from './types';
 import { BaseSessionService, ListEventsResponse } from './BaseSessionService';
-import { StatePrefix } from './State';
+import { State, StatePrefix } from './State';
 
 /**
  * Extract state delta from a state object, categorizing into app, user, and session state
@@ -52,15 +52,15 @@ function mergeState(
   appState: Record<string, any>,
   userState: Record<string, any>,
   sessionState: Record<string, any>
-): Record<string, any> {
-  const mergedState = { ...sessionState };
+): State {
+  const mergedState = new State(sessionState);
   
   for (const [key, value] of Object.entries(appState)) {
-    mergedState[StatePrefix.APP_PREFIX + key] = value;
+    mergedState.set(StatePrefix.APP_PREFIX + key, value);
   }
   
   for (const [key, value] of Object.entries(userState)) {
-    mergedState[StatePrefix.USER_PREFIX + key] = value;
+    mergedState.set(StatePrefix.USER_PREFIX + key, value);
   }
   
   return mergedState;
@@ -398,6 +398,25 @@ export class DatabaseSessionService extends BaseSessionService {
   }
 
   /**
+   * Closes the database connection for this instance.
+   * This is useful for testing to properly clean up resources.
+   */
+  async closeConnection(): Promise<void> {
+    if (this.connection && this.connection.isInitialized) {
+      await this.connection.destroy();
+      this.connection = undefined as any;
+    }
+  }
+
+  /**
+   * Closes all database connections.
+   * This static method is useful for testing to properly clean up resources.
+   */
+  static async closeAllConnections(): Promise<void> {
+    await DatabaseConnectionManager.closeAllConnections();
+  }
+
+  /**
    * Ensures the database connection is established
    */
   private async ensureConnection(): Promise<void> {
@@ -512,7 +531,7 @@ export class DatabaseSessionService extends BaseSessionService {
       sessionId
     });
     
-    // Create the session object
+    // Create the session object with merged state
     const session: Session = {
       id: sessionId,
       appName,
@@ -554,16 +573,18 @@ export class DatabaseSessionService extends BaseSessionService {
     
     const { appName, userId } = options;
     
+    // Get sessions but only those with the exact app name and user ID
     const storageSessions = await this.sessionRepo.findBy({
-      appName,
-      userId
+      appName: appName,
+      userId: userId
     });
     
-    const sessions: Session[] = storageSessions.map(storageSession => ({
+    // Create session objects without events or full state
+    const sessions = storageSessions.map(storageSession => ({
       id: storageSession.id,
       appName,
       userId,
-      state: {}, // We don't need to load the full state for listing
+      state: new State(),
       events: []
     }));
     

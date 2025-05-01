@@ -1,9 +1,9 @@
 // exampleAgent.ts
 import {
     LlmAgent as Agent, // Assuming LlmAgent is the primary agent class
-  } from '../../src'; // Adjust import paths based on your project structure
+  } from '../../src/agents'; // Adjust import paths based on your project structure
 import { FunctionTool, ToolContext } from '../../src/tools';
-import { LlmRegistry } from '../../src/models/LlmRegistry';
+import { LlmRegistry } from '../../src/models';
 import { SingleFlow } from '../../src/flows/llm_flows/SingleFlow'; 
 import { InMemoryRunner } from '../../src/runners'; // Adjust path
 import * as readline from 'readline';
@@ -178,7 +178,8 @@ const model = LlmRegistry.newLlm('gemini-1.5-flash'); // Or your preferred model
 const flow = new AutoFlow();
   
 // Define the root agent
-export const rootAgent = new Agent('weather_agent', {
+export const rootAgent = new Agent({
+  name: 'weather_agent',
   model: model, // Pass the model instance or name string
   flow: flow,
   instruction: `You are a helpful weather assistant.
