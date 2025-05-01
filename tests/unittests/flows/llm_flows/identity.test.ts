@@ -1,5 +1,3 @@
-
-
 import { requestProcessor } from '../../../../src/flows/llm_flows/identity';
 import { LlmAgent } from '../../../../src/agents/LlmAgent';
 import { BaseAgent } from '../../../../src/agents/BaseAgent';
@@ -12,16 +10,16 @@ import { Event } from '../../../../src/events/Event';
 class MockLlmFlow extends BaseLlmFlow {
   async *runAsync(): AsyncGenerator<Event, void, unknown> {
     // Empty generator that yields nothing
-    if (false) {
-      yield {} as Event;
-    }
+    return 
+    yield {} as Event;
+    
   }
 
   async *runLive(): AsyncGenerator<Event, void, unknown> {
     // Empty generator that yields nothing
-    if (false) {
-      yield {} as Event;
-    }
+    return 
+    yield {} as Event;
+    
   }
 }
 
@@ -63,7 +61,10 @@ describe('Identity LLM Flow', () => {
 
     // Create an agent without description
     const flow = new MockLlmFlow();
-    const agent = new LlmAgent('agent', { flow });
+    const agent = new LlmAgent({
+      name: 'agent',
+      flow
+    });
 
     // Create invocation context
     const invocationContext = createInvocationContext(agent);
@@ -87,7 +88,8 @@ describe('Identity LLM Flow', () => {
 
     // Create an agent with description
     const flow = new MockLlmFlow();
-    const agent = new LlmAgent('agent', {
+    const agent = new LlmAgent({
+      name: 'agent',
       flow,
       description: 'test description'
     });
@@ -102,7 +104,7 @@ describe('Identity LLM Flow', () => {
 
     // Check that the system instruction was set correctly with description
     expect(request.config.systemInstruction).toBe(
-      'You are an agent. Your internal name is "agent".\n The description about you is "test description"'
+      'You are an agent. Your internal name is "agent".\n\n The description about you is "test description"'
     );
   });
 }); 

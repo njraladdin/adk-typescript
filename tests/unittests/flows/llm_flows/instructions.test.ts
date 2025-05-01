@@ -1,5 +1,3 @@
-
-
 import { briefRequestProcessor, detailedRequestProcessor, makeInstructionsRequestProcessor } from '../../../../src/flows/llm_flows/instructions';
 import { LlmAgent } from '../../../../src/agents/LlmAgent';
 import { BaseAgent } from '../../../../src/agents/BaseAgent';
@@ -8,22 +6,22 @@ import { InvocationContext } from '../../../../src/agents/InvocationContext';
 import { BaseLlmFlow } from '../../../../src/flows/llm_flows/BaseLlmFlow';
 import { Event } from '../../../../src/events/Event';
 import { ReadonlyContext } from '../../../../src/agents/ReadonlyContext';
-import { State } from '../../../../src/sessions/state';
+import { State } from '../../../../src/sessions/State';
 
 // Mock LLM Flow class for testing
 class MockLlmFlow extends BaseLlmFlow {
   async *runAsync(): AsyncGenerator<Event, void, unknown> {
     // Empty generator that yields nothing
-    if (false) {
+    return
       yield {} as Event;
-    }
+    
   }
 
   async *runLive(): AsyncGenerator<Event, void, unknown> {
     // Empty generator that yields nothing
-    if (false) {
+    return 
       yield {} as Event;
-    }
+    
   }
 }
 
@@ -70,7 +68,7 @@ describe('Instructions LLM Flow', () => {
 
     // Create an agent
     const flow = new MockLlmFlow();
-    const agent = new LlmAgent('agent', { flow });
+    const agent = new LlmAgent({ name: 'agent', flow });
 
     // Create invocation context
     const invocationContext = createInvocationContext(agent);
@@ -94,7 +92,7 @@ describe('Instructions LLM Flow', () => {
 
     // Create an agent
     const flow = new MockLlmFlow();
-    const agent = new LlmAgent('agent', { flow });
+    const agent = new LlmAgent({ name: 'agent', flow });
 
     // Create invocation context
     const invocationContext = createInvocationContext(agent);
@@ -122,7 +120,7 @@ describe('Instructions LLM Flow', () => {
 
     // Create an agent
     const flow = new MockLlmFlow();
-    const agent = new LlmAgent('agent', { flow });
+    const agent = new LlmAgent({ name: 'agent', flow });
 
     // Create invocation context
     const invocationContext = createInvocationContext(agent);
@@ -144,7 +142,7 @@ describe('Instructions LLM Flow', () => {
 
     // Create an agent
     const flow = new MockLlmFlow();
-    const agent = new LlmAgent('agent', { flow });
+    const agent = new LlmAgent({ name: 'agent', flow });
 
     // Create invocation context
     const invocationContext = createInvocationContext(agent);

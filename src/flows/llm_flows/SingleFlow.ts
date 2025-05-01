@@ -12,7 +12,6 @@ import * as instructions from './instructions';
 import * as contents from './contents';
 import * as nlPlanning from './NlPlanning';
 import * as codeExecution from './CodeExecution';
-import * as agentTransfer from './agentTransfer';
 
 /**
  * A simple flow that only executes one LLM call.
