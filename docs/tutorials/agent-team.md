@@ -5,11 +5,6 @@
 
   <!-- Line 1: Open in Colab -->
   <!-- This div ensures the link takes up its own line and adds space below -->
-  <div style="margin-bottom: 10px;">
-    <a href="https://colab.research.google.com/github/google/adk-docs/blob/main/examples/python/tutorial/agent_team/adk_tutorial.ipynb" target="_blank" style="display: inline-flex; align-items: center; gap: 5px; text-decoration: none; color: #4285F4;">
-      <img width="32px" src="https://www.gstatic.com/pantheon/images/bigquery/welcome_page/colab-logo.svg" alt="Google Colaboratory logo">
-      <span>Open in Colab</span>
-    </a>
   </div>
 
   <!-- Line 2: Share Links -->
@@ -19,26 +14,26 @@
     <span style="font-weight: bold;">Share to:</span>
 
     <!-- Social Media Links -->
-    <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A//github/google/adk-docs/blob/main/examples/python/tutorial/agent_team/adk_tutorial.ipynb" target="_blank" title="Share on LinkedIn">
+    <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on LinkedIn">
       <img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/8/81/LinkedIn_icon.svg" alt="LinkedIn logo" style="vertical-align: middle;">
     </a>
-    <a href="https://bsky.app/intent/compose?text=https%3A//github/google/adk-docs/blob/main/examples/python/tutorial/agent_team/adk_tutorial.ipynb" target="_blank" title="Share on Bluesky">
+    <a href="https://bsky.app/intent/compose?text=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on Bluesky">
       <img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Bluesky_Logo.svg" alt="Bluesky logo" style="vertical-align: middle;">
     </a>
-    <a href="https://twitter.com/intent/tweet?url=https%3A//github/google/adk-docs/blob/main/examples/python/tutorial/agent_team/adk_tutorial.ipynb" target="_blank" title="Share on X (Twitter)">
+    <a href="https://twitter.com/intent/tweet?url=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on X (Twitter)">
       <img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/5/5a/X_icon_2.svg" alt="X logo" style="vertical-align: middle;">
     </a>
-    <a href="https://reddit.com/submit?url=https%3A//github/google/adk-docs/blob/main/examples/python/tutorial/agent_team/adk_tutorial.ipynb" target="_blank" title="Share on Reddit">
+    <a href="https://reddit.com/submit?url=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on Reddit">
       <img width="20px" src="https://redditinc.com/hubfs/Reddit%20Inc/Brand/Reddit_Logo.png" alt="Reddit logo" style="vertical-align: middle;">
     </a>
-    <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A//github/google/adk-docs/blob/main/examples/python/tutorial/agent_team/adk_tutorial.ipynb" target="_blank" title="Share on Facebook">
+    <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on Facebook">
       <img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook logo" style="vertical-align: middle;">
     </a>
   </div>
 
 </div>
 
-This tutorial extends from the [Quickstart example](https://google.github.io/adk-docs/get-started/quickstart/) for [Agent Development Kit](https://google.github.io/adk-docs/get-started/). Now, you're ready to dive deeper and construct a more sophisticated, **multi-agent system**.
+This tutorial extends from the [Quickstart example](https://njraladdin.github.io/adk-typescript/get-started/quickstart/) for [Agent Development Kit](https://njraladdin.github.io/adk-typescript/get-started/). Now, you're ready to dive deeper and construct a more sophisticated, **multi-agent system**.
 
 We'll embark on building a **Weather Bot agent team**, progressively layering advanced features onto a simple foundation. Starting with a single agent that can look up weather, we will incrementally add capabilities like:
 
@@ -54,15 +49,15 @@ This use case, while seemingly simple, provides a practical and relatable canvas
 
 **What is ADK Again?**
 
-As a reminder, ADK is a Python framework designed to streamline the development of applications powered by Large Language Models (LLMs). It offers robust building blocks for creating agents that can reason, plan, utilize tools, interact dynamically with users, and collaborate effectively within a team.
+As a reminder, ADK is a TypeScript framework designed to streamline the development of applications powered by Large Language Models (LLMs). It offers robust building blocks for creating agents that can reason, plan, utilize tools, interact dynamically with users, and collaborate effectively within a team.
 
 **In this advanced tutorial, you will master:**
 
-*   ✅ **Tool Definition & Usage:** Crafting Python functions (`tools`) that grant agents specific abilities (like fetching data) and instructing agents on how to use them effectively.
-*   ✅ **Multi-LLM Flexibility:** Configuring agents to utilize various leading LLMs (Gemini, GPT-4o, Claude Sonnet) via LiteLLM integration, allowing you to choose the best model for each task.
+*   ✅ **Tool Definition & Usage:** Crafting TypeScript functions (`tools`) that grant agents specific abilities (like fetching data) and instructing agents on how to use them effectively.
+*   ✅ **Multi-LLM Flexibility:** Configuring agents to utilize various leading LLMs (Gemini, GPT-4o, Claude Sonnet) via LlmRegistry integration, allowing you to choose the best model for each task.
 *   ✅ **Agent Delegation & Collaboration:** Designing specialized sub-agents and enabling automatic routing (`auto flow`) of user requests to the most appropriate agent within a team.
-*   ✅ **Session State for Memory:** Utilizing `Session State` and `ToolContext` to enable agents to remember information across conversational turns, leading to more contextual interactions.
-*   ✅ **Safety Guardrails with Callbacks:** Implementing `before_model_callback` and `before_tool_callback` to inspect, modify, or block requests/tool usage based on predefined rules, enhancing application safety and control.
+*   ✅ **Session State for Memory:** Utilizing `Session` and `ToolContext` to enable agents to remember information across conversational turns, leading to more contextual interactions.
+*   ✅ **Safety Guardrails with Callbacks:** Implementing `beforeModelCallback` and `beforeToolCallback` to inspect, modify, or block requests/tool usage based on predefined rules, enhancing application safety and control.
 
 **End State Expectation:**
 
@@ -70,7 +65,7 @@ By completing this tutorial, you will have built a functional multi-agent Weathe
 
 **Prerequisites:**
 
-*   ✅ **Solid understanding of Python programming.**
+*   ✅ **Solid understanding of TypeScript programming.**
 *   ✅ **Familiarity with Large Language Models (LLMs), APIs, and the concept of agents.**
 *   ❗ **Crucially: Completion of the ADK Quickstart tutorial(s) or equivalent foundational knowledge of ADK basics (Agent, Runner, SessionService, basic Tool usage).** This tutorial builds directly upon those concepts.
 *   ✅ **API Keys** for the LLMs you intend to use (e.g., Google AI Studio for Gemini, OpenAI Platform, Anthropic Console).
@@ -80,93 +75,81 @@ By completing this tutorial, you will have built a functional multi-agent Weathe
 
 **Note on Execution Environment:**
 
-This tutorial is structured for interactive notebook environments like Google Colab, Colab Enterprise, or Jupyter notebooks. Please keep the following in mind:
+This tutorial is structured for Node.js environments. Please keep the following in mind:
 
-*   **Running Async Code:** Notebook environments handle asynchronous code differently. You'll see examples using `await` (suitable when an event loop is already running, common in notebooks) or `asyncio.run()` (often needed when running as a standalone `.py` script or in specific notebook setups). The code blocks provide guidance for both scenarios.
-*   **Manual Runner/Session Setup:** The steps involve explicitly creating `Runner` and `SessionService` instances. This approach is shown because it gives you fine-grained control over the agent's execution lifecycle, session management, and state persistence.
+*   **Asynchronous Code in TypeScript vs Python:** Unlike Python which requires the `asyncio` library for asynchronous operations, TypeScript has native support for async/await patterns as part of the language. In the TypeScript version of ADK:
+    * No need to import `asyncio` - this was only required in the Python version
+    * Use `async`/`await` directly for asynchronous functions 
+    * Use `for await (const event of generator)` syntax for async generators instead of Python's `async for event in generator`
+    * Functions return `Promise<T>` instead of Python's coroutines
+    * Methods are marked with `async *` for async generator methods instead of Python's `async def` with `yield`
+
+*   **Manual Runner/Session Setup:** The steps involve explicitly creating `InMemoryRunner` and session instances. This approach is shown because it gives you fine-grained control over the agent's execution lifecycle, session management, and state persistence.
 
 **Alternative: Using ADK's Built-in Tools (Web UI / CLI / API Server)**
 
-If you prefer a setup that handles the runner and session management automatically using ADK's standard tools, you can find the equivalent code structured for that purpose [here](https://github.com/google/adk-docs/tree/main/examples/python/tutorial/agent_team/adk-tutorial). That version is designed to be run directly with commands like `adk web` (for a web UI), `adk run` (for CLI interaction), or `adk api_server` (to expose an API). Please follow the `README.md` instructions provided in that alternative resource.
+If you prefer a setup that handles the runner and session management automatically using ADK's standard tools, please refer to the example code in the repository.
 
 ---
 
 **Ready to build your agent team? Let's dive in!**
 
 
-```python
-# @title Step 0: Setup and Installation
-# Install ADK and LiteLLM for multi-model support
+```typescript
+// Step 0: Setup and Installation
+// Install ADK using npm
 
-!pip install google-adk -q
-!pip install litellm -q
+// In your project directory, run:
+// npm install adk-typescript
 
-print("Installation complete.")
+console.log("Installation complete.");
 ```
 
 
-```python
-# @title Import necessary libraries
-import os
-import asyncio
-from google.adk.agents import Agent
-from google.adk.models.lite_llm import LiteLlm # For multi-model support
-from google.adk.sessions import InMemorySessionService
-from google.adk.runners import Runner
-from google.genai import types # For creating message Content/Parts
+```typescript
+// Import necessary libraries
+import { LlmAgent } from 'adk-typescript';
+import { LlmRegistry } from 'adk-typescript/models';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { Runner, InMemoryRunner } from 'adk-typescript';
+import { Content, Part } from 'adk-typescript/models/types';
 
-import warnings
-# Ignore all warnings
-warnings.filterwarnings("ignore")
-
-import logging
-logging.basicConfig(level=logging.ERROR)
-
-print("Libraries imported.")
+console.log("Libraries imported.");
 ```
 
 
-```python
-# @title Configure API Keys (Replace with your actual keys!)
+```typescript
+// Configure API Keys (Replace with your actual keys!)
 
-# --- IMPORTANT: Replace placeholders with your real API keys ---
+// --- IMPORTANT: Replace placeholders with your real API keys ---
+// Configure your .env file or set environment variables directly
 
-# Gemini API Key (Get from Google AI Studio: https://aistudio.google.com/app/apikey)
-os.environ["GOOGLE_API_KEY"] = "YOUR_GOOGLE_API_KEY" # <--- REPLACE
+// Gemini API Key (Get from Google AI Studio: https://aistudio.google.com/app/apikey)
+process.env.GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"; // <--- REPLACE
 
-# [Optional]
-# OpenAI API Key (Get from OpenAI Platform: https://platform.openai.com/api-keys)
-os.environ['OPENAI_API_KEY'] = 'YOUR_OPENAI_API_KEY' # <--- REPLACE
+// [Optional]
+// OpenAI API Key (Get from OpenAI Platform: https://platform.openai.com/api-keys)
+process.env.OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY'; // <--- REPLACE
 
-# [Optional]
-# Anthropic API Key (Get from Anthropic Console: https://console.anthropic.com/settings/keys)
-os.environ['ANTHROPIC_API_KEY'] = 'YOUR_ANTHROPIC_API_KEY' # <--- REPLACE
+// [Optional]
+// Anthropic API Key (Get from Anthropic Console: https://console.anthropic.com/settings/keys)
+process.env.ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY'; // <--- REPLACE
 
-# --- Verify Keys (Optional Check) ---
-print("API Keys Set:")
-print(f"Google API Key set: {'Yes' if os.environ.get('GOOGLE_API_KEY') and os.environ['GOOGLE_API_KEY'] != 'YOUR_GOOGLE_API_KEY' else 'No (REPLACE PLACEHOLDER!)'}")
-print(f"OpenAI API Key set: {'Yes' if os.environ.get('OPENAI_API_KEY') and os.environ['OPENAI_API_KEY'] != 'YOUR_OPENAI_API_KEY' else 'No (REPLACE PLACEHOLDER!)'}")
-print(f"Anthropic API Key set: {'Yes' if os.environ.get('ANTHROPIC_API_KEY') and os.environ['ANTHROPIC_API_KEY'] != 'YOUR_ANTHROPIC_API_KEY' else 'No (REPLACE PLACEHOLDER!)'}")
+// --- Verify Keys (Optional Check) ---
+console.log("API Keys Set:");
+console.log(`Google API Key set: ${process.env.GOOGLE_API_KEY && process.env.GOOGLE_API_KEY !== 'YOUR_GOOGLE_API_KEY' ? 'Yes' : 'No (REPLACE PLACEHOLDER!)'}`);
+console.log(`OpenAI API Key set: ${process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'YOUR_OPENAI_API_KEY' ? 'Yes' : 'No (REPLACE PLACEHOLDER!)'}`);
+console.log(`Anthropic API Key set: ${process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'YOUR_ANTHROPIC_API_KEY' ? 'Yes' : 'No (REPLACE PLACEHOLDER!)'}`);
 
-# Configure ADK to use API keys directly (not Vertex AI for this multi-model setup)
-os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
+// --- Define Model Constants for easier use ---
 
+const MODEL_GEMINI_2_0_FLASH = "gemini-2.0-flash";
 
-# @markdown **Security Note:** It's best practice to manage API keys securely (e.g., using Colab Secrets or environment variables) rather than hardcoding them directly in the notebook. Replace the placeholder strings above.
-```
+// Note: Specific model names might change. Refer to LlmRegistry documentation.
+const MODEL_GPT_4O = "openai/gpt-4o";
+const MODEL_CLAUDE_SONNET = "anthropic/claude-3-sonnet-20240229";
 
-
-```python
-# --- Define Model Constants for easier use ---
-
-MODEL_GEMINI_2_0_FLASH = "gemini-2.0-flash"
-
-# Note: Specific model names might change. Refer to LiteLLM/Provider documentation.
-MODEL_GPT_4O = "openai/gpt-4o"
-MODEL_CLAUDE_SONNET = "anthropic/claude-3-sonnet-20240229"
-
-
-print("\nEnvironment configured.")
+console.log("\nEnvironment configured.");
 ```
 
 ---
@@ -175,14 +158,14 @@ print("\nEnvironment configured.")
 
 Let's begin by building the fundamental component of our Weather Bot: a single agent capable of performing a specific task – looking up weather information. This involves creating two core pieces:
 
-1. **A Tool:** A Python function that equips the agent with the *ability* to fetch weather data.  
+1. **A Tool:** A TypeScript function that equips the agent with the *ability* to fetch weather data.  
 2. **An Agent:** The AI "brain" that understands the user's request, knows it has a weather tool, and decides when and how to use it.
 
 ---
 
 **1\. Define the Tool (`get_weather`)**
 
-In ADK, **Tools** are the building blocks that give agents concrete capabilities beyond just text generation. They are typically regular Python functions that perform specific actions, like calling an API, querying a database, or performing calculations.
+In ADK, **Tools** are the building blocks that give agents concrete capabilities beyond just text generation. They are typically regular TypeScript functions that perform specific actions, like calling an API, querying a database, or performing calculations.
 
 Our first tool will provide a *mock* weather report. This allows us to focus on the agent structure without needing external API keys yet. Later, you could easily swap this mock function with one that calls a real weather service.
 
@@ -190,44 +173,63 @@ Our first tool will provide a *mock* weather report. This allows us to focus on 
 
 * *What* the tool does.  
 * *When* to use it.  
-* *What arguments* it requires (`city: str`).  
+* *What arguments* it requires (`city: string`).  
 * *What information* it returns.
 
 **Best Practice:** Write clear, descriptive, and accurate docstrings for your tools. This is essential for the LLM to use the tool correctly.
 
 
-```python
-# @title Define the get_weather Tool
-def get_weather(city: str) -> dict:
-    """Retrieves the current weather report for a specified city.
-
-    Args:
-        city (str): The name of the city (e.g., "New York", "London", "Tokyo").
-
-    Returns:
-        dict: A dictionary containing the weather information.
-              Includes a 'status' key ('success' or 'error').
-              If 'success', includes a 'report' key with weather details.
-              If 'error', includes an 'error_message' key.
-    """
-    print(f"--- Tool: get_weather called for city: {city} ---") # Log tool execution
-    city_normalized = city.lower().replace(" ", "") # Basic normalization
-
-    # Mock weather data
-    mock_weather_db = {
-        "newyork": {"status": "success", "report": "The weather in New York is sunny with a temperature of 25°C."},
-        "london": {"status": "success", "report": "It's cloudy in London with a temperature of 15°C."},
-        "tokyo": {"status": "success", "report": "Tokyo is experiencing light rain and a temperature of 18°C."},
+```typescript
+// @title Define the get_weather Tool
+async function get_weather(
+    params: Record<string, any>,
+    context?: ToolContext
+): Promise<any> {
+    const city = params.city;
+    console.log(`--- Tool: get_weather called for city: ${city} ---`); // Log tool execution
+    const cityNormalized = city.toLowerCase().replace(" ", ""); // Basic normalization
+    
+    // Mock weather data
+    const mock_weather_db: Record<string, any> = {
+        "newyork": { status: "success", report: "The weather in New York is sunny with a temperature of 25°C." },
+        "london": { status: "success", report: "It's cloudy in London with a temperature of 15°C." },
+        "tokyo": { status: "success", report: "Tokyo is experiencing light rain and a temperature of 18°C." },
+    };
+    
+    if (mock_weather_db[cityNormalized]) {
+        return mock_weather_db[cityNormalized];
+    } else {
+        return { 
+            status: "error", 
+            error_message: `Sorry, I don't have weather information for '${city}'` 
+        };
     }
+}
 
-    if city_normalized in mock_weather_db:
-        return mock_weather_db[city_normalized]
-    else:
-        return {"status": "error", "error_message": f"Sorry, I don't have weather information for '{city}'."}
+// Create a FunctionTool wrapper for our weather function
+const weatherTool = new FunctionTool({
+    name: 'get_weather',
+    description: 'Gets the current weather for a specific location.',
+    fn: get_weather,
+    functionDeclaration: {
+        name: 'get_weather',
+        description: 'Gets the current weather for a specific location.',
+        parameters: {
+            type: 'object',
+            properties: {
+                city: {
+                    type: 'string',
+                    description: 'The city, address, or general location to get weather for.',
+                },
+            },
+            required: ['city'],
+        },
+    },
+});
 
-# Example tool usage (optional test)
-print(get_weather("New York"))
-print(get_weather("Paris"))
+// Example tool usage (optional test) - this would be different in real code
+get_weather({ city: "New York" }, undefined).then(console.log);
+get_weather({ city: "Paris" }, undefined).then(console.log);
 ```
 
 ---
@@ -238,35 +240,59 @@ Now, let's create the **Agent** itself. An `Agent` in ADK orchestrates the inter
 
 We configure it with several key parameters:
 
-* `name`: A unique identifier for this agent (e.g., "weather\_agent\_v1").  
+* `name`: A unique identifier for this agent (e.g., "weather_agent_v1").  
 * `model`: Specifies which LLM to use (e.g., `MODEL_GEMINI_2_0_FLASH`). We'll start with a specific Gemini model.  
 * `description`: A concise summary of the agent's overall purpose. This becomes crucial later when other agents need to decide whether to delegate tasks to *this* agent.  
 * `instruction`: Detailed guidance for the LLM on how to behave, its persona, its goals, and specifically *how and when* to utilize its assigned `tools`.  
-* `tools`: A list containing the actual Python tool functions the agent is allowed to use (e.g., `[get_weather]`).
+* `tools`: A list containing the actual TypeScript tool functions the agent is allowed to use (e.g., `[get_weather]`).
 
 **Best Practice:** Provide clear and specific `instruction` prompts. The more detailed the instructions, the better the LLM can understand its role and how to use its tools effectively. Be explicit about error handling if needed.
 
 **Best Practice:** Choose descriptive `name` and `description` values. These are used internally by ADK and are vital for features like automatic delegation (covered later).
 
 
-```python
-# @title Define the Weather Agent
-# Use one of the model constants defined earlier
-AGENT_MODEL = MODEL_GEMINI_2_0_FLASH # Starting with Gemini
+```typescript
+// @title Define the Weather Agent
+// Use one of the model constants defined earlier
+const AGENT_MODEL = MODEL_GEMINI_2_0_FLASH; // Starting with Gemini
 
-weather_agent = Agent(
-    name="weather_agent_v1",
-    model=AGENT_MODEL, # Can be a string for Gemini or a LiteLlm object
-    description="Provides weather information for specific cities.",
-    instruction="You are a helpful weather assistant. "
-                "When the user asks for the weather in a specific city, "
-                "use the 'get_weather' tool to find the information. "
-                "If the tool returns an error, inform the user politely. "
-                "If the tool is successful, present the weather report clearly.",
-    tools=[get_weather], # Pass the function directly
-)
+// Import FunctionTool to wrap our function
+import { FunctionTool } from 'adk-typescript/tools';
 
-print(f"Agent '{weather_agent.name}' created using model '{AGENT_MODEL}'.")
+// Create a FunctionTool wrapper for our weather function
+const weatherTool = new FunctionTool({
+    name: 'get_weather',
+    description: 'Gets the current weather for a specific location.',
+    fn: get_weather,
+    functionDeclaration: {
+        name: 'get_weather',
+        description: 'Gets the current weather for a specific location.',
+        parameters: {
+            type: 'object',
+            properties: {
+                city: {
+                    type: 'string',
+                    description: 'The city, address, or general location to get weather for.',
+                },
+            },
+            required: ['city'],
+        },
+    },
+});
+
+const weather_agent = new LlmAgent({
+    name: "weather_agent_v1",
+    model: AGENT_MODEL, // Can be a string for Gemini or an LlmRegistry object
+    description: "Provides weather information for specific cities.",
+    instruction: "You are a helpful weather assistant. "
+               + "When the user asks for the weather in a specific city, "
+               + "use the 'get_weather' tool to find the information. "
+               + "If the tool returns an error, inform the user politely. "
+               + "If the tool is successful, present the weather report clearly.",
+    tools: [weatherTool], // Pass the FunctionTool wrapper
+});
+
+console.log(`Agent '${weather_agent.name}' created using model '${AGENT_MODEL}'`);
 ```
 
 ---
@@ -275,39 +301,39 @@ print(f"Agent '{weather_agent.name}' created using model '{AGENT_MODEL}'.")
 
 To manage conversations and execute the agent, we need two more components:
 
-* `SessionService`: Responsible for managing conversation history and state for different users and sessions. The `InMemorySessionService` is a simple implementation that stores everything in memory, suitable for testing and simple applications. It keeps track of the messages exchanged. We'll explore state persistence more in Step 4\.  
-* `Runner`: The engine that orchestrates the interaction flow. It takes user input, routes it to the appropriate agent, manages calls to the LLM and tools based on the agent's logic, handles session updates via the `SessionService`, and yields events representing the progress of the interaction.
+* `Session`: Responsible for managing conversation history and state for different users and sessions. The `InMemorySessionService` is a simple implementation that stores everything in memory, suitable for testing and simple applications. It keeps track of the messages exchanged. We'll explore state persistence more in Step 4\.  
+* `Runner`: The engine that orchestrates the interaction flow. It takes user input, routes it to the appropriate agent, manages calls to the LLM and tools based on the agent's logic, handles session updates via the `Session`, and yields events representing the progress of the interaction.
 
 
-```python
-# @title Setup Session Service and Runner
+```typescript
+// @title Setup Session Service and Runner
 
-# --- Session Management ---
-# Key Concept: SessionService stores conversation history & state.
-# InMemorySessionService is simple, non-persistent storage for this tutorial.
-session_service = InMemorySessionService()
+// --- Session Management ---
+// Key Concept: Session stores conversation history & state.
+// InMemorySessionService is simple, non-persistent storage for this tutorial.
+const session_service = new InMemorySessionService();
 
-# Define constants for identifying the interaction context
-APP_NAME = "weather_tutorial_app"
-USER_ID = "user_1"
-SESSION_ID = "session_001" # Using a fixed ID for simplicity
+// Define constants for identifying the interaction context
+const APP_NAME = "weather_tutorial_app";
+const USER_ID = "user_1";
+const SESSION_ID = "session_001"; // Using a fixed ID for simplicity
 
-# Create the specific session where the conversation will happen
-session = session_service.create_session(
-    app_name=APP_NAME,
-    user_id=USER_ID,
-    session_id=SESSION_ID
-)
-print(f"Session created: App='{APP_NAME}', User='{USER_ID}', Session='{SESSION_ID}'")
+// Create the specific session where the conversation will happen
+const session = session_service.createSession(
+    APP_NAME,
+    USER_ID,
+    SESSION_ID
+);
+console.log(`Session created: App='${APP_NAME}', User='${USER_ID}', Session='${SESSION_ID}'`);
 
-# --- Runner ---
-# Key Concept: Runner orchestrates the agent execution loop.
-runner = Runner(
-    agent=weather_agent, # The agent we want to run
-    app_name=APP_NAME,   # Associates runs with our app
-    session_service=session_service # Uses our session manager
-)
-print(f"Runner created for agent '{runner.agent.name}'.")
+// --- Runner ---
+// Key Concept: Runner orchestrates the agent execution loop.
+const runner = new InMemoryRunner({
+    agent: weather_agent, // The agent we want to run
+    app_name: APP_NAME,   // Associates runs with our app
+    session_service: session_service // Uses our session manager
+});
+console.log(`Runner created for agent '${runner.agent.name}'`);
 ```
 
 ---
@@ -320,44 +346,56 @@ We'll define an `async` helper function (`call_agent_async`) that:
 
 1. Takes a user query string.  
 2. Packages it into the ADK `Content` format.  
-3. Calls `runner.run_async`, providing the user/session context and the new message.  
+3. Calls `runner.runAsync`, providing the user/session context and the new message.  
 4. Iterates through the **Events** yielded by the runner. Events represent steps in the agent's execution (e.g., tool call requested, tool result received, intermediate LLM thought, final response).  
-5. Identifies and prints the **final response** event using `event.is_final_response()`.
+5. Identifies and prints the **final response** event using `event.isFinalResponse()`.
 
-**Why `async`?** Interactions with LLMs and potentially tools (like external APIs) are I/O-bound operations. Using `asyncio` allows the program to handle these operations efficiently without blocking execution.
+**Why `async`?** Interactions with LLMs and potentially tools (like external APIs) are I/O-bound operations. Using TypeScript's async/await pattern allows the program to handle these operations efficiently without blocking execution.
 
 
-```python
-# @title Define Agent Interaction Function
+```typescript
+// @title Define Agent Interaction Function
 
-from google.genai import types # For creating message Content/Parts
+import { LlmAgent } from 'adk-typescript';
+import { Content, Part } from 'adk-typescript/models/types'; // For creating message Content/Parts
 
-async def call_agent_async(query: str, runner, user_id, session_id):
-  """Sends a query to the agent and prints the final response."""
-  print(f"\n>>> User Query: {query}")
+async function call_agent_async(query: string, runner: Runner, user_id: string, session_id: string): Promise<any> {
+  console.log(`\n>>> User Query: ${query}`);
 
-  # Prepare the user's message in ADK format
-  content = types.Content(role='user', parts=[types.Part(text=query)])
+  // Prepare the user's message in ADK format
+  const content = new Content({ 
+    role: 'user', 
+    parts: [new Part({ text: query })]
+  });
 
-  final_response_text = "Agent did not produce a final response." # Default
+  let final_response_text = "Agent did not produce a final response."; // Default
 
-  # Key Concept: run_async executes the agent logic and yields Events.
-  # We iterate through events to find the final answer.
-  async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=content):
-      # You can uncomment the line below to see *all* events during execution
-      # print(f"  [Event] Author: {event.author}, Type: {type(event).__name__}, Final: {event.is_final_response()}, Content: {event.content}")
+  // Key Concept: runAsync executes the agent logic and yields Events.
+  // We iterate through events to find the final answer.
+  for await (const event of runner.runAsync({
+    userId: user_id,
+    sessionId: session_id,
+    content: content
+  })) {
+    // You can uncomment the line below to see *all* events during execution
+    // console.log(`  [Event] Author: ${event.author}, Type: ${event.constructor.name}, Final: ${event.isFinalResponse()}, Content: ${event.content}`);
 
-      # Key Concept: is_final_response() marks the concluding message for the turn.
-      if event.is_final_response():
-          if event.content and event.content.parts:
-             # Assuming text response in the first part
-             final_response_text = event.content.parts[0].text
-          elif event.actions and event.actions.escalate: # Handle potential errors/escalations
-             final_response_text = f"Agent escalated: {event.error_message or 'No specific message.'}"
-          # Add more checks here if needed (e.g., specific error codes)
-          break # Stop processing events once the final response is found
+    // Key Concept: isFinalResponse() marks the concluding message for the turn.
+    if (event.isFinalResponse()) {
+      if (event.content && event.content.parts) {
+         // Assuming text response in the first part
+         final_response_text = event.content.parts[0].text;
+      } else if (event.actions && event.actions.escalate) { // Handle potential errors/escalations
+         final_response_text = `Agent escalated: ${event.errorMessage || 'No specific message.'}`;
+      }
+      // Add more checks here if needed (e.g., specific error codes)
+      break; // Stop processing events once the final response is found
+    }
+  }
 
-  print(f"<<< Agent Response: {final_response_text}")
+  console.log(`<<< Agent Response: ${final_response_text}`);
+  return final_response_text;
+}
 ```
 
 ---
@@ -373,38 +411,44 @@ Watch the output:
 * Observe the agent's final responses, including how it handles the case where weather data isn't available (for Paris).
 
 
-```python
-# @title Run the Initial Conversation
+```typescript
+// @title Run the Initial Conversation
 
-# We need an async function to await our interaction helper
-async def run_conversation():
+// We need an async function to await our interaction helper
+async function run_conversation() {
     await call_agent_async("What is the weather like in London?",
-                                       runner=runner,
-                                       user_id=USER_ID,
-                                       session_id=SESSION_ID)
+                                       runner,
+                                       USER_ID,
+                                       SESSION_ID);
 
     await call_agent_async("How about Paris?",
-                                       runner=runner,
-                                       user_id=USER_ID,
-                                       session_id=SESSION_ID) # Expecting the tool's error message
+                                       runner,
+                                       USER_ID,
+                                       SESSION_ID); // Expecting the tool's error message
 
     await call_agent_async("Tell me the weather in New York",
-                                       runner=runner,
-                                       user_id=USER_ID,
-                                       session_id=SESSION_ID)
+                                       runner,
+                                       USER_ID,
+                                       SESSION_ID);
+}
 
-# Execute the conversation using await in an async context (like Colab/Jupyter)
-await run_conversation()
+// Execute the conversation using then/catch as this is TypeScript
+run_conversation().then(result => {
+    console.log(result);
+}).catch(error => {
+    console.error(`An error occurred: ${error}`);
+});
 
-# --- OR ---
+// --- OR ---
 
-# Uncomment the following lines if running as a standard Python script (.py file):
-# import asyncio
-# if __name__ == "__main__":
-#     try:
-#         asyncio.run(run_conversation())
-#     except Exception as e:
-#         print(f"An error occurred: {e}")
+// Uncomment the following lines if running as a standard Node.js script (.ts file):
+// if (require.main === module) {
+//     run_conversation().then(() => {
+//         console.log("Conversation completed");
+//     }).catch(error => {
+//         console.error(`An error occurred: ${error}`);
+//     });
+// }
 ```
 
 ---
@@ -437,9 +481,9 @@ ADK makes switching between models seamless through its integration with the [**
 We imported this during the initial setup (Step 0), but it's the key component for multi-model support:
 
 
-```python
-# @title 1. Import LiteLlm
-from google.adk.models.lite_llm import LiteLlm
+```typescript
+// @title 1. Import LiteLlm
+import { LiteLlm } from 'adk-typescript/models';
 ```
 
 **2\. Define and Test Multi-Model Agents**
@@ -458,158 +502,136 @@ Each block below will:
 
 **Best Practice:** Use constants for model names (like `MODEL_GPT_4O`, `MODEL_CLAUDE_SONNET` defined in Step 0) to avoid typos and make code easier to manage.
 
-**Error Handling:** We wrap the agent definitions in `try...except` blocks. This prevents the entire code cell from failing if an API key for a specific provider is missing or invalid, allowing the tutorial to proceed with the models that *are* configured.
+**Error Handling:** We wrap the agent definitions in `try...catch` blocks. This prevents the entire code cell from failing if an API key for a specific provider is missing or invalid, allowing the tutorial to proceed with the models that *are* configured.
 
 First, let's create and test the agent using OpenAI's GPT-4o.
 
 
-```python
-# @title Define and Test GPT Agent
+```typescript
+// @title Define and Test GPT Agent
 
-# Make sure 'get_weather' function from Step 1 is defined in your environment.
-# Make sure 'call_agent_async' is defined from earlier.
+// Make sure 'get_weather' function from Step 1 is defined in your environment.
+// Make sure 'call_agent_async' is defined from earlier.
 
-# --- Agent using GPT-4o ---
-weather_agent_gpt = None # Initialize to None
-runner_gpt = None      # Initialize runner to None
+// --- Agent using GPT-4o ---
+let weather_agent_gpt: LlmAgent | null = null; // Initialize to null
+let runner_gpt: InMemoryRunner | null = null;      // Initialize runner to null
 
-try:
-    weather_agent_gpt = Agent(
-        name="weather_agent_gpt",
-        # Key change: Wrap the LiteLLM model identifier
-        model=LiteLlm(model=MODEL_GPT_4O),
-        description="Provides weather information (using GPT-4o).",
-        instruction="You are a helpful weather assistant powered by GPT-4o. "
-                    "Use the 'get_weather' tool for city weather requests. "
-                    "Clearly present successful reports or polite error messages based on the tool's output status.",
-        tools=[get_weather], # Re-use the same tool
-    )
-    print(f"Agent '{weather_agent_gpt.name}' created using model '{MODEL_GPT_4O}'.")
+try {
+    weather_agent_gpt = new LlmAgent({
+        name: "weather_agent_gpt",
+        // Key change: Wrap the LiteLLM model identifier
+        model: new LiteLlm({ model: MODEL_GPT_4O }),
+        description: "Provides weather information (using GPT-4o).",
+        instruction: "You are a helpful weather assistant powered by GPT-4o. "
+                   + "Use the 'get_weather' tool for city weather requests. "
+                   + "Clearly present successful reports or polite error messages based on the tool's output status.",
+        tools: [weatherTool], // Use the same FunctionTool
+    });
+    console.log(`Agent '${weather_agent_gpt.name}' created using model '${MODEL_GPT_4O}'`);
 
-    # InMemorySessionService is simple, non-persistent storage for this tutorial.
-    session_service_gpt = InMemorySessionService() # Create a dedicated service
+    // InMemorySessionService is simple, non-persistent storage for this tutorial.
+    const session_service_gpt = new InMemorySessionService(); // Create a dedicated service
 
-    # Define constants for identifying the interaction context
-    APP_NAME_GPT = "weather_tutorial_app_gpt" # Unique app name for this test
-    USER_ID_GPT = "user_1_gpt"
-    SESSION_ID_GPT = "session_001_gpt" # Using a fixed ID for simplicity
+    // Define constants for identifying the interaction context
+    const APP_NAME_GPT = "weather_tutorial_app_gpt"; // Unique app name for this test
+    const USER_ID_GPT = "user_1_gpt";
+    const SESSION_ID_GPT = "session_001_gpt"; // Using a fixed ID for simplicity
 
-    # Create the specific session where the conversation will happen
-    session_gpt = session_service_gpt.create_session(
-        app_name=APP_NAME_GPT,
-        user_id=USER_ID_GPT,
-        session_id=SESSION_ID_GPT
-    )
-    print(f"Session created: App='{APP_NAME_GPT}', User='{USER_ID_GPT}', Session='{SESSION_ID_GPT}'")
+    // Create the specific session where the conversation will happen
+    const session_gpt = session_service_gpt.createSession({
+        appName: APP_NAME_GPT,
+        userId: USER_ID_GPT,
+        sessionId: SESSION_ID_GPT
+    });
+    console.log(`Session created: App='${APP_NAME_GPT}', User='${USER_ID_GPT}', Session='${SESSION_ID_GPT}'`);
 
-    # Create a runner specific to this agent and its session service
-    runner_gpt = Runner(
-        agent=weather_agent_gpt,
-        app_name=APP_NAME_GPT,       # Use the specific app name
-        session_service=session_service_gpt # Use the specific session service
-        )
-    print(f"Runner created for agent '{runner_gpt.agent.name}'.")
+    // Create a runner specific to this agent and its session service
+    runner_gpt = new Runner({
+        agent: weather_agent_gpt,
+        appName: APP_NAME_GPT,       // Use the specific app name
+        sessionService: session_service_gpt // Use the specific session service
+    });
+    console.log(`Runner created for agent '${runner_gpt.agent.name}'`);
 
-    # --- Test the GPT Agent ---
-    print("\n--- Testing GPT Agent ---")
-    # Ensure call_agent_async uses the correct runner, user_id, session_id
-    await call_agent_async(query = "What's the weather in Tokyo?",
-                           runner=runner_gpt,
-                           user_id=USER_ID_GPT,
-                           session_id=SESSION_ID_GPT)
-    # --- OR ---
+    // --- Test the GPT Agent ---
+    console.log("\n--- Testing GPT Agent ---");
+    // Call the agent with the appropriate runner and session info
+    call_agent_async("What's the weather in Tokyo?", runner_gpt, USER_ID_GPT, SESSION_ID_GPT).then(result => {
+        console.log(result);
+    }).catch(error => {
+        console.error(`An error occurred: ${error}`);
+    });
 
-    # Uncomment the following lines if running as a standard Python script (.py file):
-    # import asyncio
-    # if __name__ == "__main__":
-    #     try:
-    #         asyncio.run(call_agent_async(query = "What's the weather in Tokyo?",
-    #                      runner=runner_gpt,
-    #                       user_id=USER_ID_GPT,
-    #                       session_id=SESSION_ID_GPT)
-    #     except Exception as e:
-    #         print(f"An error occurred: {e}")
-
-except Exception as e:
-    print(f"❌ Could not create or run GPT agent '{MODEL_GPT_4O}'. Check API Key and model name. Error: {e}")
+} catch (error) {
+    console.error(`❌ Could not create or run GPT agent '${MODEL_GPT_4O}'. Check API Key and model name. Error: ${error}`);
+}
 
 ```
 
 Next, we'll do the same for Anthropic's Claude Sonnet.
 
 
-```python
-# @title Define and Test Claude Agent
+```typescript
+// @title Define and Test Claude Agent
 
-# Make sure 'get_weather' function from Step 1 is defined in your environment.
-# Make sure 'call_agent_async' is defined from earlier.
+// Make sure 'get_weather' function from Step 1 is defined in your environment.
+// Make sure 'call_agent_async' is defined from earlier.
 
-# --- Agent using Claude Sonnet ---
-weather_agent_claude = None # Initialize to None
-runner_claude = None      # Initialize runner to None
+// --- Agent using Claude Sonnet ---
+let weather_agent_claude: LlmAgent | null = null; // Initialize to null
+let runner_claude: InMemoryRunner | null = null;      // Initialize runner to null
 
-try:
-    weather_agent_claude = Agent(
-        name="weather_agent_claude",
-        # Key change: Wrap the LiteLLM model identifier
-        model=LiteLlm(model=MODEL_CLAUDE_SONNET),
-        description="Provides weather information (using Claude Sonnet).",
-        instruction="You are a helpful weather assistant powered by Claude Sonnet. "
+try {
+    weather_agent_claude = new LlmAgent({
+        name: "weather_agent_claude",
+        // Key change: Wrap the LiteLLM model identifier
+        model: new LiteLlm({ model: MODEL_CLAUDE_SONNET }),
+        description: "Provides weather information (using Claude Sonnet).",
+        instruction: "You are a helpful weather assistant powered by Claude Sonnet. "
                     "Use the 'get_weather' tool for city weather requests. "
                     "Analyze the tool's dictionary output ('status', 'report'/'error_message'). "
                     "Clearly present successful reports or polite error messages.",
-        tools=[get_weather], # Re-use the same tool
-    )
-    print(f"Agent '{weather_agent_claude.name}' created using model '{MODEL_CLAUDE_SONNET}'.")
+        tools: [weatherTool], // Use the same FunctionTool
+    });
+    console.log(`Agent '${weather_agent_claude.name}' created using model '${MODEL_CLAUDE_SONNET}'`);
 
-    # InMemorySessionService is simple, non-persistent storage for this tutorial.
-    session_service_claude = InMemorySessionService() # Create a dedicated service
+    // InMemorySessionService is simple, non-persistent storage for this tutorial.
+    const session_service_claude = new InMemorySessionService(); // Create a dedicated service
 
-    # Define constants for identifying the interaction context
-    APP_NAME_CLAUDE = "weather_tutorial_app_claude" # Unique app name
-    USER_ID_CLAUDE = "user_1_claude"
-    SESSION_ID_CLAUDE = "session_001_claude" # Using a fixed ID for simplicity
+    // Define constants for identifying the interaction context
+    const APP_NAME_CLAUDE = "weather_tutorial_app_claude"; // Unique app name
+    const USER_ID_CLAUDE = "user_1_claude";
+    const SESSION_ID_CLAUDE = "session_001_claude"; // Using a fixed ID for simplicity
 
-    # Create the specific session where the conversation will happen
-    session_claude = session_service_claude.create_session(
-        app_name=APP_NAME_CLAUDE,
-        user_id=USER_ID_CLAUDE,
-        session_id=SESSION_ID_CLAUDE
-    )
-    print(f"Session created: App='{APP_NAME_CLAUDE}', User='{USER_ID_CLAUDE}', Session='{SESSION_ID_CLAUDE}'")
+    // Create the specific session where the conversation will happen
+    const session_claude = session_service_claude.createSession({
+        appName: APP_NAME_CLAUDE,
+        userId: USER_ID_CLAUDE,
+        sessionId: SESSION_ID_CLAUDE
+    });
+    console.log(`Session created: App='${APP_NAME_CLAUDE}', User='${USER_ID_CLAUDE}', Session='${SESSION_ID_CLAUDE}'`);
 
-    # Create a runner specific to this agent and its session service
-    runner_claude = Runner(
-        agent=weather_agent_claude,
-        app_name=APP_NAME_CLAUDE,       # Use the specific app name
-        session_service=session_service_claude # Use the specific session service
-        )
-    print(f"Runner created for agent '{runner_claude.agent.name}'.")
+    // Create a runner specific to this agent and its session service
+    runner_claude = new Runner({
+        agent: weather_agent_claude,
+        appName: APP_NAME_CLAUDE,       // Use the specific app name
+        sessionService: session_service_claude // Use the specific session service
+    });
+    console.log(`Runner created for agent '${runner_claude.agent.name}'`);
 
-    # --- Test the Claude Agent ---
-    print("\n--- Testing Claude Agent ---")
-    # Ensure call_agent_async uses the correct runner, user_id, session_id
-    await call_agent_async(query = "Weather in London please.",
-                           runner=runner_claude,
-                           user_id=USER_ID_CLAUDE,
-                           session_id=SESSION_ID_CLAUDE)
+    // --- Test the Claude Agent ---
+    console.log("\n--- Testing Claude Agent ---");
+    // Call the agent with the appropriate runner and session info
+    call_agent_async("Weather in London please.", runner_claude, USER_ID_CLAUDE, SESSION_ID_CLAUDE).then(result => {
+        console.log(result);
+    }).catch(error => {
+        console.error(`An error occurred: ${error}`);
+    });
 
-    # --- OR ---
-
-    # Uncomment the following lines if running as a standard Python script (.py file):
-    # import asyncio
-    # if __name__ == "__main__":
-    #     try:
-    #         asyncio.run(call_agent_async(query = "Weather in London please.",
-    #                      runner=runner_claude,
-    #                       user_id=USER_ID_CLAUDE,
-    #                       session_id=SESSION_ID_CLAUDE)
-    #     except Exception as e:
-    #         print(f"An error occurred: {e}")
-
-
-except Exception as e:
-    print(f"❌ Could not create or run Claude agent '{MODEL_CLAUDE_SONNET}'. Check API Key and model name. Error: {e}")
+} catch (error) {
+    console.error(`❌ Could not create or run Claude agent '${MODEL_CLAUDE_SONNET}'. Check API Key and model name. Error: ${error}`);
+}
 ```
 
 Observe the output carefully from both code blocks. You should see:
@@ -655,37 +677,72 @@ A more robust approach is to build an **Agent Team**. This involves:
 
 **1\. Define Tools for Sub-Agents**
 
-First, let's create the simple Python functions that will serve as tools for our new specialist agents. Remember, clear docstrings are vital for the agents that will use them.
+First, let's create the simple TypeScript functions that will serve as tools for our new specialist agents. Remember, clear docstrings are vital for the agents that will use them.
 
 
-```python
-# @title Define Tools for Greeting and Farewell Agents
+```typescript
+// @title Define Tools for Greeting and Farewell Agents
 
-# Ensure 'get_weather' from Step 1 is available if running this step independently.
-# def get_weather(city: str) -> dict: ... (from Step 1)
+// Greeting function with proper parameters structure
+async function say_hello(
+    params: Record<string, any>,
+    context?: ToolContext
+): Promise<string> {
+    const name = params.name || "there"; // Default to "there" if not provided
+    console.log(`--- Tool: say_hello called with name: ${name} ---`);
+    return `Hello, ${name}!`;
+}
 
-def say_hello(name: str = "there") -> str:
-    """Provides a simple greeting, optionally addressing the user by name.
+// Farewell function with proper parameters structure
+async function say_goodbye(
+    params: Record<string, any>,
+    context?: ToolContext
+): Promise<string> {
+    console.log(`--- Tool: say_goodbye called ---`);
+    return "Goodbye! Have a great day.";
+}
 
-    Args:
-        name (str, optional): The name of the person to greet. Defaults to "there".
+// Create FunctionTool wrappers
+const helloTool = new FunctionTool({
+    name: 'say_hello',
+    description: 'Provides a simple greeting, optionally addressing the user by name.',
+    fn: say_hello,
+    functionDeclaration: {
+        name: 'say_hello',
+        description: 'Provides a simple greeting, optionally addressing the user by name.',
+        parameters: {
+            type: 'object',
+            properties: {
+                name: {
+                    type: 'string',
+                    description: 'The name of the person to greet. Defaults to "there" if not provided.'
+                }
+            },
+            required: []
+        }
+    }
+});
 
-    Returns:
-        str: A friendly greeting message.
-    """
-    print(f"--- Tool: say_hello called with name: {name} ---")
-    return f"Hello, {name}!"
+const goodbyeTool = new FunctionTool({
+    name: 'say_goodbye',
+    description: 'Provides a simple farewell message to conclude the conversation.',
+    fn: say_goodbye,
+    functionDeclaration: {
+        name: 'say_goodbye',
+        description: 'Provides a simple farewell message to conclude the conversation.',
+        parameters: {
+            type: 'object',
+            properties: {},
+            required: []
+        }
+    }
+});
 
-def say_goodbye() -> str:
-    """Provides a simple farewell message to conclude the conversation."""
-    print(f"--- Tool: say_goodbye called ---")
-    return "Goodbye! Have a great day."
+console.log("Greeting and Farewell tools defined.");
 
-print("Greeting and Farewell tools defined.")
-
-# Optional self-test
-print(say_hello("Alice"))
-print(say_goodbye())
+// Example tool usage (optional test)
+say_hello({ name: "Alice" }, undefined).then(console.log);
+say_goodbye({}, undefined).then(console.log);
 ```
 
 ---
@@ -699,51 +756,48 @@ Now, create the `Agent` instances for our specialists. Notice their highly focus
 **Best Practice:** Sub-agent `instruction` fields should be tailored to their limited scope, telling them exactly what to do and *what not* to do (e.g., "Your *only* task is...").
 
 
-```python
-# @title Define Greeting and Farewell Sub-Agents
+```typescript
+// @title Define Greeting and Farewell Sub-Agents
 
-# If you want to use models other than Gemini, Ensure LiteLlm is imported and API keys are set (from Step 0/2)
-# from google.adk.models.lite_llm import LiteLlm
-# MODEL_GPT_4O, MODEL_CLAUDE_SONNET etc. should be defined
-# Or else, continue to use: model = MODEL_GEMINI_2_0_FLASH
+// --- Greeting Agent ---
+let greeting_agent: LlmAgent | null = null;
+try {
+    greeting_agent = new LlmAgent({
+        // Using a potentially different/cheaper model for a simple task
+        model: MODEL_GEMINI_2_0_FLASH,
+        // model: new LiteLlm({ model: MODEL_GPT_4O }), // If you would like to experiment with other models
+        name: "greeting_agent",
+        instruction: "You are the Greeting Agent. Your ONLY task is to provide a friendly greeting to the user. "
+                   + "Use the 'say_hello' tool to generate the greeting. "
+                   + "If the user provides their name, make sure to pass it to the tool. "
+                   + "Do not engage in any other conversation or tasks.",
+        description: "Handles simple greetings and hellos using the 'say_hello' tool.", // Crucial for delegation
+        tools: [helloTool], // Use the FunctionTool wrapper
+    });
+    console.log(`✅ Agent '${greeting_agent.name}' created using model '${greeting_agent.model}'`);
+} catch (error) {
+    console.error(`❌ Could not create Greeting agent. Check API Key (${greeting_agent?.model}). Error: ${error}`);
+}
 
-# --- Greeting Agent ---
-greeting_agent = None
-try:
-    greeting_agent = Agent(
-        # Using a potentially different/cheaper model for a simple task
-        model = MODEL_GEMINI_2_0_FLASH,
-        # model=LiteLlm(model=MODEL_GPT_4O), # If you would like to experiment with other models
-        name="greeting_agent",
-        instruction="You are the Greeting Agent. Your ONLY task is to provide a friendly greeting to the user. "
-                    "Use the 'say_hello' tool to generate the greeting. "
-                    "If the user provides their name, make sure to pass it to the tool. "
-                    "Do not engage in any other conversation or tasks.",
-        description="Handles simple greetings and hellos using the 'say_hello' tool.", # Crucial for delegation
-        tools=[say_hello],
-    )
-    print(f"✅ Agent '{greeting_agent.name}' created using model '{greeting_agent.model}'.")
-except Exception as e:
-    print(f"❌ Could not create Greeting agent. Check API Key ({greeting_agent.model}). Error: {e}")
-
-# --- Farewell Agent ---
-farewell_agent = None
-try:
-    farewell_agent = Agent(
-        # Can use the same or a different model
-        model = MODEL_GEMINI_2_0_FLASH,
-        # model=LiteLlm(model=MODEL_GPT_4O), # If you would like to experiment with other models
-        name="farewell_agent",
-        instruction="You are the Farewell Agent. Your ONLY task is to provide a polite goodbye message. "
-                    "Use the 'say_goodbye' tool when the user indicates they are leaving or ending the conversation "
-                    "(e.g., using words like 'bye', 'goodbye', 'thanks bye', 'see you'). "
-                    "Do not perform any other actions.",
-        description="Handles simple farewells and goodbyes using the 'say_goodbye' tool.", # Crucial for delegation
-        tools=[say_goodbye],
-    )
-    print(f"✅ Agent '{farewell_agent.name}' created using model '{farewell_agent.model}'.")
-except Exception as e:
-    print(f"❌ Could not create Farewell agent. Check API Key ({farewell_agent.model}). Error: {e}")
+// --- Farewell Agent ---
+let farewell_agent: LlmAgent | null = null;
+try {
+    farewell_agent = new LlmAgent({
+        // Can use the same or a different model
+        model: MODEL_GEMINI_2_0_FLASH,
+        // model: new LiteLlm({ model: MODEL_GPT_4O }), // If you would like to experiment with other models
+        name: "farewell_agent",
+        instruction: "You are the Farewell Agent. Your ONLY task is to provide a polite goodbye message. "
+                   + "Use the 'say_goodbye' tool when the user indicates they are leaving or ending the conversation "
+                   + "(e.g., using words like 'bye', 'goodbye', 'thanks bye', 'see you'). "
+                   + "Do not perform any other actions.",
+        description: "Handles simple farewells and goodbyes using the 'say_goodbye' tool.", // Crucial for delegation
+        tools: [goodbyeTool], // Use the FunctionTool wrapper
+    });
+    console.log(`✅ Agent '${farewell_agent.name}' created using model '${farewell_agent.model}'`);
+} catch (error) {
+    console.error(`❌ Could not create Farewell agent. Check API Key (${farewell_agent?.model}). Error: ${error}`);
+}
 ```
 
 ---
@@ -760,23 +814,23 @@ Now, we upgrade our `weather_agent`. The key changes are:
 **Best Practice:** Ensure the root agent's instructions clearly guide its delegation decisions. Mention the sub-agents by name and describe the conditions under which delegation should occur.
 
 
-```python
-# @title Define the Root Agent with Sub-Agents
+```typescript
+// @title Define the Root Agent with Sub-Agents
 
-# Ensure sub-agents were created successfully before defining the root agent.
-# Also ensure the original 'get_weather' tool is defined.
-root_agent = None
-runner_root = None # Initialize runner
+// Ensure sub-agents were created successfully before defining the root agent.
+// Also ensure the original 'get_weather' tool is defined.
+let root_agent: LlmAgent | null = null;
+let runner_root: InMemoryRunner | null = null; // Initialize runner
 
-if greeting_agent and farewell_agent and 'get_weather' in globals():
-    # Let's use a capable Gemini model for the root agent to handle orchestration
-    root_agent_model = MODEL_GEMINI_2_0_FLASH
+if (greeting_agent && farewell_agent && 'get_weather' in globalThis) {
+    // Let's use a capable Gemini model for the root agent to handle orchestration
+    const root_agent_model = MODEL_GEMINI_2_0_FLASH;
 
-    weather_agent_team = Agent(
-        name="weather_agent_v2", # Give it a new version name
-        model=root_agent_model,
-        description="The main coordinator agent. Handles weather requests and delegates greetings/farewells to specialists.",
-        instruction="You are the main Weather Agent coordinating a team. Your primary responsibility is to provide weather information. "
+    const weather_agent_team = new LlmAgent({
+        name: "weather_agent_v2", // Give it a new version name
+        model: root_agent_model,
+        description: "The main coordinator agent. Handles weather requests and delegates greetings/farewells to specialists.",
+        instruction: "You are the main Weather Agent coordinating a team. Your primary responsibility is to provide weather information. "
                     "Use the 'get_weather' tool ONLY for specific weather requests (e.g., 'weather in London'). "
                     "You have specialized sub-agents: "
                     "1. 'greeting_agent': Handles simple greetings like 'Hi', 'Hello'. Delegate to it for these. "
@@ -784,18 +838,18 @@ if greeting_agent and farewell_agent and 'get_weather' in globals():
                     "Analyze the user's query. If it's a greeting, delegate to 'greeting_agent'. If it's a farewell, delegate to 'farewell_agent'. "
                     "If it's a weather request, handle it yourself using 'get_weather'. "
                     "For anything else, respond appropriately or state you cannot handle it.",
-        tools=[get_weather], # Root agent still needs the weather tool for its core task
-        # Key change: Link the sub-agents here!
-        sub_agents=[greeting_agent, farewell_agent]
-    )
-    print(f"✅ Root Agent '{weather_agent_team.name}' created using model '{root_agent_model}' with sub-agents: {[sa.name for sa in weather_agent_team.sub_agents]}")
+        tools: [weatherTool], // Root agent still needs the weather tool for its core task
+        // Key change: Link the sub-agents here!
+        sub_agents: [greeting_agent, farewell_agent]
+    });
+    console.log(`✅ Root Agent '${weather_agent_team.name}' created using model '${root_agent_model}' with sub-agents: [${weather_agent_team.sub_agents.map(sa => sa.name).join(', ')}]`);
 
-else:
-    print("❌ Cannot create root agent because one or more sub-agents failed to initialize or 'get_weather' tool is missing.")
-    if not greeting_agent: print(" - Greeting Agent is missing.")
-    if not farewell_agent: print(" - Farewell Agent is missing.")
-    if 'get_weather' not in globals(): print(" - get_weather function is missing.")
-
+} else {
+    console.error("❌ Cannot create root agent because one or more sub-agents failed to initialize or 'get_weather' tool is missing.");
+    if (!greeting_agent) console.error(" - Greeting Agent is missing.");
+    if (!farewell_agent) console.error(" - Farewell Agent is missing.");
+    if (!'get_weather' in globalThis) console.error(" - get_weather function is missing.");
+}
 
 ```
 
@@ -824,90 +878,81 @@ We expect the following flow:
 
 
 
-```python
-# @title Interact with the Agent Team
-import asyncio # Ensure asyncio is imported
+```typescript
+// @title Interact with the Agent Team
 
-# Ensure the root agent (e.g., 'weather_agent_team' or 'root_agent' from the previous cell) is defined.
-# Ensure the call_agent_async function is defined.
+// Ensure the root agent (e.g., 'weather_agent_team' or 'root_agent' from the previous cell) is defined.
+// Ensure the call_agent_async function is defined.
 
-# Check if the root agent variable exists before defining the conversation function
-root_agent_var_name = 'root_agent' # Default name from Step 3 guide
-if 'weather_agent_team' in globals(): # Check if user used this name instead
-    root_agent_var_name = 'weather_agent_team'
-elif 'root_agent' not in globals():
-    print("⚠️ Root agent ('root_agent' or 'weather_agent_team') not found. Cannot define run_team_conversation.")
-    # Assign a dummy value to prevent NameError later if the code block runs anyway
-    root_agent = None # Or set a flag to prevent execution
+// Check if the root agent variable exists before defining the conversation function
+let root_agent_var_name = 'root_agent'; // Default name from Step 3 guide
+if ('weather_agent_team' in globalThis) { // Check if user used this name instead
+    root_agent_var_name = 'weather_agent_team';
+} else if (!('root_agent' in globalThis)) {
+    console.warn("⚠️ Root agent ('root_agent' or 'weather_agent_team') not found. Cannot define run_team_conversation.");
+    // Assign a dummy value to prevent NameError later if the code block runs anyway
+    root_agent = null; // Or set a flag to prevent execution
+}
 
-# Only define and run if the root agent exists
-if root_agent_var_name in globals() and globals()[root_agent_var_name]:
-    # Define the main async function for the conversation logic.
-    # The 'await' keywords INSIDE this function are necessary for async operations.
-    async def run_team_conversation():
-        print("\n--- Testing Agent Team Delegation ---")
-        session_service = InMemorySessionService()
-        APP_NAME = "weather_tutorial_agent_team"
-        USER_ID = "user_1_agent_team"
-        SESSION_ID = "session_001_agent_team"
-        session = session_service.create_session(
-            app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
-        )
-        print(f"Session created: App='{APP_NAME}', User='{USER_ID}', Session='{SESSION_ID}'")
+// Only define and run if the root agent exists
+if (root_agent_var_name in globalThis && globalThis[root_agent_var_name]) {
+    // Define the main async function for the conversation logic.
+    // The 'await' keywords INSIDE this function are necessary for async operations.
+    async function run_team_conversation() {
+        console.log("\n--- Testing Agent Team Delegation ---");
+        const session_service = new InMemorySessionService();
+        const APP_NAME = "weather_tutorial_agent_team";
+        const USER_ID = "user_1_agent_team";
+        const SESSION_ID = "session_001_agent_team";
+        const session = session_service.createSession(
+            APP_NAME,
+            USER_ID,
+            SESSION_ID
+        );
+        console.log(`Session created: App='${APP_NAME}', User='${USER_ID}', Session='${SESSION_ID}'`);
 
-        actual_root_agent = globals()[root_agent_var_name]
-        runner_agent_team = Runner( # Or use InMemoryRunner
-            agent=actual_root_agent,
-            app_name=APP_NAME,
-            session_service=session_service
-        )
-        print(f"Runner created for agent '{actual_root_agent.name}'.")
+        const actual_root_agent = globalThis[root_agent_var_name];
+        const runner_agent_team = new InMemoryRunner({
+            agent: actual_root_agent,
+            app_name: APP_NAME,
+            session_service: session_service // Uses our session manager
+        });
+        console.log(`Runner created for agent '${actual_root_agent.name}'`);
 
-        # --- Interactions using await (correct within async def) ---
-        await call_agent_async(query = "Hello there!",
-                               runner=runner_agent_team,
-                               user_id=USER_ID,
-                               session_id=SESSION_ID)
-        await call_agent_async(query = "What is the weather in New York?",
-                               runner=runner_agent_team,
-                               user_id=USER_ID,
-                               session_id=SESSION_ID)
-        await call_agent_async(query = "Thanks, bye!",
-                               runner=runner_agent_team,
-                               user_id=USER_ID,
-                               session_id=SESSION_ID)
+        // --- Interactions using await (correct within async function) ---
+        await call_agent_async("Hello there!", runner_agent_team, USER_ID, SESSION_ID);
+        await call_agent_async("What is the weather in New York?", runner_agent_team, USER_ID, SESSION_ID);
+        await call_agent_async("Thanks, bye!", runner_agent_team, USER_ID, SESSION_ID);
+    }
 
-    # --- Execute the `run_team_conversation` async function ---
-    # Choose ONE of the methods below based on your environment.
-    # Note: This may require API keys for the models used!
+    // --- Execute the `run_team_conversation` async function ---
+    // Choose ONE of the methods below based on your environment.
+    // Note: This may require API keys for the models used!
 
-    # METHOD 1: Direct await (Default for Notebooks/Async REPLs)
-    # If your environment supports top-level await (like Colab/Jupyter notebooks),
-    # it means an event loop is already running, so you can directly await the function.
-    print("Attempting execution using 'await' (default for notebooks)...")
-    await run_team_conversation()
+    // METHOD 1: Direct Promise handling (Default for Node.js/TypeScript)
+    console.log("Executing run_team_conversation using Promise...");
+    run_team_conversation().then(() => {
+        console.log("Team conversation completed successfully");
+    }).catch(error => {
+        console.error(`An error occurred: ${error}`);
+    });
 
-    # METHOD 2: asyncio.run (For Standard Python Scripts [.py])
-    # If running this code as a standard Python script from your terminal,
-    # the script context is synchronous. `asyncio.run()` is needed to
-    # create and manage an event loop to execute your async function.
-    # To use this method:
-    # 1. Comment out the `await run_team_conversation()` line above.
-    # 2. Uncomment the following block:
-    """
-    import asyncio
-    if __name__ == "__main__": # Ensures this runs only when script is executed directly
-        print("Executing using 'asyncio.run()' (for standard Python scripts)...")
-        try:
-            # This creates an event loop, runs your async function, and closes the loop.
-            asyncio.run(run_team_conversation())
-        except Exception as e:
-            print(f"An error occurred: {e}")
-    """
-
-else:
-    # This message prints if the root agent variable wasn't found earlier
-    print("\n⚠️ Skipping agent team conversation execution as the root agent was not successfully defined in a previous step.")
+    // METHOD 2: For Standard Node.js Scripts (.ts)
+    // If running this code as a standard Node.js script from your terminal
+    // To use this method:
+    // 1. Comment out the Promise-based execution above
+    // 2. Uncomment the following block:
+    /**
+    if (require.main === module) {
+        console.log("Executing run_team_conversation as main module...");
+        run_team_conversation().then(() => {
+            console.log("Team conversation completed successfully");
+        }).catch(error => {
+            console.error(`An error occurred: ${error}`);
+        });
+    }
+    */
+}
 ```
 
 ---
@@ -928,7 +973,7 @@ So far, our agent team can handle different tasks through delegation, but each i
 
 **What is Session State?**
 
-* It's a Python dictionary (`session.state`) tied to a specific user session (identified by `APP_NAME`, `USER_ID`, `SESSION_ID`).  
+* It's a TypeScript dictionary (`session.state`) tied to a specific user session (identified by `APP_NAME`, `USER_ID`, `SESSION_ID`).  
 * It persists information *across multiple conversational turns* within that session.  
 * Agents and Tools can read from and write to this state, allowing them to remember details, adapt behavior, and personalize responses.
 
@@ -952,43 +997,47 @@ So far, our agent team can handle different tasks through delegation, but each i
 To clearly demonstrate state management without interference from prior steps, we'll instantiate a new `InMemorySessionService`. We'll also create a session with an initial state defining the user's preferred temperature unit.
 
 
-```python
-# @title 1. Initialize New Session Service and State
+```typescript
+// @title 1. Initialize New Session Service and State
 
-# Import necessary session components
-from google.adk.sessions import InMemorySessionService
+// Import necessary session components
+import { InMemorySessionService } from 'adk-typescript/sessions';
 
-# Create a NEW session service instance for this state demonstration
-session_service_stateful = InMemorySessionService()
-print("✅ New InMemorySessionService created for state demonstration.")
+// Create a NEW session service instance for this state demonstration
+const session_service_stateful = new InMemorySessionService();
+console.log("✅ New InMemorySessionService created for state demonstration.");
 
-# Define a NEW session ID for this part of the tutorial
-SESSION_ID_STATEFUL = "session_state_demo_001"
-USER_ID_STATEFUL = "user_state_demo"
+// Define a NEW session ID for this part of the tutorial
+const SESSION_ID_STATEFUL = "session_state_demo_001";
+const USER_ID_STATEFUL = "user_state_demo";
 
-# Define initial state data - user prefers Celsius initially
-initial_state = {
+// Define initial state data - user prefers Celsius initially
+const initial_state = {
     "user_preference_temperature_unit": "Celsius"
-}
+};
 
-# Create the session, providing the initial state
-session_stateful = session_service_stateful.create_session(
-    app_name=APP_NAME, # Use the consistent app name
-    user_id=USER_ID_STATEFUL,
-    session_id=SESSION_ID_STATEFUL,
-    state=initial_state # <<< Initialize state during creation
-)
-print(f"✅ Session '{SESSION_ID_STATEFUL}' created for user '{USER_ID_STATEFUL}'.")
+// Create the session, providing the initial state
+const session_stateful = session_service_stateful.createSession({
+    appName: APP_NAME, // Use the consistent app name
+    userId: USER_ID_STATEFUL,
+    sessionId: SESSION_ID_STATEFUL,
+    state: initial_state // Initialize state during creation
+});
+console.log(`✅ Session '${SESSION_ID_STATEFUL}' created for user '${USER_ID_STATEFUL}'`);
 
-# Verify the initial state was set correctly
-retrieved_session = session_service_stateful.get_session(app_name=APP_NAME,
-                                                         user_id=USER_ID_STATEFUL,
-                                                         session_id = SESSION_ID_STATEFUL)
-print("\n--- Initial Session State ---")
-if retrieved_session:
-    print(retrieved_session.state)
-else:
-    print("Error: Could not retrieve session.")
+// Verify the initial state was set correctly
+session_service_stateful.getSession({
+    appName: APP_NAME,
+    userId: USER_ID_STATEFUL,
+    sessionId: SESSION_ID_STATEFUL
+}).then(retrieved_session => {
+    console.log("\n--- Initial Session State ---");
+    if (retrieved_session) {
+        console.log(retrieved_session.state);
+    } else {
+        console.error("Error: Could not retrieve session.");
+    }
+});
 ```
 
 ---
@@ -1004,56 +1053,90 @@ Now, we create a new version of the weather tool. Its key feature is accepting `
 * **Best Practice:** When reading from state, use `dictionary.get('key', default_value)` to handle cases where the key might not exist yet, ensuring your tool doesn't crash.
 
 
-```python
-from google.adk.tools.tool_context import ToolContext
+```typescript
+// Define stateful weather tool
+import { ToolContext } from 'adk-typescript/tools';
 
-def get_weather_stateful(city: str, tool_context: ToolContext) -> dict:
-    """Retrieves weather, converts temp unit based on session state."""
-    print(f"--- Tool: get_weather_stateful called for {city} ---")
+async function get_weather_stateful(
+    params: Record<string, any>,
+    toolContext: ToolContext
+): Promise<any> {
+    const city = params.city;
+    console.log(`--- Tool: get_weather_stateful called for ${city} ---`);
 
-    # --- Read preference from state ---
-    preferred_unit = tool_context.state.get("user_preference_temperature_unit", "Celsius") # Default to Celsius
-    print(f"--- Tool: Reading state 'user_preference_temperature_unit': {preferred_unit} ---")
+    // --- Read preference from state ---
+    const preferred_unit = toolContext.state.get("user_preference_temperature_unit", "Celsius"); // Default to Celsius
+    console.log(`--- Tool: Reading state 'user_preference_temperature_unit': ${preferred_unit} ---`);
 
-    city_normalized = city.lower().replace(" ", "")
+    const cityNormalized = city.toLowerCase().replace(" ", "");
 
-    # Mock weather data (always stored in Celsius internally)
-    mock_weather_db = {
-        "newyork": {"temp_c": 25, "condition": "sunny"},
-        "london": {"temp_c": 15, "condition": "cloudy"},
-        "tokyo": {"temp_c": 18, "condition": "light rain"},
+    // Mock weather data (always stored in Celsius internally)
+    const mock_weather_db: Record<string, any> = {
+        "newyork": { temp_c: 25, condition: "sunny" },
+        "london": { temp_c: 15, condition: "cloudy" },
+        "tokyo": { temp_c: 18, condition: "light rain" },
+    };
+
+    if (mock_weather_db[cityNormalized]) {
+        const data = mock_weather_db[cityNormalized];
+        const temp_c = data.temp_c;
+        const condition = data.condition;
+
+        // Format temperature based on state preference
+        let temp_value: number;
+        let temp_unit: string;
+        if (preferred_unit === "Fahrenheit") {
+            temp_value = (temp_c * 9/5) + 32; // Calculate Fahrenheit
+            temp_unit = "°F";
+        } else { // Default to Celsius
+            temp_value = temp_c;
+            temp_unit = "°C";
+        }
+
+        const report = `The weather in ${city.charAt(0).toUpperCase() + city.slice(1)} is ${condition} with a temperature of ${temp_value.toFixed(0)}${temp_unit}.`;
+        const result = { status: "success", report: report };
+        console.log(`--- Tool: Generated report in ${preferred_unit}. Result: ${JSON.stringify(result)} ---`);
+
+        // Example of writing back to state (optional for this tool)
+        toolContext.state["last_city_checked_stateful"] = city;
+        console.log(`--- Tool: Updated state 'last_city_checked_stateful': ${city} ---`);
+
+        return result;
+    } else {
+        // Handle city not found
+        const error_msg = `Sorry, I don't have weather information for '${city}'`;
+        console.log(`--- Tool: City '${city}' not found. ---`);
+        return { status: "error", error_message: error_msg };
     }
+}
 
-    if city_normalized in mock_weather_db:
-        data = mock_weather_db[city_normalized]
-        temp_c = data["temp_c"]
-        condition = data["condition"]
+// Create a FunctionTool wrapper for the stateful weather function
+const weatherStatefulTool = new FunctionTool({
+    name: 'get_weather_stateful',
+    description: 'Gets the current weather for a specific location, using unit preferences from state.',
+    fn: get_weather_stateful,
+    functionDeclaration: {
+        name: 'get_weather_stateful',
+        description: 'Gets the current weather for a specific location, using unit preferences from state.',
+        parameters: {
+            type: 'object',
+            properties: {
+                city: {
+                    type: 'string',
+                    description: 'The city, address, or general location to get weather for.',
+                }
+            },
+            required: ['city']
+        }
+    }
+});
 
-        # Format temperature based on state preference
-        if preferred_unit == "Fahrenheit":
-            temp_value = (temp_c * 9/5) + 32 # Calculate Fahrenheit
-            temp_unit = "°F"
-        else: # Default to Celsius
-            temp_value = temp_c
-            temp_unit = "°C"
-
-        report = f"The weather in {city.capitalize()} is {condition} with a temperature of {temp_value:.0f}{temp_unit}."
-        result = {"status": "success", "report": report}
-        print(f"--- Tool: Generated report in {preferred_unit}. Result: {result} ---")
-
-        # Example of writing back to state (optional for this tool)
-        tool_context.state["last_city_checked_stateful"] = city
-        print(f"--- Tool: Updated state 'last_city_checked_stateful': {city} ---")
-
-        return result
-    else:
-        # Handle city not found
-        error_msg = f"Sorry, I don't have weather information for '{city}'."
-        print(f"--- Tool: City '{city}' not found. ---")
-        return {"status": "error", "error_message": error_msg}
-
-print("✅ State-aware 'get_weather_stateful' tool defined.")
-
+// We would use this tool in our agent like this:
+// const agent = new LlmAgent({
+//     ...
+//     tools: [weatherStatefulTool],
+//     ...
+// });
 ```
 
 ---
@@ -1067,80 +1150,83 @@ To ensure this step is self-contained and builds correctly, we first redefine th
 * **Crucially**, it sets `output_key="last_weather_report"` which automatically saves its final weather response to the session state.
 
 
-```python
-# @title 3. Redefine Sub-Agents and Update Root Agent with output_key
+```typescript
+// @title 3. Redefine Sub-Agents and Update Root Agent with output_key
 
-# Ensure necessary imports: Agent, LiteLlm, Runner
-from google.adk.agents import Agent
-from google.adk.models.lite_llm import LiteLlm
-from google.adk.runners import Runner
-# Ensure tools 'say_hello', 'say_goodbye' are defined (from Step 3)
-# Ensure model constants MODEL_GPT_4O, MODEL_GEMINI_2_0_FLASH etc. are defined
+// Ensure necessary imports: Agent, LiteLlm, Runner
+import { LlmAgent } from 'adk-typescript';
+import { LiteLlm } from 'adk-typescript/models';
+import { InMemoryRunner } from 'adk-typescript';
+// Ensure tools 'say_hello', 'say_goodbye' are defined (from Step 3)
+// Ensure model constants MODEL_GPT_4O, MODEL_GEMINI_2_0_FLASH etc. are defined
 
-# --- Redefine Greeting Agent (from Step 3) ---
-greeting_agent = None
-try:
-    greeting_agent = Agent(
-        model=MODEL_GEMINI_2_0_FLASH,
-        name="greeting_agent",
-        instruction="You are the Greeting Agent. Your ONLY task is to provide a friendly greeting using the 'say_hello' tool. Do nothing else.",
-        description="Handles simple greetings and hellos using the 'say_hello' tool.",
-        tools=[say_hello],
-    )
-    print(f"✅ Agent '{greeting_agent.name}' redefined.")
-except Exception as e:
-    print(f"❌ Could not redefine Greeting agent. Error: {e}")
+// --- Redefine Greeting Agent (from Step 3) ---
+let greeting_agent: LlmAgent | null = null;
+try {
+    greeting_agent = new LlmAgent({
+        model: MODEL_GEMINI_2_0_FLASH,
+        name: "greeting_agent",
+        instruction: "You are the Greeting Agent. Your ONLY task is to provide a friendly greeting using the 'say_hello' tool. Do nothing else.",
+        description: "Handles simple greetings and hellos using the 'say_hello' tool.",
+        tools: [say_hello], // Use the FunctionTool wrapper
+    });
+    console.log(`✅ Agent '${greeting_agent.name}' redefined.`);
+} catch (error) {
+    console.error(`❌ Could not redefine Greeting agent. Error: ${error}`);
+}
 
-# --- Redefine Farewell Agent (from Step 3) ---
-farewell_agent = None
-try:
-    farewell_agent = Agent(
-        model=MODEL_GEMINI_2_0_FLASH,
-        name="farewell_agent",
-        instruction="You are the Farewell Agent. Your ONLY task is to provide a polite goodbye message using the 'say_goodbye' tool. Do not perform any other actions.",
-        description="Handles simple farewells and goodbyes using the 'say_goodbye' tool.",
-        tools=[say_goodbye],
-    )
-    print(f"✅ Agent '{farewell_agent.name}' redefined.")
-except Exception as e:
-    print(f"❌ Could not redefine Farewell agent. Error: {e}")
+// --- Redefine Farewell Agent (from Step 3) ---
+let farewell_agent: LlmAgent | null = null;
+try {
+    farewell_agent = new LlmAgent({
+        model: MODEL_GEMINI_2_0_FLASH,
+        name: "farewell_agent",
+        instruction: "You are the Farewell Agent. Your ONLY task is to provide a polite goodbye message using the 'say_goodbye' tool. Do not perform any other actions.",
+        description: "Handles simple farewells and goodbyes using the 'say_goodbye' tool.",
+        tools: [say_goodbye], // Use the FunctionTool wrapper
+    });
+    console.log(`✅ Agent '${farewell_agent.name}' redefined.`);
+} catch (error) {
+    console.error(`❌ Could not redefine Farewell agent. Error: ${error}`);
+}
 
-# --- Define the Updated Root Agent ---
-root_agent_stateful = None
-runner_root_stateful = None # Initialize runner
+// --- Define the Updated Root Agent ---
+let root_agent_stateful: LlmAgent | null = null;
+let runner_root_stateful: InMemoryRunner | null = null; // Initialize runner
 
-# Check prerequisites before creating the root agent
-if greeting_agent and farewell_agent and 'get_weather_stateful' in globals():
+// Check prerequisites before creating the root agent
+if (greeting_agent && farewell_agent && 'get_weather_stateful' in globalThis) {
 
-    root_agent_model = MODEL_GEMINI_2_0_FLASH # Choose orchestration model
+    const root_agent_model = MODEL_GEMINI_2_0_FLASH; // Choose orchestration model
 
-    root_agent_stateful = Agent(
-        name="weather_agent_v4_stateful", # New version name
-        model=root_agent_model,
-        description="Main agent: Provides weather (state-aware unit), delegates greetings/farewells, saves report to state.",
-        instruction="You are the main Weather Agent. Your job is to provide weather using 'get_weather_stateful'. "
+    root_agent_stateful = new LlmAgent({
+        name: "weather_agent_v4_stateful", // New version name
+        model: root_agent_model,
+        description: "Main agent: Provides weather (state-aware unit), delegates greetings/farewells, saves report to state.",
+        instruction: "You are the main Weather Agent. Your job is to provide weather using 'get_weather_stateful'. "
                     "The tool will format the temperature based on user preference stored in state. "
                     "Delegate simple greetings to 'greeting_agent' and farewells to 'farewell_agent'. "
                     "Handle only weather requests, greetings, and farewells.",
-        tools=[get_weather_stateful], # Use the state-aware tool
-        sub_agents=[greeting_agent, farewell_agent], # Include sub-agents
-        output_key="last_weather_report" # <<< Auto-save agent's final weather response
-    )
-    print(f"✅ Root Agent '{root_agent_stateful.name}' created using stateful tool and output_key.")
+        tools: [get_weather_stateful], // Use the state-aware tool
+        sub_agents: [greeting_agent, farewell_agent], // Include sub-agents
+        output_key: "last_weather_report" // <<< Auto-save agent's final weather response
+    });
+    console.log(`✅ Root Agent '${root_agent_stateful.name}' created using stateful tool and output_key.`);
 
-    # --- Create Runner for this Root Agent & NEW Session Service ---
-    runner_root_stateful = Runner(
-        agent=root_agent_stateful,
-        app_name=APP_NAME,
-        session_service=session_service_stateful # Use the NEW stateful session service
-    )
-    print(f"✅ Runner created for stateful root agent '{runner_root_stateful.agent.name}' using stateful session service.")
+    // --- Create Runner for this Root Agent & NEW Session Service ---
+    runner_root_stateful = new InMemoryRunner({
+        agent: root_agent_stateful,
+        app_name: APP_NAME,
+        session_service: session_service_stateful // Use the NEW stateful session service
+    });
+    console.log(`✅ Runner created for stateful root agent '${runner_root_stateful.agent.name}' using stateful session service.`);
 
-else:
-    print("❌ Cannot create stateful root agent. Prerequisites missing.")
-    if not greeting_agent: print(" - greeting_agent definition missing.")
-    if not farewell_agent: print(" - farewell_agent definition missing.")
-    if 'get_weather_stateful' not in globals(): print(" - get_weather_stateful tool missing.")
+} else {
+    console.error("❌ Cannot create stateful root agent. Prerequisites missing.");
+    if (!greeting_agent) console.error(" - greeting_agent definition missing.");
+    if (!farewell_agent) console.error(" - farewell_agent definition missing.");
+    if (!'get_weather_stateful' in globalThis) console.error(" - get_weather_stateful tool missing.");
+}
 
 ```
 
@@ -1154,115 +1240,99 @@ The conversation flow will be:
 
 1.  **Check weather (London):** The `get_weather_stateful` tool should read the initial "Celsius" preference from the session state initialized in Section 1. The root agent's final response (the weather report in Celsius) should get saved to `state['last_weather_report']` via the `output_key` configuration.
 2.  **Manually update state:** We will *directly modify* the state stored within the `InMemorySessionService` instance (`session_service_stateful`).
-    *   **Why direct modification?** The `session_service.get_session()` method returns a *copy* of the session. Modifying that copy wouldn't affect the state used in subsequent agent runs. For this testing scenario with `InMemorySessionService`, we access the internal `sessions` dictionary to change the *actual* stored state value for `user_preference_temperature_unit` to "Fahrenheit". *Note: In real applications, state changes are typically triggered by tools or agent logic returning `EventActions(state_delta=...)`, not direct manual updates.*
+    *   **Why direct modification?** The `session_service.getSession()` method returns a *copy* of the session. Modifying that copy wouldn't affect the state used in subsequent agent runs. For this testing scenario with `InMemorySessionService`, we access the internal `sessions` dictionary to change the *actual* stored state value for `user_preference_temperature_unit` to "Fahrenheit". *Note: In real applications, state changes are typically triggered by tools or agent logic returning `EventActions(state_delta=...)`, not direct manual updates.*
 3.  **Check weather again (New York):** The `get_weather_stateful` tool should now read the updated "Fahrenheit" preference from the state and convert the temperature accordingly. The root agent's *new* response (weather in Fahrenheit) will overwrite the previous value in `state['last_weather_report']` due to the `output_key`.
 4.  **Greet the agent:** Verify that delegation to the `greeting_agent` still works correctly alongside the stateful operations. This interaction will become the *last* response saved by `output_key` in this specific sequence.
 5.  **Inspect final state:** After the conversation, we retrieve the session one last time (getting a copy) and print its state to confirm the `user_preference_temperature_unit` is indeed "Fahrenheit", observe the final value saved by `output_key` (which will be the greeting in this run), and see the `last_city_checked_stateful` value written by the tool.
 
 
 
-```python
-# @title 4. Interact to Test State Flow and output_key
-import asyncio # Ensure asyncio is imported
+```typescript
+// @title 4. Interact to Test State Flow and output_key
 
-# Ensure the stateful runner (runner_root_stateful) is available from the previous cell
-# Ensure call_agent_async, USER_ID_STATEFUL, SESSION_ID_STATEFUL, APP_NAME are defined
+// Ensure the stateful runner (runner_root_stateful) is available from the previous cell
+// Ensure call_agent_async, USER_ID_STATEFUL, SESSION_ID_STATEFUL, APP_NAME are defined
 
-if 'runner_root_stateful' in globals() and runner_root_stateful:
-    # Define the main async function for the stateful conversation logic.
-    # The 'await' keywords INSIDE this function are necessary for async operations.
-    async def run_stateful_conversation():
-        print("\n--- Testing State: Temp Unit Conversion & output_key ---")
+if ('runner_root_stateful' in globalThis && runner_root_stateful) {
+    // Define the main async function for the stateful conversation logic.
+    async function run_stateful_conversation() {
+        console.log("\n--- Testing State: Temp Unit Conversion & output_key ---");
 
-        # 1. Check weather (Uses initial state: Celsius)
-        print("--- Turn 1: Requesting weather in London (expect Celsius) ---")
-        await call_agent_async(query= "What's the weather in London?",
-                               runner=runner_root_stateful,
-                               user_id=USER_ID_STATEFUL,
-                               session_id=SESSION_ID_STATEFUL
-                              )
+        // 1. Check weather (Uses initial state: Celsius)
+        console.log("--- Turn 1: Requesting weather in London (expect Celsius) ---");
+        await call_agent_async("What's the weather in London?", runner_root_stateful, USER_ID_STATEFUL, SESSION_ID_STATEFUL);
 
-        # 2. Manually update state preference to Fahrenheit - DIRECTLY MODIFY STORAGE
-        print("\n--- Manually Updating State: Setting unit to Fahrenheit ---")
-        try:
-            # Access the internal storage directly - THIS IS SPECIFIC TO InMemorySessionService for testing
-            # NOTE: In production with persistent services (Database, VertexAI), you would
-            # typically update state via agent actions or specific service APIs if available,
-            # not by direct manipulation of internal storage.
-            stored_session = session_service_stateful.sessions[APP_NAME][USER_ID_STATEFUL][SESSION_ID_STATEFUL]
-            stored_session.state["user_preference_temperature_unit"] = "Fahrenheit"
-            # Optional: You might want to update the timestamp as well if any logic depends on it
-            # import time
-            # stored_session.last_update_time = time.time()
-            print(f"--- Stored session state updated. Current 'user_preference_temperature_unit': {stored_session.state.get('user_preference_temperature_unit', 'Not Set')} ---") # Added .get for safety
-        except KeyError:
-            print(f"--- Error: Could not retrieve session '{SESSION_ID_STATEFUL}' from internal storage for user '{USER_ID_STATEFUL}' in app '{APP_NAME}' to update state. Check IDs and if session was created. ---")
-        except Exception as e:
-             print(f"--- Error updating internal session state: {e} ---")
+        // 2. Manually update state preference to Fahrenheit - DIRECTLY MODIFY STORAGE
+        console.log("\n--- Manually Updating State: Setting unit to Fahrenheit ---");
+        try {
+            // Access the internal storage directly - THIS IS SPECIFIC TO InMemorySessionService for testing
+            // NOTE: In production with persistent services (Database, VertexAI), you would
+            // typically update state via agent actions or specific service APIs if available,
+            // not by direct manipulation of internal storage.
+            const stored_session = session_service_stateful.sessions[APP_NAME][USER_ID_STATEFUL][SESSION_ID_STATEFUL];
+            stored_session.state["user_preference_temperature_unit"] = "Fahrenheit";
+            // Optional: You might want to update the timestamp as well if any logic depends on it
+            // stored_session.last_update_time = Date.now();
+            console.log(`--- Stored session state updated. Current 'user_preference_temperature_unit': ${stored_session.state.get('user_preference_temperature_unit', 'Not Set')}`); // Added .get for safety
+        } catch (error) {
+            console.error(`--- Error: Could not retrieve session '${SESSION_ID_STATEFUL}' from internal storage for user '${USER_ID_STATEFUL}' in app '${APP_NAME}' to update state. Check IDs and if session was created. ---`);
+        }
 
-        # 3. Check weather again (Tool should now use Fahrenheit)
-        # This will also update 'last_weather_report' via output_key
-        print("\n--- Turn 2: Requesting weather in New York (expect Fahrenheit) ---")
-        await call_agent_async(query= "Tell me the weather in New York.",
-                               runner=runner_root_stateful,
-                               user_id=USER_ID_STATEFUL,
-                               session_id=SESSION_ID_STATEFUL
-                              )
+        // 3. Check weather again (Tool should now use Fahrenheit)
+        // This will also update 'last_weather_report' via output_key
+        console.log("\n--- Turn 2: Requesting weather in New York (expect Fahrenheit) ---");
+        await call_agent_async("Tell me the weather in New York.", runner_root_stateful, USER_ID_STATEFUL, SESSION_ID_STATEFUL);
 
-        # 4. Test basic delegation (should still work)
-        # This will update 'last_weather_report' again, overwriting the NY weather report
-        print("\n--- Turn 3: Sending a greeting ---")
-        await call_agent_async(query= "Hi!",
-                               runner=runner_root_stateful,
-                               user_id=USER_ID_STATEFUL,
-                               session_id=SESSION_ID_STATEFUL
-                              )
+        // 4. Test basic delegation (should still work)
+        // This will update 'last_weather_report' again, overwriting the NY weather report
+        console.log("\n--- Turn 3: Sending a greeting ---");
+        await call_agent_async("Hi!", runner_root_stateful, USER_ID_STATEFUL, SESSION_ID_STATEFUL);
+    }
 
-    # --- Execute the `run_stateful_conversation` async function ---
-    # Choose ONE of the methods below based on your environment.
+    // --- Execute the `run_stateful_conversation` async function ---
+    // Choose ONE of the methods below based on your environment.
 
-    # METHOD 1: Direct await (Default for Notebooks/Async REPLs)
-    # If your environment supports top-level await (like Colab/Jupyter notebooks),
-    # it means an event loop is already running, so you can directly await the function.
-    print("Attempting execution using 'await' (default for notebooks)...")
-    await run_stateful_conversation()
+    // METHOD 1: Direct Promise handling (Default for Node.js/TypeScript)
+    console.log("Executing run_stateful_conversation using Promise...");
+    run_stateful_conversation().then(() => {
+        console.log("Stateful conversation completed successfully");
+    }).catch(error => {
+        console.error(`An error occurred: ${error}`);
+    });
 
-    # METHOD 2: asyncio.run (For Standard Python Scripts [.py])
-    # If running this code as a standard Python script from your terminal,
-    # the script context is synchronous. `asyncio.run()` is needed to
-    # create and manage an event loop to execute your async function.
-    # To use this method:
-    # 1. Comment out the `await run_stateful_conversation()` line above.
-    # 2. Uncomment the following block:
-    """
-    import asyncio
-    if __name__ == "__main__": # Ensures this runs only when script is executed directly
-        print("Executing using 'asyncio.run()' (for standard Python scripts)...")
-        try:
-            # This creates an event loop, runs your async function, and closes the loop.
-            asyncio.run(run_stateful_conversation())
-        except Exception as e:
-            print(f"An error occurred: {e}")
-    """
+    // METHOD 2: For Standard Node.js Scripts (.ts)
+    // If running this code as a standard Node.js script from your terminal
+    // To use this method:
+    // 1. Comment out the Promise-based execution above
+    // 2. Uncomment the following block:
+    /**
+    if (require.main === module) {
+        console.log("Executing run_stateful_conversation as main module...");
+        run_stateful_conversation().then(() => {
+            console.log("Stateful conversation completed successfully");
+        }).catch(error => {
+            console.error(`An error occurred: ${error}`);
+        });
+    }
+    */
 
-    # --- Inspect final session state after the conversation ---
-    # This block runs after either execution method completes.
-    print("\n--- Inspecting Final Session State ---")
-    final_session = session_service_stateful.get_session(app_name=APP_NAME,
-                                                         user_id= USER_ID_STATEFUL,
-                                                         session_id=SESSION_ID_STATEFUL)
-    if final_session:
-        # Use .get() for safer access to potentially missing keys
-        print(f"Final Preference: {final_session.state.get('user_preference_temperature_unit', 'Not Set')}")
-        print(f"Final Last Weather Report (from output_key): {final_session.state.get('last_weather_report', 'Not Set')}")
-        print(f"Final Last City Checked (by tool): {final_session.state.get('last_city_checked_stateful', 'Not Set')}")
-        # Print full state for detailed view
-        # print(f"Full State Dict: {final_session.state.as_dict()}") # Use as_dict() for clarity
-    else:
-        print("\n❌ Error: Could not retrieve final session state.")
+    // --- Inspect final session state after the conversation ---
+    // This block runs after either execution method completes.
+    console.log("\n--- Inspecting Final Session State ---");
+    session_service_stateful.getSession(APP_NAME, USER_ID_STATEFUL, SESSION_ID_STATEFUL).then(final_session => {
+        // Use .get() for safer access to potentially missing keys
+        console.log(`Final Preference: ${final_session.state.get('user_preference_temperature_unit', 'Not Set')}`);
+        console.log(`Final Last Weather Report (from output_key): ${final_session.state.get('last_weather_report', 'Not Set')}`);
+        console.log(`Final Last City Checked (by tool): ${final_session.state.get('last_city_checked_stateful', 'Not Set')}`);
+        // Print full state for detailed view
+        // console.log(`Full State Dict: ${JSON.stringify(final_session.state)}`); // Use as_dict() for clarity
+    }).catch(error => {
+        console.error(`\n❌ Error: Could not retrieve final session state. Error: ${error}`);
+    });
 
-else:
-    print("\n⚠️ Skipping state test conversation. Stateful root agent runner ('runner_root_stateful') is not available.")
+} else {
+    console.warn("\n⚠️ Skipping state test conversation. Stateful root agent runner ('runner_root_stateful') is not available.");
+}
 ```
 
 ---
@@ -1281,15 +1351,15 @@ You've now successfully integrated session state to personalize agent behavior u
 
 ---
 
-## Step 5: Adding Safety \- Input Guardrail with `before_model_callback`
+## Step 5: Adding Safety \- Input Guardrail with `beforeModelCallback`
 
 Our agent team is becoming more capable, remembering preferences and using tools effectively. However, in real-world scenarios, we often need safety mechanisms to control the agent's behavior *before* potentially problematic requests even reach the core Large Language Model (LLM).
 
-ADK provides **Callbacks** – functions that allow you to hook into specific points in the agent's execution lifecycle. The `before_model_callback` is particularly useful for input safety.
+ADK provides **Callbacks** – functions that allow you to hook into specific points in the agent's execution lifecycle. The `beforeModelCallback` is particularly useful for input safety.
 
-**What is `before_model_callback`?**
+**What is `beforeModelCallback`?**
 
-* It's a Python function you define that ADK executes *just before* an agent sends its compiled request (including conversation history, instructions, and the latest user message) to the underlying LLM.  
+* It's a TypeScript function you define that ADK executes *just before* an agent sends its compiled request (including conversation history, instructions, and the latest user message) to the underlying LLM.  
 * **Purpose:** Inspect the request, modify it if necessary, or block it entirely based on predefined rules.
 
 **Common Use Cases:**
@@ -1311,7 +1381,7 @@ ADK provides **Callbacks** – functions that allow you to hook into specific po
 
 **In this step, we will:**
 
-1. Define a `before_model_callback` function (`block_keyword_guardrail`) that checks the user's input for a specific keyword ("BLOCK").  
+1. Define a `beforeModelCallback` function (`block_keyword_guardrail`) that checks the user's input for a specific keyword ("BLOCK").  
 2. Update our stateful root agent (`weather_agent_v4_stateful` from Step 4\) to use this callback.  
 3. Create a new runner associated with this updated agent but using the *same stateful session service* to maintain state continuity.  
 4. Test the guardrail by sending both normal and keyword-containing requests.
@@ -1323,61 +1393,71 @@ ADK provides **Callbacks** – functions that allow you to hook into specific po
 This function will inspect the last user message within the `llm_request` content. If it finds "BLOCK" (case-insensitive), it constructs and returns an `LlmResponse` to block the flow; otherwise, it returns `None`.  
 
 
-```python
-# @title 1. Define the before_model_callback Guardrail
+```typescript
+// @title 1. Define the beforeModelCallback Guardrail
 
-# Ensure necessary imports are available
-from google.adk.agents.callback_context import CallbackContext
-from google.adk.models.llm_request import LlmRequest
-from google.adk.models.llm_response import LlmResponse
-from google.genai import types # For creating response content
-from typing import Optional
+// Ensure necessary imports are available
+import { CallbackContext } from 'adk-typescript/agents';
+import { LlmRequest } from 'adk-typescript/models';
+import { LlmResponse } from 'adk-typescript/models';
+import { Content, Part } from 'adk-typescript/models/types'; // For creating response content
+import { Optional } from 'typescript';
 
-def block_keyword_guardrail(
-    callback_context: CallbackContext, llm_request: LlmRequest
-) -> Optional[LlmResponse]:
-    """
-    Inspects the latest user message for 'BLOCK'. If found, blocks the LLM call
-    and returns a predefined LlmResponse. Otherwise, returns None to proceed.
-    """
-    agent_name = callback_context.agent_name # Get the name of the agent whose model call is being intercepted
-    print(f"--- Callback: block_keyword_guardrail running for agent: {agent_name} ---")
+function block_keyword_guardrail(
+    callbackContext: CallbackContext, 
+    llmRequest: LlmRequest
+): LlmResponse | undefined {
+    /**
+     * Inspects the latest user message for 'BLOCK'. If found, blocks the LLM call
+     * and returns a predefined LlmResponse. Otherwise, returns undefined to proceed.
+     */
+    const agentName = callbackContext.agentName; // Get the name of the agent whose model call is being intercepted
+    console.log(`--- Callback: block_keyword_guardrail running for agent: ${agentName} ---`);
 
-    # Extract the text from the latest user message in the request history
-    last_user_message_text = ""
-    if llm_request.contents:
-        # Find the most recent message with role 'user'
-        for content in reversed(llm_request.contents):
-            if content.role == 'user' and content.parts:
-                # Assuming text is in the first part for simplicity
-                if content.parts[0].text:
-                    last_user_message_text = content.parts[0].text
-                    break # Found the last user message text
+    // Extract the text from the latest user message in the request history
+    let lastUserMessageText = "";
+    if (llmRequest.contents) {
+        // Find the most recent message with role 'user'
+        for (let i = llmRequest.contents.length - 1; i >= 0; i--) {
+            const content = llmRequest.contents[i];
+            if (content.role === 'user' && content.parts && content.parts.length > 0) {
+                // Assuming text is in the first part for simplicity
+                if (content.parts[0].text) {
+                    lastUserMessageText = content.parts[0].text;
+                    break; // Found the last user message text
+                }
+            }
+        }
+    }
 
-    print(f"--- Callback: Inspecting last user message: '{last_user_message_text[:100]}...' ---") # Log first 100 chars
+    console.log(`--- Callback: Inspecting last user message: '${lastUserMessageText.slice(0, 100)}...' ---`); // Log first 100 chars
 
-    # --- Guardrail Logic ---
-    keyword_to_block = "BLOCK"
-    if keyword_to_block in last_user_message_text.upper(): # Case-insensitive check
-        print(f"--- Callback: Found '{keyword_to_block}'. Blocking LLM call! ---")
-        # Optionally, set a flag in state to record the block event
-        callback_context.state["guardrail_block_keyword_triggered"] = True
-        print(f"--- Callback: Set state 'guardrail_block_keyword_triggered': True ---")
+    // --- Guardrail Logic ---
+    const keywordToBlock = "BLOCK";
+    if (lastUserMessageText.toUpperCase().includes(keywordToBlock)) { // Case-insensitive check
+        console.log(`--- Callback: Found '${keywordToBlock}'. Blocking LLM call! ---`);
+        // Optionally, set a flag in state to record the block event
+        callbackContext.state["guardrail_block_keyword_triggered"] = true;
+        console.log(`--- Callback: Set state 'guardrail_block_keyword_triggered': true ---`);
 
-        # Construct and return an LlmResponse to stop the flow and send this back instead
-        return LlmResponse(
-            content=types.Content(
-                role="model", # Mimic a response from the agent's perspective
-                parts=[types.Part(text=f"I cannot process this request because it contains the blocked keyword '{keyword_to_block}'.")],
-            )
-            # Note: You could also set an error_message field here if needed
-        )
-    else:
-        # Keyword not found, allow the request to proceed to the LLM
-        print(f"--- Callback: Keyword not found. Allowing LLM call for {agent_name}. ---")
-        return None # Returning None signals ADK to continue normally
+        // Construct and return an LlmResponse to stop the flow and send this back instead
+        return new LlmResponse({
+            content: new Content({
+                role: "model", // Mimic a response from the agent's perspective
+                parts: [new Part({ 
+                    text: `I cannot process this request because it contains the blocked keyword '${keywordToBlock}'.` 
+                })],
+            })
+            // Note: You could also set an errorMessage field here if needed
+        });
+    } else {
+        // Keyword not found, allow the request to proceed to the LLM
+        console.log(`--- Callback: Keyword not found. Allowing LLM call for ${agentName}. ---`);
+        return undefined; // Returning undefined signals ADK to continue normally
+    }
+}
 
-print("✅ block_keyword_guardrail function defined.")
+console.log("✅ block_keyword_guardrail function defined.");
 
 ```
 
@@ -1385,87 +1465,92 @@ print("✅ block_keyword_guardrail function defined.")
 
 **2\. Update Root Agent to Use the Callback**
 
-We redefine the root agent, adding the `before_model_callback` parameter and pointing it to our new guardrail function. We'll give it a new version name for clarity.
+We redefine the root agent, adding the `beforeModelCallback` parameter and pointing it to our new guardrail function. We'll give it a new version name for clarity.
 
 *Important:* We need to redefine the sub-agents (`greeting_agent`, `farewell_agent`) and the stateful tool (`get_weather_stateful`) within this context if they are not already available from previous steps, ensuring the root agent definition has access to all its components.
 
 
-```python
-# @title 2. Update Root Agent with before_model_callback
+```typescript
+// @title 2. Update Root Agent with beforeModelCallback
 
 
-# --- Redefine Sub-Agents (Ensures they exist in this context) ---
-greeting_agent = None
-try:
-    # Use a defined model constant
-    greeting_agent = Agent(
-        model=MODEL_GEMINI_2_0_FLASH,
-        name="greeting_agent", # Keep original name for consistency
-        instruction="You are the Greeting Agent. Your ONLY task is to provide a friendly greeting using the 'say_hello' tool. Do nothing else.",
-        description="Handles simple greetings and hellos using the 'say_hello' tool.",
-        tools=[say_hello],
-    )
-    print(f"✅ Sub-Agent '{greeting_agent.name}' redefined.")
-except Exception as e:
-    print(f"❌ Could not redefine Greeting agent. Check Model/API Key ({greeting_agent.model}). Error: {e}")
+// --- Redefine Sub-Agents (Ensures they exist in this context) ---
+let greeting_agent: LlmAgent | null = null;
+try {
+    // Use a defined model constant
+    greeting_agent = new LlmAgent({
+        model: MODEL_GEMINI_2_0_FLASH,
+        name: "greeting_agent", // Keep original name for consistency
+        instruction: "You are the Greeting Agent. Your ONLY task is to provide a friendly greeting using the 'say_hello' tool. Do nothing else.",
+        description: "Handles simple greetings and hellos using the 'say_hello' tool.",
+        tools: [say_hello], // Use the FunctionTool wrapper
+    });
+    console.log(`✅ Sub-Agent '${greeting_agent.name}' redefined.`);
+} catch (error) {
+    console.error(`❌ Could not redefine Greeting agent. Check Model/API Key (${greeting_agent?.model}). Error: ${error}`);
+}
 
-farewell_agent = None
-try:
-    # Use a defined model constant
-    farewell_agent = Agent(
-        model=MODEL_GEMINI_2_0_FLASH,
-        name="farewell_agent", # Keep original name
-        instruction="You are the Farewell Agent. Your ONLY task is to provide a polite goodbye message using the 'say_goodbye' tool. Do not perform any other actions.",
-        description="Handles simple farewells and goodbyes using the 'say_goodbye' tool.",
-        tools=[say_goodbye],
-    )
-    print(f"✅ Sub-Agent '{farewell_agent.name}' redefined.")
-except Exception as e:
-    print(f"❌ Could not redefine Farewell agent. Check Model/API Key ({farewell_agent.model}). Error: {e}")
+farewell_agent = null;
+try {
+    // Use a defined model constant
+    farewell_agent = new LlmAgent({
+        model: MODEL_GEMINI_2_0_FLASH,
+        name: "farewell_agent", // Keep original name
+        instruction: "You are the Farewell Agent. Your ONLY task is to provide a polite goodbye message using the 'say_goodbye' tool. Do not perform any other actions.",
+        description: "Handles simple farewells and goodbyes using the 'say_goodbye' tool.",
+        tools: [say_goodbye], // Use the FunctionTool wrapper
+    });
+    console.log(`✅ Sub-Agent '${farewell_agent.name}' redefined.`);
+} catch (error) {
+    console.error(`❌ Could not redefine Farewell agent. Check Model/API Key (${farewell_agent?.model}). Error: ${error}`);
+}
 
 
-# --- Define the Root Agent with the Callback ---
-root_agent_model_guardrail = None
-runner_root_model_guardrail = None
+// --- Define the Root Agent with the Callback ---
+let root_agent_model_guardrail: LlmAgent | null = null;
+let runner_root_model_guardrail: InMemoryRunner | null = null;
 
-# Check all components before proceeding
-if greeting_agent and farewell_agent and 'get_weather_stateful' in globals() and 'block_keyword_guardrail' in globals():
+// Check all components before proceeding
+if (greeting_agent && farewell_agent && 'get_weather_stateful' in globalThis && 'block_keyword_guardrail' in globalThis) {
 
-    # Use a defined model constant
-    root_agent_model = MODEL_GEMINI_2_0_FLASH
+    // Use a defined model constant
+    const root_agent_model = MODEL_GEMINI_2_0_FLASH;
 
-    root_agent_model_guardrail = Agent(
-        name="weather_agent_v5_model_guardrail", # New version name for clarity
-        model=root_agent_model,
-        description="Main agent: Handles weather, delegates greetings/farewells, includes input keyword guardrail.",
-        instruction="You are the main Weather Agent. Provide weather using 'get_weather_stateful'. "
+    root_agent_model_guardrail = new LlmAgent({
+        name: "weather_agent_v5_model_guardrail", // New version name for clarity
+        model: root_agent_model,
+        description: "Main agent: Handles weather, delegates greetings/farewells, includes input keyword guardrail.",
+        instruction: "You are the main Weather Agent. Provide weather using 'get_weather_stateful'. "
                     "Delegate simple greetings to 'greeting_agent' and farewells to 'farewell_agent'. "
                     "Handle only weather requests, greetings, and farewells.",
-        tools=[get_weather],
-        sub_agents=[greeting_agent, farewell_agent], # Reference the redefined sub-agents
-        output_key="last_weather_report", # Keep output_key from Step 4
-        before_model_callback=block_keyword_guardrail # <<< Assign the guardrail callback
-    )
-    print(f"✅ Root Agent '{root_agent_model_guardrail.name}' created with before_model_callback.")
+        tools: [weatherTool],
+        sub_agents: [greeting_agent, farewell_agent], // Reference the redefined sub-agents
+        output_key: "last_weather_report", // Keep output_key from Step 4
+        beforeModelCallback: block_keyword_guardrail // <<< Assign the guardrail callback
+    });
+    console.log(`✅ Root Agent '${root_agent_model_guardrail.name}' created with beforeModelCallback.`);
 
-    # --- Create Runner for this Agent, Using SAME Stateful Session Service ---
-    # Ensure session_service_stateful exists from Step 4
-    if 'session_service_stateful' in globals():
-        runner_root_model_guardrail = Runner(
-            agent=root_agent_model_guardrail,
-            app_name=APP_NAME, # Use consistent APP_NAME
-            session_service=session_service_stateful # <<< Use the service from Step 4
-        )
-        print(f"✅ Runner created for guardrail agent '{runner_root_model_guardrail.agent.name}', using stateful session service.")
-    else:
-        print("❌ Cannot create runner. 'session_service_stateful' from Step 4 is missing.")
+    // --- Create Runner for this Agent, Using SAME Stateful Session Service ---
+    // Ensure session_service_stateful exists from Step 4
+    if ('session_service_stateful' in globalThis) {
+        runner_root_model_guardrail = new InMemoryRunner({
+            agent: root_agent_model_guardrail,
+            app_name: APP_NAME, // Use consistent APP_NAME
+            session_service: session_service_stateful // <<< Use the service from Step 4
+        });
+        console.log(`✅ Runner created for guardrail agent '${runner_root_model_guardrail.agent.name}', using stateful session service.`);
+    } else {
+        console.error("❌ Cannot create runner. 'session_service_stateful' from Step 4 is missing.");
+    }
 
-else:
-    print("❌ Cannot create root agent with model guardrail. One or more prerequisites are missing or failed initialization:")
-    if not greeting_agent: print("   - Greeting Agent")
-    if not farewell_agent: print("   - Farewell Agent")
-    if 'get_weather_stateful' not in globals(): print("   - 'get_weather_stateful' tool")
-    if 'block_keyword_guardrail' not in globals(): print("   - 'block_keyword_guardrail' callback")
+} else {
+    console.error("❌ Cannot create root agent with model guardrail. One or more prerequisites are missing or failed initialization:");
+    if (!greeting_agent) console.error("   - Greeting Agent");
+    if (!farewell_agent) console.error("   - Farewell Agent");
+    if (!'get_weather_stateful' in globalThis) console.error("   - 'get_weather_stateful' tool");
+    if (!'block_keyword_guardrail' in globalThis) console.error("   - 'block_keyword_guardrail' callback");
+}
+
 ```
 
 ---
@@ -1479,82 +1564,96 @@ Let's test the guardrail's behavior. We'll use the *same session* (`SESSION_ID_S
 3. Send a greeting (should pass the root agent's guardrail, be delegated, and execute normally).
 
 
-```python
-# @title 3. Interact to Test the Model Input Guardrail
-import asyncio # Ensure asyncio is imported
+```typescript
+// @title 3. Interact to Test the Model Input Guardrail
 
-# Ensure the runner for the guardrail agent is available
-if 'runner_root_model_guardrail' in globals() and runner_root_model_guardrail:
-    # Define the main async function for the guardrail test conversation.
-    # The 'await' keywords INSIDE this function are necessary for async operations.
-    async def run_guardrail_test_conversation():
-        print("\n--- Testing Model Input Guardrail ---")
+// Ensure the runner for the guardrail agent is available
+if ('runner_root_model_guardrail' in globalThis && runner_root_model_guardrail) {
+    // Define the main async function for the guardrail test conversation.
+    // The 'await' keywords INSIDE this function are necessary for async operations.
+    async function run_guardrail_test_conversation() {
+        console.log("\n--- Testing Model Input Guardrail ---");
 
-        # Use the runner for the agent with the callback and the existing stateful session ID
-        # Define a helper lambda for cleaner interaction calls
-        interaction_func = lambda query: call_agent_async(query,
-                                                         runner_root_model_guardrail,
-                                                         USER_ID_STATEFUL, # Use existing user ID
-                                                         SESSION_ID_STATEFUL # Use existing session ID
-                                                        )
-        # 1. Normal request (Callback allows, should use Fahrenheit from previous state change)
-        print("--- Turn 1: Requesting weather in London (expect allowed, Fahrenheit) ---")
-        await interaction_func("What is the weather in London?")
+        // Use the runner for the agent with the callback and the existing stateful session ID
+        // Define a helper lambda for cleaner interaction calls
+        const interaction_func = (query: string) => call_agent_async(query,
+                                                                 runner_root_model_guardrail,
+                                                                 USER_ID_STATEFUL, // Use existing user ID
+                                                                 SESSION_ID_STATEFUL // Use existing session ID
+                                                                );
+        // 1. Normal request (Callback allows, should use Fahrenheit from previous state change)
+        console.log("--- Turn 1: Requesting weather in London (expect allowed, Fahrenheit) ---");
+        interaction_func("What is the weather in London?").then(result => {
+            console.log(result);
+        }).catch(error => {
+            console.error(`An error occurred: ${error}`);
+        });
 
-        # 2. Request containing the blocked keyword (Callback intercepts)
-        print("\n--- Turn 2: Requesting with blocked keyword (expect blocked) ---")
-        await interaction_func("BLOCK the request for weather in Tokyo") # Callback should catch "BLOCK"
+        // 2. Request containing the blocked keyword (Callback intercepts)
+        console.log("\n--- Turn 2: Requesting with blocked keyword (expect blocked) ---");
+        interaction_func("BLOCK the request for weather in Tokyo").then(result => {
+            console.log(result);
+        }).catch(error => {
+            console.error(`An error occurred: ${error}`);
+        });
 
-        # 3. Normal greeting (Callback allows root agent, delegation happens)
-        print("\n--- Turn 3: Sending a greeting (expect allowed) ---")
-        await interaction_func("Hello again")
+        // 3. Normal greeting (Callback allows root agent, delegation happens)
+        console.log("\n--- Turn 3: Sending a greeting (expect allowed) ---");
+        interaction_func("Hello again").then(result => {
+            console.log(result);
+        }).catch(error => {
+            console.error(`An error occurred: ${error}`);
+        });
+    }
 
-    # --- Execute the `run_guardrail_test_conversation` async function ---
-    # Choose ONE of the methods below based on your environment.
+    // --- Execute the `run_guardrail_test_conversation` async function ---
+    // Choose ONE of the methods below based on your environment.
 
-    # METHOD 1: Direct await (Default for Notebooks/Async REPLs)
-    # If your environment supports top-level await (like Colab/Jupyter notebooks),
-    # it means an event loop is already running, so you can directly await the function.
-    print("Attempting execution using 'await' (default for notebooks)...")
-    await run_guardrail_test_conversation()
+    // METHOD 1: Direct Promise handling (Default for Node.js/TypeScript)
+    console.log("Executing run_guardrail_test_conversation using Promise...");
+    run_guardrail_test_conversation().then(() => {
+        console.log("Guardrail test conversation completed successfully");
+    }).catch(error => {
+        console.error(`An error occurred: ${error}`);
+    });
 
-    # METHOD 2: asyncio.run (For Standard Python Scripts [.py])
-    # If running this code as a standard Python script from your terminal,
-    # the script context is synchronous. `asyncio.run()` is needed to
-    # create and manage an event loop to execute your async function.
-    # To use this method:
-    # 1. Comment out the `await run_guardrail_test_conversation()` line above.
-    # 2. Uncomment the following block:
-    """
-    import asyncio
-    if __name__ == "__main__": # Ensures this runs only when script is executed directly
-        print("Executing using 'asyncio.run()' (for standard Python scripts)...")
-        try:
-            # This creates an event loop, runs your async function, and closes the loop.
-            asyncio.run(run_guardrail_test_conversation())
-        except Exception as e:
-            print(f"An error occurred: {e}")
-    """
+    // METHOD 2: For Standard Node.js Scripts (.ts)
+    // If running this code as a standard Node.js script from your terminal
+    // To use this method:
+    // 1. Comment out the Promise-based execution above
+    // 2. Uncomment the following block:
+    /**
+    if (require.main === module) {
+        console.log("Executing run_guardrail_test_conversation as main module...");
+        run_guardrail_test_conversation().then(() => {
+            console.log("Guardrail test conversation completed successfully");
+        }).catch(error => {
+            console.error(`An error occurred: ${error}`);
+        });
+    }
+    */
 
-    # --- Inspect final session state after the conversation ---
-    # This block runs after either execution method completes.
-    # Optional: Check state for the trigger flag set by the callback
-    print("\n--- Inspecting Final Session State (After Guardrail Test) ---")
-    # Use the session service instance associated with this stateful session
-    final_session = session_service_stateful.get_session(app_name=APP_NAME,
-                                                         user_id=USER_ID_STATEFUL,
-                                                         session_id=SESSION_ID_STATEFUL)
-    if final_session:
-        # Use .get() for safer access
-        print(f"Guardrail Triggered Flag: {final_session.state.get('guardrail_block_keyword_triggered', 'Not Set (or False)')}")
-        print(f"Last Weather Report: {final_session.state.get('last_weather_report', 'Not Set')}") # Should be London weather if successful
-        print(f"Temperature Unit: {final_session.state.get('user_preference_temperature_unit', 'Not Set')}") # Should be Fahrenheit
-        # print(f"Full State Dict: {final_session.state.as_dict()}") # For detailed view
-    else:
-        print("\n❌ Error: Could not retrieve final session state.")
+    // --- Inspect final session state after the conversation ---
+    // This block runs after either execution method completes.
+    // Optional: Check state for the trigger flag set by the callback
+    console.log("\n--- Inspecting Final Session State (After Guardrail Test) ---");
+    // Use the session service instance associated with this stateful session
+    session_service_stateful.getSession({
+        appName: APP_NAME, 
+        userId: USER_ID_STATEFUL, 
+        sessionId: SESSION_ID_STATEFUL
+    }).then(finalSession => {
+        // Use .get() for safer access
+        console.log(`Guardrail Triggered Flag: ${finalSession.state.get('guardrail_block_keyword_triggered', 'Not Set (or False)')}`)
+        console.log(`Last Weather Report: ${finalSession.state.get('last_weather_report', 'Not Set')}`); // Should be London weather if successful
+        console.log(`Temperature Unit: ${finalSession.state.get('user_preference_temperature_unit', 'Not Set')}`); // Should be Fahrenheit
+    }).catch(error => {
+        console.error(`\n❌ Error: Could not retrieve final session state. Error: ${error}`);
+    });
 
-else:
-    print("\n⚠️ Skipping model guardrail test. Runner ('runner_root_model_guardrail') is not available.")
+} else {
+    console.warn("\n⚠️ Skipping model guardrail test. Runner ('runner_root_model_guardrail') is not available.");
+}
 ```
 
 ---
@@ -1563,19 +1662,19 @@ Observe the execution flow:
 
 1. **London Weather:** The callback runs for `weather_agent_v5_model_guardrail`, inspects the message, prints "Keyword not found. Allowing LLM call.", and returns `None`. The agent proceeds, calls the `get_weather_stateful` tool (which uses the "Fahrenheit" preference from Step 4's state change), and returns the weather. This response updates `last_weather_report` via `output_key`.  
 2. **BLOCK Request:** The callback runs again for `weather_agent_v5_model_guardrail`, inspects the message, finds "BLOCK", prints "Blocking LLM call\!", sets the state flag, and returns the predefined `LlmResponse`. The agent's underlying LLM is *never called* for this turn. The user sees the callback's blocking message.  
-3. **Hello Again:** The callback runs for `weather_agent_v5_model_guardrail`, allows the request. The root agent then delegates to `greeting_agent`. *Note: The `before_model_callback` defined on the root agent does NOT automatically apply to sub-agents.* The `greeting_agent` proceeds normally, calls its `say_hello` tool, and returns the greeting.
+3. **Hello Again:** The callback runs for `weather_agent_v5_model_guardrail`, allows the request. The root agent then delegates to `greeting_agent`. *Note: The `beforeModelCallback` defined on the root agent does NOT automatically apply to sub-agents.* The `greeting_agent` proceeds normally, calls its `say_hello` tool, and returns the greeting.
 
-You have successfully implemented an input safety layer\! The `before_model_callback` provides a powerful mechanism to enforce rules and control agent behavior *before* expensive or potentially risky LLM calls are made. Next, we'll apply a similar concept to add guardrails around tool usage itself.
+You have successfully implemented an input safety layer\! The `beforeModelCallback` provides a powerful mechanism to enforce rules and control agent behavior *before* expensive or potentially risky LLM calls are made. Next, we'll apply a similar concept to add guardrails around tool usage itself.
 
-## Step 6: Adding Safety \- Tool Argument Guardrail (`before_tool_callback`)
+## Step 6: Adding Safety \- Tool Argument Guardrail (`beforeToolCallback`)
 
 In Step 5, we added a guardrail to inspect and potentially block user input *before* it reached the LLM. Now, we'll add another layer of control *after* the LLM has decided to use a tool but *before* that tool actually executes. This is useful for validating the *arguments* the LLM wants to pass to the tool.
 
-ADK provides the `before_tool_callback` for this precise purpose.
+ADK provides the `beforeToolCallback` for this precise purpose.
 
-**What is `before_tool_callback`?**
+**What is `beforeToolCallback`?**
 
-* It's a Python function executed just *before* a specific tool function runs, after the LLM has requested its use and decided on the arguments.  
+* It's a TypeScript function executed just *before* a specific tool function runs, after the LLM has requested its use and decided on the arguments.  
 * **Purpose:** Validate tool arguments, prevent tool execution based on specific inputs, modify arguments dynamically, or enforce resource usage policies.
 
 **Common Use Cases:**
@@ -1586,7 +1685,7 @@ ADK provides the `before_tool_callback` for this precise purpose.
 
 **How it Works:**
 
-1. Define a function accepting `tool: BaseTool`, `args: Dict[str, Any]`, and `tool_context: ToolContext`.  
+1. Define a function accepting `tool: BaseTool`, `args: Record<string, any>`, and `tool_context: ToolContext`.  
    * `tool`: The tool object about to be called (inspect `tool.name`).  
    * `args`: The dictionary of arguments the LLM generated for the tool.  
    * `tool_context`: Provides access to session state (`tool_context.state`), agent info, etc.  
@@ -1598,9 +1697,9 @@ ADK provides the `before_tool_callback` for this precise purpose.
 
 **In this step, we will:**
 
-1. Define a `before_tool_callback` function (`block_paris_tool_guardrail`) that specifically checks if the `get_weather_stateful` tool is called with the city "Paris".  
+1. Define a `beforeToolCallback` function (`block_paris_tool_guardrail`) that specifically checks if the `get_weather_stateful` tool is called with the city "Paris".  
 2. If "Paris" is detected, the callback will block the tool and return a custom error dictionary.  
-3. Update our root agent (`weather_agent_v6_tool_guardrail`) to include *both* the `before_model_callback` and this new `before_tool_callback`.  
+3. Update our root agent (`weather_agent_v6_tool_guardrail`) to include *both* the `beforeModelCallback` and this new `beforeToolCallback`.  
 4. Create a new runner for this agent, using the same stateful session service.  
 5. Test the flow by requesting weather for allowed cities and the blocked city ("Paris").
 
@@ -1611,58 +1710,61 @@ ADK provides the `before_tool_callback` for this precise purpose.
 This function targets the `get_weather_stateful` tool. It checks the `city` argument. If it's "Paris", it returns an error dictionary that looks like the tool's own error response. Otherwise, it allows the tool to run by returning `None`.
 
 
-```python
-# @title 1. Define the before_tool_callback Guardrail
+```typescript
+// @title 1. Define the beforeToolCallback Guardrail
 
-# Ensure necessary imports are available
-from google.adk.tools.base_tool import BaseTool
-from google.adk.tools.tool_context import ToolContext
-from typing import Optional, Dict, Any # For type hints
+// Ensure necessary imports are available
+import { BaseTool } from 'adk-typescript/tools';
+import { ToolContext } from 'adk-typescript/tools';
+import { Optional } from 'typescript';
 
-def block_paris_tool_guardrail(
-    tool: BaseTool, args: Dict[str, Any], tool_context: ToolContext
-) -> Optional[Dict]:
-    """
-    Checks if 'get_weather_stateful' is called for 'Paris'.
-    If so, blocks the tool execution and returns a specific error dictionary.
-    Otherwise, allows the tool call to proceed by returning None.
-    """
-    tool_name = tool.name
-    agent_name = tool_context.agent_name # Agent attempting the tool call
-    print(f"--- Callback: block_paris_tool_guardrail running for tool '{tool_name}' in agent '{agent_name}' ---")
-    print(f"--- Callback: Inspecting args: {args} ---")
+function block_paris_tool_guardrail(
+    tool: BaseTool, 
+    args: Record<string, any>, 
+    toolContext: ToolContext
+): Record<string, any> | undefined {
+    /**
+     * Checks if 'get_weather_stateful' is called for 'Paris'.
+     * If so, blocks the tool execution and returns a specific error dictionary.
+     * Otherwise, allows the tool call to proceed by returning undefined.
+     */
+    const toolName = tool.name;
+    const agentName = toolContext.agentName; // Agent attempting the tool call
+    console.log(`--- Callback: block_paris_tool_guardrail running for tool '${toolName}' in agent '${agentName}' ---`);
+    console.log(`--- Callback: Inspecting args: ${JSON.stringify(args)} ---`);
 
-    # --- Guardrail Logic ---
-    target_tool_name = "get_weather_stateful" # Match the function name used by FunctionTool
-    blocked_city = "paris"
+    // --- Guardrail Logic ---
+    const targetToolName = "get_weather_stateful"; // Match the function name used by FunctionTool
+    const blockedCity = "paris";
 
-    # Check if it's the correct tool and the city argument matches the blocked city
-    if tool_name == target_tool_name:
-        city_argument = args.get("city", "") # Safely get the 'city' argument
-        if city_argument and city_argument.lower() == blocked_city:
-            print(f"--- Callback: Detected blocked city '{city_argument}'. Blocking tool execution! ---")
-            # Optionally update state
-            tool_context.state["guardrail_tool_block_triggered"] = True
-            print(f"--- Callback: Set state 'guardrail_tool_block_triggered': True ---")
+    // Check if it's the correct tool and the city argument matches the blocked city
+    if (toolName === targetToolName) {
+        const cityArgument = args.city; // Get the 'city' argument
+        if (cityArgument && typeof cityArgument === 'string' && cityArgument.toLowerCase() === blockedCity) {
+            console.log(`--- Callback: Detected blocked city '${cityArgument}'. Blocking tool execution! ---`);
+            // Optionally update state
+            toolContext.state["guardrail_tool_block_triggered"] = true;
+            console.log(`--- Callback: Set state 'guardrail_tool_block_triggered': true ---`);
 
-            # Return a dictionary matching the tool's expected output format for errors
-            # This dictionary becomes the tool's result, skipping the actual tool run.
+            // Return a dictionary matching the tool's expected output format for errors
+            // This dictionary becomes the tool's result, skipping the actual tool run.
             return {
-                "status": "error",
-                "error_message": f"Policy restriction: Weather checks for '{city_argument.capitalize()}' are currently disabled by a tool guardrail."
-            }
-        else:
-             print(f"--- Callback: City '{city_argument}' is allowed for tool '{tool_name}'. ---")
-    else:
-        print(f"--- Callback: Tool '{tool_name}' is not the target tool. Allowing. ---")
+                status: "error",
+                error_message: `Policy restriction: Weather checks for '${cityArgument.charAt(0).toUpperCase() + cityArgument.slice(1)}' are currently disabled by a tool guardrail.`
+            };
+        } else {
+            console.log(`--- Callback: City '${cityArgument}' is allowed for tool '${toolName}'. ---`);
+        }
+    } else {
+        console.log(`--- Callback: Tool '${toolName}' is not the target tool. Allowing. ---`);
+    }
 
+    // If the checks above didn't return a dictionary, allow the tool to execute
+    console.log(`--- Callback: Allowing tool '${toolName}' to proceed. ---`);
+    return undefined; // Returning undefined allows the actual tool function to run
+}
 
-    # If the checks above didn't return a dictionary, allow the tool to execute
-    print(f"--- Callback: Allowing tool '{tool_name}' to proceed. ---")
-    return None # Returning None allows the actual tool function to run
-
-print("✅ block_paris_tool_guardrail function defined.")
-
+console.log("✅ block_paris_tool_guardrail function defined.");
 
 ```
 
@@ -1670,89 +1772,113 @@ print("✅ block_paris_tool_guardrail function defined.")
 
 **2\. Update Root Agent to Use Both Callbacks**
 
-We redefine the root agent again (`weather_agent_v6_tool_guardrail`), this time adding the `before_tool_callback` parameter alongside the `before_model_callback` from Step 5\.
+We redefine the root agent again (`weather_agent_v6_tool_guardrail`), this time adding the `beforeToolCallback` parameter alongside the `beforeModelCallback` from Step 5\.
 
-*Self-Contained Execution Note:* Similar to Step 5, ensure all prerequisites (sub-agents, tools, `before_model_callback`) are defined or available in the execution context before defining this agent.
+*Self-Contained Execution Note:* Similar to Step 5, ensure all prerequisites (sub-agents, tools, `beforeModelCallback`) are defined or available in the execution context before defining this agent.
 
 
-```python
-# @title 2. Update Root Agent with BOTH Callbacks (Self-Contained)
+```typescript
+// @title 2. Update Root Agent with BOTH Callbacks (Self-Contained)
 
-# --- Ensure Prerequisites are Defined ---
-# (Include or ensure execution of definitions for: Agent, LiteLlm, Runner, ToolContext,
-#  MODEL constants, say_hello, say_goodbye, greeting_agent, farewell_agent,
-#  get_weather_stateful, block_keyword_guardrail, block_paris_tool_guardrail)
+// --- Ensure Prerequisites are Defined ---
+// (Include or ensure execution of definitions for: Agent, LiteLlm, Runner, ToolContext,
+//  MODEL constants, say_hello, say_goodbye, greeting_agent, farewell_agent,
+//  get_weather_stateful, block_keyword_guardrail, block_paris_tool_guardrail)
 
-# --- Redefine Sub-Agents (Ensures they exist in this context) ---
-greeting_agent = None
-try:
-    # Use a defined model constant
-    greeting_agent = Agent(
-        model=MODEL_GEMINI_2_0_FLASH,
-        name="greeting_agent", # Keep original name for consistency
-        instruction="You are the Greeting Agent. Your ONLY task is to provide a friendly greeting using the 'say_hello' tool. Do nothing else.",
-        description="Handles simple greetings and hellos using the 'say_hello' tool.",
-        tools=[say_hello],
-    )
-    print(f"✅ Sub-Agent '{greeting_agent.name}' redefined.")
-except Exception as e:
-    print(f"❌ Could not redefine Greeting agent. Check Model/API Key ({greeting_agent.model}). Error: {e}")
+// --- Redefine Sub-Agents (Ensures they exist in this context) ---
+let greeting_agent: LlmAgent | null = null;
+try {
+    // Use a defined model constant
+    greeting_agent = new LlmAgent({
+        model: MODEL_GEMINI_2_0_FLASH,
+        name: "greeting_agent", // Keep original name for consistency
+        instruction: "You are the Greeting Agent. Your ONLY task is to provide a friendly greeting using the 'say_hello' tool. Do nothing else.",
+        description: "Handles simple greetings and hellos using the 'say_hello' tool.",
+        tools: [say_hello], // Use the FunctionTool wrapper
+    });
+    console.log(`✅ Sub-Agent '${greeting_agent.name}' redefined.`);
+} catch (error) {
+    console.error(`❌ Could not redefine Greeting agent. Check Model/API Key (${greeting_agent?.model}). Error: ${error}`);
+}
 
-farewell_agent = None
-try:
-    # Use a defined model constant
-    farewell_agent = Agent(
-        model=MODEL_GEMINI_2_0_FLASH,
-        name="farewell_agent", # Keep original name
-        instruction="You are the Farewell Agent. Your ONLY task is to provide a polite goodbye message using the 'say_goodbye' tool. Do not perform any other actions.",
-        description="Handles simple farewells and goodbyes using the 'say_goodbye' tool.",
-        tools=[say_goodbye],
-    )
-    print(f"✅ Sub-Agent '{farewell_agent.name}' redefined.")
-except Exception as e:
-    print(f"❌ Could not redefine Farewell agent. Check Model/API Key ({farewell_agent.model}). Error: {e}")
+farewell_agent = null;
+try {
+    // Use a defined model constant
+    farewell_agent = new LlmAgent({
+        model: MODEL_GEMINI_2_0_FLASH,
+        name: "farewell_agent", // Keep original name
+        instruction: "You are the Farewell Agent. Your ONLY task is to provide a polite goodbye message using the 'say_goodbye' tool. Do not perform any other actions.",
+        description: "Handles simple farewells and goodbyes using the 'say_goodbye' tool.",
+        tools: [say_goodbye], // Use the FunctionTool wrapper
+    });
+    console.log(`✅ Sub-Agent '${farewell_agent.name}' redefined.`);
+} catch (error) {
+    console.error(`❌ Could not redefine Farewell agent. Check Model/API Key (${farewell_agent?.model}). Error: ${error}`);
+}
 
-# --- Define the Root Agent with Both Callbacks ---
-root_agent_tool_guardrail = None
-runner_root_tool_guardrail = None
+// --- Define the Root Agent with Both Callbacks ---
+let rootAgentToolGuardrail: LlmAgent | null = null;
+let runnerRootToolGuardrail: Runner | null = null;
 
-if ('greeting_agent' in globals() and greeting_agent and
-    'farewell_agent' in globals() and farewell_agent and
-    'get_weather_stateful' in globals() and
-    'block_keyword_guardrail' in globals() and
-    'block_paris_tool_guardrail' in globals()):
+if ('greeting_agent' in globalThis && greeting_agent &&
+    'farewell_agent' in globalThis && farewell_agent &&
+    'get_weather_stateful' in globalThis &&
+    'block_keyword_guardrail' in globalThis &&
+    'block_paris_tool_guardrail' in globalThis) {
 
-    root_agent_model = MODEL_GEMINI_2_0_FLASH
+    const rootAgentModel = MODEL_GEMINI_2_0_FLASH;
 
-    root_agent_tool_guardrail = Agent(
-        name="weather_agent_v6_tool_guardrail", # New version name
-        model=root_agent_model,
-        description="Main agent: Handles weather, delegates, includes input AND tool guardrails.",
-        instruction="You are the main Weather Agent. Provide weather using 'get_weather_stateful'. "
-                    "Delegate greetings to 'greeting_agent' and farewells to 'farewell_agent'. "
-                    "Handle only weather, greetings, and farewells.",
-        tools=[get_weather_stateful],
-        sub_agents=[greeting_agent, farewell_agent],
-        output_key="last_weather_report",
-        before_model_callback=block_keyword_guardrail, # Keep model guardrail
-        before_tool_callback=block_paris_tool_guardrail # <<< Add tool guardrail
-    )
-    print(f"✅ Root Agent '{root_agent_tool_guardrail.name}' created with BOTH callbacks.")
+    // Create a FunctionTool wrapper for the stateful weather function
+    const weatherStatefulTool = new FunctionTool({
+        name: 'get_weather_stateful',
+        description: 'Gets the current weather for a specific location, using unit preferences from state.',
+        fn: get_weather_stateful,
+        functionDeclaration: {
+            name: 'get_weather_stateful',
+            description: 'Gets the current weather for a specific location, using unit preferences from state.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    city: {
+                        type: 'string',
+                        description: 'The city, address, or general location to get weather for.',
+                    }
+                },
+                required: ['city']
+            }
+        }
+    });
 
-    # --- Create Runner, Using SAME Stateful Session Service ---
-    if 'session_service_stateful' in globals():
-        runner_root_tool_guardrail = Runner(
-            agent=root_agent_tool_guardrail,
-            app_name=APP_NAME,
-            session_service=session_service_stateful # <<< Use the service from Step 4/5
-        )
-        print(f"✅ Runner created for tool guardrail agent '{runner_root_tool_guardrail.agent.name}', using stateful session service.")
-    else:
-        print("❌ Cannot create runner. 'session_service_stateful' from Step 4/5 is missing.")
+    root_agent_tool_guardrail = new LlmAgent({
+        name: "weather_agent_v6_tool_guardrail", // New version name
+        model: root_agent_model,
+        description: "Main agent: Handles weather, delegates, includes input AND tool guardrails.",
+        instruction: "You are the main Weather Agent. Provide weather using 'get_weather_stateful'. "
+                   + "Delegate greetings to 'greeting_agent' and farewells to 'farewell_agent'. "
+                   + "Handle only weather, greetings, and farewells.",
+        tools: [weatherStatefulTool],
+        subAgents: [greeting_agent, farewell_agent],
+        outputKey: "last_weather_report",
+        beforeModelCallback: block_keyword_guardrail, // Keep model guardrail
+        beforeToolCallback: block_paris_tool_guardrail // Add tool guardrail
+    });
+    console.log(`✅ Root Agent '${root_agent_tool_guardrail.name}' created with BOTH callbacks.`);
 
-else:
-    print("❌ Cannot create root agent with tool guardrail. Prerequisites missing.")
+    // --- Create Runner, Using SAME Stateful Session Service ---
+    if ('session_service_stateful' in globalThis) {
+        runner_root_tool_guardrail = new Runner({
+            agent: root_agent_tool_guardrail,
+            appName: APP_NAME, // Use consistent APP_NAME
+            sessionService: session_service_stateful // Use the service from Step 4/5
+        });
+        console.log(`✅ Runner created for tool guardrail agent '${runner_root_tool_guardrail.agent.name}', using stateful session service.`);
+    } else {
+        console.error("❌ Cannot create runner. 'session_service_stateful' from Step 4/5 is missing.");
+    }
 
+} else {
+    console.error("❌ Cannot create root agent with tool guardrail. Prerequisites missing.");
+}
 
 ```
 
@@ -1763,97 +1889,96 @@ else:
 Let's test the interaction flow, again using the same stateful session (`SESSION_ID_STATEFUL`) from the previous steps.
 
 1. Request weather for "New York": Passes both callbacks, tool executes (using Fahrenheit preference from state).  
-2. Request weather for "Paris": Passes `before_model_callback`. LLM decides to call `get_weather_stateful(city='Paris')`. `before_tool_callback` intercepts, blocks the tool, and returns the error dictionary. Agent relays this error.  
+2. Request weather for "Paris": Passes `beforeModelCallback`. LLM decides to call `get_weather_stateful(city='Paris')`. `beforeToolCallback` intercepts, blocks the tool, and returns the error dictionary. Agent relays this error.  
 3. Request weather for "London": Passes both callbacks, tool executes normally.
 
 
-```python
-# @title 3. Interact to Test the Tool Argument Guardrail
-import asyncio # Ensure asyncio is imported
+```typescript
+// @title 3. Interact to Test the Tool Argument Guardrail
 
-# Ensure the runner for the tool guardrail agent is available
-if 'runner_root_tool_guardrail' in globals() and runner_root_tool_guardrail:
-    # Define the main async function for the tool guardrail test conversation.
-    # The 'await' keywords INSIDE this function are necessary for async operations.
-    async def run_tool_guardrail_test():
-        print("\n--- Testing Tool Argument Guardrail ('Paris' blocked) ---")
+// Ensure the runner for the tool guardrail agent is available
+if ('rootAgentToolGuardrail' in globalThis && runnerRootToolGuardrail) {
+    // Define the main async function for the tool guardrail test conversation.
+    // The 'await' keywords INSIDE this function are necessary for async operations.
+    async function runToolGuardrailTest() {
+        console.log("\n--- Testing Tool Argument Guardrail ('Paris' blocked) ---");
 
-        # Use the runner for the agent with both callbacks and the existing stateful session
-        # Define a helper lambda for cleaner interaction calls
-        interaction_func = lambda query: call_agent_async(query,
-                                                         runner_root_tool_guardrail,
-                                                         USER_ID_STATEFUL, # Use existing user ID
-                                                         SESSION_ID_STATEFUL # Use existing session ID
-                                                        )
-        # 1. Allowed city (Should pass both callbacks, use Fahrenheit state)
-        print("--- Turn 1: Requesting weather in New York (expect allowed) ---")
-        await interaction_func("What's the weather in New York?")
+        // Use the runner for the agent with both callbacks and the existing stateful session
+        // Define a helper lambda for cleaner interaction calls
+        const interactionFunc = (query: string) => call_agent_async(query,
+                                                                 runnerRootToolGuardrail,
+                                                                 USER_ID_STATEFUL, // Use existing user ID
+                                                                 SESSION_ID_STATEFUL // Use existing session ID
+                                                                );
+        // 1. Allowed city (Should pass both callbacks, use Fahrenheit state)
+        console.log("--- Turn 1: Requesting weather in New York (expect allowed) ---");
+        await interactionFunc("What's the weather in New York?");
 
-        # 2. Blocked city (Should pass model callback, but be blocked by tool callback)
-        print("\n--- Turn 2: Requesting weather in Paris (expect blocked by tool guardrail) ---")
-        await interaction_func("How about Paris?") # Tool callback should intercept this
+        // 2. Blocked city (Should pass model callback, but be blocked by tool callback)
+        console.log("\n--- Turn 2: Requesting weather in Paris (expect blocked by tool guardrail) ---");
+        await interactionFunc("How about Paris?"); // Tool callback should intercept this
 
-        # 3. Another allowed city (Should work normally again)
-        print("\n--- Turn 3: Requesting weather in London (expect allowed) ---")
-        await interaction_func("Tell me the weather in London.")
+        // 3. Another allowed city (Should work normally again)
+        console.log("\n--- Turn 3: Requesting weather in London (expect allowed) ---");
+        await interactionFunc("Tell me the weather in London.");
+    }
 
-    # --- Execute the `run_tool_guardrail_test` async function ---
-    # Choose ONE of the methods below based on your environment.
+    // --- Execute the `runToolGuardrailTest` async function ---
+    // Choose ONE of the methods below based on your environment.
 
-    # METHOD 1: Direct await (Default for Notebooks/Async REPLs)
-    # If your environment supports top-level await (like Colab/Jupyter notebooks),
-    # it means an event loop is already running, so you can directly await the function.
-    print("Attempting execution using 'await' (default for notebooks)...")
-    await run_tool_guardrail_test()
+    // METHOD 1: Direct Promise handling (Default for Node.js/TypeScript)
+    console.log("Executing runToolGuardrailTest using Promise...");
+    runToolGuardrailTest().then(() => {
+        console.log("Tool guardrail test conversation completed successfully");
+    }).catch(error => {
+        console.error(`An error occurred: ${error}`);
+    });
 
-    # METHOD 2: asyncio.run (For Standard Python Scripts [.py])
-    # If running this code as a standard Python script from your terminal,
-    # the script context is synchronous. `asyncio.run()` is needed to
-    # create and manage an event loop to execute your async function.
-    # To use this method:
-    # 1. Comment out the `await run_tool_guardrail_test()` line above.
-    # 2. Uncomment the following block:
-    """
-    import asyncio
-    if __name__ == "__main__": # Ensures this runs only when script is executed directly
-        print("Executing using 'asyncio.run()' (for standard Python scripts)...")
-        try:
-            # This creates an event loop, runs your async function, and closes the loop.
-            asyncio.run(run_tool_guardrail_test())
-        except Exception as e:
-            print(f"An error occurred: {e}")
-    """
+    // METHOD 2: For Standard Node.js Scripts (.ts)
+    // If running this code as a standard Node.js script from your terminal
+    // To use this method:
+    // 1. Comment out the Promise-based execution above
+    // 2. Uncomment the following block:
+    /**
+    if (require.main === module) {
+        console.log("Executing runToolGuardrailTest as main module...");
+        runToolGuardrailTest().then(() => {
+            console.log("Tool guardrail test conversation completed successfully");
+        }).catch(error => {
+            console.error(`An error occurred: ${error}`);
+        });
+    }
+    */
 
-    # --- Inspect final session state after the conversation ---
-    # This block runs after either execution method completes.
-    # Optional: Check state for the tool block trigger flag
-    print("\n--- Inspecting Final Session State (After Tool Guardrail Test) ---")
-    # Use the session service instance associated with this stateful session
-    final_session = session_service_stateful.get_session(app_name=APP_NAME,
-                                                         user_id=USER_ID_STATEFUL,
-                                                         session_id= SESSION_ID_STATEFUL)
-    if final_session:
-        # Use .get() for safer access
-        print(f"Tool Guardrail Triggered Flag: {final_session.state.get('guardrail_tool_block_triggered', 'Not Set (or False)')}")
-        print(f"Last Weather Report: {final_session.state.get('last_weather_report', 'Not Set')}") # Should be London weather if successful
-        print(f"Temperature Unit: {final_session.state.get('user_preference_temperature_unit', 'Not Set')}") # Should be Fahrenheit
-        # print(f"Full State Dict: {final_session.state.as_dict()}") # For detailed view
-    else:
-        print("\n❌ Error: Could not retrieve final session state.")
+    // --- Inspect final session state after the conversation ---
+    // This block runs after either execution method completes.
+    // Optional: Check state for the tool block trigger flag
+    console.log("\n--- Inspecting Final Session State (After Tool Guardrail Test) ---");
+    // Use the session service instance associated with this stateful session
+    session_service_stateful.getSession(APP_NAME, USER_ID_STATEFUL, SESSION_ID_STATEFUL).then(final_session => {
+        // Use .get() for safer access
+        console.log(`Tool Guardrail Triggered Flag: ${final_session.state.get('guardrail_tool_block_triggered', 'Not Set (or False)')}`)
+        console.log(`Last Weather Report: ${final_session.state.get('last_weather_report', 'Not Set')}`); // Should be London weather if successful
+        console.log(`Temperature Unit: ${final_session.state.get('user_preference_temperature_unit', 'Not Set')}`); // Should be Fahrenheit
+        // console.log(`Full State Dict: ${JSON.stringify(final_session.state)}`); // For detailed view
+    }).catch(error => {
+        console.error(`\n❌ Error: Could not retrieve final session state. Error: ${error}`);
+    });
 
-else:
-    print("\n⚠️ Skipping tool guardrail test. Runner ('runner_root_tool_guardrail') is not available.")
+} else {
+    console.warn("\n⚠️ Skipping tool guardrail test. Runner ('runnerRootToolGuardrail') is not available.");
+}
 ```
 
 ---
 
 Analyze the output:
 
-1. **New York:** The `before_model_callback` allows the request. The LLM requests `get_weather_stateful`. The `before_tool_callback` runs, inspects the args (`{'city': 'New York'}`), sees it's not "Paris", prints "Allowing tool..." and returns `None`. The actual `get_weather_stateful` function executes, reads "Fahrenheit" from state, and returns the weather report. The agent relays this, and it gets saved via `output_key`.  
-2. **Paris:** The `before_model_callback` allows the request. The LLM requests `get_weather_stateful(city='Paris')`. The `before_tool_callback` runs, inspects the args, detects "Paris", prints "Blocking tool execution\!", sets the state flag, and returns the error dictionary `{'status': 'error', 'error_message': 'Policy restriction...'}`. The actual `get_weather_stateful` function is **never executed**. The agent receives the error dictionary *as if it were the tool's output* and formulates a response based on that error message.  
+1. **New York:** The `beforeModelCallback` allows the request. The LLM requests `get_weather_stateful`. The `beforeToolCallback` runs, inspects the args (`{'city': 'New York'}`), sees it's not "Paris", prints "Allowing tool..." and returns `None`. The actual `get_weather_stateful` function executes, reads "Fahrenheit" from state, and returns the weather report. The agent relays this, and it gets saved via `output_key`.  
+2. **Paris:** The `beforeModelCallback` allows the request. The LLM requests `get_weather_stateful(city='Paris')`. The `beforeToolCallback` runs, inspects the args, detects "Paris", prints "Blocking tool execution\!", sets the state flag, and returns the error dictionary `{'status': 'error', 'error_message': 'Policy restriction...'}`. The actual `get_weather_stateful` function is **never executed**. The agent receives the error dictionary *as if it were the tool's output* and formulates a response based on that error message.  
 3. **London:** Behaves like New York, passing both callbacks and executing the tool successfully. The new London weather report overwrites the `last_weather_report` in the state.
 
-You've now added a crucial safety layer controlling not just *what* reaches the LLM, but also *how* the agent's tools can be used based on the specific arguments generated by the LLM. Callbacks like `before_model_callback` and `before_tool_callback` are essential for building robust, safe, and policy-compliant agent applications.
+You've now added a crucial safety layer controlling not just *what* reaches the LLM, but also *how* the agent's tools can be used based on the specific arguments generated by the LLM. Callbacks like `beforeModelCallback` and `beforeToolCallback` are essential for building robust, safe, and policy-compliant agent applications.
 
 
 
@@ -1870,7 +1995,7 @@ Congratulations! You've successfully journeyed from building a single, basic wea
 *   You explored ADK's **multi-model flexibility** using LiteLLM, running the same core logic with different LLMs like Gemini, GPT-4o, and Claude.
 *   You embraced **modularity** by creating specialized sub-agents (`greeting_agent`, `farewell_agent`) and enabling **automatic delegation** from a root agent.
 *   You gave your agents **memory** using **Session State**, allowing them to remember user preferences (`temperature_unit`) and past interactions (`output_key`).
-*   You implemented crucial **safety guardrails** using both `before_model_callback` (blocking specific input keywords) and `before_tool_callback` (blocking tool execution based on arguments like the city "Paris").
+*   You implemented crucial **safety guardrails** using both `beforeModelCallback` (blocking specific input keywords) and `beforeToolCallback` (blocking tool execution based on arguments like the city "Paris").
 
 Through building this progressive Weather Bot team, you've gained hands-on experience with core ADK concepts essential for developing complex, intelligent applications.
 
@@ -1880,7 +2005,7 @@ Through building this progressive Weather Bot team, you've gained hands-on exper
 *   **Runners & Session Services:** The engine and memory management system that orchestrate agent execution and maintain conversational context.
 *   **Delegation:** Designing multi-agent teams allows for specialization, modularity, and better management of complex tasks. Agent `description` is key for auto-flow.
 *   **Session State (`ToolContext`, `output_key`):** Essential for creating context-aware, personalized, and multi-turn conversational agents.
-*   **Callbacks (`before_model`, `before_tool`):** Powerful hooks for implementing safety, validation, policy enforcement, and dynamic modifications *before* critical operations (LLM calls or tool execution).
+*   **Callbacks (`beforeModel`, `beforeTool`):** Powerful hooks for implementing safety, validation, policy enforcement, and dynamic modifications *before* critical operations (LLM calls or tool execution).
 *   **Flexibility (`LiteLlm`):** ADK empowers you to choose the best LLM for the job, balancing performance, cost, and features.
 
 **Where to Go Next?**
@@ -1891,9 +2016,9 @@ Your Weather Bot team is a great starting point. Here are some ideas to further 
 2.  **More Complex State:** Store more user preferences (e.g., preferred location, notification settings) or conversation summaries in the session state.
 3.  **Refine Delegation:** Experiment with different root agent instructions or sub-agent descriptions to fine-tune the delegation logic. Could you add a "forecast" agent?
 4.  **Advanced Callbacks:**
-    *   Use `after_model_callback` to potentially reformat or sanitize the LLM's response *after* it's generated.
-    *   Use `after_tool_callback` to process or log the results returned by a tool.
-    *   Implement `before_agent_callback` or `after_agent_callback` for agent-level entry/exit logic.
+    *   Use `afterModelCallback` to potentially reformat or sanitize the LLM's response *after* it's generated.
+    *   Use `afterToolCallback` to process or log the results returned by a tool.
+    *   Implement `beforeAgentCallback` or `afterAgentCallback` for agent-level entry/exit logic.
 5.  **Error Handling:** Improve how the agent handles tool errors or unexpected API responses. Maybe add retry logic within a tool.
 6.  **Persistent Session Storage:** Explore alternatives to `InMemorySessionService` for storing session state persistently (e.g., using databases like Firestore or Cloud SQL – requires custom implementation or future ADK integrations).
 7.  **Streaming UI:** Integrate your agent team with a web framework (like FastAPI, as shown in the ADK Streaming Quickstart) to create a real-time chat interface.
