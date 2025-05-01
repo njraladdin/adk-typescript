@@ -182,6 +182,44 @@ export class LlmRequest {
   }
 
   /**
+   * Adds a function declaration to the tools.
+   * @param functionDef The function definition to add
+   */
+  addFunction(functionDef: FunctionDeclaration): void {
+    if (!functionDef) {
+      return;
+    }
+    
+    // Find an existing tool entry with functionDeclarations (camelCase format)
+    const toolEntry = this.config.tools.find(t => 
+      Array.isArray((t as any).functionDeclarations)
+    );
+    
+    if (toolEntry) {
+      // We need to use 'as any' since functionDeclarations isn't in the type
+      const existingDeclarations = (toolEntry as any).functionDeclarations || [];
+      
+      // Check if a declaration with the same name already exists
+      const existingIndex = existingDeclarations.findIndex(
+        (existing: FunctionDeclaration) => existing.name === functionDef.name
+      );
+      
+      if (existingIndex === -1) {
+        // Only add if it doesn't exist already
+        existingDeclarations.push(functionDef);
+      }
+      
+      // Update the declarations
+      (toolEntry as any).functionDeclarations = existingDeclarations;
+    } else {
+      // Create a new tool entry with camelCase format
+      this.config.tools.push({
+        functionDeclarations: [functionDef]
+      } as any);
+    }
+  }
+
+  /**
    * Converts this LlmRequest to a plain object for API requests.
    * @returns A plain object representation of this request
    */

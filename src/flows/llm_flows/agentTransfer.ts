@@ -57,13 +57,8 @@ class AgentTransferLlmRequestProcessor implements BaseLlmRequestProcessor {
    * @param llmRequest The LLM request to add the function to
    */
   private addTransferFunction(llmRequest: LlmRequest): void {
-    // We're using a type assertion here because we're assuming
-    // that LlmRequest will be extended to support this functionality
-    const extendedRequest = llmRequest as unknown as { 
-      addFunction: (functionDef: any) => void 
-    };
-    
-    extendedRequest.addFunction({
+    // Use the addFunction method directly instead of type casting
+    llmRequest.addFunction({
       name: 'transfer_to_agent',
       description: 'Transfer to another agent if the current agent cannot handle the request',
       parameters: {

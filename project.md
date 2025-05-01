@@ -16,6 +16,9 @@ TODO:
 - fix docd : get-started, done 
 - fix docs : tutorials, done 
 
+- fix linting, done 
 
+- make unit tests pass 
+- make integration tests pass 
 
-- publish as npm package alpha version + release on github (or action for that where it automatically updates npm package when release is created)
+- publish as npm package and create github release
