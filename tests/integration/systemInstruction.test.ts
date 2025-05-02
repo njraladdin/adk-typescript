@@ -3,7 +3,7 @@ import { setBackendEnvironment, restoreBackendEnvironment } from './testConfig';
 import { Part } from '../../src/types';
 import { InvocationContext } from '../../src/agents/InvocationContext';
 import { Session } from '../../src/sessions/Session';
-import { State } from '../../src/sessions/state';
+import { State } from '../../src/sessions/State';
 import { BaseAgent, AgentOptions } from '../../src/agents/BaseAgent';
 import { Content } from '../../src/models/types';
 import { Event } from '../../src/events/Event';
@@ -23,18 +23,19 @@ class TestAgent extends BaseAgent {
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
     // Empty generator for testing purposes
-    if (false) {
-      yield {} as Event;
-    }
+return 
+
+yield {} as Event;
+    
   }
 
   protected async *runLiveImpl(
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
     // Empty generator for testing purposes
-    if (false) {
+    return 
       yield {} as Event;
-    }
+    
   }
 
   setUserContent(content: Content, invocationContext: InvocationContext): void {

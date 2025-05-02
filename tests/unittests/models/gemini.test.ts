@@ -133,9 +133,9 @@ describe('Gemini', () => {
   let llmRequest: LlmRequest;
 
   beforeEach(() => {
-    geminiLlm = new Gemini('gemini-1.5-flash');
+    geminiLlm = new Gemini('gemini-2.0-flash');
     llmRequest = new LlmRequest();
-    llmRequest.model = 'gemini-1.5-flash';
+    llmRequest.model = 'gemini-2.0-flash';
     llmRequest.contents = [createContent('user', 'Hello')];
     llmRequest.config = {
       temperature: 0.1,

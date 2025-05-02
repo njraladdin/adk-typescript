@@ -1,18 +1,17 @@
-
-
-import { LlmAgent as Agent } from '../../../../src';
+import { LlmAgent as Agent } from '../../../../src/agents/LlmAgent';
 import { InvocationContext } from '../../../../src/agents/InvocationContext';
-import { ToolContext } from '../../../../src/tools/toolContext';
+import { ReadonlyContext } from '../../../../src/agents/ReadonlyContext';
+import { ToolContext } from '../../../../src/tools/ToolContext';
 import { PlanReActPlanner } from '../../../../src/planners';
 import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
 import { FunctionTool } from '../../../../src/tools/FunctionTool';
-import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { LlmRegistry } from '../../../../src/models';
 
 // Create a single instance of AutoFlow to be reused
 const autoFlow = new AutoFlow();
 
 // Create a model instance
-const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
+const geminiModel = LlmRegistry.newLlm('gemini-2.0-flash');
 
 /**
  * Simply ask to update these variables in the context
@@ -24,10 +23,10 @@ function updateFc(
   data_four: Array<string | number>,
   toolContext: ToolContext
 ): string {
-  toolContext.actions.updateState('data_one', data_one);
-  toolContext.actions.updateState('data_two', data_two);
-  toolContext.actions.updateState('data_three', data_three);
-  toolContext.actions.updateState('data_four', data_four);
+  toolContext.actions.stateDelta['data_one'] = data_one;
+  toolContext.actions.stateDelta['data_two'] = data_two;
+  toolContext.actions.stateDelta['data_three'] = data_three;
+  toolContext.actions.stateDelta['data_four'] = data_four;
   return 'The function `update_fc` executed successfully';
 }
 
@@ -41,8 +40,8 @@ function echoInfo(customer_id: string): string {
 /**
  * Build global instruction for agent
  */
-function buildGlobalInstruction(invocationContext: InvocationContext): string {
-  return `This is the gloabl agent instruction for invocation: ${invocationContext.invocationId}.`;
+function buildGlobalInstruction(context: ReadonlyContext): string {
+  return `This is the gloabl agent instruction for invocation: ${context.invocationId}.`;
 }
 
 /**
@@ -120,8 +119,9 @@ const updateFcTool = new FunctionTool({
 /**
  * Context variable echo agent
  */
-export const contextVariableEchoAgent = new Agent('context_variable_echo_agent', {
-  llm: geminiModel,
+export const contextVariableEchoAgent = new Agent({
+  name: 'context_variable_echo_agent',
+  model: geminiModel,
   instruction: 'Use the echo_info tool to echo {customerId}, {customerInt}, {customerFloat}, and {customerJson}. Ask for it if you need to.',
   flow: autoFlow,
   tools: [echoInfoTool]
@@ -130,8 +130,9 @@ export const contextVariableEchoAgent = new Agent('context_variable_echo_agent',
 /**
  * Context variable with complicated format agent
  */
-export const contextVariableWithComplicatedFormatAgent = new Agent('context_variable_echo_agent', {
-  llm: geminiModel,
+export const contextVariableWithComplicatedFormatAgent = new Agent({
+  name: 'context_variable_echo_agent',
+  model: geminiModel,
   instruction: 'Use the echo_info tool to echo { customerId }, {{customer_int  }, { non-identifier-float}}, {artifact.fileName}, {\'key1\': \'value1\'} and {{\'key2\': \'value2\'}}. Ask for it if you need to.',
   flow: autoFlow,
   tools: [echoInfoTool]
@@ -140,8 +141,9 @@ export const contextVariableWithComplicatedFormatAgent = new Agent('context_vari
 /**
  * Context variable with nl planner agent
  */
-export const contextVariableWithNlPlannerAgent = new Agent('context_variable_with_nl_planner_agent', {
-  llm: geminiModel,
+export const contextVariableWithNlPlannerAgent = new Agent({
+  name: 'context_variable_with_nl_planner_agent',
+  model: geminiModel,
   instruction: 'Use the echo_info tool to echo {customerId}. Ask for it if you need to.',
   flow: autoFlow,
   planner: new PlanReActPlanner(),
@@ -151,8 +153,9 @@ export const contextVariableWithNlPlannerAgent = new Agent('context_variable_wit
 /**
  * Context variable with function instruction agent
  */
-export const contextVariableWithFunctionInstructionAgent = new Agent('context_variable_with_function_instruction_agent', {
-  llm: geminiModel,
+  export const contextVariableWithFunctionInstructionAgent = new Agent({
+    name: 'context_variable_with_function_instruction_agent',
+  model: geminiModel,
   instruction: "This is the plain text sub agent instruction.",
   flow: autoFlow
 });
@@ -160,8 +163,9 @@ export const contextVariableWithFunctionInstructionAgent = new Agent('context_va
 /**
  * Context variable update agent
  */
-export const contextVariableUpdateAgent = new Agent('context_variable_update_agent', {
-  llm: geminiModel,
+export const contextVariableUpdateAgent = new Agent({
+  name: 'context_variable_update_agent',
+  model: geminiModel,
   instruction: 'Call tools',
   flow: autoFlow,
   tools: [updateFcTool]
@@ -170,8 +174,9 @@ export const contextVariableUpdateAgent = new Agent('context_variable_update_age
 /**
  * Root agent for context variable tests
  */
-export const contextVariableRootAgent = new Agent('root_agent', {
-  llm: geminiModel,
+export const contextVariableRootAgent = new Agent({
+  name: 'root_agent',
+  model: geminiModel,
   description: 'The root agent.',
   flow: autoFlow,
   globalInstruction: buildGlobalInstruction,

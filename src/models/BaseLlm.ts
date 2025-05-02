@@ -8,11 +8,11 @@ import { LlmResponse } from './LlmResponse';
  * The BaseLlm abstract class.
  *
  * Attributes:
- *   model: The name of the LLM, e.g. gemini-1.5-flash or gemini-1.5-flash-001.
+ *   model: The name of the LLM, e.g. gemini-2.0-flash or gemini-2.0-flash-001.
  */
 export abstract class BaseLlm {
   /**
-   * The name of the LLM, e.g. gemini-1.5-flash or gemini-1.5-flash-001.
+   * The name of the LLM, e.g. gemini-2.0-flash or gemini-2.0-flash-001.
    */
   model: string;
 

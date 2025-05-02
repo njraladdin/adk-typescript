@@ -1,16 +1,16 @@
 
 
-import { LlmAgent } from '../../../../src';
-import { FunctionTool } from '../../../../src/tools/FunctionTool';
-import { ToolContext } from '../../../../src/tools/toolContext';
+import { LlmAgent } from '../../../../src/agents';
+import { FunctionTool } from '../../../../src/tools';
+import { ToolContext } from '../../../../src/tools/ToolContext';
 import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
-import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { LlmRegistry } from '../../../../src/models';
 
 // Create a single instance of AutoFlow to be reused
 const autoFlow = new AutoFlow();
 
 // Create a model instance
-const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
+const geminiModel = LlmRegistry.newLlm('gemini-2.0-flash');
 
 /**
  * Roll a die and return the rolled result.
@@ -100,8 +100,9 @@ const checkPrimeTool = new FunctionTool({
 /**
  * The root agent for the hello world example
  */
-export const helloWorldRootAgent = new LlmAgent('data_processing_agent', {
-  llm: geminiModel,
+export const helloWorldRootAgent = new LlmAgent({
+  name: 'hello_world_agent',
+  model: geminiModel,
   flow: autoFlow,
   instruction: `
     You roll dice and answer questions about the outcome of the dice rolls.

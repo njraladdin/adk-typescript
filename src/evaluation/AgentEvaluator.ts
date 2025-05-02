@@ -1,10 +1,16 @@
- 
-
 import * as fs from 'fs';
 import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { EvaluationGenerator, EvalEntry } from './EvaluationGenerator';
 import { ResponseEvaluator } from './ResponseEvaluator';
 import { TrajectoryEvaluator } from './TrajectoryEvaluator';
+import { BaseAgent } from '../agents/BaseAgent';
+import { LlmAgent } from '../agents/LlmAgent';
+import { InMemorySessionService } from '../sessions/InMemorySessionService';
+import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
+import { Runner } from '../runners';
+import { Content, Part } from '../models/types';
+import { EvalConstants } from './EvaluationConstants';
 
 // Constants for default runs and evaluation criteria
 const NUM_RUNS = 2;
@@ -50,14 +56,15 @@ export interface EvaluationCriteria {
 }
 
 /**
- * Interface for evaluation parameters
+ * Interface for evaluation parameters with direct agent
  */
 export interface EvaluationParams {
-  agentModulePath: string;
+  agent: BaseAgent;  // The agent to evaluate - directly passed
   evalDatasetFilePathOrDir: string;
   numRuns?: number;
-  agentName?: string;
+  agentName?: string;  // Optional name of sub-agent to evaluate
   initialSessionFile?: string;
+  resetFunc?: () => void; // Optional function to reset agent state between runs
 }
 
 /**
@@ -101,11 +108,12 @@ export class AgentEvaluator {
    */
   static async evaluate(params: EvaluationParams): Promise<EvaluationResult[]> {
     const {
-      agentModulePath,
+      agent,
       evalDatasetFilePathOrDir,
       numRuns = NUM_RUNS,
       agentName,
-      initialSessionFile
+      initialSessionFile,
+      resetFunc
     } = params;
 
     let testFiles: string[] = [];
@@ -152,17 +160,52 @@ export class AgentEvaluator {
 
       AgentEvaluator._validateInput([dataset], criteria);
 
-      const evaluationResponse = await AgentEvaluator._generateResponses(
-        agentModulePath,
+      // Use the provided agent directly
+      let agentToEvaluate = agent;
+      
+      // If a specific sub-agent is requested by name
+      if (agentName) {
+        // First try to find it using the standard property
+        if (agent.subAgents && Array.isArray(agent.subAgents)) {
+          // Check sub-agents by their name property
+          const subAgent = agent.subAgents.find(a => a.name === agentName);
+          if (subAgent) {
+            agentToEvaluate = subAgent;
+          } else {
+            console.log(`Couldn't find sub-agent with name '${agentName}' in subAgents array. Will try findAgent method if available.`);
+          }
+        }
+      
+        // If we still haven't found it, try the findAgent method if available
+        if (agentToEvaluate === agent && agent.findAgent) {
+          try {
+            const foundAgent = agent.findAgent(agentName);
+            if (foundAgent) {
+              agentToEvaluate = foundAgent;
+            }
+          } catch (error) {
+            console.log(`Error while finding agent '${agentName}': ${error}`);
+          }
+        }
+        
+        if (agentToEvaluate === agent) {
+          console.log(`Could not find sub-agent '${agentName}'. Using the provided agent.`);
+        } else {
+          console.log(`Found and using sub-agent '${agentName}'.`);
+        }
+      }
+
+      console.log("running agent with tools ", agentToEvaluate)
+      const evaluationResponse = await AgentEvaluator._generateResponsesWithAgent(
+        agentToEvaluate,
         [dataset],
         numRuns,
-        agentName,
+        resetFunc,
         { state: initialSessionState }
       );
 
       if (AgentEvaluator._responseEvaluationRequired(criteria, [dataset])) {
         await AgentEvaluator._evaluateResponseScores(
-          agentModulePath,
           evaluationResponse,
           criteria
         );
@@ -170,7 +213,6 @@ export class AgentEvaluator {
 
       if (AgentEvaluator._trajectoryEvaluationRequired(criteria, [dataset])) {
         await AgentEvaluator._evaluateToolTrajectory(
-          agentModulePath,
           evaluationResponse,
           criteria
         );
@@ -316,44 +358,135 @@ export class AgentEvaluator {
   }
 
   /**
-   * Generates evaluation responses by running the agent module multiple times
-   * @param agentModule Path to the agent module
+   * Generates evaluation responses by directly using the agent
+   * @param agent The agent to evaluate
    * @param evalDataset The evaluation dataset
    * @param numRuns Number of times to run evaluation
-   * @param agentName Optional name of the agent to evaluate
+   * @param resetFunc Optional function to reset agent state between runs
    * @param initialSession Initial session data
    * @returns Array of evaluation responses
    */
-  private static async _generateResponses(
-    agentModulePath: string,
+  private static async _generateResponsesWithAgent(
+    agent: BaseAgent,
     evalDataset: EvalEntry[][],
     numRuns: number,
-    agentName?: string,
+    resetFunc?: () => void,
     initialSession: Record<string, any> = {}
   ): Promise<EvalEntry[][]> {
-    return await EvaluationGenerator.generateResponses(
-      evalDataset.flat(),
-      agentModulePath,
-      numRuns,
-      agentName,
-      initialSession
-    ) as unknown as EvalEntry[][];
-  }
+    const results: EvalEntry[][] = [];
 
-  /**
-   * Generates evaluation responses from session data
-   * @param evalDataset The evaluation dataset
-   * @param sessionPath Path to the session data file
-   * @returns Array of evaluation responses
-   */
-  private static async _generateResponsesFromSession(
-    evalDataset: EvalEntry[][],
-    sessionPath: string
-  ): Promise<EvalEntry[][]> {
-    return await EvaluationGenerator.generateResponsesFromSession(
-      sessionPath,
-      evalDataset.flat()
-    ) as unknown as EvalEntry[][];
+    for (let i = 0; i < numRuns; i++) {
+      const runResults: EvalEntry[] = [];
+      
+      for (const dataGroup of evalDataset) {
+        // Initialize services once per conversation
+        const sessionService = new InMemorySessionService();
+        const artifactService = new InMemoryArtifactService();
+
+        // Setup the session
+        const appName = initialSession.appName || "EvaluationGenerator";
+        const userId = initialSession.userId || "test_user_id";
+        const sessionId = uuidv4();
+        
+        // Create a session for this conversation
+        const session = sessionService.createSession({
+          appName,
+          userId,
+          sessionId,
+          state: initialSession.state || {}
+        });
+        
+        // Reset agent state if reset function is provided
+        if (resetFunc && typeof resetFunc === 'function') {
+          resetFunc();
+        }
+        
+        // Process each turn in the conversation using the same session
+        for (const data of dataGroup) {
+          // Extract tool names that need to be mocked
+          const allMockTools = new Set<string>();
+          const expectedToolUse = data.expected_tool_use || [];
+          
+          for (const expected of expectedToolUse) {
+            if (expected[EvalConstants.MOCK_TOOL_OUTPUT] !== undefined) {
+              allMockTools.add(expected[EvalConstants.TOOL_NAME]);
+            }
+          }
+
+          // Create a copy of the evaluation data to use in callbacks
+          const evalDataCopy = { ...data };
+
+          // Apply the tool callback to mock tool outputs if agent is an LlmAgent
+          if (agent instanceof LlmAgent) {
+            EvaluationGenerator.applyBeforeToolCallback(
+              agent,
+              (tool, args, toolContext, evalDataset) => 
+                EvaluationGenerator.beforeToolCallback(tool, args, toolContext, evalDataset),
+              allMockTools,
+              [evalDataCopy]
+            );
+          }
+
+          // Create a runner for the agent
+          const runner = new Runner({
+            appName,
+            agent,
+            artifactService,
+            sessionService
+          });
+
+          // Process the response
+          const response: EvalEntry = { ...data };
+          const query = data.query;
+          
+          // Create a content object from the query
+          const content: Content = {
+            role: 'user',
+            parts: [{ text: query }]
+          };
+
+          const turnActualToolUses: Array<{
+            tool_name: string;
+            tool_input: Record<string, any>;
+          }> = [];
+
+          // Run the agent and collect responses
+          for await (const event of runner.run({
+            userId,
+            sessionId,
+            newMessage: content
+          })) {
+            if (event.isFinalResponse() && event.content && event.content.parts.length > 0) {
+              const textPart = event.content.parts.find((part: Part) => part.text !== undefined);
+              if (textPart) {
+                response.response = textPart.text;
+              }
+            } 
+            
+            // Check for direct function calls
+            if (event.getFunctionCalls && event.getFunctionCalls().length > 0) {
+              for (const call of event.getFunctionCalls()) {
+                turnActualToolUses.push({
+                  tool_name: call.name,
+                  tool_input: call.args
+                });
+              }
+            } else {
+              console.log('did not get function calls', event?.content?.parts)
+            }
+          }
+
+          // Update the response with collected tool uses
+          response.actual_tool_use = turnActualToolUses;
+          
+          runResults.push(response);
+        }
+      }
+      
+      results.push(runResults);
+    }
+
+    return results;
   }
 
   /**
@@ -388,12 +521,10 @@ export class AgentEvaluator {
 
   /**
    * Evaluates response scores and raises an assertion error if they don't meet the criteria
-   * @param agentModule The agent module path
    * @param evaluationResponse The evaluation response data
    * @param criteria The evaluation criteria
    */
   private static async _evaluateResponseScores(
-    agentModulePath: string,
     evaluationResponse: EvalEntry[][],
     criteria: EvaluationCriteria
   ): Promise<void> {
@@ -411,27 +542,23 @@ export class AgentEvaluator {
       metricsMap,
       "coherence/mean",
       criteria[RESPONSE_EVALUATION_SCORE_KEY],
-      "Average response evaluation score",
-      agentModulePath
+      "Average response evaluation score"
     );
 
     AgentEvaluator._assertScore(
       metricsMap,
       "rouge_1/mean",
       criteria[RESPONSE_MATCH_SCORE_KEY],
-      "Average response match score",
-      agentModulePath
+      "Average response match score"
     );
   }
 
   /**
    * Evaluates tool trajectory scores and raises an assertion error if they don't meet the criteria
-   * @param agentModule The agent module path
    * @param evaluationResponse The evaluation response data
    * @param criteria The evaluation criteria
    */
   private static async _evaluateToolTrajectory(
-    agentModulePath: string,
     evaluationResponse: EvalEntry[][],
     criteria: EvaluationCriteria
   ): Promise<void> {
@@ -444,8 +571,7 @@ export class AgentEvaluator {
       { [TOOL_TRAJECTORY_SCORE_KEY]: score },
       TOOL_TRAJECTORY_SCORE_KEY,
       criteria[TOOL_TRAJECTORY_SCORE_KEY],
-      "Average tool trajectory evaluation score",
-      agentModulePath
+      "Average tool trajectory evaluation score"
     );
   }
 
@@ -455,20 +581,18 @@ export class AgentEvaluator {
    * @param metricKey The key of the metric to check
    * @param threshold The threshold the metric must meet
    * @param description Description of the check for error messages
-   * @param agentModule The agent module path for error messages
    */
   private static _assertScore(
     metrics: Record<string, any>,
     metricKey: string,
     threshold: number | undefined,
-    description: string,
-    agentModulePath: string
+    description: string
   ): void {
     if (metricKey in metrics && threshold !== undefined) {
       const actualScore = metrics[metricKey];
       if (actualScore < threshold) {
         throw new Error(
-          `${description} for ${agentModulePath} is lower than expected. ` +
+          `${description} is lower than expected. ` +
           `Expected >= ${threshold}, but got ${actualScore}.`
         );
       }

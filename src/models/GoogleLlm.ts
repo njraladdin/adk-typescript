@@ -127,8 +127,6 @@ function convertTools(tools: any[] | undefined): GoogleTool[] {
  * Helper to convert response from Google GenAI to our expected format
  */
 function convertResponse(response: any): GenerateContentResponse {
-  // Log the raw response for debugging purposes
-  console.log(`Raw API response: ${JSON.stringify(response, null, 2)}`);
   
   // Check if the response is empty or invalid
   if (!response || typeof response !== 'object') {
@@ -251,7 +249,6 @@ class GenAIClient {
     config: GenerateContentConfig
   ): Promise<GenerateContentResponse> {
     try {
-      console.log(`Generating content with model: ${model}`);
       
       // IMPORTANT: The JavaScript SDK handles system instructions differently than Python
       // We need to pass systemInstruction in the model configuration
@@ -264,10 +261,7 @@ class GenAIClient {
       // as they're not supported by the JavaScript SDK
       contents = contents.filter(content => content.role !== 'system');
       
-      // Log information about system instructions
-      if (systemInstructionText) {
-        console.log(`Using system instruction: ${systemInstructionText}`);
-      }
+    
       
       // Create model instance with systemInstruction as a configuration parameter
       const genModel = this.genAI.getGenerativeModel({
@@ -499,9 +493,9 @@ export class Gemini extends BaseLlm {
 
   /**
    * Constructor
-   * @param model The name of the Gemini model, defaults to 'gemini-1.5-flash'
+   * @param model The name of the Gemini model, defaults to 'gemini-2.0-flash'
    */
-  constructor(model: string = 'gemini-1.5-flash') {
+  constructor(model: string = 'gemini-2.0-flash') {
     super(model);
   }
 
@@ -515,6 +509,7 @@ export class Gemini extends BaseLlm {
       'gemini-1\\.5-pro(-\\d+)?',
       'gemini-2\\.0-flash-exp',
       'gemini-2\\.0-flash',
+      'gemini-2\\.5-flash-preview-04-17',
       'projects/.+/locations/.+/endpoints/.+', // finetuned vertex gemini endpoint
       'projects/.+/locations/.+/publishers/google/models/gemini.+', // vertex gemini long name
     ];
@@ -530,7 +525,7 @@ export class Gemini extends BaseLlm {
     llmRequest: LlmRequest,
     stream: boolean = false
   ): AsyncGenerator<LlmResponse, void, unknown> {
-    console.log('10- llmRequest', llmRequest)
+
     // Make sure contents array exists
     if (!llmRequest.contents) {
       llmRequest.contents = [];
@@ -541,9 +536,7 @@ export class Gemini extends BaseLlm {
       .filter(content => content.role === 'user')
       .map(content => JSON.stringify(content));
       
-    if (originalUserMessages.length > 0) {
-      console.log(`Processing original user message(s): ${originalUserMessages.join(', ')}`);
-    } else {
+    if (originalUserMessages.length === 0) {
       console.warn('No user message found in request - this is unusual');
     }
     
@@ -553,11 +546,7 @@ export class Gemini extends BaseLlm {
     // Remove any system messages from contents array
     llmRequest.contents = llmRequest.contents.filter(content => content.role !== 'system');
     
-    // Log if we have system instructions in the config
-    if (llmRequest.config.systemInstruction) {
-      console.log(`Using system instruction in config: ${llmRequest.config.systemInstruction}`);
-    }
-    
+   
     // Only append user content if absolutely necessary
     this._maybeAppendUserContent(llmRequest);
     
@@ -572,7 +561,7 @@ export class Gemini extends BaseLlm {
       // In this case, restore the first original user message to ensure it's not lost
       if (originalUserMessages.length > 0) {
         const firstOriginalMsg = JSON.parse(originalUserMessages[0]);
-        console.log('Restoring original user message:', firstOriginalMsg);
+
         llmRequest.contents.push(firstOriginalMsg);
       }
     }

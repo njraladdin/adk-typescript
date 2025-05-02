@@ -1,8 +1,8 @@
 
 
-import { LlmAgent as Agent } from '../../../../src';
+import { LlmAgent as Agent } from '../../../../src/agents/LlmAgent';
 import { Content, Part } from '../../../../src/types';
-import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { LlmRegistry } from '../../../../src/models';
 import { FunctionTool } from '../../../../src/tools/FunctionTool';
 
 export const newMessage: Content = {
@@ -11,15 +11,16 @@ export const newMessage: Content = {
 };
 
 // Create model instance
-const geminiFlashModel = LlmRegistry.newLlm('gemini-1.5-flash');
+const geminiFlashModel = LlmRegistry.newLlm('gemini-2.0-flash');
 
 /**
  * First agent with basic configuration
  */
-export const agent1 = new Agent('agent_1', {
+  export const agent1 = new Agent({
+    name: 'agent_1',
   description: 'The first agent in the team.',
   instruction: 'Just say 1',
-  llm: geminiFlashModel,
+  model: geminiFlashModel,
   generateContentConfig: {
     temperature: 0.1
   }
@@ -28,10 +29,11 @@ export const agent1 = new Agent('agent_1', {
 /**
  * Second agent with safety settings
  */
-export const agent2 = new Agent('agent_2', {
+export const agent2 = new Agent({
+  name: 'agent_2',
   description: 'The second agent in the team.',
   instruction: 'Just say 2',
-  llm: geminiFlashModel,
+  model: geminiFlashModel,
   generateContentConfig: {
     temperature: 0.2,
     safetySettings: [{
@@ -44,10 +46,11 @@ export const agent2 = new Agent('agent_2', {
 /**
  * Third agent with different safety settings
  */
-export const agent3 = new Agent('agent_3', {
+export const agent3 = new Agent({
+  name: 'agent_3',
   description: 'The third agent in the team.',
   instruction: 'Just say 3',
-  llm: geminiFlashModel,
+  model: geminiFlashModel,
   generateContentConfig: {
     temperature: 0.5,
     safetySettings: [{
@@ -60,8 +63,9 @@ export const agent3 = new Agent('agent_3', {
 /**
  * Agent with instruction in config
  */
-export const agentWithInstructionInConfig = new Agent('agent', {
-  llm: geminiFlashModel,
+export const agentWithInstructionInConfig = new Agent({
+  name: 'agent',
+  model: geminiFlashModel,
   generateContentConfig: {
     temperature: 0.5,
     systemInstruction: 'Count 1'
@@ -78,8 +82,9 @@ function simpleFunction(): void {
 /**
  * Agent with tools in config
  */
-export const agentWithToolsInConfig = new Agent('agent', {
-  llm: geminiFlashModel,
+export const agentWithToolsInConfig = new Agent({
+  name: 'agent',
+  model: geminiFlashModel,
   generateContentConfig: {
     temperature: 0.5,
     tools: [
@@ -103,8 +108,9 @@ export const agentWithToolsInConfig = new Agent('agent', {
 /**
  * Agent with response schema in config
  */
-export const agentWithResponseSchemaInConfig = new Agent('agent', {
-  llm: geminiFlashModel,
+export const agentWithResponseSchemaInConfig = new Agent({
+  name: 'agent',
+  model: geminiFlashModel,
   generateContentConfig: {
     temperature: 0.5,
     responseSchema: { key: 'value' }

@@ -172,7 +172,7 @@ const forecastTool = new FunctionTool({
 // --- Agent Definition ---
   
 // Create model instance (using LlmRegistry is good practice)
-const model = LlmRegistry.newLlm('gemini-1.5-flash'); // Or your preferred model string
+const model = LlmRegistry.newLlm('gemini-2.0-flash'); // Or your preferred model string
   
 // Create flow instance
 const flow = new AutoFlow();

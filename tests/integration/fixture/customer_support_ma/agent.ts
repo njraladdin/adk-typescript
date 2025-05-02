@@ -1,9 +1,9 @@
-
-
-import { LlmAgent as Agent, RemoteAgent, Session } from '../../../../src';
+import { LlmAgent as Agent } from '../../../../src/agents/LlmAgent';
+import { RemoteAgent } from '../../../../src/agents/RemoteAgent';
+import { Session } from '../../../../src/sessions/Session';
 import { Content, Part } from '../../../../src/types';
 import { BaseLlm } from '../../../../src/models/BaseLlm';
-import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { LlmRegistry } from '../../../../src/models';
 import { FunctionTool } from '../../../../src/tools/FunctionTool';
 import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
 
@@ -141,7 +141,7 @@ function afterModelCall(agent: Agent, session: Session, content: Content): Conte
 }
 
 // Create model instances for our agents
-const geminiModel = LlmRegistry.newLlm('gemini-1.5-pro');
+const geminiModel = LlmRegistry.newLlm('gemini-2.0-flash');
 
 // Create flow instances
 const autoFlow = new AutoFlow();
@@ -149,9 +149,10 @@ const autoFlow = new AutoFlow();
 /**
  * Flight agent for handling flight bookings and information
  */
-export const flightAgent = new Agent('flight_agent', {
+export const flightAgent = new Agent({
+  name: 'flight_agent',
   description: 'Handles flight information, policy and updates',
-  llm: geminiModel,
+  model: geminiModel,
   instruction: `
       You are a specialized assistant for handling flight updates.
         The primary assistant delegates work to you whenever the user needs help updating their bookings.
@@ -283,9 +284,10 @@ export const flightAgent = new Agent('flight_agent', {
 /**
  * Hotel agent for handling hotel bookings
  */
-export const hotelAgent = new Agent('hotel_agent', {
+export const hotelAgent = new Agent({
+  name: 'hotel_agent',
   description: 'Handles hotel information and booking',
-  llm: geminiModel,
+  model: geminiModel,
   instruction: `
       You are a specialized assistant for handling hotel bookings.
       The primary assistant delegates work to you whenever the user needs help booking a hotel.
@@ -359,15 +361,16 @@ export const ideaAgent = new RemoteAgent(
   {
     description: 'Provide travel ideas base on the destination.',
     url: 'http://localhost:8000/agent/run',
-    llm: geminiModel
+    model: geminiModel
   }
 );
 
 /**
  * Root agent for customer support
  */
-export const customerSupportRootAgent = new Agent('root_agent', {
-  llm: geminiModel,
+export const customerSupportRootAgent = new Agent({
+  name: 'root_agent',
+  model: geminiModel,
   instruction: `
       You are a helpful customer support assistant for Swiss Airlines.
   `,
@@ -375,16 +378,8 @@ export const customerSupportRootAgent = new Agent('root_agent', {
   flow: autoFlow,
   examples: [
     {
-      input: {
-        role: 'user',
-        parts: [{ text: 'How were you built?' }]
-      },
-      output: [
-        {
-          role: 'model',
-          parts: [{ text: 'I was built with the best agent framework.' }]
-        }
-      ]
+      input: 'How were you built?',
+      output: 'I was built with the best agent framework.'
     }
   ]
 }); 

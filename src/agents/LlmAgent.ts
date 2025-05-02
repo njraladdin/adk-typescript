@@ -13,7 +13,7 @@ import { Content, Part, MessageRole, Message } from '../models/types';
 import { BaseLlm } from '../models/BaseLlm';
 import { LlmRequest } from '../models/LlmRequest';
 import { LlmResponse } from '../models/LlmResponse';
-import { LlmRegistry } from '../models/LlmRegistry';
+import { LlmRegistry } from '../models';
 import { BaseTool } from '../tools/BaseTool';
 import { FunctionTool, FunctionToolOptions } from '../tools/FunctionTool';
 import { ToolContext } from '../tools/ToolContext';
@@ -346,7 +346,6 @@ export class LlmAgent extends BaseAgent {
   protected async *runAsyncImpl(
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
-    console.log('9- running async impl, invocationContext : ', invocationContext)
     // Forward to the LLM flow
     for await (const event of this.llmFlow.runAsync(invocationContext)) {
       this.maybeSaveOutputToState(event);

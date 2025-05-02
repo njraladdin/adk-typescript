@@ -1,16 +1,16 @@
-
-
-import { LlmAgent, CallbackContext, InvocationContext } from '../../../../src';
+import { LlmAgent } from '../../../../src/agents/LlmAgent';
+import { CallbackContext } from '../../../../src/agents/CallbackContext';
+import { InvocationContext } from '../../../../src/agents/InvocationContext';
 import { Content } from '../../../../src/types';
 import { LlmRequest, LlmResponse } from '../../../../src/models';
 import { BaseLlmFlow } from '../../../../src/flows/llm_flows/BaseLlmFlow';
 import { Event } from '../../../../src/events/Event';
 
 // Type extensions for model-related callbacks
-declare module '../../../../src' {
+declare module '../../../../src/agents/LlmAgent' {
   interface LlmAgent {
-    beforeModelCallback?: (callbackContext: CallbackContext, llmRequest: LlmRequest) => LlmResponse;
-    afterModelCallback?: (callbackContext: CallbackContext, llmResponse: LlmResponse) => LlmResponse | undefined;
+    beforeModelCallback?: (context: CallbackContext, request: LlmRequest) => LlmResponse | undefined;
+    afterModelCallback?: (context: CallbackContext, response: LlmResponse) => LlmResponse | undefined;
   }
 }
 
@@ -172,7 +172,8 @@ function afterModelCall(callbackContext: CallbackContext, llmResponse: LlmRespon
 /**
  * Before agent callback agent
  */
-export const beforeAgentCallbackAgent = new LlmAgent('before_agent_callback_agent', {
+export const beforeAgentCallbackAgent = new LlmAgent({
+  name: 'before_agent_callback_agent',
   flow: mockFlow,
   instruction: 'echo 1'
 });
@@ -182,7 +183,8 @@ export const beforeAgentCallbackAgent = new LlmAgent('before_agent_callback_agen
 /**
  * Before model callback agent
  */
-export const beforeModelCallbackAgent = new LlmAgent('before_model_callback_agent', {
+export const beforeModelCallbackAgent = new LlmAgent({
+  name: 'before_model_callback_agent',
   flow: mockFlow,
   instruction: 'echo 2'
 });
@@ -192,7 +194,8 @@ export const beforeModelCallbackAgent = new LlmAgent('before_model_callback_agen
 /**
  * After model callback agent
  */
-export const afterModelCallbackAgent = new LlmAgent('after_model_callback_agent', {
+export const afterModelCallbackAgent = new LlmAgent({
+  name: 'after_model_callback_agent',
   flow: mockFlow,
   instruction: 'Say hello'
 });

@@ -56,7 +56,7 @@ describe('Identity LLM Flow', () => {
   test('should set basic identity with no description', async () => {
     // Create a request with empty system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = '';
 
     // Create an agent without description
@@ -83,7 +83,7 @@ describe('Identity LLM Flow', () => {
   test('should include description when provided', async () => {
     // Create a request with empty system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = '';
 
     // Create an agent with description

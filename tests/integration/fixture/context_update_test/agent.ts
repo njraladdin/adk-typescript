@@ -1,8 +1,6 @@
-
-
-import { LlmAgent as Agent } from '../../../../src';
+import { LlmAgent as Agent } from '../../../../src/agents';
 import { ToolContext } from '../../../../src/tools';
-import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { LlmRegistry } from '../../../../src/models';
 import { FunctionTool } from '../../../../src/tools/FunctionTool';
 import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
 
@@ -21,14 +19,14 @@ function updateContext(
   dataFour: (number | string)[],
   toolContext: ToolContext
 ): void {
-  toolContext.actions.updateState('data_one', dataOne);
-  toolContext.actions.updateState('data_two', dataTwo);
-  toolContext.actions.updateState('data_three', dataThree);
-  toolContext.actions.updateState('data_four', dataFour);
+  toolContext.actions.stateDelta['data_one'] = dataOne;
+  toolContext.actions.stateDelta['data_two'] = dataTwo;
+  toolContext.actions.stateDelta['data_three'] = dataThree;
+  toolContext.actions.stateDelta['data_four'] = dataFour;
 }
 
 // Create model instance
-const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
+const geminiModel = LlmRegistry.newLlm('gemini-2.0-flash');
 
 // Create flow instance
 const autoFlow = new AutoFlow();
@@ -36,8 +34,9 @@ const autoFlow = new AutoFlow();
 /**
  * Root agent for context update testing
  */
-export const contextUpdateRootAgent = new Agent('root_agent', {
-  llm: geminiModel,
+export const contextUpdateRootAgent = new Agent({
+  name: 'root_agent',
+  model: geminiModel,
   instruction: 'Call tools',
   flow: autoFlow,
   tools: [

@@ -113,10 +113,7 @@ export abstract class BaseLlmFlow {
     }
 
     const llm = this._getLlm(invocationContext);
-    console.debug(
-      `Establishing live connection for agent: ${invocationContext.agent.name} with llm request:`,
-      llmRequest
-    );
+   
 
     const llmConnection = await llm.connect(llmRequest);
     try {
@@ -127,7 +124,7 @@ export abstract class BaseLlmFlow {
           try {
             const audioTranscriber = new AudioTranscriber();
             const contents = audioTranscriber.transcribeFile(invocationContext);
-            console.debug('Sending history to model:', contents);
+
             await llmConnection.sendHistory(contents);
             invocationContext.transcriptionCache = undefined;
             telemetry.traceSendData(invocationContext, eventId, contents);
@@ -154,13 +151,13 @@ export abstract class BaseLlmFlow {
           if (!event) {
             break;
           }
-          console.debug('Received new event:', event);
+
           yield event;
 
           // Send back the function response
           if (typeof event.getFunctionResponses === 'function' && event.getFunctionResponses().length > 0) {
             if (invocationContext.liveRequestQueue && typeof invocationContext.liveRequestQueue.sendContent === 'function' && event.content) {
-              console.debug('Sending back function response event:', event);
+
               invocationContext.liveRequestQueue.sendContent(event.content);
             }
           }
@@ -250,10 +247,7 @@ export abstract class BaseLlmFlow {
 
         // Duplicate the live request to all active streams
         if (invocationContext.activeStreamingTools) {
-          console.debug(
-            'Sending live request to active streams:',
-            Object.keys(invocationContext.activeStreamingTools)
-          );
+      
           
           for (const streamingTool of Object.values(invocationContext.activeStreamingTools)) {
             if (streamingTool.stream) {
@@ -414,7 +408,7 @@ export abstract class BaseLlmFlow {
       llmRequest,
       modelResponseEvent
     )) {
-      console.log('running async flow postprocessAsync')
+
       // Process each LLM response as it comes in
       yield* this._postprocessAsync(
         invocationContext,
@@ -439,7 +433,6 @@ export abstract class BaseLlmFlow {
     const agent = invocationContext.agent;
     
     // Log starting state
-    console.debug('llmRequest initial state:', llmRequest);
     
     // Make sure the agent is an LlmAgent
     if (!(agent instanceof LlmAgent)) {
@@ -448,7 +441,6 @@ export abstract class BaseLlmFlow {
     
     // Run all request processors
     for (const processor of this.requestProcessors) {
-      console.debug(`Running request processor: ${processor.constructor.name}`);
       yield* processor.runAsync(invocationContext, llmRequest);
       if (invocationContext.endInvocation) {
         return;
@@ -458,7 +450,6 @@ export abstract class BaseLlmFlow {
     // Run processors for tools
     if (agent.canonicalTools) {
       for (const tool of agent.canonicalTools) {
-        console.debug(`Processing tool: ${tool.name}`);
         
         // Create a new ToolContext directly with the invocation context
         // This matches the Python implementation: tool_context = ToolContext(invocation_context)
@@ -473,7 +464,6 @@ export abstract class BaseLlmFlow {
       }
     }
     
-    console.debug('llmRequest after preprocessing:', llmRequest);
   }
 
   /**
@@ -512,7 +502,6 @@ export abstract class BaseLlmFlow {
     
     // Handle any function calls in the response
     if (finalEvent && finalEvent.getFunctionCalls().length > 0) {
-      console.debug('Processing function calls:', finalEvent.getFunctionCalls().map(f => f.name));
       yield* this._postprocessHandleFunctionCallsAsync(
         invocationContext,
         finalEvent,

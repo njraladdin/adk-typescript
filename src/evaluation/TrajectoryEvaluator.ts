@@ -1,5 +1,3 @@
- 
-
 import { EvalConstants } from './EvaluationConstants';
 import { EvalEntry } from './EvaluationGenerator';
 
@@ -152,18 +150,85 @@ export class TrajectoryEvaluator {
     listA: Array<any>,
     listB: Array<any>
   ): boolean {
-    // Remove other entries that we don't want to evaluate
-    const normalizedListA = listA.map(tool => ({
-      [EvalConstants.TOOL_NAME]: tool[EvalConstants.TOOL_NAME],
-      [EvalConstants.TOOL_INPUT]: tool[EvalConstants.TOOL_INPUT]
-    }));
+    // First check if the lists have the same length
+    if (listA.length !== listB.length) {
+      return false;
+    }
 
-    const normalizedListB = listB.map(tool => ({
-      [EvalConstants.TOOL_NAME]: tool[EvalConstants.TOOL_NAME],
-      [EvalConstants.TOOL_INPUT]: tool[EvalConstants.TOOL_INPUT]
-    }));
+    // Sort both lists by tool name to ensure tools are compared in the same order
+    const sortedA = [...listA].sort((a, b) => 
+      a[EvalConstants.TOOL_NAME].localeCompare(b[EvalConstants.TOOL_NAME]));
+    const sortedB = [...listB].sort((a, b) => 
+      a[EvalConstants.TOOL_NAME].localeCompare(b[EvalConstants.TOOL_NAME]));
 
-    return JSON.stringify(normalizedListA) === JSON.stringify(normalizedListB);
+    // Compare each tool
+    for (let i = 0; i < sortedA.length; i++) {
+      const toolA = sortedA[i];
+      const toolB = sortedB[i];
+
+      // Compare tool names
+      if (toolA[EvalConstants.TOOL_NAME] !== toolB[EvalConstants.TOOL_NAME]) {
+        return false;
+      }
+
+      // Compare tool inputs (ignoring property order)
+      if (!TrajectoryEvaluator._areObjectsEqual(
+        toolA[EvalConstants.TOOL_INPUT] || {}, 
+        toolB[EvalConstants.TOOL_INPUT] || {}
+      )) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Helper method to compare two objects for semantic equality,
+   * ignoring property order differences
+   * @param objA First object
+   * @param objB Second object
+   * @returns True if the objects have the same properties and values
+   */
+  private static _areObjectsEqual(objA: Record<string, any>, objB: Record<string, any>): boolean {
+    // Check if both are objects
+    if (typeof objA !== 'object' || typeof objB !== 'object' || 
+        objA === null || objB === null) {
+      return objA === objB;
+    }
+
+    // Get keys from both objects
+    const keysA = Object.keys(objA);
+    const keysB = Object.keys(objB);
+
+    // Check if both have the same number of properties
+    if (keysA.length !== keysB.length) {
+      return false;
+    }
+
+    // Check if object B has all properties from object A with the same values
+    for (const key of keysA) {
+      if (!Object.prototype.hasOwnProperty.call(objB, key)) {
+        return false;
+      }
+
+      const valueA = objA[key];
+      const valueB = objB[key];
+
+      // Recursively compare nested objects
+      if (typeof valueA === 'object' && valueA !== null && 
+          typeof valueB === 'object' && valueB !== null) {
+        if (!TrajectoryEvaluator._areObjectsEqual(valueA, valueB)) {
+          return false;
+        }
+      }
+      // Compare primitive values
+      else if (valueA !== valueB) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**

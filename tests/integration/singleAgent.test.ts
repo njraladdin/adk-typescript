@@ -1,5 +1,6 @@
 import { setBackendEnvironment, restoreBackendEnvironment } from './testConfig';
 import { AgentEvaluator } from '../../src/evaluation';
+import { rootAgent } from './fixture/home_automation_agent/agent';
 
 /**
  * This test checks basic agent evaluation functionality
@@ -38,7 +39,7 @@ describe('Single Agent Tests', () => {
         try {
           // Mimic the Python test but with TypeScript paths
           const results = await AgentEvaluator.evaluate({
-            agentModulePath: 'tests/integration/fixture/home_automation_agent',
+            agent: rootAgent,
             evalDatasetFilePathOrDir: 'tests/integration/fixture/home_automation_agent/simple_test.test.json',
             numRuns: 4
           });

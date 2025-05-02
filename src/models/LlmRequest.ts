@@ -77,7 +77,7 @@ export class LlmRequest {
    * @param tools The tools to append.
    */
   appendTools(tools: BaseTool[]): void {
-    console.log('appendTools : ', tools);
+
     if (!tools || tools.length === 0) {
       console.log('no tools to append');
       return;

@@ -63,7 +63,7 @@ describe('Instructions LLM Flow', () => {
   test('should add brief instructions', async () => {
     // Create a request with empty system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = '';
 
     // Create an agent
@@ -87,7 +87,7 @@ describe('Instructions LLM Flow', () => {
   test('should add detailed instructions', async () => {
     // Create a request with empty system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = '';
 
     // Create an agent
@@ -115,7 +115,7 @@ describe('Instructions LLM Flow', () => {
     
     // Create a request with empty system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = '';
 
     // Create an agent
@@ -137,7 +137,7 @@ describe('Instructions LLM Flow', () => {
   test('should append instructions to existing system instructions', async () => {
     // Create a request with existing system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = 'Existing instruction.';
 
     // Create an agent

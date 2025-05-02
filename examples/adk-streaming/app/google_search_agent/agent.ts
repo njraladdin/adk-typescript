@@ -4,7 +4,7 @@ import { googleSearch } from 'adk-typescript/tools';
 
 // Get the model instance using LlmRegistry
 const geminiModel = LlmRegistry.newLlm(
-   "gemini-1.5-flash" // Or another compatible model 
+   "gemini-2.0-flash" // Or another compatible model 
    // Note: Ensure the model chosen supports the Google Search tool and streaming.
 );
 

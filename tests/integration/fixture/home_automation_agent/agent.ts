@@ -1,7 +1,6 @@
-import { LlmAgent as Agent } from '../../../../src';
-import { LlmRegistry } from '../../../../src/models/LlmRegistry';
-import { FunctionTool } from '../../../../src/tools/FunctionTool';
-import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
+import { LlmAgent as Agent } from '../../../../src/agents';
+import { FunctionTool } from '../../../../src/tools';
+import { AutoFlow } from '../../../../src/flows/llm_flows';
 
 // Device database interfaces
 interface DeviceInfo {
@@ -216,10 +215,20 @@ const autoFlow = new AutoFlow();
 /**
  * Home automation agent for controlling smart home devices
  */
-const homeAutomationRootAgent = new Agent('Home_automation_agent', {
-  model: 'gemini-1.5-flash',
+const homeAutomationRootAgent = new Agent({
+  name: 'Home_automation_agent',
+  model: 'gemini-2.0-flash',
   instruction: `
     You are Home Automation Agent. You are responsible for controlling the devices in the home.
+    
+    IMPORTANT: To control devices or retrieve information, you MUST use the appropriate function calls that are available to you. 
+    
+    For example:
+    - To turn devices on/off, use the set_device_info function
+    - To check device status, use the get_device_info function
+    - To set or check temperature, use the set_temperature or get_temperature functions
+    
+    Always identify which function is appropriate for the user's request and call it with the correct parameters.
   `,
   flow: autoFlow,
   tools: [

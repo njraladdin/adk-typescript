@@ -1,5 +1,3 @@
- 
-
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
@@ -13,6 +11,7 @@ import { Runner } from '../runners';
 import { BaseSessionService } from '../sessions/BaseSessionService';
 import { InMemorySessionService } from '../sessions/InMemorySessionService';
 import { SessionInterface as Session } from '../sessions/types';
+import { State } from '../sessions/State';
 import * as envs from './utils/envs';
 
 interface InputFile {
@@ -49,7 +48,7 @@ export async function runInputFile(
   const inputFile: InputFile = JSON.parse(inputFileRaw);
   
   // Add time to state
-  const state = { ...inputFile.state, _time: new Date() };
+  const state = new State({ ...inputFile.state, _time: new Date() });
   session.state = state;
   
   for (const query of inputFile.queries) {

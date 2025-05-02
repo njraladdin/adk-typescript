@@ -111,7 +111,7 @@ export class GeminiLlmConnection extends BaseLlmConnection {
         function_responses: functionResponses
       } as LiveClientToolResponse);
     } else {
-      console.debug('Sending LLM new content:', content);
+
       
       await this.geminiSession.send({
         turns: [content],

@@ -74,7 +74,7 @@ describe('Agent Transfer LLM Flow', () => {
   test('should add transfer instructions with sub-agents', async () => {
     // Create a request with empty system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = '';
 
     // Create a session
@@ -128,7 +128,7 @@ describe('Agent Transfer LLM Flow', () => {
   test('should add transfer instructions for sub-agent to parent', async () => {
     // Create a request with empty system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = '';
 
     // Create a session
@@ -172,7 +172,7 @@ describe('Agent Transfer LLM Flow', () => {
   test('should add transfer instructions for sub-agent to peer agents', async () => {
     // Create a request with empty system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = '';
 
     // Create a session
@@ -235,7 +235,7 @@ describe('Agent Transfer LLM Flow', () => {
   test('should include the transfer_to_agent function', async () => {
     // Create a request with empty system instruction
     const request = new LlmRequest();
-    request.model = 'gemini-1.5-flash';
+    request.model = 'gemini-2.0-flash';
     request.config.systemInstruction = '';
     
     // Directly add the function to test our implementation

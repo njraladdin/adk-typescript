@@ -1,5 +1,3 @@
- 
-
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -120,56 +118,95 @@ export class EvaluationGenerator {
   ): Promise<EvalEntry> {
     // Dynamically import the agent module and get the root agent
     // Note: In TypeScript/Node.js dynamic imports work differently than Python
-    // This is a simplified approximation - implementation details may vary
     console.log(`Original module path: ${moduleName}`);
     
     try {
-      // Try different import approaches
-      let agentModule;
-      
-      // First try: direct module path
+      // First ensure ts-node is registered for TypeScript files
       try {
-        console.log(`Trying direct import: ${moduleName}`);
-        agentModule = await import(moduleName);
-      } catch (e) {
-        // Second try: add index.js
-        try {
-          const indexPath = path.join(moduleName, 'index');
-          console.log(`Trying index import: ${indexPath}`);
-          agentModule = await import(indexPath);
-        } catch (e) {
-          // Third try: module path with agent.js
-          try {
-            const agentPath = path.join(moduleName, 'agent');
-            console.log(`Trying agent import: ${agentPath}`);
-            agentModule = await import(agentPath);
-          } catch (e) {
-            // Last try: as absolute path
-            const resolvedPath = path.resolve(process.cwd(), moduleName);
-            console.log(`Trying absolute path: ${resolvedPath}`);
-            agentModule = await import(resolvedPath);
+        require('ts-node/register');
+      } catch (error: any) {
+        console.log(`ts-node registration failed: ${error.message}`);
+      }
+      
+      let agentModule;
+      let rootAgent;
+      
+      // Try multiple approaches for loading the agent module, similar to cli.ts
+      try {
+        // Check if direct agent.ts file exists first
+        const agentPath = path.resolve(process.cwd(), moduleName, 'agent.ts');
+        console.log(`Trying direct agent.ts file: ${agentPath}`);
+        
+        if (fs.existsSync(agentPath)) {
+          agentModule = require(agentPath);
+        } else {
+          // Try index.ts file
+          const indexPath = path.resolve(process.cwd(), moduleName, 'index.ts');
+          console.log(`Trying index.ts file: ${indexPath}`);
+          
+          if (fs.existsSync(indexPath)) {
+            agentModule = require(indexPath);
+          } else {
+            // Try the module directly
+            console.log(`Trying direct module import: ${moduleName}`);
+            agentModule = require(moduleName);
           }
         }
-      }
+        
+        // Check if the agent structure is correct
+        if (agentModule && agentModule.agent && agentModule.agent.rootAgent) {
+          rootAgent = agentModule.agent.rootAgent;
+        } else if (agentModule && agentModule.rootAgent) {
+          rootAgent = agentModule.rootAgent;
+        } else {
+          throw new Error(`Invalid agent module structure. Expected 'agent.rootAgent' or 'rootAgent' export.`);
+        }
+        
+        // Get the reset function if it exists
+        const resetFunc = agentModule.reset_data || (agentModule.agent && agentModule.agent.reset_data);
       
-      // Check if we have a valid agent module
-      if (!agentModule || !agentModule.agent || !agentModule.agent.rootAgent) {
-        throw new Error(`Invalid agent module imported: ${JSON.stringify(Object.keys(agentModule || {}))}`);
+        let agentToEvaluate = rootAgent;
+        if (agentName) {
+          // There are several ways the agent might be found:
+          
+          // 1. Direct export with the exact agent name
+          if (agentModule[agentName]) {
+            console.log(`Found agent with exact name: ${agentName}`);
+            agentToEvaluate = agentModule[agentName];
+          } else {
+            // 2. Try all exported agents and check their name property
+            let found = false;
+            for (const exportKey in agentModule) {
+              const exportedItem = agentModule[exportKey];
+              // Check if it's an agent and has the right name
+              if (exportedItem && typeof exportedItem === 'object' && exportedItem.name === agentName) {
+                console.log(`Found agent with name property: ${agentName}, export key: ${exportKey}`);
+                agentToEvaluate = exportedItem;
+                found = true;
+                break;
+              }
+            }
+            
+            // 3. Use findAgent as a last resort
+            if (!found) {
+              console.log(`Trying findAgent for: ${agentName}`);
+              agentToEvaluate = rootAgent.findAgent(agentName);
+            }
+          }
+          
+          if (!agentToEvaluate) {
+            throw new Error(`Sub-Agent ${agentName} not found.`);
+          }
+        }
+  
+        return await EvaluationGenerator._processQueryWithRootAgent(
+          data, agentToEvaluate, resetFunc, initialSession
+        );
+      } catch (error: any) {
+        console.error(`Failed to import agent module: ${error.message}`);
+        throw error;
       }
-
-      const rootAgent = agentModule.agent.rootAgent;
-      const resetFunc = agentModule.agent.reset_data;
-
-      let agentToEvaluate = rootAgent;
-      if (agentName) {
-        agentToEvaluate = rootAgent.findAgent(agentName);
-        if (!agentToEvaluate) throw new Error(`Sub-Agent ${agentName} not found.`);
-      }
-
-      return await EvaluationGenerator._processQueryWithRootAgent(
-        data, agentToEvaluate, resetFunc, initialSession
-      );
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to import agent module: ${error}`);
       throw error;
     }
@@ -204,19 +241,18 @@ export class EvaluationGenerator {
       }
     }
 
-    // Create a copy of the evaluation data to use in callbacks
-    const evalDataCopy = { ...data };
+    // Apply the tool callback to mock tool outputs if agent is an LlmAgent
+    if (rootAgent instanceof LlmAgent) {
+      EvaluationGenerator.applyBeforeToolCallback(
+        rootAgent,
+        (tool, args, toolContext, evalDataset) => 
+          EvaluationGenerator.beforeToolCallback(tool, args, toolContext, evalDataset),
+        allMockTools,
+        [data]
+      );
+    }
 
-    // Apply the tool callback to mock tool outputs
-    EvaluationGenerator.applyBeforeToolCallback(
-      rootAgent,
-      (tool, args, toolContext, evalDataset) => 
-        EvaluationGenerator.beforeToolCallback(tool, args, toolContext, evalDataset),
-      allMockTools,
-      [evalDataCopy]
-    );
-
-    // Initialize session service if not provided
+    // Initialize services 
     if (!sessionService) {
       sessionService = new InMemorySessionService();
     }
@@ -224,14 +260,40 @@ export class EvaluationGenerator {
     // Setup the session
     const appName = initialSession.appName || "EvaluationGenerator";
     const userId = initialSession.userId || "test_user_id";
-    sessionId = sessionId || uuidv4();
+    
+    if (!sessionId) {
+      sessionId = uuidv4();
+    }
 
-    const session = sessionService.createSession({
-      appName,
-      userId,
-      sessionId,
-      state: initialSession.state || {}
-    });
+    // Get existing session or create a new one
+    let session: Session;
+    try {
+      const existingSession = sessionService.getSession({
+        appName,
+        userId,
+        sessionId
+      });
+      
+      if (existingSession) {
+        session = existingSession;
+      } else {
+        // Create new session if none exists
+        session = sessionService.createSession({
+          appName,
+          userId,
+          sessionId,
+          state: initialSession.state || {}
+        });
+      }
+    } catch (e) {
+      // Session doesn't exist, create a new one
+      session = sessionService.createSession({
+        appName,
+        userId,
+        sessionId,
+        state: initialSession.state || {}
+      });
+    }
 
     // Initialize artifact service if not provided
     if (!artifactService) {

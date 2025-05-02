@@ -1,7 +1,7 @@
 
 
-import { LlmAgent as Agent } from '../../../../src';
-import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { LlmAgent as Agent } from '../../../../src/agents';
+import { LlmRegistry } from '../../../../src/models';
 import { FunctionTool } from '../../../../src/tools/FunctionTool';
 import { AutoFlow } from '../../../../src/flows/llm_flows/AutoFlow';
 
@@ -245,7 +245,7 @@ function getUserIdFromCookie(): string {
 }
 
 // Create model instances for our agents
-const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
+const geminiModel = LlmRegistry.newLlm('gemini-2.0-flash');
 
 // Create flow instances
 const autoFlow = new AutoFlow();
@@ -253,8 +253,9 @@ const autoFlow = new AutoFlow();
 /**
  * E-commerce customer service agent
  */
-export const ecommerceCustomerServiceAgent = new Agent('Ecommerce_Customer_Service', {
-  llm: geminiModel,
+export const ecommerceCustomerServiceAgent = new Agent({
+  name: 'Ecommerce_Customer_Service',
+  model: geminiModel,
   instruction: `
     You are an intelligent customer service assistant for an e-commerce platform. Your goal is to accurately understand user queries and use the appropriate tools to fulfill requests. Follow these guidelines:
 

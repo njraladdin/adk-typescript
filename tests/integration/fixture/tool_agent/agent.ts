@@ -1,15 +1,13 @@
-
-
 import * as path from 'path';
-import { LlmAgent as Agent } from '../../../../src';
+import { LlmAgent as Agent } from '../../../../src/agents/LlmAgent';
 import { AgentTool } from '../../../../src/tools/AgentTool';
 import { FilesRetrieval } from '../../../../src/tools/retrieval/FilesRetrieval';
 import { VertexAiRagRetrieval } from '../../../../src/tools/retrieval/VertexAiRagRetrieval';
-import { LlmRegistry } from '../../../../src/models/LlmRegistry';
+import { LlmRegistry } from '../../../../src/models';
 import { FunctionTool } from '../../../../src/tools/FunctionTool';
 
 // Create model instance for all agents
-const geminiModel = LlmRegistry.newLlm('gemini-1.5-flash');
+const geminiModel = 'gemini-2.0-flash';
 
 // Define schema interfaces (equivalent to Python's Pydantic models)
 interface TestCase {
@@ -209,13 +207,15 @@ const docsTools = {
 };
 
 // Create sub-agents
-const noSchemaAgent = new Agent('no_schema_agent', {
-  llm: geminiModel,
+const noSchemaAgent = new Agent({
+  name: 'no_schema_agent',
+  model: geminiModel,
   instruction: `Just say 'Hi'`
 });
 
-const schemaAgent = new Agent('schema_agent', {
-  llm: geminiModel,
+const schemaAgent = new Agent({
+  name: 'schema_agent',
+  model: geminiModel,
   instruction: `
     You will be given a test case.
     Return a list of the received test case appended with '_success' and '_failure' as test_titles
@@ -239,8 +239,9 @@ const schemaAgent = new Agent('schema_agent', {
   } as const
 });
 
-const noInputSchemaAgent = new Agent('no_input_schema_agent', {
-  llm: geminiModel,
+const noInputSchemaAgent = new Agent({
+  name: 'no_input_schema_agent',
+  model: geminiModel,
   instruction: `
     Just return ['Tools_success, Tools_failure']
   `,
@@ -256,11 +257,10 @@ const noInputSchemaAgent = new Agent('no_input_schema_agent', {
   } as const
 });
 
-const noOutputSchemaAgent = new Agent('no_output_schema_agent', {
-  llm: geminiModel,
-  instruction: `
-    Just say 'Hi'
-  `,
+const noOutputSchemaAgent = new Agent({
+  name: 'no_output_schema_agent',
+  model: geminiModel,
+  instruction: `Just say 'Hi'`,
   inputSchema: {
     type: 'object',
     properties: {
@@ -270,15 +270,18 @@ const noOutputSchemaAgent = new Agent('no_output_schema_agent', {
   } as const
 });
 
-const singleFunctionAgent = new Agent('single_function_agent', {
-  llm: geminiModel,
-  description: 'An agent that calls a single function',
-  instruction: 'When calling tools, just return what the tool returns.',
+// Create the single function agent
+const singleFunctionAgent = new Agent({
+  name: 'single_function_agent',
+  model: geminiModel,
+    description: 'An agent that calls a single function',
+
+  instruction: 'Call the simple_function tool with the provided parameter.',
   tools: [
     new FunctionTool({
       name: 'simple_function',
       description: 'A simple function that validates parameter type',
-      fn: async (params) => simpleFunction(params.param),
+      fn: async (params: Record<string, any>, context: any) => simpleFunction(params.param),
       functionDeclaration: {
         name: 'simple_function',
         description: 'A simple function that validates parameter type',
@@ -297,19 +300,18 @@ const singleFunctionAgent = new Agent('single_function_agent', {
   ]
 });
 
-// Export the single function agent for tests
-export { singleFunctionAgent };
+// Create the tool agent
+const toolAgent = new Agent({
+  name: 'tool_agent',
+  model: geminiModel,
+    description: 'An agent that can call other tools',
 
-// Create the root agent
-export const toolAgent = new Agent('tool_agent', {
-  llm: geminiModel,
-  description: 'An agent that can call other tools',
-  instruction: 'When calling tools, just return what the tool returns.',
+  instruction: 'Call the appropriate tools based on the user request.',
   tools: [
     new FunctionTool({
       name: 'simple_function',
       description: 'A simple function that validates parameter type',
-      fn: async (params) => simpleFunction(params.param),
+      fn: async (params: Record<string, any>, context: any) => simpleFunction(params.param),
       functionDeclaration: {
         name: 'simple_function',
         description: 'A simple function that validates parameter type',
@@ -328,7 +330,7 @@ export const toolAgent = new Agent('tool_agent', {
     new FunctionTool({
       name: 'no_param_function',
       description: 'A function that takes no parameters',
-      fn: async () => noParamFunction(),
+      fn: async (params: Record<string, any>, context: any) => noParamFunction(),
       functionDeclaration: {
         name: 'no_param_function',
         description: 'A function that takes no parameters',
@@ -341,7 +343,7 @@ export const toolAgent = new Agent('tool_agent', {
     new FunctionTool({
       name: 'no_output_function',
       description: 'A function that returns no output',
-      fn: async (params) => noOutputFunction(params.param),
+      fn: async (params: Record<string, any>, context: any) => noOutputFunction(params.param),
       functionDeclaration: {
         name: 'no_output_function',
         description: 'A function that returns no output',
@@ -360,7 +362,7 @@ export const toolAgent = new Agent('tool_agent', {
     new FunctionTool({
       name: 'multiple_param_types_function',
       description: 'A function that accepts multiple parameter types',
-      fn: async (params) => multipleParamTypesFunction(
+      fn: async (params: Record<string, any>, context: any) => multipleParamTypesFunction(
         params.param1, 
         params.param2, 
         params.param3, 
@@ -396,7 +398,7 @@ export const toolAgent = new Agent('tool_agent', {
     new FunctionTool({
       name: 'throw_error_function',
       description: 'A function that throws an error',
-      fn: async (params) => throwErrorFunction(params.param),
+      fn: async (params: Record<string, any>, context: any) => throwErrorFunction(params.param),
       functionDeclaration: {
         name: 'throw_error_function',
         description: 'A function that throws an error',
@@ -415,7 +417,7 @@ export const toolAgent = new Agent('tool_agent', {
     new FunctionTool({
       name: 'list_str_param_function',
       description: 'A function that accepts a list of strings',
-      fn: async (params) => listStrParamFunction(params.param),
+      fn: async (params: Record<string, any>, context: any) => listStrParamFunction(params.param),
       functionDeclaration: {
         name: 'list_str_param_function',
         description: 'A function that accepts a list of strings',
@@ -437,7 +439,7 @@ export const toolAgent = new Agent('tool_agent', {
     new FunctionTool({
       name: 'return_list_str_function',
       description: 'A function that returns a list of strings',
-      fn: async (params) => returnListStrFunction(params.param),
+      fn: async (params: Record<string, any>, context: any) => returnListStrFunction(params.param),
       functionDeclaration: {
         name: 'return_list_str_function',
         description: 'A function that returns a list of strings',
@@ -456,7 +458,7 @@ export const toolAgent = new Agent('tool_agent', {
     new FunctionTool({
       name: 'repetive_call_1',
       description: 'First repetitive call function',
-      fn: async (params) => repetiveCall1(params.param),
+      fn: async (params: Record<string, any>, context: any) => repetiveCall1(params.param),
       functionDeclaration: {
         name: 'repetive_call_1',
         description: 'First repetitive call function',
@@ -475,7 +477,7 @@ export const toolAgent = new Agent('tool_agent', {
     new FunctionTool({
       name: 'repetive_call_2',
       description: 'Second repetitive call function',
-      fn: async (params) => repetiveCall2(params.param),
+      fn: async (params: Record<string, any>, context: any) => repetiveCall2(params.param),
       functionDeclaration: {
         name: 'repetive_call_2',
         description: 'Second repetitive call function',
@@ -517,7 +519,7 @@ export const toolAgent = new Agent('tool_agent', {
     new FunctionTool({
       name: 'directory_read_tool',
       description: 'Use this to find files for you.',
-      fn: async (params) => `Read directory: ${params.directory}`,
+      fn: async (params) => `Read directory: ${params.directory} - found files in directory`,
       functionDeclaration: {
         name: 'directory_read_tool',
         description: 'Use this to find files for you.',
@@ -536,22 +538,84 @@ export const toolAgent = new Agent('tool_agent', {
     new AgentTool({
       name: 'no_schema_agent_tool',
       description: 'A tool that uses an agent with no schema',
-      agent: noSchemaAgent
+      agent: noSchemaAgent,
+      functionDeclaration: {
+        name: 'no_schema_agent_tool',
+        description: 'A tool that uses an agent with no schema',
+        parameters: {
+          type: 'object',
+          properties: {
+            input: {
+              type: 'string',
+              description: 'The input message for the agent'
+            }
+          },
+          required: ['input']
+        }
+      }
     }),
     new AgentTool({
       name: 'schema_agent_tool',
       description: 'A tool that uses an agent with input and output schema',
-      agent: schemaAgent
+      agent: schemaAgent,
+      functionDeclaration: {
+        name: 'schema_agent_tool',
+        description: 'A tool that uses an agent with input and output schema',
+        parameters: {
+          type: 'object',
+          properties: {
+            input: {
+              type: 'string',
+              description: 'The JSON string input containing a "case" field'
+            }
+          },
+          required: ['input']
+        }
+      }
     }),
     new AgentTool({
       name: 'no_input_schema_agent_tool',
       description: 'A tool that uses an agent with no input schema',
-      agent: noInputSchemaAgent
+      agent: noInputSchemaAgent,
+      functionDeclaration: {
+        name: 'no_input_schema_agent_tool',
+        description: 'A tool that uses an agent with no input schema',
+        parameters: {
+          type: 'object',
+          properties: {
+            input: {
+              type: 'string',
+              description: 'Any input message for the agent'
+            }
+          },
+          required: ['input']
+        }
+      }
     }),
     new AgentTool({
       name: 'no_output_schema_agent_tool',
       description: 'A tool that uses an agent with no output schema',
-      agent: noOutputSchemaAgent
+      agent: noOutputSchemaAgent,
+      functionDeclaration: {
+        name: 'no_output_schema_agent_tool',
+        description: 'A tool that uses an agent with no output schema',
+        parameters: {
+          type: 'object',
+          properties: {
+            input: {
+              type: 'string',
+              description: 'The JSON string input containing a "case" field'
+            }
+          },
+          required: ['input']
+        }
+      }
     })
   ]
-}); 
+});
+
+// Don't forget to export the single function agent
+export { singleFunctionAgent };
+
+// Make sure to export the tool agent
+export { toolAgent }; 

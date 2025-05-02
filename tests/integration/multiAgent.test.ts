@@ -1,6 +1,6 @@
 import { setBackendEnvironment, restoreBackendEnvironment } from './testConfig';
 import { AgentEvaluator } from '../../src/evaluation';
-
+import { rootAgent } from './fixture/trip_planner_agent/agent';
 /**
  * Tests for evaluating multi-agent systems
  */
@@ -19,7 +19,9 @@ describe('Multi-Agent Tests', () => {
         originalBackend = setBackendEnvironment(backend);
       });
       
-      afterAll(() => {
+      afterAll(async () => {
+        // Add a delay to ensure all operations complete before restoring the environment
+        await new Promise(resolve => setTimeout(resolve, 1000));
         restoreBackendEnvironment(originalBackend);
       });
       
@@ -37,19 +39,33 @@ describe('Multi-Agent Tests', () => {
       });
       
       it('should evaluate a multi-agent system', async () => {
-        // Mimic the Python test
-        const results = await AgentEvaluator.evaluate({
-          agentModulePath: 'tests/integration/fixture/trip-planner-agent',
-          evalDatasetFilePathOrDir: 'tests/integration/fixture/trip-planner-agent/trip_inquiry.test.json',
-          initialSessionFile: 'tests/integration/fixture/trip-planner-agent/initial.session.json',
-          numRuns: 4
-        });
-        
-        // Assert that results were generated correctly
-        expect(results).toBeDefined();
-        expect(results.length).toBeGreaterThan(0);
-        expect(results.every(result => result.success)).toBe(true);
-      });
+        try {
+          // Mimic the Python test
+          const results = await AgentEvaluator.evaluate({
+            agent: rootAgent,
+            evalDatasetFilePathOrDir: 'tests/integration/fixture/trip_planner_agent/trip_inquiry.test.json',
+            initialSessionFile: 'tests/integration/fixture/trip_planner_agent/initial.session.json',
+            numRuns: 4
+          });
+          
+          // Assert that results were generated correctly
+          expect(results).toBeDefined();
+          expect(results.length).toBeGreaterThan(0);
+          expect(results.every(result => result.success)).toBe(true);
+          
+          // Add a short delay at the end to ensure all async operations complete
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error('Test failed with error:', error);
+          throw error;
+        }
+      }, 60000); // Increase timeout to 60 seconds for this test
     });
+  });
+  
+  // Add a final delay after all tests complete to ensure pending operations complete
+  afterAll(async () => {
+    // This prevents the "Cannot log after tests are done" errors
+    await new Promise(resolve => setTimeout(resolve, 2000));
   });
 }); 

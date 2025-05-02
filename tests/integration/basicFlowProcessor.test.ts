@@ -2,15 +2,15 @@ import { setBackendEnvironment, restoreBackendEnvironment } from './testConfig';
 import { requestProcessor } from '../../src/flows/llm_flows/basic';
 import { InvocationContext } from '../../src/agents/InvocationContext';
 import { LlmRequest } from '../../src/models/LlmRequest';
-import { LlmAgent as Agent } from '../../src';
+import { LlmAgent as Agent } from '../../src/agents';
 import { Session } from '../../src/sessions/Session';
 import { Content } from '../../src/models/types';
 import { SingleFlow } from '../../src/flows/llm_flows/SingleFlow';
 import { AgentOptions } from '../../src/agents/BaseAgent';
 import { Event } from '../../src/events/Event';
 import { FunctionTool } from '../../src/tools/FunctionTool';
-import { LlmRegistry } from '../../src/models/LlmRegistry';
-import { ToolContext } from '../../src/tools/toolContext';
+import { LlmRegistry } from '../../src/models';
+import { ToolContext } from '../../src/tools/ToolContext';
 import { BaseLlm } from '../../src/models/BaseLlm';
 
 // Create a MessageEvent class for testing based on Event
@@ -65,12 +65,13 @@ describe('Basic LLM Flow Request Processor Integration Tests', () => {
       
       it('should process conversation history and user content correctly', async () => {
         // Get model from registry instead of using string
-        const model = LlmRegistry.newLlm('gemini-1.5-flash');
+        const model = LlmRegistry.newLlm('gemini-2.0-flash');
         
         // Create a real agent with SingleFlow
         const flow = new SingleFlow();
         
-        const agent = new Agent('test_agent', {
+        const agent = new Agent({
+            name: 'test_agent',
             flow,
             description: 'Test agent for basic flow processor testing',
             instructions: 'You are a test agent',
@@ -158,12 +159,12 @@ describe('Basic LLM Flow Request Processor Integration Tests', () => {
         expect(llmRequest.contents[4].parts[0].text).toBe('Tell me a joke');
         
         // Verify model was set by the processor
-        expect(llmRequest.model).toBe('gemini-1.5-flash');
+        expect(llmRequest.model).toBe('gemini-2.0-flash');
       });
       
       it('should append tool definitions from LlmAgent to request', async () => {
         // Get model from registry instead of using string
-        const model = LlmRegistry.newLlm('gemini-1.5-flash');
+        const model = LlmRegistry.newLlm('gemini-2.0-flash');
         
         // Create a tool function for testing
         async function testToolFunction(
@@ -198,7 +199,8 @@ describe('Basic LLM Flow Request Processor Integration Tests', () => {
         // Create a real agent with a tool
         const flow = new SingleFlow();
         
-        const agent = new Agent('tool_agent', {
+        const agent = new Agent({
+            name: 'tool_agent',
             flow,
             tools: [testTool],
             description: 'Test agent with tools',
@@ -244,18 +246,19 @@ describe('Basic LLM Flow Request Processor Integration Tests', () => {
         expect(llmRequest.contents[0].parts[0].text).toBe('Can you help me use the test tool?');
         
         // Verify model was set by the processor
-        expect(llmRequest.model).toBe('gemini-1.5-flash');
+        expect(llmRequest.model).toBe('gemini-2.0-flash');
       });
       
       it('should handle duplicated user content in history correctly', async () => {
         // Get model from registry instead of using string
-        const model = LlmRegistry.newLlm('gemini-1.5-flash');
+        const model = LlmRegistry.newLlm('gemini-2.0-flash');
         
         // Create agent
         const flow = new SingleFlow();
-        const agent = new Agent('duplicate_test_agent', { 
-          flow,
-          model // Pass model instance directly
+        const agent = new Agent({
+            name: 'duplicate_test_agent',
+            flow,
+            model // Pass model instance directly
         });
         
         // Create session
@@ -313,7 +316,7 @@ describe('Basic LLM Flow Request Processor Integration Tests', () => {
         expect(llmRequest.contents[1].parts[0].text).toBe('Duplicated message');
         
         // Verify model was set by the processor
-        expect(llmRequest.model).toBe('gemini-1.5-flash');
+        expect(llmRequest.model).toBe('gemini-2.0-flash');
       });
     });
   });
