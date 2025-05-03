@@ -21,6 +21,11 @@ import { BaseSessionService, ListEventsResponse } from './BaseSessionService';
 import { State, StatePrefix } from './State';
 
 /**
+ * Default maximum length for VARCHAR columns in the database
+ */
+const DEFAULT_MAX_VARCHAR_LENGTH = 256;
+
+/**
  * Extract state delta from a state object, categorizing into app, user, and session state
  */
 function extractStateDelta(
@@ -150,13 +155,13 @@ function decodeContent(content: Record<string, any> | null | undefined): Content
  */
 @Entity({ name: 'sessions' })
 class StorageSession {
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   appName!: string;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   userId!: string;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   id!: string;
 
   @Column({ type: 'simple-json', default: '{}' })
@@ -177,25 +182,25 @@ class StorageSession {
  */
 @Entity({ name: 'events' })
 class StorageEvent {
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   id!: string;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   appName!: string;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   userId!: string;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   sessionId!: string;
 
-  @Column()
+  @Column({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   invocationId!: string;
 
-  @Column()
+  @Column({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   author!: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: DEFAULT_MAX_VARCHAR_LENGTH })
   branch?: string;
 
   @CreateDateColumn()
@@ -219,10 +224,10 @@ class StorageEvent {
   @Column({ nullable: true })
   turnComplete?: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: DEFAULT_MAX_VARCHAR_LENGTH })
   errorCode?: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 1024 })
   errorMessage?: string;
 
   @Column({ nullable: true })
@@ -264,7 +269,7 @@ class StorageEvent {
  */
 @Entity({ name: 'app_states' })
 class StorageAppState {
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   appName!: string;
 
   @Column({ type: 'simple-json', default: '{}' })
@@ -279,10 +284,10 @@ class StorageAppState {
  */
 @Entity({ name: 'user_states' })
 class StorageUserState {
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   appName!: string;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ length: DEFAULT_MAX_VARCHAR_LENGTH })
   userId!: string;
 
   @Column({ type: 'simple-json', default: '{}' })
