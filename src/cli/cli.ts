@@ -23,20 +23,21 @@ interface InputFile {
  * Run an agent using input from a file
  * 
  * @param appName Name of the application
+ * @param userId User ID to create the session with
  * @param rootAgent The root agent to run
  * @param artifactService Service for managing artifacts
- * @param session The session to use
  * @param sessionService Service for managing sessions
  * @param inputPath Path to the input file
+ * @returns The created session
  */
 export async function runInputFile(
   appName: string,
+  userId: string,
   rootAgent: LlmAgent,
   artifactService: BaseArtifactService,
-  session: Session,
   sessionService: BaseSessionService,
   inputPath: string
-): Promise<void> {
+): Promise<Session> {
   const runner = new Runner({
     appName,
     agent: rootAgent,
@@ -48,11 +49,17 @@ export async function runInputFile(
   const inputFile: InputFile = JSON.parse(inputFileRaw);
   
   // Add time to state
-  const state = new State({ ...inputFile.state, _time: new Date() });
-  session.state = state;
+  const state = { ...inputFile.state, _time: new Date() };
+  
+  // Create a new session with the state
+  const session = await sessionService.createSession({
+    appName,
+    userId,
+    state,
+  });
   
   for (const query of inputFile.queries) {
-    console.log(`user: ${query}`);
+    console.log(`[user]: ${query}`);
     const content: Content = { 
       role: 'user', 
       parts: [{ text: query } as Part] 
@@ -74,26 +81,26 @@ export async function runInputFile(
       }
     }
   }
+
+  return session;
 }
 
 /**
  * Run an agent interactively via CLI
  * 
- * @param appName Name of the application
  * @param rootAgent The root agent to run
  * @param artifactService Service for managing artifacts
  * @param session The session to use
  * @param sessionService Service for managing sessions
  */
 export async function runInteractively(
-  appName: string,
   rootAgent: LlmAgent,
   artifactService: BaseArtifactService,
   session: Session,
   sessionService: BaseSessionService
 ): Promise<void> {
   const runner = new Runner({
-    appName,
+    appName: session.appName,
     agent: rootAgent,
     artifactService,
     sessionService,
@@ -108,7 +115,7 @@ export async function runInteractively(
   
   let isRunning = true;
   while (isRunning) {
-    const query = (await ask('user: ')).trim();
+    const query = (await ask('[user]: ')).trim();
     if (!query) continue;
     if (query === 'exit') {
       isRunning = false;
@@ -160,18 +167,21 @@ function getSessionContents(session: Session): Content[] {
  * @param options Configuration options
  * @param options.agentParentDir The parent directory of the agent
  * @param options.agentFolderName The folder name of the agent
- * @param options.jsonFilePath Optional path to a JSON file
+ * @param options.replayFile Optional path to a replay JSON file with initial state and queries
+ * @param options.resumeFile Optional path to a previously saved session file
  * @param options.saveSession Whether to save the session after running
  */
 export async function runCli({
   agentParentDir,
   agentFolderName,
-  jsonFilePath,
+  replayFile,
+  resumeFile,
   saveSession = false,
 }: {
   agentParentDir: string;
   agentFolderName: string;
-  jsonFilePath?: string;
+  replayFile?: string;
+  resumeFile?: string;
   saveSession: boolean;
 }): Promise<void> {
   // Add agent parent directory to the module search path
@@ -182,9 +192,12 @@ export async function runCli({
   // Initialize services
   const artifactService = new InMemoryArtifactService();
   const sessionService = new InMemorySessionService();
-  const session = sessionService.createSession({
+  const userId = 'test_user';
+  
+  // Create a default session
+  let session = await sessionService.createSession({
     appName: agentFolderName,
-    userId: 'test_user',
+    userId,
   });
 
   // Resolve the agent path more carefully
@@ -227,56 +240,57 @@ export async function runCli({
         throw new Error(`Could not find rootAgent in module ${agentModulePath}. Make sure it exports a 'rootAgent' property.`);
       }
       
-      if (jsonFilePath) {
-        if (jsonFilePath.endsWith('.input.json')) {
-          // Run with input file
-          await runInputFile(
-            agentFolderName,
-            rootAgent,
-            artifactService,
-            session,
-            sessionService,
-            jsonFilePath
-          );
-        } else if (jsonFilePath.endsWith('.session.json')) {
-          // Load session from file
-          const sessionRaw = await promisify(fs.readFile)(jsonFilePath, 'utf-8');
-          const loadedSession = JSON.parse(sessionRaw);
-          
-          // Merge session data into our session object
-          session.id = loadedSession.id || session.id;
-          session.appName = loadedSession.appName || session.appName;
-          session.userId = loadedSession.userId || session.userId;
-          session.state = loadedSession.state || session.state;
-          session.events = loadedSession.events || session.events;
-          
-          // Print conversation history
-          const contents = getSessionContents(session);
-          for (const content of contents) {
-            if (content.role === 'user') {
-              console.log('user: ', content.parts[0].text);
-            } else {
-              console.log(content.parts[0].text);
+      if (replayFile) {
+        // Run with replay file (creates a new session and runs queries)
+        session = await runInputFile(
+          agentFolderName,
+          userId,
+          rootAgent,
+          artifactService,
+          sessionService,
+          replayFile
+        );
+      } else if (resumeFile) {
+        // Load session from file and replay events
+        const sessionRaw = await promisify(fs.readFile)(resumeFile, 'utf-8');
+        const loadedSession = JSON.parse(sessionRaw);
+        
+        // Merge session data into our session object
+        session.id = loadedSession.id || session.id;
+        session.appName = loadedSession.appName || session.appName;
+        session.userId = loadedSession.userId || session.userId;
+        session.state = loadedSession.state || session.state;
+        
+        // Replay all events from the loaded session
+        if (loadedSession.events && Array.isArray(loadedSession.events)) {
+          for (const event of loadedSession.events) {
+            await sessionService.appendEvent({ session, event });
+            
+            // Display the content for each event
+            if (event.content && event.content.parts && event.content.parts.length > 0) {
+              const text = event.content.parts[0].text;
+              if (text) {
+                if (event.author === 'user') {
+                  console.log(`[user]: ${text}`);
+                } else {
+                  console.log(`[${event.author}]: ${text}`);
+                }
+              }
             }
           }
-          
-          // Run interactively
-          await runInteractively(
-            agentFolderName,
-            rootAgent,
-            artifactService,
-            session,
-            sessionService
-          );
-        } else {
-          console.error(`Unsupported file type: ${jsonFilePath}`);
-          process.exit(1);
         }
+        
+        // Continue with interactive mode
+        await runInteractively(
+          rootAgent,
+          artifactService,
+          session,
+          sessionService
+        );
       } else {
         // Run interactively without input file
         console.log(`Running agent ${rootAgent.name}, type exit to exit.`);
         await runInteractively(
-          agentFolderName,
           rootAgent,
           artifactService,
           session,
@@ -287,8 +301,8 @@ export async function runCli({
       // Save session if requested
       if (saveSession) {
         let sessionPath: string;
-        if (jsonFilePath) {
-          sessionPath = jsonFilePath.replace('.input.json', '.session.json');
+        if (replayFile) {
+          sessionPath = replayFile.replace('.input.json', '.session.json');
         } else {
           // Ask for session ID
           const rl = readline.createInterface({
@@ -300,11 +314,11 @@ export async function runCli({
           });
           rl.close();
           
-          sessionPath = path.join(agentModulePath, `${sessionId}.session.json`);
+          sessionPath = path.join(path.dirname(agentModulePath), `${sessionId}.session.json`);
         }
         
         // Fetch updated session
-        const updatedSession = sessionService.getSession({
+        const updatedSession = await sessionService.getSession({
           appName: session.appName,
           userId: session.userId,
           sessionId: session.id,

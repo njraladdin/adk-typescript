@@ -41,9 +41,16 @@ program
   .command('run <agent>')
   .description('Runs an interactive CLI for a certain agent.')
   .option('--save_session', 'Whether to save the session to a json file on exit.', false)
-  .option('--input_file <inputFile>', 'Optional. Path to an input file to use.')
+  .option('--replay <replayFile>', 'Path to a JSON file with initial state and user queries. Creates a new session with this state and runs the queries without interactive mode.')
+  .option('--resume <resumeFile>', 'Path to a previously saved session file. Replays the session and continues in interactive mode.')
   .action((agent: string, options: any) => {
     try {
+      // Validate that replay and resume are not both specified
+      if (options.replay && options.resume) {
+        console.error('Error: The --replay and --resume options cannot be used together.');
+        process.exit(1);
+      }
+      
       // Register ts-node to handle TypeScript files
       try {
         require('ts-node/register');
@@ -65,7 +72,8 @@ program
         runCli({
           agentParentDir,
           agentFolderName,
-          jsonFilePath: options.input_file,
+          replayFile: options.replay,
+          resumeFile: options.resume,
           saveSession: options.save_session,
         });
       } else {
@@ -77,7 +85,8 @@ program
         runCli({
           agentParentDir,
           agentFolderName,
-          jsonFilePath: options.input_file,
+          replayFile: options.replay,
+          resumeFile: options.resume,
           saveSession: options.save_session,
         });
       }
