@@ -1,6 +1,4 @@
- 
-
-import { Part, ThinkingConfig } from '../models/types';
+import { Part, ThinkingConfig, GenerateContentConfig } from '../models/types';
 import { ReadonlyContext } from '../agents/ReadonlyContext';
 import { CallbackContext } from '../agents/CallbackContext';
 import { LlmRequest } from '../models/LlmRequest';
@@ -34,6 +32,11 @@ export class BuiltInPlanner extends BasePlanner {
    */
   applyThinkingConfig(llmRequest: LlmRequest): void {
     if (this.thinkingConfig) {
+      // Initialize config if it doesn't exist
+      if (!llmRequest.config) {
+        // Only include required properties (tools array) and use type assertion
+        llmRequest.config = { tools: [] } as GenerateContentConfig;
+      }
       llmRequest.config.thinkingConfig = this.thinkingConfig;
     }
   }
