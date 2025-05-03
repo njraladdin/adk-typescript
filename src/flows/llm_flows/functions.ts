@@ -260,17 +260,15 @@ export async function handleFunctionCallsLive(
       } else {
         // Call before_tool_callback if exists
         if (agent.beforeToolCallback) {
-          const beforeResponse = agent.beforeToolCallback(
+          functionResponse = agent.beforeToolCallback(
             tool,
             functionArgs,
             toolContext
           );
           
           // Check if the response is a Promise and await it
-          if (beforeResponse instanceof Promise) {
-            functionResponse = await beforeResponse;
-          } else {
-            functionResponse = beforeResponse;
+          if (functionResponse instanceof Promise) {
+            functionResponse = await functionResponse;
           }
         }
         
@@ -287,7 +285,7 @@ export async function handleFunctionCallsLive(
         
         // Call after_tool_callback if exists
         if (agent.afterToolCallback) {
-          const afterResponse = agent.afterToolCallback(
+          const alteredFunctionResponse = agent.afterToolCallback(
             tool,
             functionArgs,
             toolContext,
@@ -295,15 +293,15 @@ export async function handleFunctionCallsLive(
           );
           
           // Check if the response is a Promise and await it
-          if (afterResponse instanceof Promise) {
-            const awaitedResponse = await afterResponse;
+          if (alteredFunctionResponse instanceof Promise) {
+            const awaitedResponse = await alteredFunctionResponse;
             // Only update if the response is not undefined (equivalent to Python's "is not None")
             if (awaitedResponse !== undefined) {
               functionResponse = awaitedResponse;
             }
-          } else if (afterResponse !== undefined) {
+          } else if (alteredFunctionResponse !== undefined) {
             // Only update if not undefined (equivalent to Python's "is not None")
-            functionResponse = afterResponse;
+            functionResponse = alteredFunctionResponse;
           }
         }
       }
@@ -404,17 +402,15 @@ export async function handleFunctionCallsAsync(
       } else {
         // Call before_tool_callback if exists
         if (agent.beforeToolCallback) {
-          const beforeResponse = agent.beforeToolCallback(
+          functionResponse = agent.beforeToolCallback(
             tool,
             functionArgs,
             toolContext
           );
           
           // Check if the response is a Promise and await it
-          if (beforeResponse instanceof Promise) {
-            functionResponse = await beforeResponse;
-          } else {
-            functionResponse = beforeResponse;
+          if (functionResponse instanceof Promise) {
+            functionResponse = await functionResponse;
           }
         }
         
@@ -429,7 +425,7 @@ export async function handleFunctionCallsAsync(
         
         // Call after_tool_callback if exists
         if (agent.afterToolCallback) {
-          const afterResponse = agent.afterToolCallback(
+          const alteredFunctionResponse = agent.afterToolCallback(
             tool,
             functionArgs,
             toolContext,
@@ -437,15 +433,15 @@ export async function handleFunctionCallsAsync(
           );
           
           // Check if the response is a Promise and await it
-          if (afterResponse instanceof Promise) {
-            const awaitedResponse = await afterResponse;
+          if (alteredFunctionResponse instanceof Promise) {
+            const awaitedResponse = await alteredFunctionResponse;
             // Only update if the response is not undefined (equivalent to Python's "is not None")
             if (awaitedResponse !== undefined) {
               functionResponse = awaitedResponse;
             }
-          } else if (afterResponse !== undefined) {
+          } else if (alteredFunctionResponse !== undefined) {
             // Only update if not undefined (equivalent to Python's "is not None")
-            functionResponse = afterResponse;
+            functionResponse = alteredFunctionResponse;
           }
         }
       }

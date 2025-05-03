@@ -57,14 +57,14 @@ type BeforeToolCallback = (
   tool: BaseTool,
   args: Record<string, any>,
   toolContext: ToolContext
-) => Record<string, any> | undefined;
+) => Record<string, any> | undefined | Promise<Record<string, any> | undefined>;
 
 type AfterToolCallback = (
   tool: BaseTool,
   args: Record<string, any>,
   toolContext: ToolContext,
   response: Record<string, any>
-) => Record<string, any> | undefined;
+) => Record<string, any> | undefined | Promise<Record<string, any> | undefined>;
 
 /**
  * Extended options for LLM agents.
