@@ -22,9 +22,10 @@ TODO:
 - make integration tests pass, done 
 
 
-- port changes from python project v0.3.0
+- port changes from python project v0.3.0, done 
 - port changes from python project v0.4.0
 
+- port all tools unit tests 
 
 git tag -f v0.0.1
  git push

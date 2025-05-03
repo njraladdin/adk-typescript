@@ -88,7 +88,8 @@ export class OperationParser {
           location,
           schema,
           description,
-          ''
+          '',
+          required
         )
       );
     }
@@ -113,19 +114,22 @@ export class OperationParser {
     const mediaTypeObject = content[firstMimeType];
     const schema = mediaTypeObject.schema || {};
     const description = requestBody.description || '';
+    const required = requestBody.required;
 
     if (schema.type === 'object') {
       const properties = schema.properties || {};
       
       // For objects, extract each property as a parameter
       Object.entries(properties).forEach(([propName, propDetails]) => {
+        const propRequired = Array.isArray(schema.required) && schema.required.includes(propName);
         this.params.push(
           new ApiParameter(
             propName,
             'body',
             propDetails as any,
             (propDetails as any).description || '',
-            ''
+            '',
+            propRequired
           )
         );
       });
@@ -136,7 +140,8 @@ export class OperationParser {
           'body',
           schema,
           description,
-          ''
+          '',
+          required
         )
       );
     } else {
@@ -147,7 +152,8 @@ export class OperationParser {
           'body',
           schema,
           description,
-          ''
+          '',
+          required
         )
       );
     }
@@ -296,7 +302,7 @@ ${jsDocParams.map(param => ` * ${param}`).join('\n')}
     return {
       properties,
       required: this.params
-        .filter(p => typeof p.paramSchema.required === 'boolean' && p.paramSchema.required)
+        .filter(p => p.required !== false)
         .map(p => p.pyName),
       title: `${this.operation.operationId || 'unnamed'}_Arguments`,
       type: 'object'
