@@ -1,5 +1,3 @@
-
-
 import { BaseTool } from '../BaseTool';
 import { ToolContext } from '../ToolContext';
 
@@ -16,6 +14,8 @@ export enum AuthCredentialTypes {
 export interface OAuth2Auth {
   clientId: string;
   clientSecret: string;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 /**

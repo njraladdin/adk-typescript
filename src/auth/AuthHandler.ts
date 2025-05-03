@@ -1,5 +1,3 @@
- 
-
 import { AuthCredential, AuthCredentialTypes, OAuth2Auth } from './AuthCredential';
 import { AuthConfig } from './AuthConfig';
 import { AuthSchemeType, OAuthGrantType, OpenIdConnectWithConfig } from './AuthSchemes';

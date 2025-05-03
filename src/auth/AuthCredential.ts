@@ -1,5 +1,3 @@
- 
-
 /**
  * Enum for authentication credential types.
  */
@@ -76,7 +74,14 @@ export interface OAuth2Auth {
   redirect_uri?: string;
   auth_response_uri?: string;
   auth_code?: string;
-  token?: Record<string, any>;
+  /**
+   * OAuth2 access token
+   */
+  access_token?: string;
+  /**
+   * OAuth2 refresh token
+   */
+  refresh_token?: string;
 }
 
 /**
@@ -221,14 +226,14 @@ export class ApiKeyCredential {
  */
 export class BearerCredential {
   readonly auth_type = AuthCredentialTypes.HTTP;
-  private token: string;
+  private access_token: string;
   
   /**
    * Initialize the bearer token credential
    * @param token The bearer token value
    */
   constructor(token: string) {
-    this.token = token;
+    this.access_token = token;
   }
   
   /**
@@ -240,7 +245,7 @@ export class BearerCredential {
       http: {
         scheme: 'bearer',
         credentials: {
-          token: this.token
+          token: this.access_token
         }
       }
     };

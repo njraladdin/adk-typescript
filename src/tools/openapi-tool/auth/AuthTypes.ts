@@ -1,5 +1,3 @@
-
-
 /**
  * Authentication types and interfaces for OpenAPI tools
  */
