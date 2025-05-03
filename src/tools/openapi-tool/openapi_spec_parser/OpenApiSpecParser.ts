@@ -1,5 +1,3 @@
-
-
 import { ApiParameter, OperationEndpoint, toSnakeCase } from '../common/common';
 import { AuthCredential, AuthScheme } from '../auth/AuthTypes';
 
@@ -161,7 +159,8 @@ export class OpenApiSpecParser {
             
             if (schema.type === 'object' && schema.properties) {
               // For objects, extract each property as a parameter
-              Object.entries(schema.properties).forEach(([propName, propDetails]) => {
+              const properties = schema.properties || {};
+              Object.entries(properties).forEach(([propName, propDetails]) => {
                 parameters.push(new ApiParameter(
                   propName,
                   'body',

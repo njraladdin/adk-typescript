@@ -1,5 +1,3 @@
-
-
 import axios, { AxiosRequestConfig, Method } from 'axios';
 import { BaseTool } from '../../BaseTool';
 import { ToolContext } from '../../ToolContext';
@@ -18,6 +16,42 @@ export function snakeToLowerCamel(snakeCaseString: string): string {
   }
 
   return snakeCaseString.replace(/_([a-z])/g, (_, char) => char.toUpperCase());
+}
+
+/**
+ * Normalizes a JSON Schema type into a Gemini Schema type and checks if it's nullable
+ * @param jsonSchemaType The JSON Schema type (string or array of strings)
+ * @returns A tuple of [normalizedType, isNullable]
+ */
+export function normalizeJsonSchemaType(
+  jsonSchemaType: string | string[] | null | undefined
+): [string | null, boolean] {
+  if (!jsonSchemaType) {
+    return [null, false];
+  }
+
+  if (typeof jsonSchemaType === 'string') {
+    if (jsonSchemaType === 'null') {
+      return [null, true];
+    }
+    return [jsonSchemaType, false];
+  }
+
+  // Handle array of types
+  const nonNullTypes: string[] = [];
+  let nullable = false;
+
+  // If JSON schema type is an array, pick the first non null type
+  for (const typeValue of jsonSchemaType) {
+    if (typeValue === 'null') {
+      nullable = true;
+    } else {
+      nonNullTypes.push(typeValue);
+    }
+  }
+
+  const nonNullType = nonNullTypes.length > 0 ? nonNullTypes[0] : null;
+  return [nonNullType, nullable];
 }
 
 /**
@@ -41,11 +75,6 @@ export function toGeminiSchema(openApiSchema: Schema | null | undefined): any {
     openApiSchema.type = 'object';
   }
 
-  // Add properties to avoid validation errors for object types
-  if (openApiSchema.type === 'object' && !openApiSchema.properties) {
-    openApiSchema.properties = { 'dummy_DO_NOT_GENERATE': { type: 'string' } };
-  }
-
   // Convert OpenAPI schema fields to Gemini schema fields
   for (const [key, value] of Object.entries(openApiSchema)) {
     // Convert key from camelCase to snake_case
@@ -56,7 +85,19 @@ export function toGeminiSchema(openApiSchema: Schema | null | undefined): any {
       continue;
     }
 
-    if (snakeCaseKey === 'properties' && typeof value === 'object') {
+    if (snakeCaseKey === 'type') {
+      const [schemaType, nullable] = normalizeJsonSchemaType(
+        openApiSchema.type as string | string[]
+      );
+      
+      // Adding this to force adding a type to an empty dict
+      // This avoids "... one_of or any_of must specify a type" error
+      geminiSchema['type'] = schemaType ? schemaType.toUpperCase() : 'OBJECT';
+      
+      if (nullable) {
+        geminiSchema['nullable'] = true;
+      }
+    } else if (snakeCaseKey === 'properties' && typeof value === 'object') {
       geminiSchema[snakeCaseKey] = Object.entries(value).reduce(
         (acc, [propKey, propValue]) => {
           acc[propKey] = toGeminiSchema(propValue as Schema);

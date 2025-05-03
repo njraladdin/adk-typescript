@@ -1,5 +1,3 @@
-
-
 /**
  * Common utility functions and interfaces for OpenAPI tool implementation
  */
@@ -249,20 +247,23 @@ export class JsDocHelper {
    * @returns JSDoc string for the return value
    */
   static generateReturnDoc(responses: Record<string, any>): string {
-    // Find a success response (2xx)
-    const successCodes = Object.keys(responses).filter(code => code.startsWith('2'));
+    // Default return doc
+    let returnDoc = '@returns {any}';
     
-    if (successCodes.length === 0) {
-      return '@returns {Promise<any>}';
+    // Get the first 2xx response
+    const successCodes = Object.keys(responses).filter(code => code.startsWith('2'));
+    if (successCodes.length > 0) {
+      const minStatusCode = successCodes.sort()[0];
+      const response = responses[minStatusCode];
+      
+      // Get description if available
+      let description = response.description || '';
+      if (description) {
+        description = description.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+        returnDoc = `@returns {any} ${description}`;
+      }
     }
     
-    // Use the first success code
-    const responseCode = successCodes[0];
-    const response = responses[responseCode];
-    
-    let description = response.description || 'Successful response';
-    description = description.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-    
-    return `@returns {Promise<any>} ${description}`;
+    return returnDoc;
   }
 } 
