@@ -251,24 +251,26 @@ export async function handleFunctionCallsLive(
       
       // Function args
       const functionArgs = functionCall.args || {};
-      let functionResponse = null;
+      let functionResponse: Record<string, any> | undefined = undefined;
       
       // Check for missing mandatory arguments
       const missingArgsError = _checkMandatoryArguments(tool, functionArgs);
       if (missingArgsError) {
         functionResponse = missingArgsError;
       } else {
-        // Call before_tool_callback if exists
+        // before_tool_callback (sync or async)
         if (agent.beforeToolCallback) {
-          functionResponse = agent.beforeToolCallback(
+          const beforeCallbackResult = agent.beforeToolCallback(
             tool,
             functionArgs,
             toolContext
           );
           
           // Check if the response is a Promise and await it
-          if (functionResponse instanceof Promise) {
-            functionResponse = await functionResponse;
+          if (beforeCallbackResult instanceof Promise) {
+            functionResponse = await beforeCallbackResult;
+          } else {
+            functionResponse = beforeCallbackResult;
           }
         }
         
@@ -283,8 +285,8 @@ export async function handleFunctionCallsLive(
           );
         }
         
-        // Call after_tool_callback if exists
-        if (agent.afterToolCallback) {
+        // after_tool_callback (sync or async)
+        if (agent.afterToolCallback && functionResponse) {
           const alteredFunctionResponse = agent.afterToolCallback(
             tool,
             functionArgs,
@@ -314,14 +316,16 @@ export async function handleFunctionCallsLive(
       }
       
       // Build function response event
-      const responseEvent = _buildResponseEvent(
-        tool,
-        functionResponse,
-        toolContext,
-        invocationContext
-      );
-      
-      functionResponseEvents.push(responseEvent);
+      if (functionResponse) {
+        const responseEvent = _buildResponseEvent(
+          tool,
+          functionResponse,
+          toolContext,
+          invocationContext
+        );
+        
+        functionResponseEvents.push(responseEvent);
+      }
     } catch (error) {
       console.error(`Error executing function ${functionCall.name}:`, error);
     }
@@ -393,24 +397,26 @@ export async function handleFunctionCallsAsync(
       
       // Function args
       const functionArgs = functionCall.args || {};
-      let functionResponse = null;
+      let functionResponse: Record<string, any> | undefined = undefined;
       
       // Check for missing mandatory arguments
       const missingArgsError = _checkMandatoryArguments(tool, functionArgs);
       if (missingArgsError) {
         functionResponse = missingArgsError;
       } else {
-        // Call before_tool_callback if exists
+        // before_tool_callback (sync or async)
         if (agent.beforeToolCallback) {
-          functionResponse = agent.beforeToolCallback(
+          const beforeCallbackResult = agent.beforeToolCallback(
             tool,
             functionArgs,
             toolContext
           );
           
           // Check if the response is a Promise and await it
-          if (functionResponse instanceof Promise) {
-            functionResponse = await functionResponse;
+          if (beforeCallbackResult instanceof Promise) {
+            functionResponse = await beforeCallbackResult;
+          } else {
+            functionResponse = beforeCallbackResult;
           }
         }
         
@@ -423,8 +429,8 @@ export async function handleFunctionCallsAsync(
           );
         }
         
-        // Call after_tool_callback if exists
-        if (agent.afterToolCallback) {
+        // after_tool_callback (sync or async)
+        if (agent.afterToolCallback && functionResponse) {
           const alteredFunctionResponse = agent.afterToolCallback(
             tool,
             functionArgs,
@@ -454,14 +460,16 @@ export async function handleFunctionCallsAsync(
       }
       
       // Build function response event
-      const responseEvent = _buildResponseEvent(
-        tool,
-        functionResponse,
-        toolContext,
-        invocationContext
-      );
-      
-      functionResponseEvents.push(responseEvent);
+      if (functionResponse) {
+        const responseEvent = _buildResponseEvent(
+          tool,
+          functionResponse,
+          toolContext,
+          invocationContext
+        );
+        
+        functionResponseEvents.push(responseEvent);
+      }
     } catch (error) {
       console.error(`Error executing function ${functionCall.name}:`, error);
     }
