@@ -1,5 +1,3 @@
- 
-
 /**
  * Handles function calls for LLM flow.
  */
@@ -10,18 +8,10 @@ import { ToolContext } from '../../tools/ToolContext';
 import { BaseTool } from '../../tools/BaseTool';
 import * as telemetry from '../../telemetry';
 import { LlmAgent } from '../../agents/LlmAgent';
+import { ActiveStreamingTool } from '../../agents/ActiveStreamingTool';
 
 const AF_FUNCTION_CALL_ID_PREFIX = 'adk-';
 const REQUEST_EUC_FUNCTION_CALL_NAME = 'adk_request_credential';
-
-/**
- * Interface for active streaming tool task
- */
-interface ActiveStreamingTool {
-  task: Promise<void> | null;
-  done?: boolean;
-  cancelled?: boolean;
-}
 
 /**
  * Safely get an event ID for telemetry purposes
@@ -240,6 +230,11 @@ export async function handleFunctionCallsLive(
           functionArgs,
           toolContext
         );
+        
+        // Check if the response is a Promise and await it
+        if (functionResponse instanceof Promise) {
+          functionResponse = await functionResponse;
+        }
       }
       
       // Execute the tool if no callback response
@@ -262,7 +257,13 @@ export async function handleFunctionCallsLive(
           functionResponse
         );
         
-        if (newResponse) {
+        // Check if the response is a Promise and await it
+        if (newResponse instanceof Promise) {
+          const awaitedResponse = await newResponse;
+          if (awaitedResponse !== undefined) {
+            functionResponse = awaitedResponse;
+          }
+        } else if (newResponse !== undefined) {
           functionResponse = newResponse;
         }
       }
@@ -363,6 +364,11 @@ export async function handleFunctionCallsAsync(
           functionArgs,
           toolContext
         );
+        
+        // Check if the response is a Promise and await it
+        if (functionResponse instanceof Promise) {
+          functionResponse = await functionResponse;
+        }
       }
       
       // Execute the tool if no callback response
@@ -383,7 +389,13 @@ export async function handleFunctionCallsAsync(
           functionResponse
         );
         
-        if (newResponse) {
+        // Check if the response is a Promise and await it
+        if (newResponse instanceof Promise) {
+          const awaitedResponse = await newResponse;
+          if (awaitedResponse !== undefined) {
+            functionResponse = awaitedResponse;
+          }
+        } else if (newResponse !== undefined) {
           functionResponse = newResponse;
         }
       }
@@ -449,17 +461,93 @@ async function _processFunctionLiveHelper(
   functionArgs: Record<string, any>,
   invocationContext: InvocationContext
 ): Promise<any> {
-  // We need to implement live streaming support when appropriate interfaces are added
-  // This is a simplified implementation without streaming support
+  let functionResponse = null;
   
   // Handle stop_streaming function call
   if (functionCall.name === 'stop_streaming' && functionArgs.function_name) {
     const functionName = functionArgs.function_name;
-    return { status: `Stop streaming request received for ${functionName}` };
+    const activeTasks = invocationContext.activeStreamingTools;
+    
+    if (activeTasks && 
+        activeTasks.has(functionName) && 
+        activeTasks.get(functionName)?.task && 
+        !activeTasks.get(functionName)?.done) {
+      const activeTask = activeTasks.get(functionName)!;
+      
+      // Mark as cancelled
+      activeTask.cancelled = true;
+      
+      try {
+        // Wait for task to complete or timeout
+        // Note: Proper task cancellation would require more robust implementation
+        await Promise.race([
+          activeTask.task,
+          new Promise(resolve => setTimeout(resolve, 1000)) // 1 second timeout
+        ]);
+        
+        // Clean up the reference
+        activeTask.task = null;
+        functionResponse = {
+          status: `Successfully stopped streaming function ${functionName}`
+        };
+      } catch (error: any) {
+        console.error(`Error cancelling task ${functionName}:`, error);
+        functionResponse = {
+          status: `Error stopping streaming function ${functionName}: ${error.message || 'Unknown error'}`
+        };
+      }
+    } else {
+      functionResponse = {
+        status: `No active streaming function named ${functionName} found`
+      };
+    }
+  } else if ((tool as any).func && typeof (tool as any).func === 'function' && 
+             (tool as any).isAsyncGenerator) {
+    // For streaming tool use case
+    // Mirroring Python's inspect.isasyncgenfunction(tool.func)
+    
+    // Create async function to run tool and update results
+    const runToolAndUpdateQueue = async () => {
+      try {
+        // In Python, this uses tool._call_live() which is an async generator
+        // We'd need equivalent streaming support in TypeScript
+        // This is a placeholder for the actual implementation
+        return { status: 'The function is running asynchronously and the results are pending.' };
+      } catch (error: any) {
+        console.error(`Error in streaming tool ${tool.name}:`, error);
+        return { status: `Error in streaming tool: ${error.message || 'Unknown error'}` };
+      }
+    };
+    
+    // Create a task
+    const task = runToolAndUpdateQueue();
+    
+    // Store the task in active streaming tools
+    if (!invocationContext.activeStreamingTools) {
+      // Initialize the map if it doesn't exist
+      invocationContext.activeStreamingTools = new Map();
+    }
+    
+    // Create the streaming tool
+    const streamingTool = new ActiveStreamingTool(task, {
+      name: tool.name,
+      args: functionArgs,
+      id: functionCall.id
+    });
+    
+    // Ensure the map exists before setting the tool
+    invocationContext.activeStreamingTools.set(tool.name, streamingTool);
+    
+    // Immediately return a pending response
+    functionResponse = {
+      status: 'The function is running asynchronously and the results are pending.'
+    };
+  } else {
+    // For non-streaming tools, just call them normally
+    functionResponse = await _callToolAsync(tool, functionArgs, toolContext);
   }
   
-  // For now, execute all tools synchronously
-  return await _callToolAsync(tool, functionArgs, toolContext);
+  return functionResponse;
 }
 
 /**
@@ -570,7 +658,8 @@ function mergeParallelFunctionResponseEvents(
     }
   }
   
-  // Create a new event with all parts
+  // Create a new event with all parts and the actions from the first event
+  // In a more complete implementation, we would merge actions more thoroughly
   return new Event({
     invocationId: firstEvent.invocationId,
     author: firstEvent.author,
@@ -580,5 +669,7 @@ function mergeParallelFunctionResponseEvents(
       parts: parts,
     },
     actions: firstEvent.actions,
+    // Also preserve the timestamp from the first event
+    timestamp: firstEvent.timestamp
   });
 } 

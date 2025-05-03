@@ -19,10 +19,12 @@ TODO:
 - fix linting, done 
 
 - make unit tests pass, done 
+- make integration tests pass, done 
 
-- make integration tests pass 
 
 - port changes from python project v0.3.0
+- port changes from python project v0.4.0
+
 
 git tag -f v0.0.1
  git push

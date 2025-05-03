@@ -115,8 +115,6 @@ You don't need to commit the generated files as they're created during the build
 
 The ADK TypeScript CLI provides commands to manage and run your agents. *(Ensure you have built the project (`npm run build`) or installed it globally)*.
 
-*(**Note:** Replace `adk-ts` with the actual command if needed, e.g., `node dist/cli/index.js` or similar if running from source/build output)*
-
 **1. Create a New Agent Project:**
 
 Generates a starter agent template with necessary files (`agent.ts`, `package.json`, `tsconfig.json`, `.env`).
@@ -188,7 +186,7 @@ adk-ts graph <path_to_agent_folder> --output graph.png
 
 **7. Deploy to Cloud Run:**
 
-Packages and deploys your agent to Google Cloud Run. *(Note: This command might require adjustments specific to the TypeScript build/runtime)*.
+Packages and deploys your agent to Google Cloud Run. 
 
 ```bash
 adk-ts deploy cloud_run <path_to_agent_folder> --project <your-gcp-project> --region <gcp-region> --service_name <your-service-name>
