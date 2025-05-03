@@ -167,11 +167,11 @@ export class OperationParser {
     
     for (const param of this.params) {
       const name = param.pyName;
-      if (name in paramsCnt) {
-        paramsCnt[name]++;
-        param.pyName = `${name}_${paramsCnt[name] - 1}`; 
+      if (!(name in paramsCnt)) {
+        paramsCnt[name] = 0;
       } else {
-        paramsCnt[name] = 1;
+        paramsCnt[name]++;
+        param.pyName = `${name}_${paramsCnt[name] - 1}`;
       }
     }
   }
