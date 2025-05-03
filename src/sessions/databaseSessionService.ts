@@ -102,11 +102,12 @@ function encodeContent(content: Content): Record<string, any> {
 /**
  * Decode content from the database
  */
-function decodeContent(content: Record<string, any>): Content {
+function decodeContent(content: Record<string, any> | null | undefined): Content {
   if (!content || !content.parts) {
+    // Return null when content is null or undefined
     // Create a default Content structure if content is missing required properties
     return {
-      role: content?.role || 'user',
+      role: 'user',
       parts: []
     };
   }
@@ -200,8 +201,8 @@ class StorageEvent {
   @CreateDateColumn()
   timestamp!: Date;
 
-  @Column({ type: 'simple-json' })
-  content!: Record<string, any>;
+  @Column({ type: 'simple-json', nullable: true })
+  content?: Record<string, any>;
 
   @Column({ type: 'simple-json' })
   actions!: Record<string, any>;
@@ -711,7 +712,7 @@ export class DatabaseSessionService extends BaseSessionService {
     storageEvent.sessionId = session.id;
     storageEvent.invocationId = event.invocationId;
     storageEvent.author = event.author;
-    storageEvent.content = encodeContent(event.content);
+    storageEvent.content = event.content ? encodeContent(event.content) : undefined;
     storageEvent.actions = event.actions || {};
     storageEvent.turnComplete = event.turnComplete;
     storageEvent.partial = event.partial;

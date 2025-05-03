@@ -501,8 +501,7 @@ async function _processFunctionLiveHelper(
         status: `No active streaming function named ${functionName} found`
       };
     }
-  } else if ((tool as any).func && typeof (tool as any).func === 'function' && 
-             (tool as any).isAsyncGenerator) {
+  } else if ((tool as any).isAsyncGenerator) {
     // For streaming tool use case
     // Mirroring Python's inspect.isasyncgenfunction(tool.func)
     
