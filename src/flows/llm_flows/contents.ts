@@ -356,7 +356,7 @@ export function getContents(
   // Parse the events, leaving the contents and the function calls and
   // responses from the current agent.
   for (const event of events) {
-    if (!event.content || !event.content.role) {
+    if (!event.content || !event.content.role || !event.content.parts || event.content.parts[0].text == '') {
       // Skip events without content, or generated neither by user nor by model.
       // E.g. events purely for mutating session states.
       continue;
