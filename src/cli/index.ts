@@ -177,6 +177,11 @@ program
   .option('--with_ui', 'Deploy ADK Web UI if set.', false)
   .option('--temp_folder <tempFolder>', 'Temp folder for the generated Cloud Run source files.')
   .option('--verbosity <verbosity>', 'Override the default verbosity level.', 'WARNING')
+  .option('--session_db_url <sessionDbUrl>', 
+    'Optional. The database URL to store the session.\n' +
+    '  - Use \'agentengine://<agent_engine_resource_id>\' to connect to Agent Engine sessions.\n' +
+    '  - Use \'sqlite://<path_to_sqlite_file>\' to connect to a SQLite DB.\n' +
+    '  - See https://docs.sqlalchemy.org/en/20/core/engines.html#backend-specific-urls for more details on supported DB URLs.')
   .action((agent: string, options: any) => {
     toCloudRun({
       agentFolder: agent,
@@ -189,6 +194,7 @@ program
       traceToCloud: options.trace_to_cloud,
       withUi: options.with_ui,
       verbosity: options.verbosity,
+      sessionDbUrl: options.session_db_url,
     });
   });
 
@@ -198,6 +204,11 @@ program
   .description('Starts a web server for agents with Socket.IO for live interaction.')
   .option('--port <port>', 'Port to run the server on.', '3000')
   .option('--allow_origin <origins...>', 'Allowed origins for CORS.', ['*'])
+  .option('--session_db_url <sessionDbUrl>', 
+    'Optional. The database URL to store the session.\n' +
+    '  - Use \'agentengine://<agent_engine_resource_id>\' to connect to Agent Engine sessions.\n' +
+    '  - Use \'sqlite://<path_to_sqlite_file>\' to connect to a SQLite DB.\n' +
+    '  - See https://docs.sqlalchemy.org/en/20/core/engines.html#backend-specific-urls for more details on supported DB URLs.')
   .action((agent: string | undefined, options: any) => {
     try {
       let agentDir = '.';
@@ -213,7 +224,8 @@ program
       startWebServer({
         agentDir,
         port: parseInt(options.port, 10),
-        allowOrigins: options.allow_origin
+        allowOrigins: options.allow_origin,
+        sessionDbUrl: options.session_db_url
       });
     } catch (error) {
       console.error('Error starting web server:', error);
@@ -226,7 +238,11 @@ program
   .command('api_server')
   .description('Starts an API server for agents.')
   .option('--agent_dir <agentDir>', 'Directory containing agent modules.', '.')
-  .option('--db_url <dbUrl>', 'Database URL for session storage.', '')
+  .option('--session_db_url <sessionDbUrl>', 
+    'Optional. The database URL to store the session.\n' +
+    '  - Use \'agentengine://<agent_engine_resource_id>\' to connect to Agent Engine sessions.\n' +
+    '  - Use \'sqlite://<path_to_sqlite_file>\' to connect to a SQLite DB.\n' +
+    '  - See https://docs.sqlalchemy.org/en/20/core/engines.html#backend-specific-urls for more details on supported DB URLs.')
   .option('--port <port>', 'Port to run the server on.', '8000')
   .option('--allow_origin <origins...>', 'Allowed origins for CORS.', ['*'])
   .option('--with_ui', 'Serve web UI if set.', false)
@@ -235,7 +251,7 @@ program
     try {
       const { app, server } = createApiServer({
         agentDir: options.agent_dir,
-        sessionDbUrl: options.db_url,
+        sessionDbUrl: options.session_db_url,
         allowOrigins: options.allow_origin,
         web: options.with_ui,
         traceToCloud: options.trace_to_cloud,

@@ -1,5 +1,3 @@
- 
-
 import express, { Request, Response } from 'express';
 import * as http from 'http';
 import * as fs from 'fs';
@@ -120,14 +118,16 @@ function getAgentDirectories(parentDir: string): string[] {
  * @param params.agentDir Directory containing agent modules
  * @param params.port Port to run the server on
  * @param params.allowOrigins Allowed origins for CORS
+ * @param params.sessionDbUrl Optional database URL for session storage
  * @returns Object containing Express app and HTTP server
  */
 export function createWebServer(params: {
   agentDir: string;
   port: number;
   allowOrigins: string[];
+  sessionDbUrl?: string;
 }): { app: express.Express; server: http.Server } {
-  const { agentDir, port, allowOrigins } = params;
+  const { agentDir, port, allowOrigins, sessionDbUrl } = params;
   
   // Create Express app
   const app = express();
@@ -155,6 +155,12 @@ export function createWebServer(params: {
   });
   
   // Create shared services
+  // TODO: Implement database session service when sessionDbUrl is provided
+  // For now, we'll continue using the in-memory session service
+  if (sessionDbUrl) {
+    console.log(`Note: Database session service URL provided (${sessionDbUrl}), but not implemented yet in TypeScript. Using in-memory session service.`);
+  }
+  
   const sessionService = new InMemorySessionService();
   const artifactService = new InMemoryArtifactService();
   
@@ -1043,25 +1049,28 @@ export function createWebServer(params: {
 }
 
 /**
- * Starts a web server for the specified agent
+ * Starts a web server for agents
  * 
  * @param params Configuration parameters
- * @param params.agentDir Directory containing the agent
+ * @param params.agentDir Directory containing agent modules
  * @param params.port Port to run the server on
  * @param params.allowOrigins Allowed origins for CORS
+ * @param params.sessionDbUrl Optional database URL for session storage
  */
 export function startWebServer(params: {
   agentDir: string;
   port: number;
   allowOrigins: string[];
+  sessionDbUrl?: string;
 }): void {
-  const { agentDir, port, allowOrigins } = params;
+  const { agentDir, port, allowOrigins, sessionDbUrl } = params;
   
   try {
     const { server } = createWebServer({
       agentDir,
       port,
-      allowOrigins
+      allowOrigins,
+      sessionDbUrl
     });
     
     server.listen(port, () => {

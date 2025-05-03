@@ -1,5 +1,3 @@
- 
-
 import * as fs from 'fs';
 import * as path from 'path';
 import * as child_process from 'child_process';
@@ -41,7 +39,7 @@ COPY "agents/{app_name}/" "/app/agents/{app_name}/"
 
 EXPOSE {port}
 
-CMD adk {command} --port={port} {trace_to_cloud_option} "/app/agents"
+CMD adk {command} --port={port} {session_db_option} {trace_to_cloud_option} "/app/agents"
 `;
 
 async function resolveProject(projectInOption?: string): Promise<string> {
@@ -72,6 +70,7 @@ export async function toCloudRun({
   traceToCloud,
   withUi,
   verbosity,
+  sessionDbUrl,
 }: {
   agentFolder: string;
   project?: string;
@@ -83,6 +82,7 @@ export async function toCloudRun({
   traceToCloud: boolean;
   withUi: boolean;
   verbosity: string;
+  sessionDbUrl?: string;
 }) {
   appName = appName || path.basename(agentFolder);
   console.log(`Start generating Cloud Run source files in ${tempFolder}`);
@@ -111,6 +111,7 @@ export async function toCloudRun({
       .replace(/{port}/g, String(port))
       .replace(/{command}/g, withUi ? 'web' : 'api_server')
       .replace(/{install_agent_deps}/g, installAgentDeps)
+      .replace(/{session_db_option}/g, sessionDbUrl ? `--db_url=${sessionDbUrl}` : '')
       .replace(/{trace_to_cloud_option}/g, traceToCloud ? '--trace_to_cloud' : '');
     const dockerfilePath = path.join(tempFolder, 'Dockerfile');
     fs.mkdirSync(tempFolder, { recursive: true });
