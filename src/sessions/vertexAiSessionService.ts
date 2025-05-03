@@ -3,6 +3,7 @@ import { Event, SessionInterface as Session, SessionsList } from './types';
 import { Content, Part } from './types';
 import { BaseSessionService, ListEventsResponse } from './BaseSessionService';
 import { State } from './State';
+import { encodeContent, decodeContent } from './sessionUtils';
 
 // Interface for the Vertex AI client
 interface VertexAiClient {
@@ -418,7 +419,7 @@ export class VertexAiSessionService extends BaseSessionService {
     }
 
     if (event.content) {
-      eventJson.content = this.convertContentToJson(event.content);
+      eventJson.content = encodeContent(event.content);
     }
 
     return eventJson;
@@ -473,7 +474,7 @@ export class VertexAiSessionService extends BaseSessionService {
       id: apiEvent.name.split('/').slice(-1)[0],
       invocationId: apiEvent.invocationId,
       author: apiEvent.author,
-      content: this.parseContent(apiEvent.content),
+      content: decodeContent(apiEvent.content),
       actions: eventActions,
       timestamp: new Date(apiEvent.timestamp).getTime() / 1000,
       errorCode: apiEvent.errorCode,
@@ -509,27 +510,6 @@ export class VertexAiSessionService extends BaseSessionService {
       };
     }
 
-    return {
-      role: apiContent.role,
-      parts: (apiContent.parts || []).map((part: any) => this.parsePart(part))
-    };
-  }
-
-  /**
-   * Parses a part from the API
-   */
-  private parsePart(apiPart: Record<string, any>): Part {
-    const part: Part = {};
-    
-    if (apiPart.text !== undefined) {
-      part.text = apiPart.text;
-    }
-    
-    if (apiPart.inline_data) {
-      part.data = Buffer.from(apiPart.inline_data.data, 'base64');
-      part.mimeType = apiPart.inline_data.mime_type;
-    }
-    
-    return part;
+    return decodeContent(apiContent);
   }
 } 
