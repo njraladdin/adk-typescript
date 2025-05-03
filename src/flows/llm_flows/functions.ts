@@ -189,6 +189,36 @@ function _getToolAndContext(
 }
 
 /**
+ * Checks if a function call is missing any mandatory arguments
+ * 
+ * @param tool The tool being called
+ * @param functionArgs The arguments provided to the function
+ * @returns An error object if mandatory arguments are missing, undefined otherwise
+ */
+function _checkMandatoryArguments(
+  tool: BaseTool,
+  functionArgs: Record<string, any>
+): { error: string } | undefined {
+  // Get the tool declaration which contains parameter information
+  const declaration = tool.getDeclaration();
+  if (!declaration || !declaration.parameters || !declaration.parameters.required) {
+    return undefined;
+  }
+
+  // Check for missing mandatory arguments
+  const missingArgs = declaration.parameters.required.filter((arg: string) => !(arg in functionArgs));
+  
+  if (missingArgs.length > 0) {
+    const missingArgsStr = missingArgs.join('\n');
+    const errorStr = `Invoking \`${tool.name}()\` failed as the following mandatory input parameters are not present:\n${missingArgsStr}\nYou could retry calling this tool, but it is IMPORTANT for you to provide all the mandatory parameters.`;
+    
+    return { error: errorStr };
+  }
+  
+  return undefined;
+}
+
+/**
  * Handles function calls for the live API
  * 
  * @param invocationContext Invocation context
@@ -223,48 +253,54 @@ export async function handleFunctionCallsLive(
       const functionArgs = functionCall.args || {};
       let functionResponse = null;
       
-      // Call before_tool_callback if exists
-      if (agent.beforeToolCallback) {
-        functionResponse = agent.beforeToolCallback(
-          tool,
-          functionArgs,
-          toolContext
-        );
-        
-        // Check if the response is a Promise and await it
-        if (functionResponse instanceof Promise) {
-          functionResponse = await functionResponse;
-        }
-      }
-      
-      // Execute the tool if no callback response
-      if (!functionResponse) {
-        functionResponse = await _processFunctionLiveHelper(
-          tool,
-          toolContext,
-          functionCall,
-          functionArgs,
-          invocationContext
-        );
-      }
-      
-      // Call after_tool_callback if exists
-      if (agent.afterToolCallback) {
-        const newResponse = agent.afterToolCallback(
-          tool,
-          functionArgs,
-          toolContext,
-          functionResponse
-        );
-        
-        // Check if the response is a Promise and await it
-        if (newResponse instanceof Promise) {
-          const awaitedResponse = await newResponse;
-          if (awaitedResponse !== undefined) {
-            functionResponse = awaitedResponse;
+      // Check for missing mandatory arguments
+      const missingArgsError = _checkMandatoryArguments(tool, functionArgs);
+      if (missingArgsError) {
+        functionResponse = missingArgsError;
+      } else {
+        // Call before_tool_callback if exists
+        if (agent.beforeToolCallback) {
+          functionResponse = agent.beforeToolCallback(
+            tool,
+            functionArgs,
+            toolContext
+          );
+          
+          // Check if the response is a Promise and await it
+          if (functionResponse instanceof Promise) {
+            functionResponse = await functionResponse;
           }
-        } else if (newResponse !== undefined) {
-          functionResponse = newResponse;
+        }
+        
+        // Execute the tool if no callback response
+        if (!functionResponse) {
+          functionResponse = await _processFunctionLiveHelper(
+            tool,
+            toolContext,
+            functionCall,
+            functionArgs,
+            invocationContext
+          );
+        }
+        
+        // Call after_tool_callback if exists
+        if (agent.afterToolCallback) {
+          const newResponse = agent.afterToolCallback(
+            tool,
+            functionArgs,
+            toolContext,
+            functionResponse
+          );
+          
+          // Check if the response is a Promise and await it
+          if (newResponse instanceof Promise) {
+            const awaitedResponse = await newResponse;
+            if (awaitedResponse !== undefined) {
+              functionResponse = awaitedResponse;
+            }
+          } else if (newResponse !== undefined) {
+            functionResponse = newResponse;
+          }
         }
       }
       
@@ -357,46 +393,52 @@ export async function handleFunctionCallsAsync(
       const functionArgs = functionCall.args || {};
       let functionResponse = null;
       
-      // Call before_tool_callback if exists
-      if (agent.beforeToolCallback) {
-        functionResponse = agent.beforeToolCallback(
-          tool,
-          functionArgs,
-          toolContext
-        );
-        
-        // Check if the response is a Promise and await it
-        if (functionResponse instanceof Promise) {
-          functionResponse = await functionResponse;
-        }
-      }
-      
-      // Execute the tool if no callback response
-      if (!functionResponse) {
-        functionResponse = await _callToolAsync(
-          tool,
-          functionArgs,
-          toolContext
-        );
-      }
-      
-      // Call after_tool_callback if exists
-      if (agent.afterToolCallback) {
-        const newResponse = agent.afterToolCallback(
-          tool,
-          functionArgs,
-          toolContext,
-          functionResponse
-        );
-        
-        // Check if the response is a Promise and await it
-        if (newResponse instanceof Promise) {
-          const awaitedResponse = await newResponse;
-          if (awaitedResponse !== undefined) {
-            functionResponse = awaitedResponse;
+      // Check for missing mandatory arguments
+      const missingArgsError = _checkMandatoryArguments(tool, functionArgs);
+      if (missingArgsError) {
+        functionResponse = missingArgsError;
+      } else {
+        // Call before_tool_callback if exists
+        if (agent.beforeToolCallback) {
+          functionResponse = agent.beforeToolCallback(
+            tool,
+            functionArgs,
+            toolContext
+          );
+          
+          // Check if the response is a Promise and await it
+          if (functionResponse instanceof Promise) {
+            functionResponse = await functionResponse;
           }
-        } else if (newResponse !== undefined) {
-          functionResponse = newResponse;
+        }
+        
+        // Execute the tool if no callback response
+        if (!functionResponse) {
+          functionResponse = await _callToolAsync(
+            tool,
+            functionArgs,
+            toolContext
+          );
+        }
+        
+        // Call after_tool_callback if exists
+        if (agent.afterToolCallback) {
+          const newResponse = agent.afterToolCallback(
+            tool,
+            functionArgs,
+            toolContext,
+            functionResponse
+          );
+          
+          // Check if the response is a Promise and await it
+          if (newResponse instanceof Promise) {
+            const awaitedResponse = await newResponse;
+            if (awaitedResponse !== undefined) {
+              functionResponse = awaitedResponse;
+            }
+          } else if (newResponse !== undefined) {
+            functionResponse = newResponse;
+          }
         }
       }
       
