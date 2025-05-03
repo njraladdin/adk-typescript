@@ -1,5 +1,5 @@
 import { ApiParameter, OperationEndpoint, toSnakeCase } from '../common/common';
-import { AuthCredential, AuthScheme } from '../auth/AuthTypes';
+import { AuthCredential, AuthScheme, AuthSchemeType } from '../auth/AuthTypes';
 
 /**
  * Represents a parsed operation from an OpenAPI spec
@@ -61,6 +61,11 @@ export class OpenApiSpecParser {
    * @returns A list of parsed operations
    */
   parse(openApiSpecDict: Record<string, any>): ParsedOperation[] {
+    // Check if input is valid
+    if (openApiSpecDict === null || typeof openApiSpecDict !== 'object' || Array.isArray(openApiSpecDict)) {
+      throw new Error('OpenAPI specification must be an object');
+    }
+
     // Create a deep copy to avoid modifying the original
     const specDict = JSON.parse(JSON.stringify(openApiSpecDict));
     
@@ -129,7 +134,20 @@ export class OpenApiSpecParser {
         authSchemeName = authSchemeName || globalSchemeName;
         
         // Get the actual auth scheme
-        const authScheme = authSchemeName ? authSchemes[authSchemeName] : undefined;
+        let authScheme = undefined;
+        if (authSchemeName && authSchemes[authSchemeName]) {
+          const schemeData = authSchemes[authSchemeName];
+          authScheme = {
+            type_: schemeData.type as AuthSchemeType,
+            name: schemeData.name,
+            in: schemeData.in,
+            scheme: schemeData.scheme,
+            bearerFormat: schemeData.bearerFormat,
+            flows: schemeData.flows,
+            openIdConnectUrl: schemeData.openIdConnectUrl,
+            openIdConnectConfig: schemeData.openIdConnectConfig,
+          };
+        }
 
         // Create a simple operation parser
         const operationName = this._getFunctionName(operationDict.operationId);
@@ -179,6 +197,9 @@ export class OpenApiSpecParser {
             }
           }
         }
+        
+        // Deduplicate parameter names to avoid conflicts
+        this._dedupeParamNames(parameters);
         
         // Extract return value from responses
         let returnValue: ApiParameter;
@@ -351,5 +372,23 @@ export class OpenApiSpecParser {
     };
     
     return recursiveResolve(specCopy, specCopy);
+  }
+
+  /**
+   * Deduplicates parameter names to avoid conflicts
+   * @param params List of parameters to deduplicate
+   */
+  private _dedupeParamNames(params: ApiParameter[]): void {
+    const paramsCnt: Record<string, number> = {};
+    
+    for (const param of params) {
+      const name = param.pyName;
+      if (!(name in paramsCnt)) {
+        paramsCnt[name] = 0;
+      } else {
+        paramsCnt[name]++;
+        param.pyName = `${name}_${paramsCnt[name] - 1}`;
+      }
+    }
   }
 } 

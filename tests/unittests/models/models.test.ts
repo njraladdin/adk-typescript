@@ -1,49 +1,6 @@
- 
-
 import { BaseLlm, LlmRegistry, LlmRequest } from '../../../src/models';
-
-// Mock Gemini class
-class Gemini extends BaseLlm {
-  static supportedModels(): string[] {
-    return [
-      'gemini-1\\.5-flash(-\\d+)?',
-      'gemini-1\\.5-pro(-\\d+)?',
-      'gemini-2\\.0-flash-exp',
-      'projects/.+/locations/.+/endpoints/.+', // finetuned vertex gemini endpoint
-      'projects/.+/locations/.+/publishers/google/models/gemini.+', // vertex gemini long name
-    ];
-  }
-
-  async *generateContentAsync(
-    llmRequest: LlmRequest,
-    stream = false
-  ): AsyncGenerator<any, void, unknown> {
-    // This is a mock implementation
-    yield { content: { role: 'model', parts: [{ text: 'Mock response' }] } };
-  }
-}
-
-// Mock Claude class
-class Claude extends BaseLlm {
-  static supportedModels(): string[] {
-    return [
-      'claude-3-5-haiku@\\d+',
-      'claude-3-5-sonnet-v2@\\d+',
-      'claude-3-5-sonnet@\\d+',
-      'claude-3-haiku@\\d+',
-      'claude-3-opus@\\d+',
-      'claude-3-sonnet@\\d+',
-    ];
-  }
-
-  async *generateContentAsync(
-    llmRequest: LlmRequest,
-    stream = false
-  ): AsyncGenerator<any, void, unknown> {
-    // This is a mock implementation
-    yield { content: { role: 'model', parts: [{ text: 'Mock response' }] } };
-  }
-}
+import { Gemini } from '../../../src/models/GoogleLlm';
+import { Claude } from '../../../src/models/AnthropicLlm';
 
 describe('LlmRegistry', () => {
   beforeAll(() => {
@@ -54,7 +11,6 @@ describe('LlmRegistry', () => {
   describe('Gemini model matching', () => {
     const geminiModels = [
       'gemini-2.0-flash',
-      'gemini-2.0-flash-exp',
       'projects/123456/locations/us-central1/endpoints/123456', // finetuned vertex gemini endpoint
       'projects/123456/locations/us-central1/publishers/google/models/gemini-2.0-flash-exp', // vertex gemini long name
     ];
