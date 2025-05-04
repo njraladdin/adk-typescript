@@ -1,5 +1,5 @@
 import { Schema } from '../../../../../src/tools/openapi-tool/common/common';
-import { normalizeJsonSchemaType, toGeminiSchema } from '../../../../../src/tools/openapi-tool/openapi_spec_parser/RestApiTool';
+import { normalizeJsonSchemaType, toGeminiSchema } from '../../../../../src/tools/openapi-tool/openapi-spec-parser/RestApiTool';
 
 describe('normalizeJsonSchemaType', () => {
   test('handles undefined or null type', () => {

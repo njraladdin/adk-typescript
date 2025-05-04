@@ -23,6 +23,16 @@ export interface AgentToolOptions extends BaseToolOptions {
    * Optional function declaration schema override
    */
   functionDeclaration?: Record<string, any>;
+  
+  /**
+   * Optional key to store the tool output in the state
+   */
+  outputKey?: string;
+  
+  /**
+   * Optional flag to skip summarization of the agent's response
+   */
+  skipSummarization?: boolean;
 }
 
 /**
@@ -40,6 +50,16 @@ export class AgentTool extends BaseTool {
   private functionDeclaration?: Record<string, any>;
   
   /**
+   * The key to store the tool output in the state
+   */
+  private outputKey?: string;
+  
+  /**
+   * Whether to skip summarization of the agent's response
+   */
+  private skipSummarization: boolean;
+  
+  /**
    * Create a new agent tool
    * @param options Options for the agent tool
    */
@@ -47,6 +67,8 @@ export class AgentTool extends BaseTool {
     super(options);
     this.agent = options.agent;
     this.functionDeclaration = options.functionDeclaration;
+    this.outputKey = options.outputKey;
+    this.skipSummarization = options.skipSummarization || false;
   }
   
   /**
@@ -90,19 +112,45 @@ export class AgentTool extends BaseTool {
     params: Record<string, any>,
     context: ToolContext
   ): Promise<any> {
-    const input = params.input;
+    // Use the first parameter value if input is not provided
+    // This allows support for custom schema parameters
+    const input = params.input || Object.values(params)[0];
     
     if (!isLlmAgent(this.agent)) {
       throw new Error(`Agent ${this.name} does not support createSession method`);
     }
     
     // Create a new session for the agent
-    const session: any = await this.agent.createSession();
+    // Pass the parent session's state to allow state access and modification
+    const sessionOptions: Record<string, any> = {};
+    
+    // Only add state if context.session and context.session.state exist
+    if (context?.session?.state) {
+      sessionOptions.state = context.session.state;
+    }
+    
+    // Create a new session for the agent
+    const session: any = await this.agent.createSession(sessionOptions);
     
     // Send the input to the agent and get the response
     const response = await session.sendMessage(input);
     
-    // Return the agent's response text
-    return response.text();
+    // Get the response text and try to parse it as JSON
+    const responseText = await response.text();
+    let parsedResponse;
+    
+    try {
+      parsedResponse = JSON.parse(responseText);
+    } catch (e) {
+      // If not valid JSON, just return the text
+      parsedResponse = responseText;
+    }
+    
+    // If an output key is specified, store the result in the state
+    if (this.outputKey && context?.session?.state) {
+      context.session.state[this.outputKey] = parsedResponse;
+    }
+    
+    return parsedResponse;
   }
 } 
