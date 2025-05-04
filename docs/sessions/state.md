@@ -4,7 +4,7 @@ Within each `Session` (our conversation thread), the **`state`** attribute acts 
 
 ## What is `session.state`?
 
-Conceptually, `session.state` is a record holding key-value pairs. It's designed for information the agent needs to recall or track to make the current conversation effective:
+Conceptually, `session.state` is an instance of the `State` class which behaves like a record holding key-value pairs. It's designed for information the agent needs to recall or track to make the current conversation effective:
 
 * **Personalize Interaction:** Remember user preferences mentioned earlier (e.g., `'user_preference_theme': 'dark'`).  
 * **Track Task Progress:** Keep tabs on steps in a multi-turn process (e.g., `'booking_step': 'confirm_payment'`).  
@@ -17,7 +17,7 @@ Conceptually, `session.state` is a record holding key-value pairs. It's designed
 
     * Data is stored as `key: value`.  
     * **Keys:** Always strings (`string`). Use clear names (e.g., `'departure_city'`, `'user:language_preference'`).  
-    * **Values:** Must be **serializable**. This means they can be easily saved and loaded by the `SessionService`. Stick to basic TypeScript types like strings, numbers, booleans, and simple arrays or objects containing *only* these basic types. (See API documentation for precise details).  
+    * **Values:** Must be **serializable**. This means they can be easily saved and loaded by the `SessionService`. Stick to basic TypeScript types like strings, numbers, booleans, and simple arrays or objects containing *only* these basic types.
     * **⚠️ Avoid Complex Objects:** **Do not store non-serializable objects** (custom class instances, functions, connections, etc.) directly in the state. Store simple identifiers if needed, and retrieve the complex object elsewhere.
 
 2. **Mutability: It Changes**  
@@ -39,30 +39,72 @@ Prefixes on state keys define their scope and persistence behavior, especially w
     * **Scope:** Specific to the *current* session (`id`).  
     * **Persistence:** Only persists if the `SessionService` is persistent (`Database`, `VertexAI`).  
     * **Use Cases:** Tracking progress within the current task (e.g., `'current_booking_step'`), temporary flags for this interaction (e.g., `'needs_clarification'`).  
-    * **Example:** `session.state['current_intent'] = 'book_flight'`
+    * **Example:** `session.state['current_intent'] = 'book_flight'` or `session.state.set('current_intent', 'book_flight')`
 
 * **`user:` Prefix (User State):**  
 
     * **Scope:** Tied to the `userId`, shared across *all* sessions for that user (within the same `appName`).  
     * **Persistence:** Persistent with persistent service implementations. (Stored by `InMemory` but lost on restart).  
     * **Use Cases:** User preferences (e.g., `'user:theme'`), profile details (e.g., `'user:name'`).  
-    * **Example:** `session.state['user:preferred_language'] = 'fr'`
+    * **Example:** `session.state['user:preferred_language'] = 'fr'` or `session.state.set('user:preferred_language', 'fr')`
 
 * **`app:` Prefix (App State):**  
 
     * **Scope:** Tied to the `appName`, shared across *all* users and sessions for that application.  
     * **Persistence:** Persistent with persistent service implementations. (Stored by `InMemory` but lost on restart).  
     * **Use Cases:** Global settings (e.g., `'app:api_endpoint'`), shared templates.  
-    * **Example:** `session.state['app:global_discount_code'] = 'SAVE10'`
+    * **Example:** `session.state['app:global_discount_code'] = 'SAVE10'` or `session.state.set('app:global_discount_code', 'SAVE10')`
 
 * **`temp:` Prefix (Temporary Session State):**  
 
     * **Scope:** Specific to the *current* session processing turn.  
     * **Persistence:** **Never Persistent.** Guaranteed to be discarded, even with persistent services.  
     * **Use Cases:** Intermediate results needed only immediately, data you explicitly don't want stored.  
-    * **Example:** `session.state['temp:raw_api_response'] = {...}`
+    * **Example:** `session.state['temp:raw_api_response'] = {...}` or `session.state.set('temp:raw_api_response', {...})`
 
-**How the Agent Sees It:** Your agent code interacts with the *combined* state through the single `session.state` record. The `SessionService` handles fetching/merging state from the correct underlying storage based on prefixes.
+**How the Agent Sees It:** Your agent code interacts with the *combined* state through the single `session.state` object. The `SessionService` handles fetching/merging state from the correct underlying storage based on prefixes.
+
+### Accessing State Data
+
+The `State` class provides multiple ways to access and modify state data:
+
+1. **Direct Property Access:**
+   ```typescript
+   // Get a value
+   const theme = session.state['user:theme'];
+   
+   // Set a value
+   session.state['current_step'] = 'confirmation';
+   ```
+
+2. **Method-based Access:**
+   ```typescript
+   // Get a value
+   const theme = session.state.get('user:theme');
+   
+   // Set a value
+   session.state.set('current_step', 'confirmation');
+   
+   // Check if a key exists
+   if (session.state.has('user:preferences')) {
+     // Do something with the preferences
+   }
+   
+   // Delete a key
+   session.state.delete('temp:calculation_result');
+   
+   // Get all state as a plain object
+   const allState = session.state.getAll();
+   
+   // Update multiple values at once
+   session.state.update({
+     'step': 'payment',
+     'user:last_action': 'checkout',
+     'temp:validation_results': { valid: true }
+   });
+   ```
+
+The method-based approach is more explicit and provides additional functionality like `has()`, `delete()`, and `update()`.
 
 ### How State is Updated: Recommended Methods
 
@@ -73,10 +115,9 @@ State should **always** be updated as part of adding an `Event` to the session h
 For updating state, you should construct the `stateDelta` within `EventActions` when creating an event:
 
 ```typescript
-import { Event, EventActions } from './sessions/interfaces';
-import { Content, Part } from './sessions/types';
-import { InMemorySessionService } from './sessions/inMemorySessionService';
-import { StatePrefix } from './sessions/state';
+import { Event, EventActions } from './events/Event';
+import { InMemorySessionService } from './sessions/InMemorySessionService';
+import { StatePrefix } from './sessions/State';
 
 // --- Setup ---
 const sessionService = new InMemorySessionService();
@@ -94,18 +135,18 @@ const session = sessionService.createSession({
 console.log(`Initial state: ${JSON.stringify(session.state)}`);
 
 // --- Define State Changes ---
-const currentTime = Date.now();
+const currentTime = Date.now() / 1000; // Convert to seconds for timestamp consistency
 const stateChanges: Record<string, any> = {
   'task_status': 'active',              // Update session state
-  'user:login_count': (session.state['user:login_count'] || 0) + 1, // Update user state
+  'user:login_count': (session.state.get('user:login_count') || 0) + 1, // Update user state
   'user:last_login_ts': currentTime,    // Add user state
   'temp:validation_needed': true        // Add temporary state (will be discarded)
 };
 
 // --- Create Event with Actions ---
-const actionsWithUpdate: EventActions = { stateDelta: stateChanges };
+const actionsWithUpdate = new EventActions({ stateDelta: stateChanges });
 // This event might represent an internal system action, not just an agent response
-const systemEvent: Event = {
+const systemEvent = new Event({
   invocationId: 'inv_login_update',
   author: 'system', // Or 'agent', 'tool' etc.
   actions: actionsWithUpdate,
@@ -114,7 +155,7 @@ const systemEvent: Event = {
     role: 'system',
     parts: [{ text: 'System login update processed' }]
   }
-};
+});
 
 // --- Append the Event (This updates the state) ---
 sessionService.appendEvent({ session, event: systemEvent });
@@ -141,16 +182,16 @@ console.log(`State after event: ${JSON.stringify(updatedSession?.state)}`);
 
 ### ⚠️ A Warning About Direct State Modification
 
-Avoid directly modifying the `session.state` object after retrieving a session (e.g., `retrievedSession.state['key'] = value`).
+While the `State` class allows direct property access and modification (e.g., `session.state['key'] = value` or `session.state.set('key', value)`), this approach has significant limitations for persisting changes after retrieving a session.
 
-**Why this is strongly discouraged:**
+**Why this approach should be used carefully:**
 
 1. **Bypasses Event History:** The change isn't recorded as an `Event`, losing auditability.  
-2. **Breaks Persistence:** Changes made this way **will likely NOT be saved** by persistent implementations of `SessionService`. They rely on `appendEvent` to trigger saving.  
-3. **Not Thread-Safe:** Can lead to race conditions and lost updates.  
+2. **Potential Persistence Issues:** Changes made directly to `session.state` may not be saved by persistent implementations of `SessionService` unless explicitly persisted. Many implementations rely on `appendEvent` to trigger saving.  
+3. **Potential Thread-Safety Issues:** Can lead to race conditions and lost updates in multi-user scenarios.  
 4. **Ignores Timestamps/Logic:** Doesn't update `lastUpdateTime` or trigger related event logic.
 
-**Recommendation:** Stick to updating state via `EventActions.stateDelta` within the `appendEvent` flow for reliable, trackable, and persistent state management. Use direct access only for *reading* state.
+**Recommendation:** For persistent, traceable state changes, use `EventActions.stateDelta` within the `appendEvent` flow. Direct access through the `State` methods is convenient for temporary, in-memory changes or reading values, but should be used with awareness of these limitations.
 
 ### Best Practices for State Design Recap
 
@@ -158,14 +199,15 @@ Avoid directly modifying the `session.state` object after retrieving a session (
 * **Serialization:** Use basic, serializable types.  
 * **Descriptive Keys & Prefixes:** Use clear names and appropriate prefixes (`user:`, `app:`, `temp:`, or none).  
 * **Shallow Structures:** Avoid deep nesting where possible.  
-* **Standard Update Flow:** Rely on `appendEvent`.
+* **Standard Update Flow:** Prefer `appendEvent` for persistent changes.
+* **Consistency:** Choose either direct property access or method-based access and use it consistently.
 
 ### Access Constants for Prefixes
 
 TypeScript provides constants for the standard prefixes in the `StatePrefix` class:
 
 ```typescript
-import { StatePrefix } from './sessions/state';
+import { StatePrefix } from './sessions/State';
 
 // Use constants for prefixes
 const appSettings = `${StatePrefix.APP_PREFIX}feature_flags`;

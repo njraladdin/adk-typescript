@@ -20,17 +20,14 @@ TODO:
 - make integration tests pass, done 
 - port changes from python project v0.3.0, done 
 - port changes from python project v0.4.0, done 
+- port all unit tests and fix them, done 
 
-- port all unit tests 
-
-- fix all units tests 
-
-- udnerstand the structure of agnet files created using adk create in roiginal python proejc,t then udnerstand hwo teh structure is used using adk run, and see if our implementation is correct 
 
 - publish as npm package and create github release
 
 
-- deploy agent that would automatically port commits from the original python project, fix deploy docs 
+
+- deploy agent that would automatically port commits from the original python project OR ai workflow  
 
 
 git tag -f v0.0.1
