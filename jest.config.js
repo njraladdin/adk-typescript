@@ -14,5 +14,7 @@ module.exports = {
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!**/node_modules/**'
-  ]
+  ],
+  // Limit the number of workers to reduce API request frequency
+  maxWorkers: 2
 }; 

@@ -1,9 +1,9 @@
-import { LlmAgent } from '../../../../src/agents/LlmAgent';
-import { CallbackContext } from '../../../../src/agents/CallbackContext';
-import { InvocationContext } from '../../../../src/agents/InvocationContext';
+import { LlmAgent } from '../../../../src/agents';
+import { CallbackContext } from '../../../../src/agents';
+import { InvocationContext } from '../../../../src/agents';
 import { Content } from '../../../../src/types';
 import { LlmRequest, LlmResponse } from '../../../../src/models';
-import { BaseLlmFlow } from '../../../../src/flows/llm_flows/BaseLlmFlow';
+import { BaseLlmFlow } from '../../../../src/flows/llm_flows';
 import { Event } from '../../../../src/events/Event';
 
 // Type extensions for model-related callbacks
@@ -174,6 +174,7 @@ function afterModelCall(callbackContext: CallbackContext, llmResponse: LlmRespon
  */
 export const beforeAgentCallbackAgent = new LlmAgent({
   name: 'before_agent_callback_agent',
+  model: 'gemini-1.5-flash',
   flow: mockFlow,
   instruction: 'echo 1'
 });
@@ -185,6 +186,8 @@ export const beforeAgentCallbackAgent = new LlmAgent({
  */
 export const beforeModelCallbackAgent = new LlmAgent({
   name: 'before_model_callback_agent',
+  model: 'gemini-1.5-flash',
+
   flow: mockFlow,
   instruction: 'echo 2'
 });
@@ -197,6 +200,7 @@ export const beforeModelCallbackAgent = new LlmAgent({
 export const afterModelCallbackAgent = new LlmAgent({
   name: 'after_model_callback_agent',
   flow: mockFlow,
+  model: 'gemini-1.5-flash',
   instruction: 'Say hello'
 });
 // Add the callback directly to the agent

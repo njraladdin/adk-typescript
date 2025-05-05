@@ -44,7 +44,7 @@ describe('Multi-Turn Conversation Tests', () => {
           const results = await AgentEvaluator.evaluate({
             agent: rootAgent,
             evalDatasetFilePathOrDir: 'tests/integration/fixture/home_automation_agent/test_files/simple_multi_turn_conversation.test.json',
-            numRuns: 2
+            numRuns: 1
           });
           
           // Assert that results were generated correctly
@@ -66,7 +66,7 @@ describe('Multi-Turn Conversation Tests', () => {
           const results = await AgentEvaluator.evaluate({
             agent: rootAgent,
             evalDatasetFilePathOrDir: 'tests/integration/fixture/home_automation_agent/test_files/dependent_tool_calls.test.json',
-            numRuns: 2
+            numRuns: 1
           });
           
           // Assert that results were generated correctly
@@ -88,7 +88,7 @@ describe('Multi-Turn Conversation Tests', () => {
           const results = await AgentEvaluator.evaluate({
             agent: rootAgent,
             evalDatasetFilePathOrDir: 'tests/integration/fixture/home_automation_agent/test_files/memorizing_past_events/eval_data.test.json',
-            numRuns: 2
+            numRuns: 1
           });
           
           // Assert that results were generated correctly
