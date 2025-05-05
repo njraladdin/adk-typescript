@@ -83,33 +83,6 @@ Explore the full documentation for detailed guides. *Please note that the offici
 *   **[Official ADK Documentation](https://google.github.io/adk-docs)** (Primarily Python)
 *   Refer to the `*.md` files within *this* repository (like `quickstart.md`, `tutorial.md`) for TypeScript-specific guidance based on this port.
 
-### Generating API Reference Documentation
-
-This project uses TypeDoc to automatically generate API reference documentation from TypeScript source code and JSDoc comments.
-
-#### For Local Development
-
-To generate and view the documentation locally:
-
-```bash
-# Install dependencies if you haven't already
-npm install
-
-# Generate the API reference
-npm run docs
-```
-
-This will create HTML documentation in the `docs/api-reference` directory, which you can view in your browser by opening `docs/api-reference/index.html`.
-
-#### For Published Documentation
-
-The API reference documentation is automatically generated during the CI/CD process when changes are pushed to the main branch. The workflow:
-
-1. Runs TypeDoc to generate fresh API documentation
-2. Builds the full documentation site with MkDocs
-3. Publishes the complete documentation to GitHub Pages
-
-You don't need to commit the generated files as they're created during the build process.
 
 ## ⚙️ Using the CLI (`adk-ts`)
 
