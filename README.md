@@ -13,8 +13,7 @@
     </h3>
     <h3 align="center">
       Important Links:
-      <a href="https://google.github.io/adk-docs/">Docs</a> (Note: Primarily Python-focused currently) &
-      <a href="https://github.com/google/adk-samples">Samples</a> (Note: Primarily Python).
+      <a href="https://njraladdin.github.io/adk-typescript">Docs</a> 
     </h3>
 </html>
 
