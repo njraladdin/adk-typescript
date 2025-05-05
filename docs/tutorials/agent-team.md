@@ -1655,7 +1655,6 @@ if ('runner_root_model_guardrail' in globalThis && runner_root_model_guardrail) 
     console.warn("\n⚠️ Skipping model guardrail test. Runner ('runner_root_model_guardrail') is not available.");
 }
 ```
-
 ---
 
 Observe the execution flow:
@@ -2026,3 +2025,4 @@ Your Weather Bot team is a great starting point. Here are some ideas to further 
 The Agent Development Kit provides a robust foundation for building sophisticated LLM-powered applications. By mastering the concepts covered in this tutorial – tools, state, delegation, and callbacks – you are well-equipped to tackle increasingly complex agentic systems.
 
 Happy building!
+

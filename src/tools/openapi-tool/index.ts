@@ -8,8 +8,8 @@
  */
 
 // Export from OpenAPI spec parser
-export * from './openapi_spec_parser/RestApiTool';
-export * from './openapi_spec_parser/OpenAPIToolset';
+export * from './openapi-spec-parser/RestApiTool';
+export * from './openapi-spec-parser/OpenAPIToolset';
 
 // Export commonly used types and utilities
 export * from './common/common'; 

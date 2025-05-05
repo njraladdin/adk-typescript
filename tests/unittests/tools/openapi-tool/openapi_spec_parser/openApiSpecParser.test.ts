@@ -1,5 +1,5 @@
 import { ApiParameter } from '../../../../../src/tools/openapi-tool/common/common';
-import { OpenApiSpecParser } from '../../../../../src/tools/openapi-tool/openapi_spec_parser/OpenApiSpecParser';
+import { OpenApiSpecParser } from '../../../../../src/tools/openapi-tool/openapi-spec-parser/OpenApiSpecParser';
 
 /**
  * Creates a minimal valid OpenAPI spec for testing

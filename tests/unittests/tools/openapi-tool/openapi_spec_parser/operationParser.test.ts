@@ -1,5 +1,5 @@
 import { ApiParameter } from '../../../../../src/tools/openapi-tool/common/common';
-import { OperationParser } from '../../../../../src/tools/openapi-tool/openapi_spec_parser/OperationParser';
+import { OperationParser } from '../../../../../src/tools/openapi-tool/openapi-spec-parser/OperationParser';
 
 /**
  * Creates a sample operation for testing
