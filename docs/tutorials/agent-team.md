@@ -59,17 +59,6 @@ As a reminder, ADK is a TypeScript framework designed to streamline the developm
 *   ✅ **Session State for Memory:** Utilizing `Session` and `ToolContext` to enable agents to remember information across conversational turns, leading to more contextual interactions.
 *   ✅ **Safety Guardrails with Callbacks:** Implementing `beforeModelCallback` and `beforeToolCallback` to inspect, modify, or block requests/tool usage based on predefined rules, enhancing application safety and control.
 
-**End State Expectation:**
-
-By completing this tutorial, you will have built a functional multi-agent Weather Bot system. This system will not only provide weather information but also handle conversational niceties, remember the last city checked, and operate within defined safety boundaries, all orchestrated using ADK.
-
-**Prerequisites:**
-
-*   ✅ **Solid understanding of TypeScript programming.**
-*   ✅ **Familiarity with Large Language Models (LLMs), APIs, and the concept of agents.**
-*   ❗ **Crucially: Completion of the ADK Quickstart tutorial(s) or equivalent foundational knowledge of ADK basics (Agent, Runner, SessionService, basic Tool usage).** This tutorial builds directly upon those concepts.
-*   ✅ **API Keys** for the LLMs you intend to use (e.g., Google AI Studio for Gemini, OpenAI Platform, Anthropic Console).
-
 
 ---
 
@@ -86,11 +75,6 @@ This tutorial is structured for Node.js environments. Please keep the following 
 
 *   **Manual Runner/Session Setup:** The steps involve explicitly creating `InMemoryRunner` and session instances. This approach is shown because it gives you fine-grained control over the agent's execution lifecycle, session management, and state persistence.
 
-**Alternative: Using ADK's Built-in Tools (Web UI / CLI / API Server)**
-
-If you prefer a setup that handles the runner and session management automatically using ADK's standard tools, please refer to the example code in the repository.
-
----
 
 **Ready to build your agent team? Let's dive in!**
 

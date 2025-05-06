@@ -22,8 +22,7 @@ TODO:
 - port changes from python project v0.4.0, done 
 - port all unit tests and fix them, done 
 - publish as npm package and create github release, done 
-
-- go thourgh quickstart docs and apply examples 
+- test quickstart doc examples, done  
 
 
 - deploy agent that would automatically port commits from the original python project OR ai workflow  
