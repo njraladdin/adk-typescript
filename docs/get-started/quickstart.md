@@ -9,22 +9,29 @@ This quickstart assumes a local development environment (VS Code, WebStorm, etc.
 **Environment Setup:**
 
 *   Ensure you have Node.js (v18+) and npm (or yarn) installed.
-*   Navigate to the directory where you want to create your project.
-
-**Create Project & Install ADK TypeScript:**
+*   Install ADK TypeScript globally:
 
 ```bash
-# Create a new project directory and navigate into it
+# Install ADK TypeScript globally
+npm install -g adk-typescript
+
+# Verify installation
+adk-ts --version
+```
+
+**Create Project:**
+
+Navigate to the directory where you want to create your project and create a new folder:
+
+```bash
+# Create and navigate to a new project directory
 mkdir my-adk-project
 cd my-adk-project
 
 # Initialize npm project (creates package.json)
 npm init -y
 
-# Install ADK TypeScript (replace with actual package name if different)
-npm install adk-typescript
-
-# Install dotenv for environment variable handling
+# Install required dependencies
 npm install dotenv @types/dotenv
 ```
 
@@ -221,7 +228,7 @@ Your agent needs credentials to securely call the LLM service.
     1.  Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
     2.  Open the **`.env`** file in your project root and add the following content:
 
-        ```env title=".env"
+        ```env
         # Use Google AI backend (value 0 or false)
         GOOGLE_GENAI_USE_VERTEXAI=0
         # Your API Key
@@ -251,7 +258,7 @@ Your agent needs credentials to securely call the LLM service.
 
     3.  Edit the `.env` file to replace `YOUR_PROJECT_ID` with your actual Google Cloud project ID and update the location if needed.
 
-## 4. Run Your Agent {#run-your-agent-typescript}
+## 4. Compile and Run Your Agent {#run-your-agent-typescript}
 
 First, **build** your TypeScript code:
 
@@ -260,8 +267,7 @@ First, **build** your TypeScript code:
 npm run build
 ```
 
-Now you can interact with your agent using the ADK TypeScript CLI tools. Make sure you run these commands from your project root directory (`my-adk-project/`).
-
+Now you can interact with your agent using the ADK TypeScript CLI. Since we installed it globally, the commands are available anywhere:
 
 === "Dev UI (adk-ts web)"
 
@@ -300,6 +306,7 @@ Now you can interact with your agent using the ADK TypeScript CLI tools. Make su
     Run the following command to chat with your agent directly in the terminal:
 
     ```bash
+    # Run from the project root (my-adk-project/)
     adk-ts run multi_tool_agent
     ```
 
@@ -309,7 +316,7 @@ Now you can interact with your agent using the ADK TypeScript CLI tools. Make su
 
 === "API Server (adk-ts api_server)"
 
-    `adk-ts api_server` starts a local Express.js server, allowing you to test API requests before deployment. Specify the directory containing *all* your agent folders (if you have multiple) or the specific agent folder.
+    `adk-ts api_server` starts a local Express.js server, allowing you to test API requests before deployment:
 
     ```bash
     # If multi_tool_agent is the only agent in the current dir
