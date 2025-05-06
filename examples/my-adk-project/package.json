@@ -1,12 +1,19 @@
 {
   "name": "my-adk-project",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "main": "dist/multi_tool_agent/agent.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/multi_tool_agent/agent.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@types/dotenv": "^8.2.3",
+    "adk-typescript": "file:../../adk-typescript-0.1.1.tgz",
+    "dotenv": "^16.5.0"
+  }
 }

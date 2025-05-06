@@ -9,15 +9,6 @@ This quickstart assumes a local development environment (VS Code, WebStorm, etc.
 **Environment Setup:**
 
 *   Ensure you have Node.js (v18+) and npm (or yarn) installed.
-*   Install ADK TypeScript globally:
-
-```bash
-# Install ADK TypeScript globally
-npm install -g adk-typescript
-
-# Verify installation
-adk-ts --version
-```
 
 **Create Project:**
 
@@ -31,9 +22,11 @@ cd my-adk-project
 # Initialize npm project (creates package.json)
 npm init -y
 
-# Install required dependencies
-npm install dotenv @types/dotenv
+# Install ADK TypeScript and other required dependencies
+npm install adk-typescript dotenv @types/dotenv
 ```
+
+> **Note:** The command-line tool uses the prefix `npx adk-ts` when running commands locally.
 
 ## 2. Create Agent Project {#create-agent-project-typescript}
 
@@ -123,7 +116,7 @@ import { FunctionTool, ToolContext } from 'adk-typescript/tools';
  * @returns Promise resolving to weather information or error
  */
 async function getWeather(
-  params: { city: string },
+  params: Record<string, any>,
   context?: ToolContext
 ): Promise<{ status: string; report?: string; error_message?: string }> {
   const city = params.city;
@@ -145,7 +138,7 @@ async function getWeather(
  * @returns Promise resolving to time information
  */
 async function getCurrentTime(
-  params: {}, // No parameters expected
+  params: Record<string, any>, // Use Record<string, any> for compatibility with ToolFunction
   context?: ToolContext
 ): Promise<{ currentTime: string; timezone: string; }> {
     console.log(`--- Tool: getCurrentTime called ---`);
@@ -267,14 +260,15 @@ First, **build** your TypeScript code:
 npm run build
 ```
 
-Now you can interact with your agent using the ADK TypeScript CLI. Since we installed it globally, the commands are available anywhere:
+Now you can interact with your agent using the ADK TypeScript CLI with npx:
 
-=== "Dev UI (adk-ts web)"
+=== "Dev UI (npx adk-ts web)"
 
     Run the following command to launch the **dev UI**:
 
     ```bash
-    adk-ts web multi_tool_agent
+    # Run from the project root (my-adk-project/)
+    npx adk-ts web multi_tool_agent
     ```
 
     **Step 1:** Open the URL provided (usually `http://localhost:3000`) directly in your browser.
@@ -283,7 +277,7 @@ Now you can interact with your agent using the ADK TypeScript CLI. Since we inst
 
     !!!note "Troubleshooting"
 
-        If you do not see "multi_tool_agent" in the dropdown menu, ensure you ran `adk-ts web` from the **correct directory** (`my-adk-project/` in this example) where your agent folder is located.
+        If you do not see "multi_tool_agent" in the dropdown menu, ensure you ran `npx adk-ts web` from the **correct directory** (`my-adk-project/` in this example) where your agent folder is located.
 
     **Step 3.** Chat with your agent using the textbox:
 
@@ -301,34 +295,34 @@ Now you can interact with your agent using the ADK TypeScript CLI. Since we inst
 
     ![ADK Web Dev UI Audio](../assets/adk-web-dev-ui-audio.png)
 
-=== "Terminal (adk-ts run)"
+=== "Terminal (npx adk-ts run)"
 
     Run the following command to chat with your agent directly in the terminal:
 
     ```bash
     # Run from the project root (my-adk-project/)
-    adk-ts run multi_tool_agent
+    npx adk-ts run multi_tool_agent
     ```
 
     ![ADK Run Terminal](../assets/adk-run.png)
 
     Type your prompts and press Enter. To exit, use Cmd/Ctrl+C.
 
-=== "API Server (adk-ts api_server)"
+=== "API Server (npx adk-ts api_server)"
 
-    `adk-ts api_server` starts a local Express.js server, allowing you to test API requests before deployment:
+    `npx adk-ts api_server` starts a local Express.js server, allowing you to test API requests before deployment:
 
     ```bash
     # If multi_tool_agent is the only agent in the current dir
-    adk-ts api_server --agent_dir .
+    npx adk-ts api_server --agent_dir .
 
     # Or specify the agent folder directly
-    adk-ts api_server --agent_dir multi_tool_agent
+    npx adk-ts api_server --agent_dir multi_tool_agent
     ```
 
     ![ADK API Server](../assets/adk-api-server.png)
 
-    To learn how to use `adk-ts api_server` for testing, refer to the [documentation on testing](./testing.md).
+    To learn how to use `npx adk-ts api_server` for testing, refer to the [documentation on testing](./testing.md).
 
 ### 📝 Example prompts to try
 
