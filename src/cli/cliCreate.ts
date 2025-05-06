@@ -1,31 +1,101 @@
- 
-
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { promisify } from 'util';
+import { VERSION } from '../index';
 
-const AGENT_TS_TEMPLATE = `const { LlmAgent, AutoFlow, LlmRegistry } = require('adk-typescript');
-const dotenv = require('dotenv');
+const AGENT_TS_TEMPLATE = `import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { LlmRegistry } from 'adk-typescript/models';
+import { FunctionTool, ToolContext } from 'adk-typescript/tools';
 
-dotenv.config();
+// --- Tool Functions ---
 
-// Create model instance (using LlmRegistry)
-const model = LlmRegistry.newLlm('{model_name}');
+/**
+ * Returns current weather information for a specified city
+ * @param params Object containing city name
+ * @param context Optional ToolContext
+ * @returns Promise resolving to weather information or error
+ */
+async function getWeather(
+  params: Record<string, any>,
+  context?: ToolContext
+): Promise<{ status: string; report?: string; error_message?: string }> {
+  const city = params.city;
+  console.log(\`--- Tool: getWeather called for city: \${city} ---\`);
+  const cityNormalized = city.toLowerCase().trim();
+  const mockWeatherDb: Record<string, { status: string; report: string }> = {
+    "newyork": {status: "success", report: "The weather in New York is sunny with a temperature of 25°C."},
+    "london": {status: "success", report: "It's cloudy in London with a temperature of 15°C."},
+    "tokyo": {status: "success", report: "Tokyo is experiencing light rain and a temperature of 18°C."},
+  };
+  if (mockWeatherDb[cityNormalized]) { return mockWeatherDb[cityNormalized]; }
+  else { return {status: "error", error_message: \`Sorry, I don't have weather information for '\${city}'.\`}; }
+}
 
-// Create flow instance
-const flow = new AutoFlow();
+/**
+ * Gets the current local time and timezone.
+ * @param params Empty object (no parameters needed)
+ * @param context Optional ToolContext
+ * @returns Promise resolving to time information
+ */
+async function getCurrentTime(
+  params: Record<string, any>, 
+  context?: ToolContext
+): Promise<{ currentTime: string; timezone: string; }> {
+    console.log(\`--- Tool: getCurrentTime called ---\`);
+    const now = new Date();
+    return {
+        currentTime: now.toLocaleTimeString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    };
+}
 
-// Define the root agent
-const rootAgent = new LlmAgent('root_agent', {
-  model: model,
-  flow: flow,
-  instruction: 'Answer user questions to the best of your knowledge',
-  tools: [],
+// --- Tool Wrappers ---
+
+const getWeatherTool = new FunctionTool({
+  name: "getWeather",
+  description: "Returns current weather information for a specified city",
+  fn: getWeather,
+  functionDeclaration: {
+    name: "getWeather",
+    description: "Returns current weather information for a specified city",
+    parameters: {
+      type: 'object',
+      properties: {
+        city: { type: 'string', description: 'The name of the city (e.g., "New York")'}
+      },
+      required: ['city']
+    }
+  }
 });
 
-// Export the agent - CommonJS style
-module.exports = { rootAgent };
+const getCurrentTimeTool = new FunctionTool({
+    name: "getCurrentTime",
+    description: "Gets the current local time and timezone.",
+    fn: getCurrentTime,
+    functionDeclaration: {
+        name: "getCurrentTime",
+        description: "Gets the current local time and timezone.",
+        parameters: { type: 'object', properties: {} } // No parameters
+    }
+});
+
+
+// --- Agent Definition ---
+
+// Use LlmRegistry to get a model instance
+const agentLlm = LlmRegistry.newLlm("{model_name}"); // Or another compatible model
+
+// Export the root agent for ADK tools to find
+export const rootAgent = new Agent({
+  name: "{agent_name}", // Unique agent name
+  model: agentLlm,       // LLM instance
+  description: "Provides current weather and time information for cities.",
+  instruction: "You are a helpful assistant. Use the 'getWeather' tool for weather queries " +
+               "and the 'getCurrentTime' tool for time queries. Provide clear answers based on tool results. " +
+               "If asked for weather AND time, use both tools.",
+  tools: [getWeatherTool, getCurrentTimeTool], // List of available tools
+});
 `;
 
 const PACKAGE_JSON_TEMPLATE = `{
@@ -35,10 +105,10 @@ const PACKAGE_JSON_TEMPLATE = `{
   "main": "dist/agent.js",
   "scripts": {
     "build": "tsc",
-    "start": "ts-node src/agent.ts"
+    "start": "node dist/agent.js"
   },
   "dependencies": {
-    "adk-typescript": "^0.0.1-alpha.1",
+    "adk-typescript": "^${VERSION}",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
@@ -51,21 +121,33 @@ const PACKAGE_JSON_TEMPLATE = `{
 const TSCONFIG_JSON_TEMPLATE = `{
   "compilerOptions": {
     "target": "ES2020",
-    "module": "commonjs",
+    "module": "Node16",
     "outDir": "./dist",
+    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node16",
+    "resolveJsonModule": true,
+    "declaration": true
   },
-  "include": ["src/**/*"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }
 `;
 
 const GOOGLE_API_MSG = `\nDon't have API Key? Create one in AI Studio: https://aistudio.google.com/apikey\n`;
 const GOOGLE_CLOUD_SETUP_MSG = `\nYou need an existing Google Cloud account and project, check out this link for details:\nhttps://google.github.io/adk-docs/get-started/quickstart/#gemini---google-cloud-vertex-ai\n`;
 const OTHER_MODEL_MSG = `\nPlease see below guide to configure other models:\nhttps://google.github.io/adk-docs/agents/models\n`;
-const SUCCESS_MSG = `\nAgent created in {agent_folder}:\n- .env\n- package.json\n- tsconfig.json\n- src/agent.ts\n\nNext steps:\n1. cd {agent_folder}\n2. npm install              # Install dependencies\n3. adk-ts run .             # Run your agent (use '.' when inside the agent directory)\n\nAlternatively, you can run it from the parent directory:\n  adk-ts run {agent_folder}\n`;
+const SUCCESS_MSG = `\nAgent created in {agent_folder}:\n- .env\n- package.json\n- tsconfig.json\n- agent.ts\n- README.md\n
+Next steps:
+1. cd {agent_folder}
+2. npm install              # Install dependencies
+3. npx adk-ts run .         # Run your agent in terminal (use '.' when inside the agent directory)
+4. npx adk-ts web .         # OR try the dev UI in browser
+
+`;
 
 function askQuestion(rl: readline.Interface, question: string, defaultValue?: string): Promise<string> {
   return new Promise(resolve => {
@@ -102,11 +184,13 @@ async function promptForGoogleApiKey(rl: readline.Interface, googleApiKey?: stri
 
 async function promptForModel(rl: readline.Interface): Promise<string> {
   // Ask once and handle response
-  const modelChoice = await askQuestion(rl, `Choose a model for the root agent:\n1. gemini-2.0-flash\n2. Other models (fill later)\nChoose model`, '1');
+  const modelChoice = await askQuestion(rl, `Choose a model for the root agent:\n1. gemini-1.5-flash (recommended)\n2. gemini-2.0-flash\n3. Other models (fill later)\nChoose model`, '1');
   
   if (modelChoice === '1') {
-    return 'gemini-2.0-flash';
+    return 'gemini-1.5-flash';
   } else if (modelChoice === '2') {
+    return 'gemini-2.0-flash';
+  } else if (modelChoice === '3') {
     console.log(OTHER_MODEL_MSG);
     return '<FILL_IN_MODEL>';
   }
@@ -139,6 +223,16 @@ async function promptToChooseBackend(
   return { googleApiKey };
 }
 
+/**
+ * Sanitizes an agent name to use only alphanumeric characters and underscores
+ * @param name The original agent name
+ * @returns Sanitized name with non-alphanumeric characters replaced with underscores
+ */
+function sanitizeAgentName(name: string): string {
+  // Replace any non-alphanumeric character (except underscores) with underscores
+  return name.replace(/[^a-zA-Z0-9_]/g, '_');
+}
+
 async function generateFiles(
   agentFolder: string,
   opts: {
@@ -150,12 +244,12 @@ async function generateFiles(
   }
 ) {
   await fs.promises.mkdir(agentFolder, { recursive: true });
-  await fs.promises.mkdir(path.join(agentFolder, 'src'), { recursive: true });
   
   const dotenvFilePath = path.join(agentFolder, '.env');
   const packageJsonFilePath = path.join(agentFolder, 'package.json');
   const tsconfigFilePath = path.join(agentFolder, 'tsconfig.json');
-  const agentFilePath = path.join(agentFolder, 'src', 'agent.ts');
+  const agentFilePath = path.join(agentFolder, 'agent.ts');
+  const readmeFilePath = path.join(agentFolder, 'README.md');
   
   const lines: string[] = [];
   if (opts.googleApiKey) {
@@ -168,9 +262,17 @@ async function generateFiles(
   if (opts.googleCloudRegion) lines.push(`GOOGLE_CLOUD_LOCATION=${opts.googleCloudRegion}`);
   
   await fs.promises.writeFile(dotenvFilePath, lines.join('\n'), 'utf-8');
-  await fs.promises.writeFile(packageJsonFilePath, PACKAGE_JSON_TEMPLATE.replace('{agent_name}', opts.agentName), 'utf-8');
+  await fs.promises.writeFile(packageJsonFilePath, PACKAGE_JSON_TEMPLATE.replace(/{agent_name}/g, opts.agentName), 'utf-8');
   await fs.promises.writeFile(tsconfigFilePath, TSCONFIG_JSON_TEMPLATE, 'utf-8');
-  await fs.promises.writeFile(agentFilePath, AGENT_TS_TEMPLATE.replace('{model_name}', opts.model || '<FILL_IN_MODEL>'), 'utf-8');
+  
+  // Ensure both curly and non-curly braces templates are replaced for agent name
+  const agentCode = AGENT_TS_TEMPLATE
+    .replace(/{model_name}/g, opts.model || 'gemini-1.5-flash')
+    .replace(/{agent_name}/g, opts.agentName)
+    .replace(/"{agent_name}"/g, `"${opts.agentName}"`)
+    .replace(/'{agent_name}'/g, `'${opts.agentName}'`);
+  
+  await fs.promises.writeFile(agentFilePath, agentCode, 'utf-8');
   
   const successMessage = SUCCESS_MSG.replace(/{agent_folder}/g, agentFolder);
   console.log(successMessage);
@@ -190,16 +292,23 @@ export async function runCmd({
   googleCloudRegion?: string;
 }) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  
+  // Sanitize the agent name
+  const sanitizedAgentName = sanitizeAgentName(agentName);
+  if (sanitizedAgentName !== agentName) {
+    console.log(`Agent name has been sanitized from "${agentName}" to "${sanitizedAgentName}" (only alphanumeric characters and underscores allowed)`);
+  }
+  
   if (!model) {
     model = await promptForModel(rl);
   }
   const backend = await promptToChooseBackend(rl, googleApiKey, googleCloudProject, googleCloudRegion);
-  await generateFiles(agentName, {
+  await generateFiles(sanitizedAgentName, {
     googleApiKey: backend.googleApiKey,
     googleCloudProject: backend.googleCloudProject,
     googleCloudRegion: backend.googleCloudRegion,
     model,
-    agentName,
+    agentName: sanitizedAgentName,
   });
   rl.close();
 } 

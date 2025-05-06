@@ -23,7 +23,7 @@
  */
 
 // Version information
-export const VERSION = '0.0.1';
+export const VERSION = '0.1.0';
 
 // Import modules to re-export
 import * as agentsModule from './agents';
