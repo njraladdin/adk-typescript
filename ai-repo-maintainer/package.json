@@ -1,0 +1,22 @@
+{
+  "name": "repo-maintainer",
+  "version": "0.1.0",
+  "description": "GitHub repository maintainer tool",
+  "main": "agent.ts",
+  "scripts": {
+    "test:commits": "ts-node tools/getLatestCommits.ts",
+    "test:issues": "ts-node tools/getRepoIssues.ts",
+    "start": "ts-node agent.ts"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.1.1",
+    "adk-typescript": "file:../../adk-typescript",
+    "axios": "^1.6.2",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.2"
+  }
+}
