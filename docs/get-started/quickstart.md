@@ -35,26 +35,34 @@ npm install dotenv @types/dotenv
 You will need to create the following project structure:
 
 ```console
-my-adk-project/
-├── multi_tool_agent/           # Your agent's code folder
-│   └── agent.ts                # Agent definition lives here
-├── .env                        # API keys and configuration
-├── package.json                # Node.js project manifest
-└── tsconfig.json               # TypeScript configuration
-└── dist/                       # (Created after build) Compiled JavaScript output
+my-adk-project/               # Your parent project folder
+├── multi_tool_agent/         # Your agent's code folder
+│   └── agent.ts              # Agent definition lives here
+├── .env                      # API keys and configuration
+├── package.json              # Node.js project manifest
+├── tsconfig.json             # TypeScript configuration
+└── dist/                     # (Created after build) Compiled JavaScript output
 ```
 
-Create the agent folder `multi_tool_agent`:
+Create the agent folder inside your project:
 
 ```bash
-mkdir multi_tool_agent/
+# Make sure you are in the my-adk-project directory
+mkdir multi_tool_agent
 ```
 
 ### TypeScript Configuration
 
 Create the `tsconfig.json` file in your project root (`my-adk-project/`):
 
-```json title="tsconfig.json"
+```bash
+# Create TypeScript configuration file (using your preferred text editor)
+touch tsconfig.json
+```
+
+Copy and paste the following content into your `tsconfig.json` file:
+
+```json
 {
   "compilerOptions": {
     "target": "ES2020",
@@ -76,26 +84,25 @@ Create the `tsconfig.json` file in your project root (`my-adk-project/`):
 
 Add a build script to your `package.json`:
 
-```json title="package.json (add scripts section)"
-{
-  // ... other fields like name, version ...
-  "main": "dist/multi_tool_agent/agent.js", // Point to the compiled agent entry point
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/multi_tool_agent/agent.js", // Example start script
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  // ... dependencies ...
-}
+```bash
+# Update package.json with build scripts using npm pkg commands
+npm pkg set main="dist/multi_tool_agent/agent.js"
+npm pkg set scripts.build="tsc"
+npm pkg set scripts.start="node dist/multi_tool_agent/agent.js"
 ```
 
 ### `agent.ts`
 
-Create an `agent.ts` file inside the `multi_tool_agent/` folder.
+Create an `agent.ts` file inside the `multi_tool_agent/` folder:
+
+```bash
+# Create agent.ts file (using your preferred text editor)
+touch multi_tool_agent/agent.ts
+```
 
 Copy and paste the following code into `multi_tool_agent/agent.ts`:
 
-```typescript title="multi_tool_agent/agent.ts"
+```typescript
 import { LlmAgent as Agent } from 'adk-typescript/agents';
 import { LlmRegistry } from 'adk-typescript/models';
 import { FunctionTool, ToolContext } from 'adk-typescript/tools';
@@ -212,7 +219,7 @@ Your agent needs credentials to securely call the LLM service.
 === "Gemini - Google AI Studio"
 
     1.  Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
-    2.  Open the **`.env`** file (in your project root `my-adk-project/`) and add/modify the following lines:
+    2.  Open the **`.env`** file in your project root and add the following content:
 
         ```env title=".env"
         # Use Google AI backend (value 0 or false)
@@ -221,7 +228,7 @@ Your agent needs credentials to securely call the LLM service.
         GOOGLE_API_KEY=PASTE_YOUR_ACTUAL_API_KEY_HERE
         ```
 
-    3.  Replace `PASTE_YOUR_ACTUAL_API_KEY_HERE` with your actual API key.
+    3.  Edit the `.env` file to replace `PASTE_YOUR_ACTUAL_API_KEY_HERE` with your actual API key.
 
 === "Gemini - Google Cloud Vertex AI"
 
@@ -230,7 +237,7 @@ Your agent needs credentials to securely call the LLM service.
         *   Set up the [gcloud CLI](https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#setup-local).
         *   Authenticate to Google Cloud for Application Default Credentials (ADC): `gcloud auth application-default login`.
         *   [Enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
-    2.  Open the **`.env`** file (in your project root `my-adk-project/`). Add/modify the following lines and update the project ID and location.
+    2.  Open the **`.env`** file in your project root and add the following content:
 
         ```env title=".env"
         # Use Vertex AI backend (value 1 or true)
@@ -241,6 +248,8 @@ Your agent needs credentials to securely call the LLM service.
         GOOGLE_CLOUD_LOCATION=us-central1
         # GOOGLE_API_KEY is NOT needed when using Vertex AI with ADC
         ```
+
+    3.  Edit the `.env` file to replace `YOUR_PROJECT_ID` with your actual Google Cloud project ID and update the location if needed.
 
 ## 4. Run Your Agent {#run-your-agent-typescript}
 
@@ -253,11 +262,10 @@ npm run build
 
 Now you can interact with your agent using the ADK TypeScript CLI tools. Make sure you run these commands from your project root directory (`my-adk-project/`).
 
-*(**Note:** Replace `adk-ts` with the actual command if needed, e.g., `node node_modules/adk-typescript/dist/cli/index.js`)*
 
 === "Dev UI (adk-ts web)"
 
-    Run the following command to launch the **dev UI**, telling it where your agent code resides:
+    Run the following command to launch the **dev UI**:
 
     ```bash
     adk-ts web multi_tool_agent
@@ -265,11 +273,11 @@ Now you can interact with your agent using the ADK TypeScript CLI tools. Make su
 
     **Step 1:** Open the URL provided (usually `http://localhost:3000`) directly in your browser.
 
-    **Step 2.** In the top-left corner of the UI, select your agent: "multi\_tool\_agent".
+    **Step 2.** In the top-left corner of the UI, select your agent: "multi_tool_agent".
 
     !!!note "Troubleshooting"
 
-        If you do not see "multi_tool_agent" in the dropdown menu, ensure you ran `adk-ts web` from the **correct directory** (`my-adk-project/` in this example) and specified the correct agent folder name (`multi_tool_agent`).
+        If you do not see "multi_tool_agent" in the dropdown menu, ensure you ran `adk-ts web` from the **correct directory** (`my-adk-project/` in this example) where your agent folder is located.
 
     **Step 3.** Chat with your agent using the textbox:
 
@@ -289,7 +297,7 @@ Now you can interact with your agent using the ADK TypeScript CLI tools. Make su
 
 === "Terminal (adk-ts run)"
 
-    Run the following command to chat with your agent directly in the terminal, specifying the agent folder:
+    Run the following command to chat with your agent directly in the terminal:
 
     ```bash
     adk-ts run multi_tool_agent

@@ -21,15 +21,9 @@ TODO:
 - port changes from python project v0.3.0, done 
 - port changes from python project v0.4.0, done 
 - port all unit tests and fix them, done 
-
-
-- publish as npm package and create github release
+- publish as npm package and create github release, done 
 
 
 
 - deploy agent that would automatically port commits from the original python project OR ai workflow  
 
-
-git tag -f v0.0.1
- git push
-   git push origin v0.0.1 
