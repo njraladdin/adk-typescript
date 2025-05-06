@@ -1,8 +1,8 @@
 # ADK TypeScript Streaming Quickstart {#adk-typescript-streaming-quickstart}
 
-With this quickstart, you'll learn to create a simple agent and use ADK TypeScript Streaming to enable voice and video communication with it that is low-latency and bidirectional. We will install ADK TypeScript, set up a basic "Google Search" agent, try running the agent with Streaming using the `adk-ts web` tool.
+This quickstart guides you through creating a simple agent and using ADK TypeScript Streaming to enable voice and video communication with it that is low-latency and bidirectional. You'll learn how to install ADK TypeScript, set up a basic "Google Search" agent, and run the agent with Streaming using the `adk-ts web` tool.
 
-**Note:** This guide assumes you have experience using a terminal and Node.js/npm in Windows, Mac, or Linux environments.
+This quickstart assumes a local development environment with Node.js (v18+ recommended), npm, and terminal access in Windows, Mac, or Linux environments.
 
 ## Supported models for voice/video streaming {#supported-models}
 
@@ -11,11 +11,13 @@ In order to use voice/video streaming in ADK TypeScript, you will need to use Ge
 - [Google AI Studio: Gemini API Models](https://ai.google.dev/gemini-api/docs/models#model-variations) (Look for models supporting streaming/multimodal features)
 - [Vertex AI: Gemini API Models](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models#gemini_models) (Look for models supporting streaming/multimodal features)
 
-## 1. Setup Environment & Install ADK TypeScript {#1.-setup-installation-typescript}
+## 1. Set up Environment & Install ADK TypeScript {#1.-setup-installation-typescript}
 
-**Environment:** Ensure you have Node.js (version 18 or higher recommended) and npm installed.
+**Environment Setup:**
 
-Create a new project:
+*   Ensure you have Node.js (version 18 or higher recommended) and npm installed.
+
+**Create Project:**
 
 ```bash
 # Create project folders
@@ -26,25 +28,34 @@ cd adk-streaming/app
 npm init -y
 
 # Install ADK TypeScript and dependencies
-npm install adk-typescript dotenv
+npm install adk-typescript dotenv @types/dotenv
 ```
 
-## 2. Project Structure {#2.-project-structure-typescript}
+> **Note:** The command-line tool uses the prefix `npx adk-ts` when running commands locally.
+
+## 2. Create Agent Project {#2.-project-structure-typescript}
+
+### Project structure
 
 Your project should have the following structure:
 
 ```console
 adk-streaming/  # Project folder
 └── app/        # Your application source folder
-    ├── .env    # API keys and environment variables
-    └── google_search_agent/ # Agent folder
-        └── agent.ts        # Agent definition
+    ├── google_search_agent/ # Agent folder
+    │   └── agent.ts        # Agent definition lives here
+    ├── .env                # API keys and environment variables
     ├── package.json        # Created by npm init
+    ├── tsconfig.json       # TypeScript configuration
+    └── dist/               # (Created after build) Compiled JavaScript output
 ```
 
-When working with TypeScript, you'll need a `tsconfig.json` file. You can generate one with:
+### TypeScript Configuration
+
+When working with TypeScript, you'll need a `tsconfig.json` file. Create one in your project's `app` directory:
 
 ```bash
+# Generate a basic TypeScript configuration file
 npx tsc --init
 ```
 
@@ -54,14 +65,14 @@ Modify the generated `tsconfig.json` to include:
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "Node16",
+    "module": "Node16",      // Required for proper module resolution
     "outDir": "./dist",
     "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node16",
+    "moduleResolution": "node16", // Required for subpath imports
     "resolveJsonModule": true
   },
   "include": ["**/*.ts"],
@@ -69,11 +80,23 @@ Modify the generated `tsconfig.json` to include:
 }
 ```
 
-### agent.ts
+Add a build script to your `package.json`:
 
-Create the agent definition file (`google_search_agent/agent.ts`).
+```bash
+# Add a build script to package.json
+npm pkg set scripts.build="tsc"
+```
 
-Copy-paste the following code block. For `model`, please double-check the model ID as described earlier in the [Models section](#supported-models).
+### `agent.ts`
+
+Create the agent definition file (`google_search_agent/agent.ts`):
+
+```bash
+# Create agent.ts file (using your preferred text editor)
+touch google_search_agent/agent.ts
+```
+
+Copy-paste the following code into `google_search_agent/agent.ts`. For `model`, please double-check the model ID as described earlier in the [Models section](#supported-models).
 
 ```typescript
 // google_search_agent/agent.ts
@@ -107,17 +130,28 @@ export const rootAgent = new Agent({
 
 Notice how easily you integrated grounding with Google Search. The `Agent` class and the imported `googleSearch` tool handle the complex interactions with the LLM and grounding with the search API.
 
-## 3\. Set up the platform {#3.-set-up-the-platform-typescript}
+### `.env`
 
-To run the agent, choose a platform (Google AI Studio or Google Cloud Vertex AI) and configure your `.env` file accordingly.
+Create a `.env` file in your `app` directory:
+
+```bash
+# Create .env file
+touch .env
+```
+
+You'll populate this file in the next section.
+
+## 3. Set up the model {#3.-set-up-the-platform-typescript}
+
+Your agent needs credentials to securely call the LLM service. Choose a platform (Google AI Studio or Google Cloud Vertex AI) and configure your `.env` file accordingly.
 
 === "Gemini - Google AI Studio"
 
     1.  Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
     2.  Open the **`.env`** file (located inside `app/`) and add the following lines:
 
-        ```env title=".env"
-        # Use Google AI backend (not Vertex AI)
+        ```env
+        # Use Google AI backend (value 0 or false)
         GOOGLE_GENAI_USE_VERTEXAI=0
         # Your API Key
         GOOGLE_API_KEY=PASTE_YOUR_ACTUAL_API_KEY_HERE
@@ -130,40 +164,47 @@ To run the agent, choose a platform (Google AI Studio or Google Cloud Vertex AI)
     1.  You need an existing [Google Cloud](https://cloud.google.com/?e=48754805&hl=en) account and a project.
         *   Set up a [Google Cloud project](https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#setup-gcp).
         *   Set up the [gcloud CLI](https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#setup-local).
-        *   Authenticate to Google Cloud from the terminal by running `gcloud auth application-default login`.
+        *   Authenticate to Google Cloud for Application Default Credentials (ADC): `gcloud auth application-default login`.
         *   [Enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
-    2.  Open the **`.env`** file (located inside `app/`). Add the following lines:
+    2.  Open the **`.env`** file (located inside `app/`) and add the following lines:
 
-        ```env title=".env"
-        # Use Vertex AI backend
+        ```env
+        # Use Vertex AI backend (value 1 or true)
         GOOGLE_GENAI_USE_VERTEXAI=1
         # Your Project ID
-        GOOGLE_CLOUD_PROJECT=PASTE_YOUR_ACTUAL_PROJECT_ID
+        GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
         # Your Project Location (e.g., us-central1)
         GOOGLE_CLOUD_LOCATION=us-central1
-        # GOOGLE_API_KEY is NOT needed when using Vertex AI with application-default credentials
+        # GOOGLE_API_KEY is NOT needed when using Vertex AI with ADC
         ```
 
-## 4. Try the agent with `adk-ts web` {#4.-try-it-adk-web-typescript}
+    3.  Edit the `.env` file to replace `YOUR_PROJECT_ID` with your actual Google Cloud project ID and update the location if needed.
 
-Now, it's time to try the agent using the built-in development UI.
+## 4. Compile and Run Your Agent {#4.-try-it-adk-web-typescript}
 
-1.  **Build your code:** Compile your TypeScript code:
-    ```bash
-    # Add a build script to package.json first
-    npm pkg set scripts.build="tsc"
-    
-    # Build the project
-    npm run build
-    ```
+First, **build** your TypeScript code:
 
-2.  **Run the Dev UI:** Make sure you are in the `app` directory.
-    ```bash
-    npx adk-ts web .
-    ```
-    This launches the web UI with the agent in your current directory.
+```bash
+# Make sure you are in the app directory
+npm run build
+```
 
-3.  **Access the UI:** Open the URL provided (typically `http://localhost:3000`) **directly in your browser**. Select `google_search_agent` from the available agents.
+Now, it's time to try the agent using the built-in development UI:
+
+```bash
+# Run the Dev UI from the app directory
+npx adk-ts web .
+```
+
+This launches the web UI with the agent in your current directory.
+
+**Step 1:** Open the URL provided (typically `http://localhost:3000`) **directly in your browser**.
+
+**Step 2:** Select `google_search_agent` from the available agents.
+
+!!!note "Troubleshooting"
+
+    If you do not see "google_search_agent" in the dropdown menu, ensure you ran `npx adk-ts web` from the **correct directory** (`adk-streaming/app` in this example) where your agent folder is located.
 
 ### Try with text
 
@@ -192,7 +233,7 @@ The `runLive` method in the `Runner` and the `LiveRequestQueue` class provide th
 
 ## 5. Building a Custom Streaming App (Optional) {#5.-build-custom-app-typescript}
 
-In the previous section, we have checked that our basic search agent works with the ADK TypeScript Streaming using `adk-ts web` tool. In this section, we will learn how to build your own web application capable of the streaming communication using [Express.js](https://expressjs.com/) and [Socket.IO](https://socket.io/).
+In the previous section, we have checked that our basic search agent works with the ADK TypeScript Streaming using the `adk-ts web` tool. In this section, we will learn how to build your own web application capable of the streaming communication using [Express.js](https://expressjs.com/) and [Socket.IO](https://socket.io/).
 
 Add `static` directory under `app`, and add `server.ts` and `index.html` as empty files, as in the following structure:
 
@@ -212,10 +253,11 @@ adk-streaming/  # Project folder
     ├── server.ts       # Express.js web app
     ├── static/         # Static content folder
     |   └── index.html  # The web client page
-    ├── .env            # Gemini API key
+    ├── google_search_agent/ # Agent folder
+    |   └── agent.ts    # Agent definition
+    ├── .env            # API keys and environment variables 
     ├── package.json    # Node.js package file
-    └── google_search_agent/ # Agent folder
-        └── agent.ts    # Agent definition
+    └── tsconfig.json   # TypeScript configuration
 ```
 
 **server.ts**
@@ -377,15 +419,16 @@ This code creates a real-time chat application using ADK TypeScript and Express.
 
 Key functionalities:
 
-* Loads the Gemini API key.
-* Uses ADK TypeScript to manage agent sessions and run the `google_search_agent`.
-* `startAgentSession` initializes an agent session with a live request queue for real-time communication.
-* `agentToClientMessaging` asynchronously streams the agent's text responses and status updates (turn complete, interrupted) to the connected WebSocket client.
-* `clientToAgentMessaging` asynchronously receives text messages from the WebSocket client and sends them as user input to the agent.
-* Express.js serves a static frontend and handles WebSocket connections.
-* When a client connects, it starts an agent session and creates functions for bidirectional communication between the client and the agent via WebSockets.
+* Loads environment variables for model access
+* Uses ADK TypeScript to manage agent sessions and run the `google_search_agent`
+* `startAgentSession` initializes an agent session with a live request queue for real-time communication
+* `agentToClientMessaging` asynchronously streams the agent's responses to the client
+* `clientToAgentMessaging` handles user inputs from the client to the agent
+* Express.js serves a static frontend and handles WebSocket connections
 
-Copy-paste the following code block to the `index.html` file.
+**index.html**
+
+Create the web client frontend by copying this HTML to `static/index.html`:
 
 ```html
 <!doctype html>
@@ -506,9 +549,9 @@ This HTML file sets up a basic webpage with:
 # Build the TypeScript files
 npm run build
 
-# Run the server
-node dist/server.js
-```
+   # Run the server
+   node dist/server.js
+   ```
 
 3\. **Access the UI:** Once the UI server starts, the terminal will display a local URL (e.g., [http://localhost:8080](http://localhost:8080)). Click this link to open the UI in your browser.
 
@@ -522,7 +565,7 @@ Benefits over conventional synchronous web apps:
 
 Congratulations! You've successfully created and interacted with your first Streaming agent using ADK TypeScript!
 
-## Next steps
+## 🛣️ Next steps
 
 *   **Add Multimodal Capabilities:** Modify the agent, server, and client to handle sending/receiving audio or video data using `LiveRequestQueue.sendBlob` and appropriate browser APIs (e.g., `MediaRecorder`, `getUserMedia`). Remember to use an LLM that supports multimodal input.
 *   **Explore Other Tools:** Integrate different ADK tools (like `FunctionTool`) into your streaming agent.
