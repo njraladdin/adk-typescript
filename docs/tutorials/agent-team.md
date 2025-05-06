@@ -1,38 +1,5 @@
 # Build Your First Intelligent Agent Team: A Progressive Weather Bot with ADK
 
-<!-- Optional outer container for overall padding/spacing -->
-<div style="padding: 10px 0;">
-
-  <!-- Line 1: Open in Colab -->
-  <!-- This div ensures the link takes up its own line and adds space below -->
-  </div>
-
-  <!-- Line 2: Share Links -->
-  <!-- This div acts as a flex container for the "Share to" text and icons -->
-  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-    <!-- Share Text -->
-    <span style="font-weight: bold;">Share to:</span>
-
-    <!-- Social Media Links -->
-    <a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on LinkedIn">
-      <img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/8/81/LinkedIn_icon.svg" alt="LinkedIn logo" style="vertical-align: middle;">
-    </a>
-    <a href="https://bsky.app/intent/compose?text=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on Bluesky">
-      <img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Bluesky_Logo.svg" alt="Bluesky logo" style="vertical-align: middle;">
-    </a>
-    <a href="https://twitter.com/intent/tweet?url=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on X (Twitter)">
-      <img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/5/5a/X_icon_2.svg" alt="X logo" style="vertical-align: middle;">
-    </a>
-    <a href="https://reddit.com/submit?url=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on Reddit">
-      <img width="20px" src="https://redditinc.com/hubfs/Reddit%20Inc/Brand/Reddit_Logo.png" alt="Reddit logo" style="vertical-align: middle;">
-    </a>
-    <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A//github/google/adk-docs/blob/main/examples/typescript/tutorial/agent_team/adk_tutorial_ts.ipynb" target="_blank" title="Share on Facebook">
-      <img width="20px" src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" alt="Facebook logo" style="vertical-align: middle;">
-    </a>
-  </div>
-
-</div>
-
 This tutorial extends from the [Quickstart example](https://njraladdin.github.io/adk-typescript/get-started/quickstart/) for [Agent Development Kit](https://njraladdin.github.io/adk-typescript/get-started/). Now, you're ready to dive deeper and construct a more sophisticated, **multi-agent system**.
 
 We'll embark on building a **Weather Bot agent team**, progressively layering advanced features onto a simple foundation. Starting with a single agent that can look up weather, we will incrementally add capabilities like:
@@ -85,8 +52,6 @@ This tutorial is structured for Node.js environments. Please keep the following 
 
 // In your project directory, run:
 // npm install adk-typescript
-
-console.log("Installation complete.");
 ```
 
 
