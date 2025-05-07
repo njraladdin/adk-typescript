@@ -10,13 +10,14 @@ import { getAgentGraph } from './agentGraph';
 import { createApiServer } from './apiServer';
 import { startWebServer } from './webServer';
 import * as fs from 'fs';
+import { VERSION } from '../index';
 
 const program = new Command();
 
 program
   .name('adk-ts')
   .description('Agent Development Kit CLI tools (TypeScript port)')
-  .version('0.0.1-alpha.1');
+  .version(VERSION);
 
 // create
 program

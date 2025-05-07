@@ -5,7 +5,16 @@
 ### Changed
 ### Fixed
 
-## [0.0.1] 
+## [0.1.1]
+
+### Fixed
+
+* Improved "Get Started" documentation
+* Fixed CLI create command
+* Fixed exports (modules were not being imported correctly)
+* Removed requirement to install global version of the npm package
+
+## [0.1.0] 
 
 ### Features
 
