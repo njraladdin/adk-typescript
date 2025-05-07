@@ -23,7 +23,9 @@ TODO:
 - port all unit tests and fix them, done 
 - publish as npm package and create github release, done 
 - test quickstart doc examples, done  
-- deploy simple agent that would detect commits on the original python project and create issues on the github repo
 
-- deploy agent that would automatically port commits from the original python project OR ai workflow  
+- create simple agent that would detect commits on the original python project and create issues on the github repo
+- deploy simple workflow agent 
 
+- agent would check which typescript project files need to be updated 
+- get project up to date with the latest changes 

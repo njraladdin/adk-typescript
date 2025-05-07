@@ -1,14 +1,20 @@
 import axios from 'axios';
 
 /**
- * Fetches the latest commits from the Google ADK Python repository
+ * Fetches the latest commits from a GitHub repository
+ * @param username GitHub username or organization name
+ * @param repo GitHub repository name
  * @param count Number of commits to retrieve (default: 10)
  * @returns Promise resolving to an array of commit objects
  */
-export async function getLatestCommits(count: number = 10): Promise<any[]> {
+export async function getRepoCommits(
+  username: string,
+  repo: string,
+  count: number = 10
+): Promise<any[]> {
   try {
     const response = await axios.get(
-      `https://api.github.com/repos/google/adk-python/commits`,
+      `https://api.github.com/repos/${username}/${repo}/commits`,
       {
         params: {
           per_page: count
@@ -30,8 +36,12 @@ export async function getLatestCommits(count: number = 10): Promise<any[]> {
 if (require.main === module) {
   const testFunction = async () => {
     try {
-      console.log('Fetching latest commits from Google ADK Python repo:');
-      const commits = await getLatestCommits(5);
+      // Using the previously hardcoded values for testing
+      const username = 'google';
+      const repo = 'adk-python';
+      
+      console.log(`Fetching latest commits from ${username}/${repo} repo:`);
+      const commits = await getRepoCommits(username, repo, 5);
       console.log(JSON.stringify(commits, null, 2));
     } catch (error) {
       console.error('Test failed:', error);
