@@ -10,5 +10,10 @@ agent:
 - context about how we ported the python project to typescript, and his job is to report new updates in the typescript repo 
 - gets command to check for now commits on the original python repo 
 - uses tool to get commits that were not reported in the issues 
+- uses tool to get related issues and comments on those commits 
+- uses llm to analyze what changed 
+- uses tool to create new issue on typescript repo 
+
+
 
 

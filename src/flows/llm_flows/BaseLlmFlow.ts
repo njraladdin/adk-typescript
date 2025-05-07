@@ -50,6 +50,7 @@ declare module '../../tools/BaseTool' {
 declare module '../../agents/LiveRequestQueue' {
   interface LiveRequestQueue {
     close(): void;
+    sendClose(): void;
   }
 }
 
@@ -62,7 +63,7 @@ if (typeof LiveRequestQueue.prototype.close !== 'function') {
 
 interface FunctionResponseEvent extends Event {
   actions: EventActions & {
-    transferToAgent?: any;
+    transferToAgent?: string | { agent_name: string } | Record<string, any>;
   };
 }
 
@@ -81,18 +82,6 @@ export abstract class BaseLlmFlow {
    */
   protected responseProcessors: BaseLlmResponseProcessor[] = [];
 
-  /**
-   * NOTE: There are several TypeScript linter errors that need to be fixed:
-   * 
-   * 1. The AgentWithRoot interface needs to be refined to properly extend BaseAgent
-   * 2. Several methods need proper type checking for function calls like runLive and runAsync
-   * 3. The telemetry.tracer.startSpan method doesn't exist or needs proper typings
-   * 4. The LiveRequestQueue.close method doesn't exist or needs proper typings
-   * 5. Method signature for generateContentAsync needs to be fixed (expects 1 arg but gets 2)
-   * 
-   * These should be addressed in a follow-up implementation after proper type definitions
-   * are confirmed.
-   */
 
   /**
    * Runs the flow using live API.
@@ -548,7 +537,7 @@ export abstract class BaseLlmFlow {
     if (finalEvent.getFunctionCalls().length > 0) {
       try {
         // Get tools dictionary if available
-        const toolsDict = llmRequest.getToolsDict ? llmRequest.getToolsDict() : {};
+        const toolsDict = 'getToolsDict' in llmRequest ? llmRequest.getToolsDict() : {};
         
         const functionResponseEvent = await functions.handleFunctionCallsLive(
           invocationContext, 
@@ -618,7 +607,7 @@ export abstract class BaseLlmFlow {
     try {
       // Handle function calls asynchronously
       // Get tools dictionary if available
-      const toolsDict = llmRequest.getToolsDict ? llmRequest.getToolsDict() : {};
+      const toolsDict = 'getToolsDict' in llmRequest ? llmRequest.getToolsDict() : {};
 
       const functionResponseEvent = await functions.handleFunctionCallsAsync(
         invocationContext, 
@@ -666,7 +655,7 @@ export abstract class BaseLlmFlow {
    */
   protected _getAgentToRun(
     invocationContext: InvocationContext,
-    transferToAgent: any
+    transferToAgent: string | { agent_name: string } | Record<string, any>
   ): BaseAgent {
     // Check if rootAgent is available
     const rootAgent = invocationContext.agent.rootAgent;
@@ -682,7 +671,7 @@ export abstract class BaseLlmFlow {
     }
     
     // Fallback: try to get from session
-    if (transferToAgent && transferToAgent.agent_name) {
+    if (transferToAgent && typeof transferToAgent === 'object' && 'agent_name' in transferToAgent) {
       const agentName = transferToAgent.agent_name;
       if (invocationContext.session && typeof invocationContext.session.getAgent === 'function') {
         const agent = invocationContext.session.getAgent(agentName);
@@ -897,7 +886,7 @@ export abstract class BaseLlmFlow {
         functions.populateClientFunctionCallId(finalEvent);
         
         // Get tools dictionary if available
-        const toolsDict = llmRequest.getToolsDict ? llmRequest.getToolsDict() : {};
+        const toolsDict = 'getToolsDict' in llmRequest ? llmRequest.getToolsDict() : {};
         finalEvent.longRunningToolIds = functions.getLongRunningFunctionCalls(
           functionCalls, 
           toolsDict
