@@ -659,7 +659,7 @@ function _buildResponseEvent(
         {
           functionResponse: {
             name: tool.name,
-            response: functionResult,
+            ...functionResult,
             id: functionCallId,
           },
         },

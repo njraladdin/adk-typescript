@@ -14,7 +14,7 @@ const COMMIT_REFERENCE_REGEX = /\[commit:([a-f0-9]+)\]|\b([a-f0-9]{40})\b/gi;
  * @param tsRepoUsername GitHub username/org for the TypeScript repo (e.g., 'njraladdin')
  * @param tsRepoName GitHub repo name for the TypeScript repo (e.g., 'adk-typescript')
  * @param commitCount Number of recent commits to check (default: 10)
- * @returns Promise resolving to an array of unreported commit objects
+ * @returns Promise resolving to an object with commits array, count, and repo information
  */
 export async function getUnreportedCommits(
   pythonRepoUsername: string,
@@ -22,7 +22,7 @@ export async function getUnreportedCommits(
   tsRepoUsername: string, 
   tsRepoName: string,
   commitCount: number = 10
-): Promise<any[]> {
+): Promise<any> {
   try {
     // Get the latest commits from the Python repo
     const pythonCommits = await getRepoCommits(pythonRepoUsername, pythonRepoName, commitCount);
@@ -58,7 +58,23 @@ export async function getUnreportedCommits(
       return !reportedCommitHashes.has(fullHash) && !reportedCommitHashes.has(shortHash);
     });
     
-    return unreportedCommits;
+    // Transform the commits to a simpler format that's easier for the LLM to process
+    const simplifiedCommits = unreportedCommits.map(commit => ({
+      sha: commit.sha,
+      shortSha: commit.sha.substring(0, 7),
+      message: commit.commit.message,
+      author: commit.commit.author?.name || 'Unknown',
+      date: commit.commit.author?.date || 'Unknown',
+      url: commit.html_url || ''
+    }));
+    
+    // Return as a flat object with commits array, rather than returning the array directly
+    return {
+      commits: simplifiedCommits,
+      count: simplifiedCommits.length,
+      pythonRepo: `${pythonRepoUsername}/${pythonRepoName}`,
+      tsRepo: `${tsRepoUsername}/${tsRepoName}`
+    };
   } catch (error) {
     console.error('Error getting unreported commits:', error);
     throw error;
@@ -76,7 +92,7 @@ if (require.main === module) {
       const tsRepoName = 'adk-typescript';
       
       console.log(`Checking for unreported commits from ${pythonRepoUsername}/${pythonRepoName} that are not reported in ${tsRepoUsername}/${tsRepoName}...`);
-      const unreportedCommits = await getUnreportedCommits(
+      const result = await getUnreportedCommits(
         pythonRepoUsername, 
         pythonRepoName, 
         tsRepoUsername, 
@@ -84,13 +100,13 @@ if (require.main === module) {
         10
       );
       
-      console.log(`Found ${unreportedCommits.length} unreported commits:`);
-      for (const commit of unreportedCommits) {
-        console.log(`- ${commit.sha.substring(0, 7)}: ${commit.commit.message.split('\n')[0]}`);
+      console.log(`Found ${result.count} unreported commits:`);
+      for (const commit of result.commits) {
+        console.log(`- ${commit.shortSha}: ${commit.message.split('\n')[0]}`);
       }
       
       console.log('\nFull details:');
-      console.log(JSON.stringify(unreportedCommits, null, 2));
+      console.log(JSON.stringify(result, null, 2));
     } catch (error) {
       console.error('Test failed:', error);
     }

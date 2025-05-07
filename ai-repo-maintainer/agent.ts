@@ -1,92 +1,180 @@
-import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { LlmAgent } from 'adk-typescript/agents';
 import { LlmRegistry } from 'adk-typescript/models';
-import { FunctionTool, ToolContext } from 'adk-typescript/tools';
+import { FunctionTool } from 'adk-typescript/tools';
 
-// --- Tool Functions ---
+// Import tool functions
+import { getUnreportedCommits } from './tools/getUnreportedCommits';
+import { getIssueDetails } from './tools/getIssueDetails';
+import { getCommitDiff } from './tools/getCommitDiff';
+import { createIssue } from './tools/createIssue';
 
-/**
- * Returns current weather information for a specified city
- * @param params Object containing city name
- * @param context Optional ToolContext
- * @returns Promise resolving to weather information or error
- */
-async function getWeather(
-  params: Record<string, any>,
-  context?: ToolContext
-): Promise<{ status: string; report?: string; error_message?: string }> {
-  const city = params.city;
-  console.log(`--- Tool: getWeather called for city: ${city} ---`);
-  const cityNormalized = city.toLowerCase().trim();
-  const mockWeatherDb: Record<string, { status: string; report: string }> = {
-    "newyork": {status: "success", report: "The weather in New York is sunny with a temperature of 25°C."},
-    "london": {status: "success", report: "It's cloudy in London with a temperature of 15°C."},
-    "tokyo": {status: "success", report: "Tokyo is experiencing light rain and a temperature of 18°C."},
-  };
-  if (mockWeatherDb[cityNormalized]) { return mockWeatherDb[cityNormalized]; }
-  else { return {status: "error", error_message: `Sorry, I don't have weather information for '${city}'.`}; }
-}
+// Configure default GitHub repository information
+const DEFAULT_PYTHON_REPO = 'google/adk-python';
+const DEFAULT_TS_REPO = 'njraladdin/adk-typescript';
 
-/**
- * Gets the current local time and timezone.
- * @param params Empty object (no parameters needed)
- * @param context Optional ToolContext
- * @returns Promise resolving to time information
- */
-async function getCurrentTime(
-  params: Record<string, any>, 
-  context?: ToolContext
-): Promise<{ currentTime: string; timezone: string; }> {
-    console.log(`--- Tool: getCurrentTime called ---`);
-    const now = new Date();
-    return {
-        currentTime: now.toLocaleTimeString(),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    };
-}
-
-// --- Tool Wrappers ---
-
-const getWeatherTool = new FunctionTool({
-  name: "getWeather",
-  description: "Returns current weather information for a specified city",
-  fn: getWeather,
+// Create FunctionTool wrappers for each tool
+const getUnreportedCommitsTool = new FunctionTool({
+  name: "getUnreportedCommits",
+  description: "Gets commits from the Python repo that haven't been reported as issues in the TypeScript repo",
+  fn: async (params: Record<string, any>) => {
+    const pythonRepo = params.pythonRepo || DEFAULT_PYTHON_REPO;
+    const tsRepo = params.tsRepo || DEFAULT_TS_REPO;
+    
+    const [pythonRepoUsername, pythonRepoName] = pythonRepo.split('/');
+    const [tsRepoUsername, tsRepoName] = tsRepo.split('/');
+    
+    return getUnreportedCommits(
+      pythonRepoUsername,
+      pythonRepoName,
+      tsRepoUsername,
+      tsRepoName,
+      params.commitCount || 10
+    );
+  },
   functionDeclaration: {
-    name: "getWeather",
-    description: "Returns current weather information for a specified city",
+    name: "getUnreportedCommits",
+    description: "Gets commits from the Python repo that haven't been reported as issues in the TypeScript repo",
     parameters: {
       type: 'object',
       properties: {
-        city: { type: 'string', description: 'The name of the city (e.g., "New York")'}
-      },
-      required: ['city']
+        pythonRepo: { 
+          type: 'string', 
+          description: 'Python repo in format "username/repo" (default: "google/adk-python")'
+        },
+        tsRepo: { 
+          type: 'string', 
+          description: 'TypeScript repo in format "username/repo" (default: "njraladdin/adk-typescript")'
+        },
+        commitCount: { 
+          type: 'number', 
+          description: 'Number of recent commits to check (default: 10)'
+        }
+      }
     }
   }
 });
 
-const getCurrentTimeTool = new FunctionTool({
-    name: "getCurrentTime",
-    description: "Gets the current local time and timezone.",
-    fn: getCurrentTime,
-    functionDeclaration: {
-        name: "getCurrentTime",
-        description: "Gets the current local time and timezone.",
-        parameters: { type: 'object', properties: {} } // No parameters
+const getIssueDetailsTool = new FunctionTool({
+  name: "getIssueDetails",
+  description: "Gets detailed information about a specific GitHub issue and its comments",
+  fn: async (params: Record<string, any>) => {
+    const repo = params.repo || DEFAULT_PYTHON_REPO;
+    const [username, repoName] = repo.split('/');
+    
+    return getIssueDetails(username, repoName, params.issueNumber);
+  },
+  functionDeclaration: {
+    name: "getIssueDetails",
+    description: "Gets detailed information about a specific GitHub issue and its comments",
+    parameters: {
+      type: 'object',
+      properties: {
+        repo: { 
+          type: 'string', 
+          description: 'Repository in format "username/repo" (default: "google/adk-python")'
+        },
+        issueNumber: { 
+          type: 'number', 
+          description: 'Issue number identifier'
+        }
+      },
+      required: ['issueNumber']
     }
+  }
 });
 
+const getCommitDiffTool = new FunctionTool({
+  name: "getCommitDiff",
+  description: "Gets the diff for a specific commit",
+  fn: async (params: Record<string, any>) => {
+    const repo = params.repo || DEFAULT_PYTHON_REPO;
+    const [username, repoName] = repo.split('/');
+    
+    return getCommitDiff(username, repoName, params.commitSha);
+  },
+  functionDeclaration: {
+    name: "getCommitDiff",
+    description: "Gets the diff for a specific commit",
+    parameters: {
+      type: 'object',
+      properties: {
+        repo: { 
+          type: 'string', 
+          description: 'Repository in format "username/repo" (default: "google/adk-python")'
+        },
+        commitSha: { 
+          type: 'string', 
+          description: 'The commit hash to get the diff for'
+        }
+      },
+      required: ['commitSha']
+    }
+  }
+});
 
-// --- Agent Definition ---
+const createIssueTool = new FunctionTool({
+  name: "createIssue",
+  description: "Creates a new issue in the TypeScript repository",
+  fn: async (params: Record<string, any>) => {
+    return createIssue(params.title, params.body);
+  },
+  functionDeclaration: {
+    name: "createIssue",
+    description: "Creates a new issue in the TypeScript repository",
+    parameters: {
+      type: 'object',
+      properties: {
+        title: { 
+          type: 'string', 
+          description: 'Issue title. For commit ports, use the format "[commit:SHA] Description"'
+        },
+        body: { 
+          type: 'string', 
+          description: 'Issue body with details about what needs to be implemented'
+        }
+      },
+      required: ['title', 'body']
+    }
+  }
+});
 
 // Use LlmRegistry to get a model instance
 const agentLlm = LlmRegistry.newLlm("gemini-2.0-flash"); // Or another compatible model
 
-// Export the root agent for ADK tools to find
-export const rootAgent = new Agent({
-  name: "repo_maintainer", // Unique agent name
-  model: agentLlm,       // LLM instance
-  description: "Provides current weather and time information for cities.",
-  instruction: "You are a helpful assistant. Use the 'getWeather' tool for weather queries " +
-               "and the 'getCurrentTime' tool for time queries. Provide clear answers based on tool results. " +
-               "If asked for weather AND time, use both tools.",
-  tools: [getWeatherTool, getCurrentTimeTool], // List of available tools
+// Export the root agent with all tools for ADK CLI to find
+export const rootAgent = new LlmAgent({
+  name: "python_to_ts_porter",
+  model: agentLlm,
+  description: "Automates the process of identifying and porting Python ADK changes to TypeScript",
+  instruction: `You are an AI assistant that helps port features from the Python version of the Agent Development Kit (ADK) to the TypeScript version.
+  
+  You have access to tools that allow you to:
+  1. Find Python commits that haven't been ported to TypeScript
+  2. Get issue details for related GitHub issues
+  3. Examine commit diffs to understand code changes
+  4. Create new issues in the TypeScript repo for tracking port work
+  
+  WORKFLOW TO FOLLOW:
+  When asked to port changes, follow these steps:
+  
+  1. First, use getUnreportedCommits() to find Python commits that haven't been reported in the TypeScript repo
+  2. Select the most recent unreported commit (first in the list)
+  3. Check if the commit message references any issues (e.g., contains "#123")
+     a. If it does, use getIssueDetails() to get context about that issue
+  4. Use getCommitDiff() with the commit's SHA to get the code changes
+  5. Analyze the diff to understand what changed in Python and needs porting to TypeScript
+  6. Create a detailed issue using createIssue() with:
+     a. A title following the format: "[NEW COMMIT IN PYTHON VERSION] [commit:SHORT_SHA] Brief description"
+     b. A body explaining what needs to be implemented in TypeScript
+  
+  Only process one commit at a time. Be detailed in your analysis of the code changes.
+  When analyzing diffs, focus on the core functionality, not syntax differences between languages.
+  
+  Always format your final analysis as JSON with "title" and "body" keys before creating an issue.`,
+  tools: [
+    getUnreportedCommitsTool,
+    getIssueDetailsTool,
+    getCommitDiffTool,
+    createIssueTool
+  ]
 });
