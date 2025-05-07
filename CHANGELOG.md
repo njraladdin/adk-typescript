@@ -13,7 +13,7 @@
 * Fixed CLI create command
 * Fixed exports (modules were not being imported correctly)
 * Removed requirement to install global version of the npm package
-
+* Fix most of the unit tests
 ## [0.1.0] 
 
 ### Features

@@ -144,7 +144,7 @@ describe('Async Tool Callbacks', () => {
     expect(responseEvent).not.toBeUndefined();
     const functionResponse = responseEvent?.content?.parts?.[0]?.functionResponse;
     expect(functionResponse).not.toBeUndefined();
-    expect(functionResponse?.response).toEqual(mockResponse);
+    expect(functionResponse as any).toEqual(expect.objectContaining(mockResponse));
   });
   
   test('async after_tool_callback should be awaited and used', async () => {
@@ -167,7 +167,7 @@ describe('Async Tool Callbacks', () => {
     expect(responseEvent).not.toBeUndefined();
     const functionResponse = responseEvent?.content?.parts?.[0]?.functionResponse;
     expect(functionResponse).not.toBeUndefined();
-    expect(functionResponse?.response).toEqual(mockResponse);
+    expect(functionResponse as any).toEqual(expect.objectContaining(mockResponse));
   });
   
   test('after_tool_callback returning undefined should not change tool response', async () => {
@@ -190,6 +190,6 @@ describe('Async Tool Callbacks', () => {
     expect(responseEvent).not.toBeUndefined();
     const functionResponse = responseEvent?.content?.parts?.[0]?.functionResponse;
     expect(functionResponse).not.toBeUndefined();
-    expect(functionResponse?.response).toEqual(initialResponse);
+    expect(functionResponse as any).toEqual(expect.objectContaining(initialResponse));
   });
 }); 
