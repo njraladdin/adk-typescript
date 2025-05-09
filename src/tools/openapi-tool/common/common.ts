@@ -104,7 +104,7 @@ export class ApiParameter {
   pyName: string;
   typeValue: any;
   typeHint: string;
-  required?: boolean;
+  required: boolean = false;
 
   /**
    * Create a new API parameter
@@ -127,7 +127,7 @@ export class ApiParameter {
       
     this.description = description || this.paramSchema.description || '';
     this.pyName = pyName || renameTypescriptKeywords(toSnakeCase(originalName));
-    this.required = required;
+    this.required = required !== undefined ? required : false;
     
     // Set type information
     const typeInfo = TypeHintHelper.getTypeInfo(this.paramSchema);

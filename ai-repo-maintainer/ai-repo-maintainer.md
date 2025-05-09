@@ -18,3 +18,5 @@ TODO:
 
 - agent able to implement the changes and submit a PR
 - update readme to mention this is maintaned by AI agent 
+
+ignore core commits

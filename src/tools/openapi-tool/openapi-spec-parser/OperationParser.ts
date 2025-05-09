@@ -302,7 +302,7 @@ ${jsDocParams.map(param => ` * ${param}`).join('\n')}
     return {
       properties,
       required: this.params
-        .filter(p => p.required !== false)
+        .filter(p => p.required === true)
         .map(p => p.pyName),
       title: `${this.operation.operationId || 'unnamed'}_Arguments`,
       type: 'object'
