@@ -1,5 +1,3 @@
- 
-
 import { CallbackContext } from '../agents/CallbackContext';
 import { InvocationContext } from '../agents/InvocationContext';
 import { EventActions } from '../events/EventActions';
@@ -119,7 +117,7 @@ export class ToolContext extends CallbackContext {
    * @returns The search results
    * @throws Error if memory service is not available
    */
-  searchMemory(query: string): SearchMemoryResponse | Promise<SearchMemoryResponse> {
+  async searchMemory(query: string): Promise<SearchMemoryResponse> {
     if (!this.invocationContext.memoryService) {
       throw new Error('Memory service is not available.');
     }

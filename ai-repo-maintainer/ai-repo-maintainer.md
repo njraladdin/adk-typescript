@@ -17,3 +17,4 @@ TODO:
 - agent able to get file structure of TS repo, get equivilent files content, and generate detailed implementation steps section in the issue body, done 
 
 - agent able to implement the changes and submit a PR
+- update readme to mention this is maintaned by AI agent 
