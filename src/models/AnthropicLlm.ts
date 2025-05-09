@@ -1,5 +1,3 @@
- 
-
 import { BaseLlm } from './BaseLlm';
 import { LlmRequest } from './LlmRequest';
 import { LlmResponse } from './LlmResponse';
@@ -329,6 +327,37 @@ function messageToGenerateContentResponse(message: Message): LlmResponse {
 }
 
 /**
+ * Recursively updates 'type' field to expected JSON schema format.
+ * @param valueDict Object that may contain 'type' field or nested 'items'/'properties'
+ */
+function updateTypeString(valueDict: Record<string, any>): void {
+  if ('type' in valueDict) {
+    valueDict.type = typeof valueDict.type === 'string' ?
+      valueDict.type.toLowerCase() : valueDict.type;
+  }
+
+  // Process 'items' if it exists (for array types)
+  if ('items' in valueDict) {
+    // Update type field in the items object
+    updateTypeString(valueDict.items);
+
+    // If items has properties (for complex object arrays), process each property
+    if (valueDict.items.properties) {
+      for (const [propKey, propValue] of Object.entries(valueDict.items.properties)) {
+        updateTypeString(propValue as Record<string, any>);
+      }
+    }
+  }
+
+  // Process nested properties directly
+  if ('properties' in valueDict) {
+    for (const [propKey, propValue] of Object.entries(valueDict.properties)) {
+      updateTypeString(propValue as Record<string, any>);
+    }
+  }
+}
+
+/**
  * Convert a FunctionDeclaration to a Claude ToolParam
  * @param functionDeclaration Function declaration to convert
  * @returns Claude ToolParam
@@ -355,10 +384,8 @@ function functionDeclarationToToolParam(functionDeclaration: FunctionDeclaration
         }
       }
       
-      if ('type' in valueDict) {
-        valueDict.type = typeof valueDict.type === 'string' ? 
-          valueDict.type.toLowerCase() : valueDict.type;
-      }
+      // Recursively update type strings
+      updateTypeString(valueDict);
       properties[key] = valueDict;
     }
   }
