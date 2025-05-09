@@ -20,3 +20,7 @@ TODO:
 - update readme to mention this is maintaned by AI agent 
 
 ignore core commits
+
+handle commits where w replaced big files like 
+https://github.com/google/adk-python/commit/6dec235c13f42f1a6f69048b30fb78f48831cdbd
+set a max char limit for the diffs 

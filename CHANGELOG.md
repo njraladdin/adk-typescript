@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 ### Added
+* Synced various updates from the original Python ADK project
+
 ### Changed
 ### Fixed
 

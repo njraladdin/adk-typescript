@@ -36,7 +36,7 @@ if (require.main === module) {
       // Example values for testing
       const username = 'google';
       const repo = 'adk-python';
-      const commitSha = '2cbbf881353835ba1c321de865b0f53d1c4540e5'; // Replace with an actual commit SHA to test
+      const commitSha = '6dec235c13f42f1a6f69048b30fb78f48831cdbd'; // Replace with an actual commit SHA to test
       
       console.log(`Fetching diff for commit ${commitSha} from ${username}/${repo} repo:`);
       const diff = await getCommitDiff(username, repo, commitSha);
