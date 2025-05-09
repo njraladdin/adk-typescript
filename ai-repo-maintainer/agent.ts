@@ -7,6 +7,8 @@ import { getUnreportedCommits } from './tools/getUnreportedCommits';
 import { getIssueDetails } from './tools/getIssueDetails';
 import { getCommitDiff } from './tools/getCommitDiff';
 import { createIssue } from './tools/createIssue';
+import { getRepoFileStructure } from './tools/getRepoFileStructure';
+import { getFileContentFromRepo } from './tools/getFileContentFromRepo';
 
 // Configure default GitHub repository information
 const DEFAULT_PYTHON_REPO = 'google/adk-python';
@@ -146,6 +148,87 @@ const createIssueTool = new FunctionTool({
   }
 });
 
+const getRepoFileStructureTool = new FunctionTool({
+  name: "getRepoFileStructure",
+  description: "Gets the file structure of a GitHub repository in a format suitable for understanding the codebase organization",
+  fn: async (params: Record<string, any>) => {
+    const repo = params.repo;
+    const [username, repoName] = repo.split('/');
+    
+    return getRepoFileStructure(
+      username,
+      repoName,
+      params.path || '',
+      params.branch,
+      params.maxDepth || 15
+    );
+  },
+  functionDeclaration: {
+    name: "getRepoFileStructure",
+    description: "Gets the file structure of a GitHub repository in a format suitable for understanding the codebase organization",
+    parameters: {
+      type: 'object',
+      properties: {
+        repo: { 
+          type: 'string', 
+          description: 'Repository in format "username/repo"'
+        },
+        path: { 
+          type: 'string', 
+          description: 'Optional path within the repository to start from (defaults to root)'
+        },
+        branch: { 
+          type: 'string', 
+          description: 'Optional branch name (defaults to the repository\'s default branch)'
+        },
+        maxDepth: { 
+          type: 'number', 
+          description: 'Maximum depth to display for directories (defaults to 15)'
+        }
+      },
+      required: ['repo']
+    }
+  }
+});
+
+const getFileContentFromRepoTool = new FunctionTool({
+  name: "getFileContentFromRepo",
+  description: "Gets the content of a file from a GitHub repository",
+  fn: async (params: Record<string, any>) => {
+    const repo = params.repo;
+    const [username, repoName] = repo.split('/');
+    
+    return getFileContentFromRepo(
+      username,
+      repoName,
+      params.filePath,
+      params.branch
+    );
+  },
+  functionDeclaration: {
+    name: "getFileContentFromRepo",
+    description: "Gets the content of a file from a GitHub repository",
+    parameters: {
+      type: 'object',
+      properties: {
+        repo: { 
+          type: 'string', 
+          description: 'Repository in format "username/repo"'
+        },
+        filePath: { 
+          type: 'string', 
+          description: 'Path to the file within the repository'
+        },
+        branch: { 
+          type: 'string', 
+          description: 'Optional branch name (defaults to the repository\'s default branch)'
+        }
+      },
+      required: ['repo', 'filePath']
+    }
+  }
+});
+
 // Use LlmRegistry to get a model instance
 const agentLlm = LlmRegistry.newLlm("gemini-2.0-flash"); 
 
@@ -160,24 +243,39 @@ export const rootAgent = new LlmAgent({
   1. Find Python commits that haven't been ported to TypeScript
   2. Get issue details for related GitHub issues
   3. Examine commit diffs to understand code changes
-  4. Create new issues in the TypeScript repo for tracking port work
+  4. Get typescript repository file structure to understand codebase organization
+  5. Get typescript file content from repositories to analyze equivalent files
+  6. Create new issues in the TypeScript repo for tracking port work
   
   WORKFLOW TO FOLLOW:
   When asked to port changes, follow these steps:
   
-  1. First, use getUnreportedCommits() to find Python commits that haven't been reported in the TypeScript repo, it will return the lsit of unreported commits if there are any, otherwise it would return an empty array.
+  1. First, use getUnreportedCommits() to find Python commits that haven't been reported in the TypeScript repo, it will return the list of unreported commits if there are any, otherwise it would return an empty array.
   2. Select the first commit in the list if there are any unreported commits, otherwise return "No unreported commits found"
   3. Check if the commit message references any issues (e.g., contains "#123")
      a. If it does, use getIssueDetails() to get context about that issue
   4. Use getCommitDiff() with the commit's SHA to get the code changes
   5. Analyze the diff to understand what changed in Python and needs porting to TypeScript
-  6. Create a detailed issue using createIssue() with:
+  6. Use getRepoFileStructure() to get the file structure of the typescript repo to understand the codebase organization and the equivalent files in the python repo
+  7. For each modified file in the Python diff, identify the equivalent TypeScript file(s) that need to be updated
+  8. Use getFileContentFromRepo() to get the content of the equivalent TypeScript files for deeper analysis
+  9. Create a detailed issue using createIssue() with:
      a. A title following the format: "[NEW COMMIT IN PYTHON VERSION] [commit:SHORT_SHA] Brief description"
-     b. A body explaining what needs to be implemented in TypeScript
+     b. A body explaining what needs to be implemented in TypeScript, with these sections:
+        - Overview of changes
+        - IMPLEMENTATION STEPS SECTION with specific technical instructions / explanations on how to port the changes
+        - List of equivalent TypeScript files that need modification
      c. Include the commit SHA to automatically attach the diff to the issue
   
   Only process one commit at a time. Be detailed in your analysis of the code changes.
   When analyzing diffs, focus on the core functionality, not syntax differences between languages.
+  
+  IMPLEMENTATION STEPS SECTION:
+  When creating the implementation steps section, be specific and detailed:
+  1. Analyze the Python changes and identify the equivalent TypeScript files
+  2. Provide step-by-step instructions for implementing the changes in TypeScript
+  3. Reference specific files and code sections that need to be modified
+  4. Consider TypeScript-specific implementation details that might differ from Python
   
   Always format your final analysis as JSON with "title" and "body" keys before creating an issue.
   When creating issues for commits, always include the commitSha parameter to automatically include the diff.
@@ -187,6 +285,8 @@ export const rootAgent = new LlmAgent({
     getUnreportedCommitsTool,
     getIssueDetailsTool,
     getCommitDiffTool,
+    getRepoFileStructureTool,
+    getFileContentFromRepoTool,
     createIssueTool
   ]
 });
