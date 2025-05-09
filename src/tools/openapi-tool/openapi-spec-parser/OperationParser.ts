@@ -80,7 +80,8 @@ export class OperationParser {
         schema.description = description;
       }
       
-      const required = param.required;
+      // param.required could be null/undefined, handle explicitly
+      const required = param.required !== null && param.required !== undefined ? param.required : false;
 
       this.params.push(
         new ApiParameter(
@@ -114,13 +115,15 @@ export class OperationParser {
     const mediaTypeObject = content[firstMimeType];
     const schema = mediaTypeObject.schema || {};
     const description = requestBody.description || '';
-    const required = requestBody.required;
+    // Handle null/undefined required values
+    const required = requestBody.required !== null && requestBody.required !== undefined ? requestBody.required : false;
 
     if (schema.type === 'object') {
       const properties = schema.properties || {};
       
       // For objects, extract each property as a parameter
       Object.entries(properties).forEach(([propName, propDetails]) => {
+        // Check if property is in the required array
         const propRequired = Array.isArray(schema.required) && schema.required.includes(propName);
         this.params.push(
           new ApiParameter(
@@ -299,13 +302,21 @@ ${jsDocParams.map(param => ` * ${param}`).join('\n')}
       properties[p.pyName] = p.paramSchema;
     }
     
-    return {
+    const requiredParams = this.params
+      .filter(p => p.required === true)
+      .map(p => p.pyName);
+    
+    const jsonSchema: Record<string, any> = {
       properties,
-      required: this.params
-        .filter(p => p.required === true)
-        .map(p => p.pyName),
       title: `${this.operation.operationId || 'unnamed'}_Arguments`,
       type: 'object'
     };
+    
+    // Only include the required field if there are actually required parameters
+    if (requiredParams.length > 0) {
+      jsonSchema.required = requiredParams;
+    }
+    
+    return jsonSchema;
   }
 } 

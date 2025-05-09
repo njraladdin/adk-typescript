@@ -260,6 +260,55 @@ describe('OperationParser', () => {
     expect(schema.properties).toBeDefined();
     expect(Object.keys(schema.properties)).toContain('param1');
     expect(Object.keys(schema.properties)).toContain('param2');
+    expect(schema.required).toBeDefined();
+    expect(schema.required).toContain('param1');
+    expect(schema.required).toContain('param2');
+  });
+  
+  test('get_json_schema_no_required_params', () => {
+    const operation = {
+      operationId: 'testNoRequiredParams',
+      parameters: [
+        {
+          name: 'optional_param',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Optional parameter',
+          required: false
+        },
+        {
+          name: 'null_required_param',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Parameter with null required',
+          required: null
+        },
+        {
+          name: 'undefined_required_param',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'Parameter with undefined required',
+          // required is not specified
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Successful response'
+        }
+      }
+    };
+    
+    const parser = new OperationParser(operation);
+    const schema = parser.getJsonSchema();
+    
+    expect(schema.type).toBe('object');
+    expect(schema.properties).toBeDefined();
+    expect(Object.keys(schema.properties)).toContain('optional_param');
+    expect(Object.keys(schema.properties)).toContain('null_required_param');
+    expect(Object.keys(schema.properties)).toContain('undefined_required_param');
+    
+    // By default nothing is required unless explicitly stated
+    expect(schema.required).toBeUndefined();
   });
   
   test('get_jsdoc_string', () => {
