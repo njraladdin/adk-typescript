@@ -260,7 +260,7 @@ export const rootAgent = new LlmAgent({
   7. For each modified file in the Python diff, identify the equivalent TypeScript file(s) that need to be updated
   8. Use getFileContentFromRepo() to get the content of the equivalent TypeScript files for deeper analysis
   9. Create a detailed issue using createIssue() with:
-     a. A title following the format: "[NEW COMMIT IN PYTHON VERSION] [commit:SHORT_SHA] Brief description"
+     a. A title following the format: "[NEW COMMIT IN ADK-PYTHON] [commit:SHORT_SHA] Brief description"
      b. A body explaining what needs to be implemented in TypeScript, with these sections:
         - Overview of changes
         - IMPLEMENTATION STEPS SECTION with specific technical instructions / explanations on how to port the changes
