@@ -116,7 +116,7 @@ const createIssueTool = new FunctionTool({
   name: "createIssue",
   description: "Creates a new issue in the TypeScript repository",
   fn: async (params: Record<string, any>) => {
-    return createIssue(params.title, params.body);
+    return createIssue(params.title, params.body, params.commitSha, params.repoForDiff);
   },
   functionDeclaration: {
     name: "createIssue",
@@ -131,6 +131,14 @@ const createIssueTool = new FunctionTool({
         body: { 
           type: 'string', 
           description: 'Issue body with details about what needs to be implemented'
+        },
+        commitSha: {
+          type: 'string',
+          description: 'Optional. The commit SHA to include in the issue body as a diff'
+        },
+        repoForDiff: {
+          type: 'string',
+          description: 'Optional. Repository in format "username/repo" where to get the commit diff from (default: "google/adk-python")'
         }
       },
       required: ['title', 'body']
@@ -139,7 +147,7 @@ const createIssueTool = new FunctionTool({
 });
 
 // Use LlmRegistry to get a model instance
-const agentLlm = LlmRegistry.newLlm("gemini-2.0-flash"); // Or another compatible model
+const agentLlm = LlmRegistry.newLlm("gemini-2.0-flash"); 
 
 // Export the root agent with all tools for ADK CLI to find
 export const rootAgent = new LlmAgent({
@@ -157,8 +165,8 @@ export const rootAgent = new LlmAgent({
   WORKFLOW TO FOLLOW:
   When asked to port changes, follow these steps:
   
-  1. First, use getUnreportedCommits() to find Python commits that haven't been reported in the TypeScript repo
-  2. Select the most recent unreported commit (first in the list)
+  1. First, use getUnreportedCommits() to find Python commits that haven't been reported in the TypeScript repo, it will return the lsit of unreported commits if there are any, otherwise it would return an empty array.
+  2. Select the first commit in the list if there are any unreported commits, otherwise return "No unreported commits found"
   3. Check if the commit message references any issues (e.g., contains "#123")
      a. If it does, use getIssueDetails() to get context about that issue
   4. Use getCommitDiff() with the commit's SHA to get the code changes
@@ -166,11 +174,15 @@ export const rootAgent = new LlmAgent({
   6. Create a detailed issue using createIssue() with:
      a. A title following the format: "[NEW COMMIT IN PYTHON VERSION] [commit:SHORT_SHA] Brief description"
      b. A body explaining what needs to be implemented in TypeScript
+     c. Include the commit SHA to automatically attach the diff to the issue
   
   Only process one commit at a time. Be detailed in your analysis of the code changes.
   When analyzing diffs, focus on the core functionality, not syntax differences between languages.
   
-  Always format your final analysis as JSON with "title" and "body" keys before creating an issue.`,
+  Always format your final analysis as JSON with "title" and "body" keys before creating an issue.
+  When creating issues for commits, always include the commitSha parameter to automatically include the diff.
+  
+  If user asks to test only certain tools or steps, do so.`,
   tools: [
     getUnreportedCommitsTool,
     getIssueDetailsTool,

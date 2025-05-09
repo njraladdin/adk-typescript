@@ -23,8 +23,8 @@ export async function getCommitDiff(
     );
     
     return response.data;
-  } catch (error) {
-    console.error('Error fetching commit diff:', error);
+  } catch (error: any) {
+    console.error('Error fetching commit diff:', error.message);
     throw error;
   }
 }
@@ -36,7 +36,7 @@ if (require.main === module) {
       // Example values for testing
       const username = 'google';
       const repo = 'adk-python';
-      const commitSha = '0123456789abcdef'; // Replace with an actual commit SHA to test
+      const commitSha = '2cbbf881353835ba1c321de865b0f53d1c4540e5'; // Replace with an actual commit SHA to test
       
       console.log(`Fetching diff for commit ${commitSha} from ${username}/${repo} repo:`);
       const diff = await getCommitDiff(username, repo, commitSha);
