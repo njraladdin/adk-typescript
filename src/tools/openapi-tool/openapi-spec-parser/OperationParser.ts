@@ -80,7 +80,7 @@ export class OperationParser {
         schema.description = description;
       }
       
-      // param.required could be null/undefined, handle explicitly
+      // param.required can be null/undefined
       const required = param.required !== null && param.required !== undefined ? param.required : false;
 
       this.params.push(
@@ -115,7 +115,7 @@ export class OperationParser {
     const mediaTypeObject = content[firstMimeType];
     const schema = mediaTypeObject.schema || {};
     const description = requestBody.description || '';
-    // Handle null/undefined required values
+    // requestBody.required can be null/undefined
     const required = requestBody.required !== null && requestBody.required !== undefined ? requestBody.required : false;
 
     if (schema.type === 'object') {
