@@ -659,7 +659,7 @@ function _buildResponseEvent(
         {
           functionResponse: {
             name: tool.name,
-            response: functionResult,
+            response: functionResult,  // Nest the function result instead of spreading it
             id: functionCallId,
           },
         },
