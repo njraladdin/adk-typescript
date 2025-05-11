@@ -19,7 +19,8 @@ TODO:
 - include commit url in the issue body, done 
 - handle commits that are too large to be processed. parse commit diff. update instruction so the agent flags issue for human manual inspection, done 
 
-- agent able to implement the changes and submit a PR
+- agent able to implement the changes and write new diffs for the ported version 
+- agent submits a PR
 
 - update readme to mention this is maintaned by AI agent 
 

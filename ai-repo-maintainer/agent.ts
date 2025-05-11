@@ -263,8 +263,9 @@ export const rootAgent = new LlmAgent({
   10. Create a detailed issue using createIssue() with:
      a. A title following the format: "[NEW COMMIT IN ADK-PYTHON] [commit:SHORT_SHA] Brief description"
      b. A body explaining what needs to be implemented in TypeScript, with these sections:
+        - Introduce yourself as an agent responsible for detecting changes in the original python version of the project 
         - Overview of changes
-        - IMPLEMENTATION STEPS SECTION with specific technical instructions / explanations on how to port the changes
+        - implementation steps section with specific technical instructions / explanations on how to port the changes
         - List of equivalent TypeScript files that need modification
      c. Include the commit SHA to automatically attach the diff to the issue
   
@@ -274,7 +275,7 @@ export const rootAgent = new LlmAgent({
   HANDLING LARGE DIFFS:
   When reviewing diffs received from getCommitDiff, if you observe files are too large and have been trimmed, flag the issue for human review. Clearly identify which specific files in the diff were truncated and explicitly state in the issue body that these files require manual inspection due to their size.
   
-  IMPLEMENTATION STEPS SECTION:
+  implementation steps section:
   When creating the implementation steps section, be specific and detailed:
   1. Analyze the Python changes and identify the equivalent TypeScript files
   2. Provide step-by-step instructions for implementing the changes in TypeScript
