@@ -15,12 +15,16 @@ workflow:
 TODO:
 - include diffs in the issue body (already have tool, so just update agent instructions), done 
 - agent able to get file structure of TS repo, get equivilent files content, and generate detailed implementation steps section in the issue body, done 
+- ignore core / bump commits, done 
 
-- agent able to implement the changes and submit a PR
-- update readme to mention this is maintaned by AI agent 
-
-ignore core commits
 
 handle commits where w replaced big files like 
 https://github.com/google/adk-python/commit/6dec235c13f42f1a6f69048b30fb78f48831cdbd
 set a max char limit for the diffs 
+
+
+- agent able to implement the changes and submit a PR
+
+- update readme to mention this is maintaned by AI agent 
+
+- deploy agent to cloudrun 

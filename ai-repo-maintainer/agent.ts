@@ -251,15 +251,16 @@ export const rootAgent = new LlmAgent({
   When asked to port changes, follow these steps:
   
   1. First, use getUnreportedCommits() to find Python commits that haven't been reported in the TypeScript repo, it will return the list of unreported commits if there are any, otherwise it would return an empty array.
-  2. Select the first commit in the list if there are any unreported commits, otherwise return "No unreported commits found"
-  3. Check if the commit message references any issues (e.g., contains "#123")
+  2. Filter out any commits with 'core' or 'bump' in their message or description as these don't need to be ported.
+  3. Select the first remaining commit in the list if there are any unreported commits, otherwise return "No unreported commits found"
+  4. Check if the commit message references any issues (e.g., contains "#123")
      a. If it does, use getIssueDetails() to get context about that issue
-  4. Use getCommitDiff() with the commit's SHA to get the code changes
-  5. Analyze the diff to understand what changed in Python and needs porting to TypeScript
-  6. Use getRepoFileStructure() to get the file structure of the typescript repo to understand the codebase organization and the equivalent files in the python repo
-  7. For each modified file in the Python diff, identify the equivalent TypeScript file(s) that need to be updated
-  8. Use getFileContentFromRepo() to get the content of the equivalent TypeScript files for deeper analysis
-  9. Create a detailed issue using createIssue() with:
+  5. Use getCommitDiff() with the commit's SHA to get the code changes
+  6. Analyze the diff to understand what changed in Python and needs porting to TypeScript
+  7. Use getRepoFileStructure() to get the file structure of the typescript repo to understand the codebase organization and the equivalent files in the python repo
+  8. For each modified file in the Python diff, identify the equivalent TypeScript file(s) that need to be updated
+  9. Use getFileContentFromRepo() to get the content of the equivalent TypeScript files for deeper analysis
+  10. Create a detailed issue using createIssue() with:
      a. A title following the format: "[NEW COMMIT IN ADK-PYTHON] [commit:SHORT_SHA] Brief description"
      b. A body explaining what needs to be implemented in TypeScript, with these sections:
         - Overview of changes
