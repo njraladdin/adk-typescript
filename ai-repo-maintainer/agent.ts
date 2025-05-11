@@ -271,6 +271,9 @@ export const rootAgent = new LlmAgent({
   Only process one commit at a time. Be detailed in your analysis of the code changes.
   When analyzing diffs, focus on the core functionality, not syntax differences between languages.
   
+  HANDLING LARGE DIFFS:
+  When reviewing diffs received from getCommitDiff, if you observe files are too large and have been trimmed, flag the issue for human review. Clearly identify which specific files in the diff were truncated and explicitly state in the issue body that these files require manual inspection due to their size.
+  
   IMPLEMENTATION STEPS SECTION:
   When creating the implementation steps section, be specific and detailed:
   1. Analyze the Python changes and identify the equivalent TypeScript files

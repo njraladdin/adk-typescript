@@ -17,12 +17,7 @@ TODO:
 - agent able to get file structure of TS repo, get equivilent files content, and generate detailed implementation steps section in the issue body, done 
 - ignore core / bump commits, done 
 - include commit url in the issue body, done 
-
-handle commits where w replaced big files like 
-https://github.com/google/adk-python/commit/6dec235c13f42f1a6f69048b30fb78f48831cdbd
-set a max char limit for the diffs 
-
-- handle commits that are too large to be processed. 
+- handle commits that are too large to be processed. parse commit diff. update instruction so the agent flags issue for human manual inspection, done 
 
 - agent able to implement the changes and submit a PR
 
