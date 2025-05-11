@@ -12,7 +12,8 @@
     "@octokit/rest": "^21.1.1",
     "adk-typescript": "file:../../adk-typescript",
     "axios": "^1.6.2",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "parse-diff": "^0.11.1"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
