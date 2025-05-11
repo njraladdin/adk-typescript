@@ -25,6 +25,10 @@ export async function createIssue(
         console.log(`Fetching diff for commit ${commitSha} from ${repo}...`);
         const diff = await getCommitDiff(username, repoName, commitSha);
         
+        // Add the commit URL
+        const commitUrl = `https://github.com/${username}/${repoName}/commit/${commitSha}`;
+        finalBody += `\n\n**Origin Commit:** [${commitSha}](${commitUrl})`;
+        
         // Append the diff to the issue body in a collapsible section
         finalBody += `\n\n<details>
 <summary>Commit Diff (${commitSha})</summary>\n
