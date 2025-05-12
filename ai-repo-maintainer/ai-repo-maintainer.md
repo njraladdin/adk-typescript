@@ -19,9 +19,22 @@ TODO:
 - include commit url in the issue body, done 
 - handle commits that are too large to be processed. parse commit diff. update instruction so the agent flags issue for human manual inspection, done 
 
-- agent able to implement the changes and write new diffs for the ported version 
-- agent submits a PR
+- agent write code for the ported version:
+tool to create a new branch for the PR
+tool to push a file into a branch 
 
-- update readme to mention this is maintaned by AI agent 
+agent writes the diffs for each typescript file 
+
+
+it fetches original python file content
+it fetch equivilent typescript file
+
+
+agent uses the PUT /repos/{owner}/{repo}/contents/{path} endpoint to commit file content to a branch 
+
+
+- agent submits a PR : create new branch, update files, submits PR
+
+- add instruction to issue that yo ucan switch to Pr branch, run "git diff main...HEAD" or copy issue body into cursor to verify the changes with Claude sonnet 
 
 - deploy agent to cloudrun 

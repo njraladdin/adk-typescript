@@ -9,6 +9,11 @@ import { getCommitDiff } from './tools/getCommitDiff';
 import { createIssue } from './tools/createIssue';
 import { getRepoFileStructure } from './tools/getRepoFileStructure';
 import { getFileContentFromRepo } from './tools/getFileContentFromRepo';
+// Import new PR creation tools
+import { createBranch } from './tools/createBranch';
+import { applyDiff, FileDiff, fetchFileContent } from './tools/applyDiff';
+import { createPullRequest } from './tools/createPullRequest';
+import { writeFileToRepo, deleteFileFromRepo, getFileSha } from './tools/writeFileToRepo';
 
 // Configure default GitHub repository information
 const DEFAULT_PYTHON_REPO = 'google/adk-python';
@@ -229,6 +234,315 @@ const getFileContentFromRepoTool = new FunctionTool({
   }
 });
 
+// New tool for creating a branch
+const createBranchTool = new FunctionTool({
+  name: "createBranch",
+  description: "Creates a new branch in a GitHub repository",
+  fn: async (params: Record<string, any>) => {
+    const repo = params.repo || DEFAULT_TS_REPO;
+    const [username, repoName] = repo.split('/');
+    
+    return createBranch(
+      username,
+      repoName,
+      params.branchName,
+      params.baseBranch || 'main'
+    );
+  },
+  functionDeclaration: {
+    name: "createBranch",
+    description: "Creates a new branch in a GitHub repository",
+    parameters: {
+      type: 'object',
+      properties: {
+        repo: { 
+          type: 'string', 
+          description: 'Repository in format "username/repo" (default: "njraladdin/adk-typescript")'
+        },
+        branchName: { 
+          type: 'string', 
+          description: 'Name of the new branch to create'
+        },
+        baseBranch: { 
+          type: 'string', 
+          description: 'Name of the branch to base the new branch on (default: "main")'
+        }
+      },
+      required: ['branchName']
+    }
+  }
+});
+
+// New tool for applying diffs to files
+const applyDiffTool = new FunctionTool({
+  name: "applyDiff",
+  description: "Applies a structured diff to file content",
+  fn: async (params: Record<string, any>) => {
+    // If file content is provided directly, use it
+    if (params.fileContent !== undefined) {
+      return applyDiff(params.fileContent, params.diff as FileDiff);
+    }
+    
+    // Otherwise, fetch content from GitHub
+    if (params.repo && params.diff?.filePath) {
+      const repo = params.repo;
+      const [username, repoName] = repo.split('/');
+      
+      // Get current file content if it's not a create operation
+      let currentContent = '';
+      if (params.diff.changeType !== 'create') {
+        currentContent = await fetchFileContent(
+          username,
+          repoName,
+          params.diff.filePath,
+          params.branch
+        ) || '';
+      }
+      
+      // Apply the diff
+      return applyDiff(currentContent, params.diff as FileDiff);
+    }
+    
+    return {
+      error: "Either fileContent or repo and diff.filePath must be provided"
+    };
+  },
+  functionDeclaration: {
+    name: "applyDiff",
+    description: "Applies a structured diff to file content",
+    parameters: {
+      type: 'object',
+      properties: {
+        fileContent: { 
+          type: 'string', 
+          description: 'Current file content to apply diff to (empty string for new files)'
+        },
+        repo: { 
+          type: 'string', 
+          description: 'Repository in format "username/repo" to fetch file from (not needed if fileContent is provided)'
+        },
+        branch: { 
+          type: 'string', 
+          description: 'Branch to fetch file from (default: repository\'s default branch)'
+        },
+        diff: { 
+          type: 'object', 
+          description: 'Structured diff specification',
+          properties: {
+            filePath: { type: 'string', description: 'Path to the file to modify' },
+            changeType: { type: 'string', enum: ['create', 'modify', 'delete'], description: 'Type of change to make' },
+            content: { type: 'string', description: 'For new files or complete replacements, the entire content' },
+            replacementType: { type: 'string', enum: ['complete', 'lines'], description: 'For modify operations, how to apply changes' },
+            lineChanges: { 
+              type: 'array', 
+              description: 'For modify with line replacements, the specific line changes',
+              items: {
+                type: 'object',
+                properties: {
+                  startLine: { type: 'number', description: 'Starting line number (1-indexed)' },
+                  endLine: { type: 'number', description: 'Ending line number (1-indexed)' },
+                  newContent: { type: 'string', description: 'New content to replace the specified lines' }
+                }
+              }
+            }
+          },
+          required: ['filePath', 'changeType']
+        }
+      },
+      required: ['diff']
+    }
+  }
+});
+
+// New tool for writing files to GitHub repository
+const writeFileToRepoTool = new FunctionTool({
+  name: "writeFileToRepo",
+  description: "Writes file content to a GitHub repository",
+  fn: async (params: Record<string, any>) => {
+    const repo = params.repo || DEFAULT_TS_REPO;
+    const [username, repoName] = repo.split('/');
+    
+    // If SHA is not provided but we need to check if file exists
+    let fileSha = params.sha;
+    if (params.checkFileExists && !fileSha) {
+      fileSha = await getFileSha(
+        username,
+        repoName,
+        params.filePath,
+        params.branch
+      );
+    }
+    
+    return writeFileToRepo(
+      username,
+      repoName,
+      params.filePath,
+      params.content,
+      params.message,
+      params.branch,
+      fileSha
+    );
+  },
+  functionDeclaration: {
+    name: "writeFileToRepo",
+    description: "Writes file content to a GitHub repository",
+    parameters: {
+      type: 'object',
+      properties: {
+        repo: { 
+          type: 'string', 
+          description: 'Repository in format "username/repo" (default: "njraladdin/adk-typescript")'
+        },
+        filePath: { 
+          type: 'string', 
+          description: 'Path to the file within the repository'
+        },
+        content: { 
+          type: 'string', 
+          description: 'Content to write to the file'
+        },
+        message: { 
+          type: 'string', 
+          description: 'Commit message'
+        },
+        branch: { 
+          type: 'string', 
+          description: 'Branch name to commit to'
+        },
+        sha: { 
+          type: 'string', 
+          description: 'SHA of the file if updating an existing file (optional)'
+        },
+        checkFileExists: { 
+          type: 'boolean', 
+          description: 'Whether to check if the file exists and get its SHA (default: false)'
+        }
+      },
+      required: ['filePath', 'content', 'message', 'branch']
+    }
+  }
+});
+
+// New tool for deleting files from GitHub repository
+const deleteFileFromRepoTool = new FunctionTool({
+  name: "deleteFileFromRepo",
+  description: "Deletes a file from a GitHub repository",
+  fn: async (params: Record<string, any>) => {
+    const repo = params.repo || DEFAULT_TS_REPO;
+    const [username, repoName] = repo.split('/');
+    
+    // If SHA is not provided, get it
+    let fileSha = params.sha;
+    if (!fileSha) {
+      fileSha = await getFileSha(
+        username,
+        repoName,
+        params.filePath,
+        params.branch
+      );
+      
+      if (!fileSha) {
+        return {
+          error: `File not found: ${params.filePath}`
+        };
+      }
+    }
+    
+    return deleteFileFromRepo(
+      username,
+      repoName,
+      params.filePath,
+      params.message,
+      params.branch,
+      fileSha
+    );
+  },
+  functionDeclaration: {
+    name: "deleteFileFromRepo",
+    description: "Deletes a file from a GitHub repository",
+    parameters: {
+      type: 'object',
+      properties: {
+        repo: { 
+          type: 'string', 
+          description: 'Repository in format "username/repo" (default: "njraladdin/adk-typescript")'
+        },
+        filePath: { 
+          type: 'string', 
+          description: 'Path to the file to delete'
+        },
+        message: { 
+          type: 'string', 
+          description: 'Commit message'
+        },
+        branch: { 
+          type: 'string', 
+          description: 'Branch name to commit to'
+        },
+        sha: { 
+          type: 'string', 
+          description: 'SHA of the file to delete (optional, will be looked up if not provided)'
+        }
+      },
+      required: ['filePath', 'message', 'branch']
+    }
+  }
+});
+
+// New tool for creating a pull request
+const createPullRequestTool = new FunctionTool({
+  name: "createPullRequest",
+  description: "Creates a pull request in a GitHub repository",
+  fn: async (params: Record<string, any>) => {
+    const repo = params.repo || DEFAULT_TS_REPO;
+    const [username, repoName] = repo.split('/');
+    
+    return createPullRequest(
+      username,
+      repoName,
+      params.title,
+      params.body,
+      params.head,
+      params.base || 'main',
+      params.draft || false
+    );
+  },
+  functionDeclaration: {
+    name: "createPullRequest",
+    description: "Creates a pull request in a GitHub repository",
+    parameters: {
+      type: 'object',
+      properties: {
+        repo: { 
+          type: 'string', 
+          description: 'Repository in format "username/repo" (default: "njraladdin/adk-typescript")'
+        },
+        title: { 
+          type: 'string', 
+          description: 'The title of the pull request'
+        },
+        body: { 
+          type: 'string', 
+          description: 'The body/description of the pull request'
+        },
+        head: { 
+          type: 'string', 
+          description: 'The name of the branch containing the changes'
+        },
+        base: { 
+          type: 'string', 
+          description: 'The name of the branch to merge into (default: "main")'
+        },
+        draft: { 
+          type: 'boolean', 
+          description: 'Whether to create the PR as a draft (default: false)'
+        }
+      },
+      required: ['title', 'body', 'head']
+    }
+  }
+});
+
 // Use LlmRegistry to get a model instance
 const agentLlm = LlmRegistry.newLlm("gemini-2.0-flash"); 
 
@@ -292,6 +606,11 @@ export const rootAgent = new LlmAgent({
     getCommitDiffTool,
     getRepoFileStructureTool,
     getFileContentFromRepoTool,
-    createIssueTool
+    createIssueTool,
+    createBranchTool,
+    applyDiffTool,
+    writeFileToRepoTool,
+    deleteFileFromRepoTool,
+    createPullRequestTool
   ]
 });

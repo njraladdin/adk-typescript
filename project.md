@@ -27,5 +27,5 @@ TODO:
 
 
 - get project up to date with v0.5.0
+- update readme to mention this is maintaned by AI agent 
 
-- deploy simple workflow agent 
