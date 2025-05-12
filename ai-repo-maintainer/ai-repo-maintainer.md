@@ -22,19 +22,24 @@ TODO:
 - agent write code for the ported version:
 tool to create a new branch for the PR
 tool to push a file into a branch 
+tool too apply diffs 
 
+flow:
+agent should already have typescript files + python commit diffs from previous steps 
 agent writes the diffs for each typescript file 
+it uses too to apply the diffs (also saved locally in tmp folder for debugging)
+tool return full file, it reviews it and make adjustemnets accrodingly, then review again etc. 
+
+QUESTION: 
+are we providing too many tools to the agent? should we delegate impelmenting changes to another agent? 
 
 
-it fetches original python file content
-it fetch equivilent typescript file
+- agent submits a PR : create new branch, update files, submits PR:
+when all files are updated with diffs, it creates a new branch
+it uses tool to push each updated file into branch
+it uses tool creates a new pull request 
 
 
-agent uses the PUT /repos/{owner}/{repo}/contents/{path} endpoint to commit file content to a branch 
-
-
-- agent submits a PR : create new branch, update files, submits PR
-
-- add instruction to issue that yo ucan switch to Pr branch, run "git diff main...HEAD" or copy issue body into cursor to verify the changes with Claude sonnet 
+- when checking the PR branch, run "git diff main...HEAD" command and copy into cursor to verify the changes with Claude sonnet 
 
 - deploy agent to cloudrun 
