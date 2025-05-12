@@ -1,0 +1,3282 @@
+<!--
+ Copyright 2025 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Build powerful multi-agent systems with Agent Development Kit">
+      
+      
+      
+        <link rel="canonical" href="https://njraladdin.github.io/adk-typescript/SUMMARY_FOR_LLMS/">
+      
+      
+      
+      
+      <link rel="icon" href="../assets/agent-development-kit.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.13">
+    
+    
+      
+        <title>Agent Development Kit (ADK) for TypeScript - Agent Development Kit</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Google Sans";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/custom.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  <!-- HTML Meta Tags -->
+  <title>Agent Development Kit</title>
+  <meta name="description" content="Build powerful multi-agent systems with Agent Development Kit">
+
+  <!-- Facebook Meta Tags -->
+  <meta property="og:url" content="https://njraladdin.github.io/adk-typescript">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Agent Development Kit">
+  <meta property="og:description" content="Build powerful multi-agent systems with Agent Development Kit">
+  <meta property="og:image" content="https://njraladdin.github.io/adk-typescript/assets/adk-social-card.png">
+
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta property="twitter:domain" content="njraladdin.github.io">
+  <meta property="twitter:url" content="https://njraladdin.github.io/adk-typescript">
+  <meta name="twitter:title" content="Agent Development Kit">
+  <meta name="twitter:description" content="Build powerful multi-agent systems with Agent Development Kit">
+  <meta name="twitter:image" content="https://njraladdin.github.io/adk-typescript/assets/adk-social-card.png">
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="white">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#agent-development-kit-adk-for-typescript" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      <!--
+ Copyright 2025 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<!-- Determine classes -->
+
+
+  
+
+
+<!-- Header -->
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav
+    class="md-header__inner md-grid"
+    aria-label="Header"
+  >
+
+    <!-- Link to home -->
+    <a
+      href=".."
+      title="Agent Development Kit"
+      class="md-header__button md-logo"
+      aria-label="Agent Development Kit"
+      data-md-component="logo"
+    >
+      
+  <img src="../assets/agent-development-kit.png" alt="logo">
+
+    </a>
+
+    <!-- Button to open drawer -->
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+
+    <!-- Header title -->
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            <a
+      href=".."
+      title="Agent Development Kit"
+      aria-label="Agent Development Kit"
+      data-md-component="logo"
+    >
+            Agent Development Kit
+            </a>
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Agent Development Kit (ADK) for TypeScript
+            
+            </a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Color palette toggle -->
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="white"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="white" data-md-color-accent="white"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+
+    <!-- User preference: color palette -->
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+
+    <!-- Site language selector -->
+    
+
+    <!-- Button to open search modal -->
+    
+      
+
+      <!-- Check if search is actually enabled - see https://t.ly/DT_0V -->
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+
+        <!-- Search interface -->
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+
+    <!-- Repository information -->
+    
+      <div class="md-header__source">
+        <a href="https://github.com/njraladdin/adk-typescript" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    adk-typescript
+  </div>
+</a>
+      </div>
+    
+  </nav>
+
+  <!-- Navigation tabs (sticky) -->
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Agent Development Kit" class="md-nav__button md-logo" aria-label="Agent Development Kit" data-md-component="logo">
+      
+  <img src="../assets/agent-development-kit.png" alt="logo">
+
+    </a>
+    Agent Development Kit
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/njraladdin/adk-typescript" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    adk-typescript
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../get-started/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Get Started
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Get Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../get-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../get-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../get-started/quickstart-streaming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart (streaming)
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../get-started/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Testing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/google/adk-samples" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sample agents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../get-started/about/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    About ADK
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tutorials/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/agent-team/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Agent Team
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../agents/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Agents
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Agents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agents/llm-agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    LLM agents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../agents/workflow-agents/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Workflow agents
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
+            <span class="md-nav__icon md-icon"></span>
+            Workflow agents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agents/workflow-agents/sequential-agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sequential agents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agents/workflow-agents/loop-agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Loop agents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agents/workflow-agents/parallel-agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Parallel agents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agents/custom-agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Custom agents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agents/multi-agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Multi-agent systems
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agents/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Models
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tools/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Tools
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Tools
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/function-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Function tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/built-in-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Built-in tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/third-party-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Third party tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/google-cloud-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Google Cloud tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/mcp-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MCP tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/openapi-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    OpenAPI tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Authentication
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../deploy/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Deploy
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Deploy
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/agent-engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Agent Engine
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/cloud-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Cloud Run
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploy/gke/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GKE
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../sessions/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Sessions & Memory
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Sessions & Memory
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sessions/session/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Session
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sessions/state/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    State
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sessions/memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Memory
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../artifacts/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Artifacts
+    
+  </span>
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Artifacts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../callbacks/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Callbacks
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_9" id="__nav_9_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            Callbacks
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../callbacks/types-of-callbacks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Types of callbacks
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../callbacks/design-patterns-and-best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Callback patterns
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../runtime/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Runtime
+    
+  </span>
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            Runtime
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../events/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Events
+    
+  </span>
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            Events
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../context/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Context
+    
+  </span>
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            Context
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_13" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../evaluate/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Evaluate
+    
+  </span>
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            Evaluate
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../safety/index.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Safety and Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/google/A2A/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Agent2Agent (A2A) Protocol
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../community.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Community Resources
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing-guide.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Contributing Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      High-Level Summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview-core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview &amp; Core Concepts
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation &amp; Setup
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Agents
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agents">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#baseagent" class="md-nav__link">
+    <span class="md-ellipsis">
+      BaseAgent
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llmagent-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      LlmAgent (Agent)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Workflow Agents
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workflow Agents">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sequentialagent" class="md-nav__link">
+    <span class="md-ellipsis">
+      SequentialAgent
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parallelagent" class="md-nav__link">
+    <span class="md-ellipsis">
+      ParallelAgent
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loopagent" class="md-nav__link">
+    <span class="md-ellipsis">
+      LoopAgent
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Agents
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-agent-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multi-Agent Systems
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Models
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tools
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tools">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tool-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Concepts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toolcontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      ToolContext
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#function-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Function Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#built-in-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Built-in Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#openapi-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenAPI Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#third-party-tools-langchainjs-crewai" class="md-nav__link">
+    <span class="md-ellipsis">
+      Third-Party Tools (LangChain.js, CrewAI)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#google-cloud-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Google Cloud Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mcp-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      MCP Tools
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      Authentication
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sessions-state-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sessions, State &amp; Memory
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Sessions, State &amp; Memory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#session" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sessionservice" class="md-nav__link">
+    <span class="md-ellipsis">
+      SessionService
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state" class="md-nav__link">
+    <span class="md-ellipsis">
+      State
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-memoryservice" class="md-nav__link">
+    <span class="md-ellipsis">
+      Memory &amp; MemoryService
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Artifacts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Artifacts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#artifact-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Artifact Concepts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#artifactservice" class="md-nav__link">
+    <span class="md-ellipsis">
+      ArtifactService
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#context-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Context Methods
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#context-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Context Objects
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Context Objects">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#invocationcontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      InvocationContext
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#readonlycontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      ReadonlyContext
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#callbackcontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      CallbackContext
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toolcontext-recap" class="md-nav__link">
+    <span class="md-ellipsis">
+      ToolContext (Recap)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Callbacks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Callbacks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#callback-mechanism" class="md-nav__link">
+    <span class="md-ellipsis">
+      Callback Mechanism
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-lifecycle-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Agent Lifecycle Callbacks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#llm-interaction-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      LLM Interaction Callbacks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tool-execution-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Execution Callbacks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#callback-patterns-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Callback Patterns &amp; Best Practices
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      Runtime &amp; Events
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Runtime &amp; Events">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#event-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      Event Loop
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-object" class="md-nav__link">
+    <span class="md-ellipsis">
+      Event Object
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#runtime-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Runtime Components
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-behaviors-state-timing-streaming-async" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Behaviors (State Timing, Streaming, Async)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Evaluation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Concepts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#methods-adk-ts-web-jestvitest-adk-ts-eval" class="md-nav__link">
+    <span class="md-ellipsis">
+      Methods (adk-ts web, jest/vitest, adk-ts eval)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      Criteria
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deployment
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deployment">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vertex-ai-agent-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      Vertex AI Agent Engine
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cloud-run-adk-ts-deploy-gcloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cloud Run (adk-ts deploy, gcloud)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#safety-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      Safety &amp; Security
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development-tools-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Tools (CLI)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contributing
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="agent-development-kit-adk-for-typescript">Agent Development Kit (ADK) for TypeScript<a class="headerlink" href="#agent-development-kit-adk-for-typescript" title="Permanent link">&para;</a></h1>
+<h2 id="high-level-summary">High-Level Summary<a class="headerlink" href="#high-level-summary" title="Permanent link">&para;</a></h2>
+<p>The Agent Development Kit (ADK) for TypeScript is an open-source, code-first toolkit designed for developers building, evaluating, and deploying sophisticated AI agents using TypeScript/Node.js, with a strong focus on integration with Google Cloud services and Gemini models. It emphasizes flexibility and fine-grained control over agent behavior, orchestration, and tool usage directly within TypeScript code.</p>
+<p><strong>Key Features:</strong></p>
+<ul>
+<li><strong>Rich Tool Ecosystem:</strong> Supports built-in tools (Google Search, Code Execution, Vertex AI Search), custom TypeScript functions, OpenAPI spec integration, third-party libraries (LangChain.js, CrewAI - <em>if JS/TS versions exist and wrappers are provided</em>), Google Cloud integrations (API Hub, Application Integration, MCP Toolbox for DBs), MCP standard tools, and using other agents as tools. Includes robust authentication handling.</li>
+<li><strong>Code-First Development:</strong> Define agent logic, workflows, and state management directly in TypeScript, enabling testability, versioning, and debugging using standard Node.js tools.</li>
+<li><strong>Flexible Orchestration:</strong> Build multi-agent systems using predefined workflow agents (<code>SequentialAgent</code>, <code>ParallelAgent</code>, <code>LoopAgent</code>) for structured processes or leverage <code>LlmAgent</code> for dynamic, LLM-driven routing and decision-making. Custom agents (<code>BaseAgent</code>) allow for arbitrary logic.</li>
+<li><strong>Context &amp; State Management:</strong> Provides mechanisms for managing conversational context (<code>Session</code>), short-term state (<code>State</code> with session/user/app/temp scopes), long-term memory (<code>MemoryService</code>), and binary data (<code>ArtifactService</code>).</li>
+<li><strong>Callbacks for Control:</strong> Offers hooks (<code>before/afterAgentCallback</code>, <code>before/afterModelCallback</code>, <code>before/afterToolCallback</code>) to observe, customize, or intercept agent execution flow for logging, validation, guardrails, caching, and more.</li>
+<li><strong>Deployment Ready:</strong> Facilitates deployment to various environments, including local testing, Google Cloud Run, and the scalable Vertex AI Agent Engine.</li>
+<li><strong>Evaluation Framework:</strong> Includes tools and patterns for evaluating agent performance based on trajectory (tool usage) and final response quality against predefined test cases (<code>.test.json</code>, <code>.evalset.json</code>).</li>
+<li><strong>Responsible AI:</strong> Provides guidance and mechanisms (guardrails, callbacks, identity management) for building safer and more secure agents.</li>
+</ul>
+<p>The documentation covers getting started guides (installation, quickstarts, tutorial), core concepts (agents, tools, sessions, context, runtime, events), advanced topics (multi-agent systems, callbacks, custom agents, memory, artifacts, authentication), deployment strategies, evaluation methods, and responsible AI practices. Code examples and snippets illustrate key functionalities in TypeScript.</p>
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<p><em>(This section remains largely the same, just ensure the links point to the correct files/sections in your TS docs)</em>
+- <a href="#overview--core-concepts">Overview &amp; Core Concepts</a>
+- <a href="#installation--setup">Installation &amp; Setup</a>
+- <a href="#agents">Agents</a>
+  - <a href="#baseagent">BaseAgent</a>
+  - <a href="#llmagent-agent">LlmAgent (<code>Agent</code>)</a>
+  - <a href="#workflow-agents">Workflow Agents</a>
+    - <a href="#sequentialagent">SequentialAgent</a>
+    - <a href="#parallelagent">ParallelAgent</a>
+    - <a href="#loopagent">LoopAgent</a>
+  - <a href="#custom-agents">Custom Agents</a>
+  - <a href="#multi-agent-systems">Multi-Agent Systems</a>
+  - <a href="#models">Models</a>
+- <a href="#tools">Tools</a>
+  - <a href="#tool-concepts">Tool Concepts</a>
+  - <a href="#toolcontext">ToolContext</a>
+  - <a href="#function-tools">Function Tools</a>
+  - <a href="#built-in-tools">Built-in Tools</a>
+  - <a href="#openapi-tools">OpenAPI Tools</a>
+  - <a href="#third-party-tools-langchainjs-crewai">Third-Party Tools (LangChain.js, CrewAI)</a>
+  - <a href="#google-cloud-tools">Google Cloud Tools</a>
+  - <a href="#mcp-tools">MCP Tools</a>
+  - <a href="#authentication">Authentication</a>
+- <a href="#sessions-state--memory">Sessions, State &amp; Memory</a>
+  - <a href="#session">Session</a>
+  - <a href="#sessionservice">SessionService</a>
+  - <a href="#state">State</a>
+  - <a href="#memory--memoryservice">Memory &amp; MemoryService</a>
+- <a href="#artifacts">Artifacts</a>
+  - <a href="#artifact-concepts">Artifact Concepts</a>
+  - <a href="#artifactservice">ArtifactService</a>
+  - <a href="#context-methods">Context Methods</a>
+- <a href="#context-objects">Context Objects</a>
+  - <a href="#invocationcontext">InvocationContext</a>
+  - <a href="#readonlycontext">ReadonlyContext</a>
+  - <a href="#callbackcontext">CallbackContext</a>
+  - <a href="#toolcontext-recap">ToolContext (Recap)</a>
+- <a href="#callbacks">Callbacks</a>
+  - <a href="#callback-mechanism">Callback Mechanism</a>
+  - <a href="#agent-lifecycle-callbacks">Agent Lifecycle Callbacks</a>
+  - <a href="#llm-interaction-callbacks">LLM Interaction Callbacks</a>
+  - <a href="#tool-execution-callbacks">Tool Execution Callbacks</a>
+  - <a href="#callback-patterns--best-practices">Callback Patterns &amp; Best Practices</a>
+- <a href="#runtime--events">Runtime &amp; Events</a>
+  - <a href="#event-loop">Event Loop</a>
+  - <a href="#event-object">Event Object</a>
+  - <a href="#runtime-components">Runtime Components</a>
+  - <a href="#key-behaviors-state-timing-streaming-async">Key Behaviors (State Timing, Streaming, Async)</a>
+- <a href="#evaluation">Evaluation</a>
+  - <a href="#concepts">Concepts</a>
+  - <a href="#methods-adk-ts-web-jestvitest-adk-ts-eval">Methods (<code>adk-ts web</code>, <code>jest</code>/<code>vitest</code>, <code>adk-ts eval</code>)</a>
+  - <a href="#criteria">Criteria</a>
+- <a href="#deployment">Deployment</a>
+  - <a href="#vertex-ai-agent-engine">Vertex AI Agent Engine</a>
+  - <a href="#cloud-run-adk-ts-deploy-gcloud">Cloud Run (<code>adk-ts deploy</code>, <code>gcloud</code>)</a>
+- <a href="#safety--security">Safety &amp; Security</a>
+- <a href="#development-tools-cli">Development Tools (CLI)</a>
+- <a href="#contributing">Contributing</a></p>
+<h2 id="overview-core-concepts">Overview &amp; Core Concepts<a class="headerlink" href="#overview-core-concepts" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>ADK (Agent Development Kit) for TypeScript:</strong> Open-source TypeScript toolkit for building, evaluating, and deploying AI agents, integrated with Google Cloud and Gemini.</li>
+<li><strong>Code-First:</strong> Define agent logic, tools, and orchestration in TypeScript/Node.js.</li>
+<li><strong>Key Primitives:</strong> Agent, Tool, Callback, Session, State, Memory, Artifact, Event, Runner, Model.</li>
+<li><strong>Focus:</strong> Flexibility, control, Google ecosystem integration, leveraging the TypeScript ecosystem.</li>
+<li><strong>Capabilities:</strong> Multi-Agent Systems, Rich Tooling, Flexible Orchestration, Streaming, Evaluation, Deployment, Responsible AI features.</li>
+</ul>
+<p><em>(See: Your <code>README.md</code>, relevant intro docs)</em></p>
+<h2 id="installation-setup">Installation &amp; Setup<a class="headerlink" href="#installation-setup" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Prerequisites:</strong> Node.js (check required version), npm or yarn.</li>
+<li><strong>Install ADK:</strong>
+    <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>npm<span class="w"> </span>install<span class="w"> </span>adk-typescript<span class="w"> </span><span class="c1"># Or your package name</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># or</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>yarn<span class="w"> </span>add<span class="w"> </span>adk-typescript<span class="w"> </span><span class="c1"># Or your package name</span>
+</span></code></pre></div></li>
+<li><strong>Install Peer Dependencies</strong> (if any listed in <code>package.json</code>).</li>
+<li><strong>Model Setup (API Keys / ADC):</strong><ul>
+<li><strong>Environment Variables:</strong> Use a <code>.env</code> file (install <code>dotenv</code>: <code>npm install dotenv</code>) or set environment variables directly.</li>
+<li><strong>Google AI Studio:</strong> Set <code>GOOGLE_API_KEY</code>. Set <code>GOOGLE_GENAI_USE_VERTEXAI=0</code>.</li>
+<li><strong>Vertex AI:</strong> Authenticate (<code>gcloud auth application-default login</code>), set <code>GOOGLE_CLOUD_PROJECT</code>, <code>GOOGLE_CLOUD_LOCATION</code>. Set <code>GOOGLE_GENAI_USE_VERTEXAI=1</code>.</li>
+<li><strong>LiteLLM (OpenAI, Anthropic, etc.):</strong> Set provider-specific keys (e.g., <code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>).</li>
+</ul>
+</li>
+</ol>
+<p><em>(See: Your installation/setup docs, model configuration docs)</em></p>
+<h2 id="agents">Agents<a class="headerlink" href="#agents" title="Permanent link">&para;</a></h2>
+<p>The fundamental execution units. All inherit from <code>BaseAgent</code>.</p>
+<p><em>(See: <code>docs/agents/index.md</code>)</em></p>
+<h3 id="baseagent">BaseAgent<a class="headerlink" href="#baseagent" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The foundation class for all agents (<code>src/agents/BaseAgent.ts</code>).</li>
+<li>Requires <code>name</code> (string).</li>
+<li>Can have <code>parentAgent</code> and <code>subAgents</code> array (<code>BaseAgent[]</code>) to define hierarchy.</li>
+<li>Requires implementation of <code>runAsyncImpl</code> and <code>runLiveImpl</code> (async generators yielding <code>Event</code>).</li>
+</ul>
+<p><em>(See: <code>docs/agents/custom-agents.md</code>)</em></p>
+<h3 id="llmagent-agent">LlmAgent (<code>Agent</code>)<a class="headerlink" href="#llmagent-agent" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Uses an LLM for reasoning, generation, and tool/transfer decisions (<code>src/agents/LlmAgent.ts</code>).</li>
+<li><strong>Key Parameters (in constructor options object):</strong><ul>
+<li><code>name</code> (string): Unique agent identifier.</li>
+<li><code>model</code> (string | <code>BaseLlm</code>): LLM identifier (e.g., <code>"gemini-2.0-flash"</code>) or a wrapper instance (e.g., <code>new LiteLlm({model: "openai/gpt-4o"})</code>). See <code>src/models</code>.</li>
+<li><code>instruction</code> (string | <code>(ctx: ReadonlyContext) =&gt; string</code>): Guides the LLM's behavior, goals, persona, tool usage.</li>
+<li><code>description</code> (string, Optional): Summary for delegation/discovery.</li>
+<li><code>tools</code> (<code>Array&lt;BaseTool | Function&gt;</code>): Tools available to the agent. Plain functions are automatically wrapped.</li>
+<li><code>subAgents</code> (<code>BaseAgent[]</code>, Optional): Child agents for hierarchy/delegation.</li>
+<li><code>outputKey</code> (string, Optional): Session state key to automatically save the agent's final text/structured response.</li>
+<li><code>outputSchema</code> (JSONSchema definition or class constructor, Optional): Enforces JSON output matching the schema. <strong>Disables tool use and transfer.</strong></li>
+<li><code>inputSchema</code> (JSONSchema definition or class constructor, Optional): Requires input to match the schema.</li>
+<li><code>generateContentConfig</code> (<code>GenerateContentConfig</code> interface, Optional): Controls LLM generation parameters (temp, max tokens, safety).</li>
+<li><code>includeContents</code> ('default' | 'none', Optional, Default: <code>'default'</code>): <code>'none'</code> excludes conversation history from LLM context.</li>
+<li>Callbacks (<code>beforeAgentCallback</code>, etc.): Functions matching specific signatures (<code>src/agents/BaseAgent.ts</code>, <code>src/agents/LlmAgent.ts</code>).</li>
+</ul>
+</li>
+<li><strong>Behavior:</strong> Non-deterministic, LLM-driven.</li>
+</ul>
+<p><em>(See: <code>docs/agents/llm-agents.md</code>)</em></p>
+<h3 id="workflow-agents">Workflow Agents<a class="headerlink" href="#workflow-agents" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Orchestrate sub-agent execution based on predefined logic (no LLM for flow control).</li>
+<li>Deterministic execution patterns.</li>
+</ul>
+<p><em>(See: <code>docs/agents/workflow-agents/index.md</code>)</em></p>
+<h4 id="sequentialagent">SequentialAgent<a class="headerlink" href="#sequentialagent" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Executes <code>subAgents</code> one after another in the array order (<code>src/agents/SequentialAgent.ts</code>).</li>
+<li>Passes the same <code>InvocationContext</code> sequentially (state is shared).</li>
+<li>Use Case: Pipelines, ordered tasks.</li>
+</ul>
+<p><em>(See: <code>docs/agents/workflow-agents/sequential-agents.md</code>, <code>docs/examples/typescript/snippets/agents/workflow-agents/sequential-agent-code-development.ts</code>)</em></p>
+<h4 id="parallelagent">ParallelAgent<a class="headerlink" href="#parallelagent" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Executes <code>subAgents</code> concurrently (<code>src/agents/ParallelAgent.ts</code>). Event order is not guaranteed.</li>
+<li>Assigns distinct <code>branch</code> identifiers in context.</li>
+<li>Sub-agents access the <em>same shared</em> <code>session.state</code> (requires careful key management).</li>
+<li>Use Case: Independent tasks to reduce latency (e.g., parallel API calls).</li>
+</ul>
+<p><em>(See: <code>docs/agents/workflow-agents/parallel-agents.md</code>, <code>docs/examples/typescript/snippets/agents/workflow-agents/parallel-agent-web-research.ts</code>)</em></p>
+<h4 id="loopagent">LoopAgent<a class="headerlink" href="#loopagent" title="Permanent link">&para;</a></h4>
+<ul>
+<li>Executes <code>subAgents</code> sequentially in a loop (<code>src/agents/LoopAgent.ts</code>).</li>
+<li><strong>Parameters:</strong><ul>
+<li><code>maxIterations</code> (number, Optional): Maximum number of loop cycles.</li>
+<li><code>subAgents</code> (<code>BaseAgent[]</code>): Agents to run in each iteration (added via <code>addSubAgent</code> or constructor).</li>
+</ul>
+</li>
+<li><strong>Termination:</strong> Stops after <code>maxIterations</code> or when a sub-agent yields an <code>Event</code> with <code>actions.escalate=true</code>.</li>
+<li>Passes the same <code>InvocationContext</code> (state persists across iterations).</li>
+<li>Use Case: Iterative refinement, polling, processes repeating until a condition is met.</li>
+</ul>
+<p><em>(See: <code>docs/agents/workflow-agents/loop-agents.md</code>, <code>docs/examples/typescript/snippets/agents/workflow-agents/loop-agent-doc-improv-agent.ts</code>)</em></p>
+<h3 id="custom-agents">Custom Agents<a class="headerlink" href="#custom-agents" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Inherit directly from <code>BaseAgent</code> (<code>src/agents/BaseAgent.ts</code>).</li>
+<li>Implement custom orchestration logic in <code>protected async *runAsyncImpl(ctx: InvocationContext)</code> and <code>protected async *runLiveImpl(ctx: InvocationContext)</code>.</li>
+<li>Call sub-agents using <code>yield* this.subAgentInstance.invoke(ctx)</code>.</li>
+<li>Use <code>ctx.session.state</code> for data passing and control flow.</li>
+<li>Register sub-agents via constructor or <code>addSubAgent()</code>.</li>
+<li>Use Case: Complex conditional logic, unique workflows, deep external integrations within the control flow.</li>
+</ul>
+<p><em>(See: <code>docs/agents/custom-agents.md</code>, <code>docs/examples/typescript/snippets/agents/custom-agent/storyflow-agent.ts</code>)</em></p>
+<h3 id="multi-agent-systems">Multi-Agent Systems<a class="headerlink" href="#multi-agent-systems" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Compose agents into hierarchies (<code>parentAgent</code>, <code>subAgents</code>).</li>
+<li><strong>Communication/Coordination:</strong><ul>
+<li><strong>Shared State (<code>session.state</code>):</strong> Passive data exchange (e.g., via <code>outputKey</code>).</li>
+<li><strong>LLM Delegation (Transfer):</strong> <code>LlmAgent</code> uses LLM to call <code>transfer_to_agent(agentName='...')</code> based on instructions/descriptions. Handled by <code>AutoFlow</code>.</li>
+<li><strong>Explicit Invocation (<code>AgentTool</code>):</strong> Wrap an agent in <code>AgentTool</code> and add to parent's <code>tools</code> list. Parent LLM calls it like a function.</li>
+</ul>
+</li>
+<li><strong>Patterns:</strong> Coordinator/Dispatcher, Sequential Pipeline, Parallel Fan-Out/Gather, Hierarchical Decomposition, Generator-Critic, Iterative Refinement, Human-in-the-Loop (via custom tools).</li>
+</ul>
+<p><em>(See: <code>docs/agents/multi-agents.md</code>)</em></p>
+<h3 id="models">Models<a class="headerlink" href="#models" title="Permanent link">&para;</a></h3>
+<ul>
+<li>ADK supports various LLMs.</li>
+<li><strong>Google Gemini:</strong> Direct string IDs (<code>gemini-2.0-flash</code>, etc.). Set up via Google AI (<code>GOOGLE_API_KEY</code>) or Vertex AI (<code>GOOGLE_CLOUD_PROJECT</code>, <code>GOOGLE_GENAI_USE_VERTEXAI=1</code>). Uses <code>src/models/GoogleLlm.ts</code>.</li>
+<li><strong>LiteLLM Integration (<code>LiteLlm</code> wrapper):</strong><ul>
+<li>Install <code>litellm</code> (<code>npm install litellm</code>). Set provider API keys (e.g., <code>OPENAI_API_KEY</code>).</li>
+<li>Use <code>new LlmAgent({model: new LiteLlm({model: "openai/gpt-4o"}), ...})</code></li>
+<li>Supports OpenAI, Anthropic (non-Vertex), Cohere, Ollama (local), etc. See <code>src/models/LiteLlm.ts</code>.</li>
+</ul>
+</li>
+<li><strong>Vertex AI Endpoints:</strong><ul>
+<li>Use full resource string (<code>projects/.../endpoints/...</code>) as <code>model</code>.</li>
+<li>Requires Vertex AI setup (<code>GOOGLE_GENAI_USE_VERTEXAI=1</code>).</li>
+<li>Works for Model Garden deployments and fine-tuned models (likely uses <code>GoogleLlm</code> or a custom Vertex endpoint wrapper).</li>
+</ul>
+</li>
+<li><strong>Third-Party on Vertex (e.g., Claude):</strong><ul>
+<li>Requires Vertex AI setup.</li>
+<li>Install provider library (e.g., <code>@anthropic-ai/vertex-sdk</code>).</li>
+<li><strong>Register</strong> the model class with ADK: <code>LlmRegistry.register(Claude)</code>. See <code>src/models/AnthropicLlm.ts</code>.</li>
+<li>Use direct model string (e.g., <code>"claude-3-sonnet@20240229"</code>) in <code>LlmAgent</code>.</li>
+</ul>
+</li>
+</ul>
+<p><em>(See: <code>docs/agents/models.md</code>, <code>src/models/</code>)</em></p>
+<h2 id="tools">Tools<a class="headerlink" href="#tools" title="Permanent link">&para;</a></h2>
+<p>Capabilities provided to agents beyond core LLM functions.</p>
+<p><em>(See: <code>docs/tools/index.md</code>)</em></p>
+<h3 id="tool-concepts">Tool Concepts<a class="headerlink" href="#tool-concepts" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Action-oriented code components (functions, classes).</li>
+<li>Extend agent abilities (API calls, search, code execution, DB query, RAG).</li>
+<li>Used by <code>LlmAgent</code> via function calling based on instructions and tool descriptions/schemas.</li>
+</ul>
+<h3 id="toolcontext">ToolContext<a class="headerlink" href="#toolcontext" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Special object injected into tool functions/callbacks if declared: <code>function myTool(params: Record&lt;string, any&gt;, toolContext: ToolContext)</code>.</li>
+<li>Inherits from <code>CallbackContext</code>.</li>
+<li><strong>Key Capabilities:</strong><ul>
+<li><code>state</code>: Read/write session state (<code>State</code> object).</li>
+<li><code>actions</code>: Modify <code>EventActions</code> (e.g., <code>skipSummarization=true</code>, <code>transferToAgent</code>, <code>escalate</code>).</li>
+<li><code>functionCallId</code>: ID of the LLM's request to call this tool.</li>
+<li><code>agentName</code>, <code>invocationId</code>.</li>
+<li><code>requestCredential(authConfig)</code>: Initiate auth flow.</li>
+<li><code>getAuthResponse(authConfig)</code>: Retrieve credentials after auth flow.</li>
+<li><code>listArtifacts()</code>: List available session artifacts.</li>
+<li><code>loadArtifact(filename, version?)</code>: Load artifact content.</li>
+<li><code>saveArtifact(filename, artifact)</code>: Save artifact content.</li>
+<li><code>searchMemory(query)</code>: Query the long-term <code>MemoryService</code>.</li>
+</ul>
+</li>
+</ul>
+<p><em>(See: <code>docs/tools/index.md#tool-context</code>, <code>docs/context/index.md</code>, <code>src/tools/ToolContext.ts</code>)</em></p>
+<h3 id="function-tools">Function Tools<a class="headerlink" href="#function-tools" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Wrap custom TypeScript functions or methods.</li>
+<li><strong><code>FunctionTool</code>:</strong> (<code>src/tools/FunctionTool.ts</code>) Standard synchronous/asynchronous functions (<code>async (params, context) =&gt; ...</code>).<ul>
+<li>Function <strong>name</strong>, <strong>description</strong>, and <strong><code>functionDeclaration</code></strong> (JSON schema for parameters) are critical for LLM usage.</li>
+<li>Use simple, JSON-serializable types for args/return. <code>ToolContext</code> is automatically injected if present in signature.</li>
+<li>Keep tools focused; decompose complex tasks.</li>
+</ul>
+</li>
+<li><strong><code>LongRunningFunctionTool</code>:</strong> (<code>src/tools/LongRunningTool.ts</code>) Wraps a function that <em>returns</em> a final result but indicates long-running status (used for tasks like <code>getUserChoice</code>). ADK handles progress updates differently than Python's generator approach.</li>
+<li><strong><code>AgentTool</code>:</strong> (<code>src/tools/AgentTool.ts</code>) Treats another agent instance as a callable tool.<ul>
+<li>Parent LLM calls it like a function.</li>
+<li><code>AgentTool</code> creates a sub-session, runs the target agent, captures the final response, and returns it.</li>
+<li><code>skipSummarization</code> (boolean): Option to bypass LLM summarization of the sub-agent's result.</li>
+</ul>
+</li>
+</ul>
+<p><em>(See: <code>docs/tools/function-tools.md</code>, Example Snippets in <code>docs/examples/typescript/snippets/tools/function-tools/</code>)</em></p>
+<h3 id="built-in-tools">Built-in Tools<a class="headerlink" href="#built-in-tools" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Ready-to-use tools provided by ADK. Require specific models (often Gemini).</li>
+<li><code>googleSearch</code> (<code>src/tools/GoogleSearchTool.ts</code>): Performs Google web search.</li>
+<li><code>builtInCodeExecution</code> (<code>src/tools/BuiltInCodeExecutionTool.ts</code>): Executes Python code sandboxed (via Gemini API).</li>
+<li><code>VertexAiSearchTool</code> (<code>src/tools/VertexAISearchTool.ts</code>): Searches a specific Vertex AI Search data store or engine.</li>
+<li><strong>Limitations (Current):</strong> Similar to Python, generally one built-in per root/single agent. Use delegation for sub-agents.</li>
+</ul>
+<p><em>(See: <code>docs/tools/built-in-tools.md</code>, Example Snippets)</em></p>
+<h3 id="openapi-tools">OpenAPI Tools<a class="headerlink" href="#openapi-tools" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>OpenAPIToolset</code>:</strong> (<code>src/tools/openapi-tool/openapi-spec-parser/OpenAPIToolset.ts</code>) Automatically generates <code>RestApiTool</code> instances from an OpenAPI v3 spec (JSON/YAML string or object).</li>
+<li><strong><code>RestApiTool</code>:</strong> (<code>src/tools/openapi-tool/openapi-spec-parser/RestApiTool.ts</code>) Represents a single API operation (e.g., GET /users). Handles request construction (using <code>axios</code>), execution, and response.</li>
+<li><strong>Usage:</strong><ol>
+<li>Instantiate <code>new OpenAPIToolset({ specStr: ..., specStrType: ..., authScheme: ..., authCredential: ...})</code>.</li>
+<li>Get tools: <code>const apiTools = toolset.getTools()</code>.</li>
+<li>Add <code>apiTools</code> to <code>new LlmAgent({ tools: [...] })</code>.</li>
+</ol>
+</li>
+<li>Handles parameters (path, query, header, cookie), request bodies, and authentication schemes defined in the spec.</li>
+</ul>
+<p><em>(See: <code>docs/tools/openapi-tools.md</code>, <code>src/tools/openapi-tool/</code>)</em></p>
+<h3 id="third-party-tools-langchainjs-crewai">Third-Party Tools (LangChain.js, CrewAI)<a class="headerlink" href="#third-party-tools-langchainjs-crewai" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Wrappers to integrate tools from other frameworks.</li>
+<li><strong><code>LangchainTool</code>:</strong> (<code>src/tools/LangchainTool.ts</code>) Wraps a LangChain.js tool (requires <code>@langchain/core</code>, etc.).</li>
+<li><strong><code>CrewaiTool</code>:</strong> (<code>src/tools/CrewaiTool.ts</code>) Wraps a CrewAI tool (requires <code>crewai-tools</code> JS/TS library if available). Provide <code>name</code> and <code>description</code>.</li>
+<li><strong>Usage:</strong> Instantiate provider tool, wrap with ADK tool, add wrapped tool to <code>LlmAgent</code>.</li>
+</ul>
+<p><em>(See: <code>docs/tools/third-party-tools.md</code>, Example Snippets)</em></p>
+<h3 id="google-cloud-tools">Google Cloud Tools<a class="headerlink" href="#google-cloud-tools" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Integrations with Google Cloud services.</li>
+<li><strong><code>ApiHubToolset</code>:</strong> (<code>src/tools/apihub-tool/APIHubToolset.ts</code>) Creates tools from APIs documented in Apigee API Hub. Requires GCP auth and API Hub resource name. Can configure API auth.</li>
+<li><strong><code>ApplicationIntegrationToolset</code>:</strong> (<code>src/tools/application-integration-tool/ApplicationIntegrationToolset.ts</code>) Creates tools from Application Integration workflows or Connectors. Requires GCP project/location, integration/connection details, and GCP auth.</li>
+<li><strong>MCP Toolbox for Databases:</strong> Uses <code>ToolboxTool</code> (<code>src/tools/ToolboxTool.ts</code>) to connect to a deployed MCP Toolbox server. Requires MCP client library (<code>@modelcontextprotocol/sdk</code>). <code>const toolbox = new ToolboxTool("https://server-url")</code>, <code>const tools = await toolbox.getToolset(...)</code>.</li>
+</ul>
+<p><em>(See: <code>docs/tools/google-cloud-tools.md</code>, <code>docs/tools/mcp-tools.md</code>)</em></p>
+<h3 id="mcp-tools">MCP Tools<a class="headerlink" href="#mcp-tools" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Model Context Protocol (MCP) integration.</li>
+<li><strong>Using MCP Servers in ADK:</strong><ul>
+<li><code>MCPToolset.fromServer({ connectionParams: ... })</code>: Connects ADK agent to an external MCP server. (<code>src/tools/mcp-tool/MCPToolset.ts</code>)</li>
+<li><code>connectionParams</code>: <code>StdioServerParameters</code> for local servers, or <code>SseServerParams</code> for remote.</li>
+<li>Returns <code>Promise&lt;[MCPTool[], AsyncExitStack]&gt;</code>. Tools are added to <code>LlmAgent</code>.</li>
+<li><strong>Crucial:</strong> Call <code>await exitStack.aclose()</code> for cleanup.</li>
+</ul>
+</li>
+<li><strong>Exposing ADK Tools via MCP:</strong> (Requires building a separate MCP server in Node.js/TypeScript)<ul>
+<li>Install <code>@modelcontextprotocol/server</code>.</li>
+<li>Use <code>adkToMcpToolType(adkTool)</code> in <code>listTools</code> handler. (<code>src/tools/mcp-tool/ConversionUtils.ts</code>)</li>
+<li>Call <code>adkTool.execute(...)</code> in <code>callTool</code> handler.</li>
+</ul>
+</li>
+</ul>
+<p><em>(See: <code>docs/tools/mcp-tools.md</code>, <code>src/tools/mcp-tool/</code>)</em></p>
+<h3 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Handles secure access for tools calling external APIs.</li>
+<li><strong>Core Concepts:</strong><ul>
+<li><code>AuthScheme</code>: <em>How</em> API expects credentials (e.g., <code>APIKey</code>, <code>HTTPBearer</code>, <code>OAuth2</code>, <code>OpenIdConnectWithConfig</code> interfaces/classes). See <code>src/tools/openapi-tool/auth/AuthHelpers.ts</code>. Defined by OpenAPI spec or specific classes.</li>
+<li><code>AuthCredential</code>: <em>Initial</em> info to start auth (e.g., Client ID/Secret, API key value). <code>authType</code> indicates flow (e.g., <code>AuthCredentialTypes.API_KEY</code>, <code>AuthCredentialTypes.OAUTH2</code>). See <code>src/auth/AuthCredential.ts</code>.</li>
+</ul>
+</li>
+<li><strong>Configuration:</strong> Passed during <code>OpenAPIToolset</code>, <code>APIHubToolset</code>, etc. initialization, or via specific methods like <code>GoogleApiToolSet.configureAuth(...)</code>.</li>
+<li><strong>Interactive Flow (OAuth/OIDC):</strong><ol>
+<li>Tool call fails -&gt; ADK yields <code>adk_request_credential</code> function call event.</li>
+<li>Client app extracts <code>AuthConfig</code> (<code>src/auth/AuthConfig.ts</code>) from event args.</li>
+<li>Client app redirects user to <code>auth_uri</code> (appending <code>redirect_uri</code>).</li>
+<li>User logs in, authorizes. IDP redirects back with <code>code</code>.</li>
+<li>Client app captures callback URL, updates <code>AuthConfig</code>.</li>
+<li>Client app sends <code>AuthConfig</code> back via <code>FunctionResponse</code> for <code>adk_request_credential</code>.</li>
+<li>ADK performs token exchange (via <code>AuthHandler</code>), stores tokens, retries tool call.</li>
+</ol>
+</li>
+<li><strong>Custom <code>FunctionTool</code> Auth:</strong><ol>
+<li>Check <code>toolContext.state</code> for cached credentials.</li>
+<li>If no valid creds, check <code>toolContext.getAuthResponse()</code> for results from client flow.</li>
+<li>If still no creds, call <code>toolContext.requestCredential(new AuthConfig(...))</code> to start flow. Return pending status.</li>
+<li>ADK handles token exchange.</li>
+<li>On retry, <code>getAuthResponse()</code> provides creds. Cache in state.</li>
+<li>Make API call.</li>
+<li>Return result.</li>
+</ol>
+</li>
+<li><strong>Security:</strong> Use secure secret management for production. Consider encrypting state if using persistent DBs.</li>
+</ul>
+<p><em>(See: <code>docs/tools/authentication.md</code>, <code>docs/examples/typescript/snippets/tools/auth/</code>, <code>src/auth/</code>)</em></p>
+<h2 id="sessions-state-memory">Sessions, State &amp; Memory<a class="headerlink" href="#sessions-state-memory" title="Permanent link">&para;</a></h2>
+<p>Manage conversational context.</p>
+<p><em>(See: <code>docs/sessions/index.md</code>)</em></p>
+<h3 id="session">Session<a class="headerlink" href="#session" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Represents a single, ongoing conversation thread (<code>src/sessions/Session.ts</code>).</li>
+<li>Container for <code>events</code> (history) and <code>state</code> (current context data).</li>
+<li>Identified by <code>id</code>, <code>appName</code>, <code>userId</code>.</li>
+<li>Managed by <code>SessionService</code>.</li>
+</ul>
+<p><em>(See: <code>docs/sessions/session.md</code>)</em></p>
+<h3 id="sessionservice">SessionService<a class="headerlink" href="#sessionservice" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Manages <code>Session</code> object lifecycle (<code>src/sessions/BaseSessionService.ts</code>).</li>
+<li>Responsible for persisting session data.</li>
+<li><strong>Implementations:</strong><ul>
+<li><code>InMemorySessionService</code>: (<code>src/sessions/InMemorySessionService.ts</code>) Non-persistent.</li>
+<li><code>DatabaseSessionService</code>: (<code>src/sessions/DatabaseSessionService.ts</code>) Persistent using TypeORM (<code>npm install typeorm reflect-metadata sqlite3 # or other driver</code>). Requires DB URL.</li>
+<li><code>VertexAiSessionService</code>: (<code>src/sessions/VertexAiSessionService.ts</code>) Persistent using Vertex AI Agent Engine backend (<code>npm install @google-cloud/vertexai</code>). Requires GCP setup, <code>appName</code> is Reasoning Engine ID.</li>
+</ul>
+</li>
+</ul>
+<p><em>(See: <code>docs/sessions/session.md</code>)</em></p>
+<h3 id="state">State<a class="headerlink" href="#state" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Class (<code>src/sessions/State.ts</code>) holding temporary data for the <em>current</em> conversation. Accessible via <code>session.state</code>.</li>
+<li>Keys are strings, values must be JSON-serializable.</li>
+<li><strong>Prefixes (Define Scope):</strong> (<code>src/sessions/State.ts</code>)<ul>
+<li><strong>(None):</strong> Session-specific.</li>
+<li><code>user:</code>: User-specific across sessions (requires persistent service).</li>
+<li><code>app:</code>: App-specific across users/sessions (requires persistent service).</li>
+<li><code>temp:</code>: Temporary for current invocation turn (never persisted).</li>
+</ul>
+</li>
+<li><strong>Updates:</strong><ul>
+<li><strong>Recommended:</strong> Via <code>appendEvent</code> flow using:<ul>
+<li><code>new LlmAgent({ outputKey: "state_key" })</code>: Saves final agent response.</li>
+<li><code>new Event({ actions: new EventActions({ stateDelta: {...} }) })</code>: Manually specify changes.</li>
+</ul>
+</li>
+<li><strong>Discouraged:</strong> Direct modification (<code>retrievedSession.state.set('key', value)</code>) bypasses history/persistence. Use context objects (<code>toolContext.state</code>, <code>callbackContext.state</code>) within tools/callbacks.</li>
+</ul>
+</li>
+</ul>
+<p><em>(See: <code>docs/sessions/state.md</code>)</em></p>
+<h3 id="memory-memoryservice">Memory &amp; MemoryService<a class="headerlink" href="#memory-memoryservice" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Manages long-term, searchable knowledge (<code>src/memory/BaseMemoryService.ts</code>).</li>
+<li><strong>Responsibilities:</strong><ul>
+<li><code>addSessionToMemory(session)</code>: Ingest session info.</li>
+<li><code>searchMemory(appName, userId, query)</code>: Search the store.</li>
+</ul>
+</li>
+<li><strong>Implementations:</strong><ul>
+<li><code>InMemoryMemoryService</code>: (<code>src/memory/InMemoryMemoryService.ts</code>) Non-persistent keyword search.</li>
+<li><code>VertexAiRagMemoryService</code>: (<code>src/memory/VertexAiRagMemoryService.ts</code>) Persistent semantic search via Vertex AI RAG Corpus (<code>npm install @google-cloud/vertexai</code>). Requires GCP setup, Corpus ID.</li>
+</ul>
+</li>
+<li><strong>Usage:</strong> Agents use tools (e.g., <code>loadMemoryTool</code>) that call <code>memoryService.searchMemory</code>.</li>
+</ul>
+<p><em>(See: <code>docs/sessions/memory.md</code>)</em></p>
+<h2 id="artifacts">Artifacts<a class="headerlink" href="#artifacts" title="Permanent link">&para;</a></h2>
+<p>Manage named, versioned binary data (files).</p>
+<p><em>(See: <code>docs/artifacts/index.md</code>)</em></p>
+<h3 id="artifact-concepts">Artifact Concepts<a class="headerlink" href="#artifact-concepts" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Represents binary data (e.g., image, PDF) identified by a <code>filename</code> string.</li>
+<li>Stored/retrieved via <code>ArtifactService</code>.</li>
+<li>Data represented as <code>Part</code> interface (usually <code>inlineData</code> with <code>data: string</code> (base64) and <code>mimeType: string</code>). See <code>src/models/types.ts</code>.</li>
+<li>Automatically versioned on save.</li>
+<li><strong>Namespacing:</strong> <code>"report.pdf"</code> (session-scoped), <code>"user:profile.png"</code> (user-scoped).</li>
+</ul>
+<h3 id="artifactservice">ArtifactService<a class="headerlink" href="#artifactservice" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Manages artifact storage (<code>src/artifacts/BaseArtifactService.ts</code>). Configured on the <code>Runner</code>.</li>
+<li><strong>Implementations:</strong><ul>
+<li><code>InMemoryArtifactService</code>: (<code>src/artifacts/InMemoryArtifactService.ts</code>) Non-persistent.</li>
+<li><code>GcsArtifactService</code>: (<code>src/artifacts/GcsArtifactService.ts</code>) Persistent via GCS (<code>npm install @google-cloud/storage</code>). Requires bucket name/permissions.</li>
+</ul>
+</li>
+</ul>
+<h3 id="context-methods">Context Methods<a class="headerlink" href="#context-methods" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Available on <code>CallbackContext</code> and <code>ToolContext</code>. Require <code>ArtifactService</code>.</li>
+<li><code>saveArtifact(filename: string, artifact: Part): Promise&lt;number&gt; | number</code>: Saves data, returns version. Records action in <code>event.actions.artifactDelta</code>.</li>
+<li><code>loadArtifact(filename: string, version?: number): Promise&lt;Part | undefined&gt; | Part | undefined</code>: Retrieves artifact. Loads latest if <code>version</code> is undefined.</li>
+<li><code>listArtifacts(): Promise&lt;string[]&gt; | string[]</code> (<code>ToolContext</code> only): Lists available artifact filenames.</li>
+</ul>
+<p><em>(See: <code>docs/artifacts/index.md</code>)</em></p>
+<h2 id="context-objects">Context Objects<a class="headerlink" href="#context-objects" title="Permanent link">&para;</a></h2>
+<p>Bundles of information available during execution.</p>
+<p><em>(See: <code>docs/context/index.md</code>)</em></p>
+<h3 id="invocationcontext">InvocationContext<a class="headerlink" href="#invocationcontext" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Most comprehensive context (<code>src/agents/InvocationContext.ts</code>). Passed to agent <code>_runAsyncImpl</code>/<code>_runLiveImpl</code>.</li>
+<li>Contains: <code>session</code> (with <code>state</code>, <code>events</code>), <code>agent</code>, <code>invocationId</code>, <code>userContent</code>, configured services (<code>sessionService</code>, <code>artifactService</code>, <code>memoryService</code>), <code>endInvocation</code> flag.</li>
+</ul>
+<h3 id="readonlycontext">ReadonlyContext<a class="headerlink" href="#readonlycontext" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Base class (<code>src/agents/ReadonlyContext.ts</code>), provides read-only view. Used in instruction providers.</li>
+<li>Contains: <code>invocationId</code>, <code>agentName</code>, read-only <code>state</code>.</li>
+</ul>
+<h3 id="callbackcontext">CallbackContext<a class="headerlink" href="#callbackcontext" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Used in agent/model callbacks (<code>src/agents/CallbackContext.ts</code>).</li>
+<li>Adds to <code>ReadonlyContext</code>: Mutable <code>state</code> property, <code>saveArtifact</code>, <code>loadArtifact</code> methods, <code>userContent</code>.</li>
+</ul>
+<h3 id="toolcontext-recap">ToolContext (Recap)<a class="headerlink" href="#toolcontext-recap" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Used in tool functions/callbacks (<code>src/tools/ToolContext.ts</code>).</li>
+<li>Inherits from <code>CallbackContext</code>.</li>
+<li>Adds: <code>requestCredential</code>, <code>getAuthResponse</code>, <code>listArtifacts</code>, <code>searchMemory</code>, <code>functionCallId</code>, direct <code>actions</code> access.</li>
+</ul>
+<h2 id="callbacks">Callbacks<a class="headerlink" href="#callbacks" title="Permanent link">&para;</a></h2>
+<p>Functions to hook into agent lifecycle points. Registered on <code>Agent</code> initialization.</p>
+<p><em>(See: <code>docs/callbacks/index.md</code>)</em></p>
+<h3 id="callback-mechanism">Callback Mechanism<a class="headerlink" href="#callback-mechanism" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Framework calls registered functions at specific points.</li>
+<li>Receive context objects (<code>CallbackContext</code> or <code>ToolContext</code>).</li>
+<li><strong>Control Flow:</strong><ul>
+<li><code>return undefined</code>: Allows default behavior.</li>
+<li><code>return &lt;Specific Object&gt;</code>: <strong>Overrides</strong> default behavior / <strong>skips</strong> next step.<ul>
+<li><code>beforeAgentCallback</code> -&gt; <code>Content</code>: Skips agent run.</li>
+<li><code>beforeModelCallback</code> -&gt; <code>LlmResponse</code>: Skips LLM call.</li>
+<li><code>beforeToolCallback</code> -&gt; <code>Record&lt;string, any&gt;</code>: Skips tool execution.</li>
+<li><code>afterAgentCallback</code> -&gt; <code>Content</code>: Replaces agent result.</li>
+<li><code>afterModelCallback</code> -&gt; <code>LlmResponse</code>: Replaces LLM response.</li>
+<li><code>afterToolCallback</code> -&gt; <code>Record&lt;string, any&gt;</code>: Replaces tool result.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="agent-lifecycle-callbacks">Agent Lifecycle Callbacks<a class="headerlink" href="#agent-lifecycle-callbacks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Apply to any <code>BaseAgent</code>. (<code>src/agents/BaseAgent.ts</code>)</li>
+<li><code>beforeAgentCallback?: (ctx: CallbackContext) =&gt; Content | undefined</code>: Before <code>runAsyncImpl</code>. Return <code>Content</code> to skip.</li>
+<li><code>afterAgentCallback?: (ctx: CallbackContext) =&gt; Content | undefined</code>: After <code>runAsyncImpl</code>. Return <code>Content</code> to replace.</li>
+</ul>
+<p><em>(See: <code>docs/callbacks/types-of-callbacks.md</code>)</em></p>
+<h3 id="llm-interaction-callbacks">LLM Interaction Callbacks<a class="headerlink" href="#llm-interaction-callbacks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Specific to <code>LlmAgent</code>. (<code>src/agents/LlmAgent.ts</code>)</li>
+<li><code>beforeModelCallback?: (ctx: CallbackContext, req: LlmRequest) =&gt; LlmResponse | undefined</code>: Before LLM call. Return <code>LlmResponse</code> to skip. Can modify <code>req</code>.</li>
+<li><code>afterModelCallback?: (ctx: CallbackContext, res: LlmResponse) =&gt; LlmResponse | undefined</code>: After LLM response. Return <code>LlmResponse</code> to replace.</li>
+</ul>
+<p><em>(See: <code>docs/callbacks/types-of-callbacks.md</code>, Example Snippets)</em></p>
+<h3 id="tool-execution-callbacks">Tool Execution Callbacks<a class="headerlink" href="#tool-execution-callbacks" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Specific to <code>LlmAgent</code> when calling tools. (<code>src/agents/LlmAgent.ts</code>)</li>
+<li><code>beforeToolCallback?: (tool: BaseTool, args: Record&lt;string, any&gt;, ctx: ToolContext) =&gt; Promise&lt;Record&lt;string, any&gt; | undefined&gt; | Record&lt;string, any&gt; | undefined</code>: Before tool <code>execute</code>. Return <code>Record</code> to skip. Can modify <code>args</code>.</li>
+<li><code>afterToolCallback?: (tool: BaseTool, args: Record&lt;string, any&gt;, ctx: ToolContext, res: Record&lt;string, any&gt;) =&gt; Promise&lt;Record&lt;string, any&gt; | undefined&gt; | Record&lt;string, any&gt; | undefined</code>: After tool <code>execute</code>. Return <code>Record</code> to replace <code>res</code>.</li>
+</ul>
+<p><em>(See: <code>docs/callbacks/types-of-callbacks.md</code>, Example Snippets)</em></p>
+<h3 id="callback-patterns-best-practices">Callback Patterns &amp; Best Practices<a class="headerlink" href="#callback-patterns-best-practices" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Patterns:</strong> Guardrails, State Management, Logging, Caching, Request/Response Modification, Conditional Skipping, Tool Actions (Auth, Skip Summarization), Artifact Handling.</li>
+<li><strong>Best Practices:</strong> Keep focused, mind performance (avoid blocking I/O in sync callbacks if possible), handle errors, manage state carefully, test thoroughly, use clear names/docs, use correct context type.</li>
+</ul>
+<p><em>(See: <code>docs/callbacks/design-patterns-and-best-practices.md</code>)</em></p>
+<h2 id="runtime-events">Runtime &amp; Events<a class="headerlink" href="#runtime-events" title="Permanent link">&para;</a></h2>
+<p>The execution engine and communication mechanism.</p>
+<p><em>(See: <code>docs/runtime/index.md</code>)</em></p>
+<h3 id="event-loop">Event Loop<a class="headerlink" href="#event-loop" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Core operational pattern: <code>Runner</code> orchestrates, <code>Execution Logic</code> (Agents, Tools, Callbacks) yields <code>Event</code> objects via async generators.</li>
+<li><strong>Cycle:</strong><ol>
+<li>Runner starts Agent (<code>agent.invoke(ctx)</code>).</li>
+<li>Agent logic runs, <code>yield</code>s <code>Event</code>, pauses.</li>
+<li>Runner receives Event, processes <code>actions</code> (commits state/artifact changes via Services), yields event upstream.</li>
+<li>Agent logic resumes, sees committed state. Repeats.</li>
+</ol>
+</li>
+</ul>
+<h3 id="event-object">Event Object<a class="headerlink" href="#event-object" title="Permanent link">&para;</a></h3>
+<ul>
+<li>(<code>src/events/Event.ts</code>) Immutable record of an occurrence.</li>
+<li>Contains: <code>author</code> ('user' or agent name), <code>content</code> (<code>Content</code> interface), <code>actions</code> (<code>EventActions</code> payload), <code>invocationId</code>, <code>id</code>, <code>timestamp</code>, <code>partial</code> flag, etc.</li>
+<li><code>event.actions</code>: Carries <code>stateDelta</code>, <code>artifactDelta</code>, <code>transferToAgent</code>, <code>escalate</code>, <code>skipSummarization</code>, etc.</li>
+<li><code>event.isFinalResponse()</code>: Helper to identify user-facing final output for a turn.</li>
+</ul>
+<p><em>(See: <code>docs/events/index.md</code>)</em></p>
+<h3 id="runtime-components">Runtime Components<a class="headerlink" href="#runtime-components" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>Runner</code>: (<code>src/runners.ts</code>) Orchestrates the Event Loop.</li>
+<li>Execution Logic: Agents, Tools, Callbacks yielding Events.</li>
+<li><code>Event</code>: Communication unit.</li>
+<li><code>Services</code>: Persistence layers (<code>SessionService</code>, <code>ArtifactService</code>, <code>MemoryService</code>).</li>
+<li><code>Session</code>: (<code>src/sessions/Session.ts</code>) Container for conversation state/events.</li>
+<li><code>InvocationContext</code>: (<code>src/agents/InvocationContext.ts</code>) Context for one user-query-to-final-response cycle.</li>
+</ul>
+<h3 id="key-behaviors-state-timing-streaming-async">Key Behaviors (State Timing, Streaming, Async)<a class="headerlink" href="#key-behaviors-state-timing-streaming-async" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>State Commitment:</strong> Changes (<code>stateDelta</code>) are committed by <code>SessionService</code> <em>after</em> the event carrying them is yielded and processed by the Runner.</li>
+<li><strong>Dirty Reads:</strong> Code <em>within</em> the same invocation step might see local, uncommitted state changes.</li>
+<li><strong>Streaming (<code>partial=true</code>):</strong> Events marked <code>partial</code> are yielded upstream immediately but their <code>actions</code> are processed only when the final (non-partial) event arrives.</li>
+<li><strong>Async Primary:</strong> Runtime is built on Node.js <code>async/await</code> and Promises.</li>
+</ul>
+<p><em>(See: <code>docs/runtime/index.md</code>)</em></p>
+<h2 id="evaluation">Evaluation<a class="headerlink" href="#evaluation" title="Permanent link">&para;</a></h2>
+<p>Assessing agent performance.</p>
+<p><em>(See: <code>docs/evaluate/index.md</code>)</em></p>
+<h3 id="concepts">Concepts<a class="headerlink" href="#concepts" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Evaluates <strong>Trajectory</strong> (tool usage) and <strong>Final Response</strong>.</li>
+<li>Uses datasets (<code>.test.json</code>, <code>.evalset.json</code>).</li>
+<li><strong>Test Files:</strong> Simpler, single session. Fields: <code>query</code>, <code>expected_tool_use</code>, <code>expected_intermediate_agent_responses</code>, <code>reference</code>.</li>
+<li><strong>Evalsets:</strong> Multiple sessions ("evals"), multi-turn support. Fields per turn same as test files, plus <code>name</code> and <code>initial_session</code>.</li>
+</ul>
+<h3 id="methods-adk-ts-web-jestvitest-adk-ts-eval">Methods (<code>adk-ts web</code>, <code>jest</code>/<code>vitest</code>, <code>adk-ts eval</code>)<a class="headerlink" href="#methods-adk-ts-web-jestvitest-adk-ts-eval" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>adk-ts web</code>:</strong> Interactive evaluation via "Eval" tab in the dev UI.</li>
+<li><strong><code>jest</code>/<code>vitest</code>:</strong> Programmatic evaluation using <code>AgentEvaluator.evaluate({ agent: ..., evalDatasetFilePathOrDir: ...})</code>. Good for CI/CD. Requires a testing framework setup.</li>
+<li><strong><code>adk-ts eval &lt;AGENT_DIR_PATH&gt; &lt;EVAL_SET_FILE(S)&gt;</code>:</strong> CLI command to run evaluations.</li>
+</ul>
+<h3 id="criteria">Criteria<a class="headerlink" href="#criteria" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Specified in <code>test_config.json</code> (optional).</li>
+<li><code>tool_trajectory_avg_score</code> (number, default 1.0): Tool usage accuracy.</li>
+<li><code>response_match_score</code> (number, default 0.8): ROUGE score vs. <code>reference</code>.</li>
+</ul>
+<h2 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>
+<p>Moving agents to scalable environments.</p>
+<p><em>(See: <code>docs/deploy/index.md</code>)</em></p>
+<h3 id="vertex-ai-agent-engine">Vertex AI Agent Engine<a class="headerlink" href="#vertex-ai-agent-engine" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fully managed, auto-scaling Google Cloud service.</li>
+<li><strong>Steps:</strong> (Requires <code>@google-cloud/vertexai</code> or equivalent TS library)<ol>
+<li>Initialize Vertex AI SDK.</li>
+<li>Wrap agent: <code>const app = new reasoningEngines.AdkApp({ agent: rootAgent, ... });</code> (Conceptual - Adapt based on actual TS SDK).</li>
+<li>Deploy: <code>const remoteApp = await agentEngines.create({ agentEngine: rootAgent, requirements: [...] });</code>.</li>
+<li><strong>Grant Permissions:</strong> Assign <code>roles/aiplatform.user</code>.</li>
+<li>Interact: <code>remoteApp.createSession()</code>, <code>remoteApp.streamQuery()</code>.</li>
+<li>Cleanup: <code>remoteApp.delete()</code>.</li>
+</ol>
+</li>
+</ul>
+<p><em>(See: <code>docs/deploy/agent-engine.md</code>)</em></p>
+<h3 id="cloud-run-adk-ts-deploy-gcloud">Cloud Run (<code>adk-ts deploy</code>, <code>gcloud</code>)<a class="headerlink" href="#cloud-run-adk-ts-deploy-gcloud" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Deploy as a container on Google Cloud's serverless platform.</li>
+<li><strong>Method 1: <code>adk-ts deploy cloud_run</code> CLI:</strong><ul>
+<li><code>adk-ts deploy cloud_run --project &lt;...&gt; --region &lt;...&gt; [options] &lt;AGENT_DIR_PATH&gt;</code></li>
+<li>Handles <code>Dockerfile</code> creation (Node.js base, copy code, <code>npm install</code>, set user, CMD <code>node dist/src/cli/index.js api_server</code>) and deployment.</li>
+</ul>
+</li>
+<li><strong>Method 2: <code>gcloud run deploy</code> (Manual):</strong><ol>
+<li>Create <code>Dockerfile</code> (Node.js base, copy <code>package.json</code>, <code>npm install</code>, copy code, expose port, CMD).</li>
+<li>Create <code>server.ts</code> (or similar) using <code>Express</code> or <code>Fastify</code> and integrate with ADK's <code>createApiServer</code> or <code>createWebServer</code>.</li>
+<li>Build and push container image.</li>
+<li>Run <code>gcloud run deploy &lt;service_name&gt; --image &lt;...&gt; --region &lt;...&gt; --project &lt;...&gt; [flags]</code>.</li>
+</ol>
+</li>
+<li><strong>Testing:</strong> Use deployed UI or <code>curl</code> against API endpoints (<code>/list-apps</code>, <code>/apps/.../sessions/...</code>, <code>/run</code>, <code>/run_sse</code>). Use <code>gcloud auth print-identity-token</code>.</li>
+</ul>
+<p><em>(See: <code>docs/deploy/cloud-run.md</code>, <code>docs/get-started/testing.md</code>)</em></p>
+<h2 id="safety-security">Safety &amp; Security<a class="headerlink" href="#safety-security" title="Permanent link">&para;</a></h2>
+<p>Building trustworthy agents.</p>
+<ul>
+<li><strong>Risks:</strong> Misalignment, harmful content, unsafe actions, prompt injection.</li>
+<li><strong>Mitigation Strategies:</strong><ul>
+<li><strong>Identity/Authorization:</strong> Configure tools with appropriate auth schemes/credentials.</li>
+<li><strong>Guardrails:</strong> In-tool checks, Gemini safety settings, Callbacks (<code>beforeModelCallback</code>, <code>beforeToolCallback</code>), LLM-as-filter pattern.</li>
+<li><strong>Sandboxed Code Execution:</strong> Use <code>builtInCodeExecution</code> or custom sandboxing.</li>
+<li><strong>Evaluation &amp; Tracing:</strong> Assess safety; use tracing.</li>
+<li><strong>Network Controls:</strong> VPC Service Controls.</li>
+<li><strong>UI Escaping:</strong> Prevent XSS.</li>
+</ul>
+</li>
+</ul>
+<p><em>(See: <code>docs/guides/responsible-agents.md</code>)</em></p>
+<h2 id="development-tools-cli">Development Tools (CLI)<a class="headerlink" href="#development-tools-cli" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>adk-ts web [AGENTS_DIR]</code>: Starts local Express server with Dev UI (Socket.IO). Options: <code>--port</code>, <code>--session_db_url</code>, <code>--log_level</code>, <code>--allow_origins</code>.</li>
+<li><code>adk-ts run &lt;AGENT_DIR&gt;</code>: Runs interactive CLI session. Option: <code>--save_session</code>.</li>
+<li><code>adk-ts eval &lt;AGENT_DIR_PATH&gt; &lt;EVAL_SET_FILE(S)&gt;</code>: Runs evaluations. Options: <code>--config_file_path</code>, <code>--print_detailed_results</code>.</li>
+<li><code>adk-ts api_server [AGENTS_DIR]</code>: Starts local Express server (API only).</li>
+<li><code>adk-ts deploy cloud_run &lt;AGENT_DIR&gt;</code>: Deploys agent to Cloud Run.</li>
+<li><code>adk-ts create &lt;APP_NAME&gt;</code>: Creates a new agent project structure.</li>
+</ul>
+<p><em>(See: <code>docs/get-started/local-dev.md</code>)</em></p>
+<h2 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Requires signing Google CLA.</li>
+<li>Follows Google Open Source Community Guidelines.</li>
+<li>Use GitHub Discussions/Issues for questions/bugs.</li>
+<li>Submit PRs to the relevant repository. Code reviews required.</li>
+<li>Contributions licensed under Apache 2.0.</li>
+</ul>
+<p><em>(See: <code>docs/contributing-guide.md</code>)</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright Google 2025
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["content.code.annotate", "content.code.copy", "content.tabs.link", "content.code.select", "navigation.instant", "navigation.instant.progress", "navigation.path", "navigation.top", "navigation.tracking", "navigation.indexes", "toc.follow", "navigation.footer"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>
