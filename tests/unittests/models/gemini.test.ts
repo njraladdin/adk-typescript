@@ -121,10 +121,10 @@ export class Gemini extends BaseLlm {
 }
 
 // Helper function to create a content object
-function createContent(role: string, text: string): Content {
+function createContent(role: string, text: string, thought: boolean = false): Content {
   return {
     role,
-    parts: [{ text }]
+    parts: [{ text, thought }]
   };
 }
 
@@ -202,6 +202,46 @@ describe('Gemini', () => {
     expect(responses[2].partial).toBe(true);
     expect(responses[3].content?.parts[0].text).toBe('Hello, how can I help you?');
     expect(responses[3].turnComplete).toBe(true);
+  });
+
+  test('generateContentAsync with streaming preserves thinking and text parts', async () => {
+    // Mock streaming responses that include thought parts and a regular text part
+    const mockResponses = [
+      // First thought part
+      { candidates: [{ content: { role: 'model', parts: [{ text: 'Think1', thought: true }] }, finish_reason: null }] },
+      // Second thought part
+      { candidates: [{ content: { role: 'model', parts: [{ text: 'Think2', thought: true }] }, finish_reason: null }] },
+      // Regular text part with STOP reason
+      { candidates: [{ content: { role: 'model', parts: [{ text: 'Answer.' }] }, finish_reason: 'STOP' }] },
+    ];
+
+    // Temporarily override the apiClient's generateContentStream for this test
+    const originalGenerateContentStream = geminiLlm.apiClient.generateContentStream;
+    geminiLlm.apiClient.generateContentStream = async function*() {
+      for (const response of mockResponses) {
+        yield response;
+      }
+    };
+
+    const responses: LlmResponse[] = [];
+    for await (const response of geminiLlm.generateContentAsync(llmRequest, true)) {
+      responses.push(response);
+    }
+
+    expect(responses.length).toBe(4);
+    expect(responses[0].partial).toBe(true);
+    expect(responses[1].partial).toBe(true);
+    expect(responses[2].partial).toBe(true);
+
+    // The last response should contain both accumulated thought and text parts
+    const finalResponse = responses[3];
+    expect(finalResponse.content?.parts.length).toBe(2);
+    expect(finalResponse.content?.parts[0].text).toBe('Think1Think2');
+    expect(finalResponse.content?.parts[0].thought).toBe(true);
+    expect(finalResponse.content?.parts[1].text).toBe('Answer.');
+
+    // Restore the original generateContentStream
+    geminiLlm.apiClient.generateContentStream = originalGenerateContentStream;
   });
 
   test('connect returns a GeminiLlmConnection instance', () => {

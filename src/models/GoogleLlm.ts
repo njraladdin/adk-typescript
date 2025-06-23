@@ -210,7 +210,7 @@ function convertResponse(response: any): GenerateContentResponse {
         role: 'model',
         parts: [{ text: 'I received your message but encountered an issue generating a proper response. Please try again.' }]
       },
-      finish_reason: 'DEFAULT_CANDIDATE',
+      finish_reason: 'ERROR',
       finish_message: 'Created default candidate due to missing response data'
     }];
   }
@@ -579,34 +579,52 @@ export class Gemini extends BaseLlm {
       );
 
       let response: GenerateContentResponse | null = null;
+      let thoughtText = ''; // Added to handle thought=True parts
       let text = '';
+      let usageMetadata: any = null; // Added to store usage metadata
 
       // For streaming, mark text content as partial and accumulate text
       for await (const resp of responses) {
         console.info(this._buildResponseLog(resp));
         response = resp;
         const llmResponse = LlmResponse.create(resp);
+        usageMetadata = llmResponse.usageMetadata; // Update usage metadata
 
         if (
           llmResponse.content &&
           llmResponse.content.parts &&
           llmResponse.content.parts[0]?.text
         ) {
-          text += llmResponse.content.parts[0].text;
+          const part0 = llmResponse.content.parts[0];
+          if (part0.thought) { // Check if it's a thought part
+            thoughtText += part0.text;
+          } else {
+            text += part0.text;
+          }
           llmResponse.partial = true;
         } else if (
-          text &&
+          (thoughtText || text) && // Check both thoughtText and text
           (!llmResponse.content ||
             !llmResponse.content.parts ||
             !llmResponse.content.parts[0]?.inlineData)
         ) {
           // Yield accumulated text
-          const textResponse = new LlmResponse();
-          textResponse.content = {
-            role: 'model',
-            parts: [{ text }]
-          };
-          yield textResponse;
+          const parts: Part[] = [];
+          if (thoughtText) {
+            parts.push({ text: thoughtText, thought: true });
+          }
+          if (text) {
+            parts.push({ text: text });
+          }
+          
+          yield new LlmResponse({
+            content: {
+              role: 'model',
+              parts: parts
+            },
+            usageMetadata: usageMetadata, // Pass usage metadata
+          });
+          thoughtText = ''; // Reset thoughtText
           text = '';
         }
 
@@ -615,17 +633,25 @@ export class Gemini extends BaseLlm {
 
       // Yield final accumulated text if there's any and response finished with STOP
       if (
-        text &&
+        (text || thoughtText) && // Check both thoughtText and text
         response &&
         response.candidates &&
         response.candidates[0]?.finish_reason === 'STOP'
       ) {
-        const finalResponse = new LlmResponse();
-        finalResponse.content = {
-          role: 'model',
-          parts: [{ text }]
-        };
-        yield finalResponse;
+        const parts: Part[] = [];
+        if (thoughtText) {
+          parts.push({ text: thoughtText, thought: true });
+        }
+        if (text) {
+          parts.push({ text: text });
+        }
+        yield new LlmResponse({
+          content: {
+            role: 'model',
+            parts: parts
+          },
+          usageMetadata: usageMetadata, // Use the last known usage metadata
+        });
       }
     } else {
       // Non-streaming mode

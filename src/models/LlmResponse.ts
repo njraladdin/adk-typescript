@@ -16,6 +16,11 @@ export interface GenerateContentResponse {
     block_reason?: string;
     block_reason_message?: string;
   };
+  usage_metadata?: {
+    prompt_token_count?: number;
+    candidates_token_count?: number;
+    total_token_count?: number;
+  };
 }
 
 /**
@@ -66,6 +71,15 @@ export interface LlmResponseOptions {
    * NOTE: the entire dict must be JSON serializable.
    */
   customMetadata?: Record<string, any>;
+
+  /**
+   * The usage metadata of the LlmResponse.
+   */
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
 }
 
 /**
@@ -119,6 +133,15 @@ export class LlmResponse {
   customMetadata?: Record<string, any>;
 
   /**
+   * The usage metadata of the LlmResponse.
+   */
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
+
+  /**
    * Creates a new LlmResponse instance.
    * @param options Configuration options for the response
    */
@@ -131,6 +154,7 @@ export class LlmResponse {
     this.errorMessage = options.errorMessage;
     this.interrupted = options.interrupted;
     this.customMetadata = options.customMetadata;
+    this.usageMetadata = options.usageMetadata;
   }
 
   /**
@@ -139,6 +163,16 @@ export class LlmResponse {
    * @returns The LlmResponse.
    */
   static create(generateContentResponse: GenerateContentResponse): LlmResponse {
+    // Helper to convert snake_case usage metadata to camelCase
+    const convertUsageMetadata = (usageMetadata: any) => {
+      if (!usageMetadata) return undefined;
+      return {
+        promptTokenCount: usageMetadata.prompt_token_count,
+        candidatesTokenCount: usageMetadata.candidates_token_count,
+        totalTokenCount: usageMetadata.total_token_count,
+      };
+    };
+
     // Check if the response is empty or undefined
     if (!generateContentResponse || Object.keys(generateContentResponse).length === 0) {
       console.warn('Received empty response from the LLM API');
@@ -148,7 +182,8 @@ export class LlmResponse {
           parts: [{ text: 'I encountered an issue processing your request. Please try again.' }]
         },
         errorCode: 'EMPTY_RESPONSE',
-        errorMessage: 'Empty response received from the LLM API.'
+        errorMessage: 'Empty response received from the LLM API.',
+        usageMetadata: convertUsageMetadata(generateContentResponse.usage_metadata),
       });
     }
 
@@ -157,24 +192,28 @@ export class LlmResponse {
       if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
         return new LlmResponse({
           content: candidate.content,
-          groundingMetadata: candidate.grounding_metadata
+          groundingMetadata: candidate.grounding_metadata,
+          usageMetadata: convertUsageMetadata(generateContentResponse.usage_metadata),
         });
       } else {
         return new LlmResponse({
           errorCode: candidate.finish_reason,
-          errorMessage: candidate.finish_message
+          errorMessage: candidate.finish_message,
+          usageMetadata: convertUsageMetadata(generateContentResponse.usage_metadata),
         });
       }
     } else if (generateContentResponse.prompt_feedback) {
       const promptFeedback = generateContentResponse.prompt_feedback;
       return new LlmResponse({
         errorCode: promptFeedback.block_reason,
-        errorMessage: promptFeedback.block_reason_message
+        errorMessage: promptFeedback.block_reason_message,
+        usageMetadata: convertUsageMetadata(generateContentResponse.usage_metadata),
       });
     } else {
       return new LlmResponse({
         errorCode: 'UNKNOWN_ERROR',
-        errorMessage: 'Unknown error.'
+        errorMessage: 'Unknown error.',
+        usageMetadata: convertUsageMetadata(generateContentResponse.usage_metadata),
       });
     }
   }
@@ -216,7 +255,8 @@ export class LlmResponse {
       errorCode: this.errorCode,
       errorMessage: this.errorMessage,
       interrupted: this.interrupted,
-      customMetadata: this.customMetadata
+      customMetadata: this.customMetadata,
+      usageMetadata: this.usageMetadata,
     });
   }
 
@@ -234,7 +274,8 @@ export class LlmResponse {
       errorCode: this.errorCode,
       errorMessage: this.errorMessage,
       interrupted: this.interrupted,
-      customMetadata: this.customMetadata
+      customMetadata: this.customMetadata,
+      usageMetadata: this.usageMetadata,
     });
   }
 
@@ -252,7 +293,8 @@ export class LlmResponse {
       errorCode: this.errorCode,
       errorMessage: this.errorMessage,
       interrupted,
-      customMetadata: this.customMetadata
+      customMetadata: this.customMetadata,
+      usageMetadata: this.usageMetadata,
     });
   }
 
@@ -270,7 +312,8 @@ export class LlmResponse {
       errorCode: this.errorCode,
       errorMessage: this.errorMessage,
       interrupted: this.interrupted,
-      customMetadata
+      customMetadata,
+      usageMetadata: this.usageMetadata,
     });
   }
 } 
