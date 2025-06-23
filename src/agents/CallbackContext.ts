@@ -1,5 +1,3 @@
- 
-
 import { Content, Part } from '../models/types';
 import { InvocationContext } from './InvocationContext';
 import { ReadonlyContext } from './ReadonlyContext';
@@ -54,12 +52,12 @@ export class CallbackContext extends ReadonlyContext {
    * @param version The version of the artifact. If undefined, the latest version will be returned.
    * @returns The artifact, or undefined if not found.
    */
-  loadArtifact(filename: string, version?: number): Part | undefined | Promise<Part | undefined> {
+  async loadArtifact(filename: string, version?: number): Promise<Part | undefined> {
     if (!this.invocationContext.artifactService) {
       throw new Error("Artifact service is not initialized.");
     }
     
-    return this.invocationContext.artifactService.loadArtifact({
+    return await this.invocationContext.artifactService.loadArtifact({
       appName: this.invocationContext.appName,
       userId: this.invocationContext.userId,
       sessionId: this.invocationContext.session.id,
@@ -75,12 +73,12 @@ export class CallbackContext extends ReadonlyContext {
    * @param artifact The artifact to save.
    * @returns The version of the artifact.
    */
-  saveArtifact(filename: string, artifact: Part): number | Promise<number> {
+  async saveArtifact(filename: string, artifact: Part): Promise<number> {
     if (!this.invocationContext.artifactService) {
       throw new Error("Artifact service is not initialized.");
     }
     
-    const version = this.invocationContext.artifactService.saveArtifact({
+    const version = await this.invocationContext.artifactService.saveArtifact({
       appName: this.invocationContext.appName,
       userId: this.invocationContext.userId,
       sessionId: this.invocationContext.session.id,
@@ -88,18 +86,7 @@ export class CallbackContext extends ReadonlyContext {
       artifact
     });
     
-    // Handle both synchronous and asynchronous cases
-    if (version instanceof Promise) {
-      // If it's a Promise, we need to return a new Promise that resolves
-      // after we've updated the artifact delta
-      return version.then(v => {
-        this.eventActions.artifactDelta[filename] = v;
-        return v;
-      });
-    } else {
-      // If it's synchronous, we can update the artifact delta directly
-      this.eventActions.artifactDelta[filename] = version;
-      return version;
-    }
+    this.eventActions.artifactDelta[filename] = version;
+    return version;
   }
 } 

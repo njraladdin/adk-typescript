@@ -95,12 +95,12 @@ export class ToolContext extends CallbackContext {
    * @returns List of artifact filenames
    * @throws Error if artifact service is not initialized
    */
-  listArtifacts(): string[] | Promise<string[]> {
+  async listArtifacts(): Promise<string[]> {
     if (!this.invocationContext.artifactService) {
       throw new Error('Artifact service is not initialized.');
     }
     
-    return this.invocationContext.artifactService.listArtifactKeys({
+    return await this.invocationContext.artifactService.listArtifactKeys({
       appName: this.invocationContext.appName,
       userId: this.invocationContext.userId,
       sessionId: this.invocationContext.session.id,

@@ -1,5 +1,3 @@
- 
-
 import { Part } from '../models/types';
 
 /**
@@ -36,7 +34,7 @@ export interface BaseArtifactService {
    * @param params The artifact parameters
    * @returns The loaded artifact, or undefined if not found
    */
-  loadArtifact(params: ArtifactParams): Part | undefined | Promise<Part | undefined>;
+  loadArtifact(params: ArtifactParams): Promise<Part | undefined>;
 
   /**
    * Saves an artifact.
@@ -44,7 +42,7 @@ export interface BaseArtifactService {
    * @param params The artifact parameters
    * @returns The version of the saved artifact
    */
-  saveArtifact(params: ArtifactParams): number | Promise<number>;
+  saveArtifact(params: ArtifactParams): Promise<number>;
 
   /**
    * Deletes an artifact.
@@ -60,7 +58,7 @@ export interface BaseArtifactService {
    * @param params The artifact parameters
    * @returns A list of all artifact filenames within a session
    */
-  listArtifactKeys(params: ArtifactParams): string[] | Promise<string[]>;
+  listArtifactKeys(params: ArtifactParams): Promise<string[]>;
   
   /**
    * Lists all versions of an artifact.
@@ -68,5 +66,5 @@ export interface BaseArtifactService {
    * @param params The artifact parameters
    * @returns A list of all available versions of the artifact
    */
-  listVersions(params: ArtifactParams): number[] | Promise<number[]>;
+  listVersions(params: ArtifactParams): Promise<number[]>;
 } 

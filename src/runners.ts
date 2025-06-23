@@ -225,18 +225,13 @@ export class Runner {
         }
         const fileName = `artifact_${invocationContext.invocationId}_${i}`;
         try {
-          const saveResult = this.artifactService.saveArtifact({
+          await this.artifactService.saveArtifact({
             appName: this.appName,
             userId: session.userId,
             sessionId: session.id,
             filename: fileName,
             artifact: part
           });
-          
-          // Handle both synchronous and asynchronous cases
-          if (saveResult instanceof Promise) {
-            await saveResult;
-          }
           
           newMessage.parts[i] = {
             text: `Uploaded file: ${fileName}. It is saved into artifacts`

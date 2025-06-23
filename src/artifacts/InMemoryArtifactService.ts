@@ -1,5 +1,3 @@
- 
-
 /**
  * An in-memory implementation of the artifact service.
  */
@@ -44,7 +42,7 @@ export class InMemoryArtifactService implements BaseArtifactService {
    * @param params The artifact parameters
    * @returns The revision ID
    */
-  saveArtifact(params: ArtifactParams): number {
+  async saveArtifact(params: ArtifactParams): Promise<number> {
     const { appName, userId, sessionId, filename, artifact } = params;
 
     if (!artifact) {
@@ -69,7 +67,7 @@ export class InMemoryArtifactService implements BaseArtifactService {
    * @param params The artifact parameters
    * @returns The artifact or undefined if not found
    */
-  loadArtifact(params: ArtifactParams): Part | undefined {
+  async loadArtifact(params: ArtifactParams): Promise<Part | undefined> {
     const { appName, userId, sessionId, filename, version } = params;
 
     const path = this.artifactPath(appName, userId, sessionId, filename);
@@ -89,7 +87,7 @@ export class InMemoryArtifactService implements BaseArtifactService {
    * @param params The artifact parameters
    * @returns A list of all artifact filenames within a session
    */
-  listArtifactKeys(params: ArtifactParams): string[] {
+  async listArtifactKeys(params: ArtifactParams): Promise<string[]> {
     const { appName, userId, sessionId } = params;
 
     const sessionPrefix = `${appName}/${userId}/${sessionId}/`;
@@ -127,7 +125,7 @@ export class InMemoryArtifactService implements BaseArtifactService {
    * @param params The artifact parameters
    * @returns A list of all available versions of the artifact
    */
-  listVersions(params: ArtifactParams): number[] {
+  async listVersions(params: ArtifactParams): Promise<number[]> {
     const { appName, userId, sessionId, filename } = params;
 
     const path = this.artifactPath(appName, userId, sessionId, filename);

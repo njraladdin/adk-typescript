@@ -269,16 +269,13 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       const effectiveAppName = agentEngineId || appName;
       
       try {
-        const artifactResult = artifactService.loadArtifact({
+        const artifact = await artifactService.loadArtifact({
           appName: effectiveAppName,
           userId,
           sessionId,
           filename: artifactName,
           version
         });
-        
-        // Handle both synchronous and asynchronous cases
-        const artifact = artifactResult instanceof Promise ? await artifactResult : artifactResult;
         
         if (!artifact) {
           return res.status(404).json({ error: 'Artifact not found' });
@@ -300,16 +297,13 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       const effectiveAppName = agentEngineId || appName;
       
       try {
-        const artifactResult = artifactService.loadArtifact({
+        const artifact = await artifactService.loadArtifact({
           appName: effectiveAppName,
           userId,
           sessionId,
           filename: artifactName,
           version
         });
-        
-        // Handle both synchronous and asynchronous cases
-        const artifact = artifactResult instanceof Promise ? await artifactResult : artifactResult;
         
         if (!artifact) {
           return res.status(404).json({ error: 'Artifact not found' });
@@ -331,14 +325,12 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       
       try {
         // Fix for listArtifactKeys - no filename parameter needed
-        const artifactNamesResult = artifactService.listArtifactKeys({
+        const artifactNames = await artifactService.listArtifactKeys({
           appName: effectiveAppName,
           userId,
-          sessionId
-        } as any); // Using 'as any' to bypass TypeScript check as this is how the method is implemented
-        
-        // Handle both synchronous and asynchronous cases
-        const artifactNames = artifactNamesResult instanceof Promise ? await artifactNamesResult : artifactNamesResult;
+          sessionId,
+          filename: '' // Placeholder for required field
+        });
         
         res.json(artifactNames);
       } catch (error) {
@@ -355,15 +347,12 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       const effectiveAppName = agentEngineId || appName;
       
       try {
-        const versionsResult = artifactService.listVersions({
+        const versions = await artifactService.listVersions({
           appName: effectiveAppName,
           userId,
           sessionId,
           filename: artifactName
         });
-        
-        // Handle both synchronous and asynchronous cases
-        const versions = versionsResult instanceof Promise ? await versionsResult : versionsResult;
         
         res.json(versions);
       } catch (error) {
@@ -373,20 +362,25 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
   });
 
   app.delete('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName', 
-    (req: express.Request, res: express.Response) => {
+    async (req: express.Request, res: express.Response) => {
       const { appName, userId, sessionId, artifactName } = req.params;
       
       // Connect to managed session if agent_engine_id is set
       const effectiveAppName = agentEngineId || appName;
       
-      artifactService.deleteArtifact({
-        appName: effectiveAppName,
-        userId,
-        sessionId,
-        filename: artifactName
-      });
-      
-      res.status(204).send();
+      try {
+        await artifactService.deleteArtifact({
+          appName: effectiveAppName,
+          userId,
+          sessionId,
+          filename: artifactName
+        });
+        
+        res.status(204).send();
+      } catch (error) {
+        console.error('Error deleting artifact:', error);
+        res.status(500).json({ error: 'Error deleting artifact' });
+      }
   });
 
   // Agent run endpoint
