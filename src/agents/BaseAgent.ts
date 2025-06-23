@@ -1,5 +1,3 @@
- 
-
 import { Content } from '../models/types';
 import { Event } from '../events/Event';
 import { CallbackContext } from './CallbackContext';
@@ -53,10 +51,24 @@ export abstract class BaseAgent {
   /** The sub-agents of this agent */
   subAgents: BaseAgent[] = [];
   
-  /** Callback invoked before the agent run */
+  /** 
+   * Callback signature that is invoked before the agent run.
+   * 
+   * @param callbackContext The callback context.
+   * @returns Content | undefined: The content to return to the user.
+   *   When the content is present, the agent run will be skipped and the
+   *   provided content will be returned to user.
+   */
   beforeAgentCallback?: BeforeAgentCallback;
   
-  /** Callback invoked after the agent run */
+  /** 
+   * Callback signature that is invoked after the agent run.
+   * 
+   * @param callbackContext The callback context.
+   * @returns Content | undefined: The content to return to the user.
+   *   When the content is present, the provided content will be used as agent
+   *   response and appended to event history as agent response.
+   */
   afterAgentCallback?: AfterAgentCallback;
   
   /**
