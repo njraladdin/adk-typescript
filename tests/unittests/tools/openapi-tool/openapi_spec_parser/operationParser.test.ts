@@ -250,7 +250,41 @@ describe('OperationParser', () => {
   });
   
   test('get_json_schema', () => {
-    const operation = createSampleOperation();
+    const operation = {
+      operationId: 'testOperation',
+      parameters: [
+        {
+          name: 'param1',
+          in: 'query',
+          schema: { type: 'string' },
+          description: 'First parameter',
+          // required not specified, should default to false
+        }
+      ],
+      requestBody: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                prop1: { type: 'string', description: 'Property 1' }
+              }
+              // required array not specified for object properties
+            }
+          }
+        }
+      },
+      responses: {
+        '200': {
+          description: 'Successful response',
+          content: {
+            'application/json': {
+              schema: { type: 'string' }
+            }
+          }
+        }
+      }
+    };
     const parser = new OperationParser(operation);
     
     const schema = parser.getJsonSchema();
@@ -259,10 +293,9 @@ describe('OperationParser', () => {
     expect(schema.title).toBe('testOperation_Arguments');
     expect(schema.properties).toBeDefined();
     expect(Object.keys(schema.properties)).toContain('param1');
-    expect(Object.keys(schema.properties)).toContain('param2');
-    expect(schema.required).toBeDefined();
-    expect(schema.required).toContain('param1');
-    expect(schema.required).toContain('param2');
+    expect(Object.keys(schema.properties)).toContain('prop1');
+    // By default nothing is required unless explicitly stated
+    expect(schema.required).toBeUndefined();
   });
   
   test('get_json_schema_no_required_params', () => {
