@@ -426,7 +426,8 @@ export class DatabaseSessionService extends BaseSessionService {
       appName,
       userId,
       state: mergedState,
-      events: []
+      events: [],
+      lastUpdateTime: storageSession.updateTime.getTime()
     };
   }
 
@@ -474,7 +475,8 @@ export class DatabaseSessionService extends BaseSessionService {
         userState?.state || {},
         storageSession.state
       ),
-      events: []
+      events: [],
+      lastUpdateTime: storageSession.updateTime.getTime()
     };
     
     // Convert storage events to Event objects
@@ -574,6 +576,20 @@ export class DatabaseSessionService extends BaseSessionService {
         userId: session.userId,
         sessionId: session.id
       });
+    } else {
+      // Check if session last update time is stale
+      const storageUpdateTime = storageSession.updateTime.getTime() / 1000;
+      const sessionLastUpdateTime = (session.lastUpdateTime || 0) / 1000;
+      
+      if (storageUpdateTime > sessionLastUpdateTime) {
+        const sessionUpdateTimeFormatted = new Date(sessionLastUpdateTime * 1000).toISOString().replace('T', ' ').substring(0, 19);
+        const storageUpdateTimeFormatted = storageSession.updateTime.toISOString().replace('T', ' ').substring(0, 19);
+        
+        throw new Error(
+          `Session lastUpdateTime ${sessionUpdateTimeFormatted} ` +
+          `is later than the update_time in storage ${storageUpdateTimeFormatted}`
+        );
+      }
     }
     
     // Fetch app and user states
@@ -654,6 +670,17 @@ export class DatabaseSessionService extends BaseSessionService {
     storageEvent.interrupted = event.interrupted;
     
     await this.eventRepo.save(storageEvent);
+    
+    // Refresh the storage session to get the updated timestamp
+    await this.sessionRepo.findOneBy({
+      appName: session.appName,
+      userId: session.userId,
+      id: session.id
+    }).then(updatedStorageSession => {
+      if (updatedStorageSession) {
+        session.lastUpdateTime = updatedStorageSession.updateTime.getTime();
+      }
+    });
     
     // Add event to the session
     if (!event.id) {
@@ -787,7 +814,8 @@ export class DatabaseSessionService extends BaseSessionService {
         userState.state,
         storageSession.state
       ),
-      events: []
+      events: [],
+      lastUpdateTime: storageSession.updateTime.getTime()
     };
     
     // Convert storage events to Event objects

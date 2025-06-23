@@ -64,6 +64,7 @@ export interface SessionInterface {
   userId: string;
   state: State;
   events: Event[];
+  lastUpdateTime?: number;
 }
 
 /**
