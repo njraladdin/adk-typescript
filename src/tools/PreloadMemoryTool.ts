@@ -1,118 +1,75 @@
 import { BaseTool } from './BaseTool';
 import { ToolContext } from './ToolContext';
-import { MemoryEvent, MemoryResult } from './LoadMemoryTool';
+import { LlmRequest } from '../models/LlmRequest';
 
 /**
- * Tool that preloads memory based on the user's current query
+ * A tool that preloads the memory for the current user.
  */
 export class PreloadMemoryTool extends BaseTool {
-  /**
-   * Creates a new preload memory tool
-   */
   constructor() {
-    // Name and description are not used because this tool only changes llmRequest
+    // Name and description are not used because this tool only
+    // changes llm_request.
     super({
       name: 'preload_memory',
-      description: 'Preloads memory for the current user\'s query'
+      description: 'preload_memory'
     });
   }
-  
-  /**
-   * Process the LLM request to preload relevant memory
-   * 
-   * @param params Parameters for processing
-   * @param params.toolContext The tool context
-   * @param params.llmRequest The LLM request to process
-   */
-  async processLlmRequest({ 
-    toolContext, 
-    llmRequest 
-  }: { 
-    toolContext: ToolContext, 
-    llmRequest: any 
+
+  async processLlmRequest(params: {
+    toolContext: ToolContext;
+    llmRequest: LlmRequest;
   }): Promise<void> {
-    // Extract the user query from the context
-    const userContent = toolContext.userContent || (toolContext as any).user_content;
+    const { toolContext, llmRequest } = params;
     
-    if (!userContent || !userContent.parts || !userContent.parts.length || !userContent.parts[0].text) {
-      return; // No user content to process
-    }
-    
-    const query = userContent.parts[0].text;
-    
-    // Search memory
-    let memories: MemoryResult[] = [];
-    if (toolContext.searchMemory) {
-      const response = await toolContext.searchMemory(query);
-      memories = response.memories || [];
-    } else if (typeof (toolContext as any).searchMemory === 'function') {
-      const response = await (toolContext as any).searchMemory(query);
-      memories = response.memories || [];
-    }
-    
-    // If no memories found, return
-    if (!memories.length) {
+    const parts = toolContext.userContent?.parts;
+    if (!parts || !parts[0] || !parts[0].text) {
       return;
     }
+
+    const query = parts[0].text;
+    const response = await toolContext.searchMemory(query);
     
-    // Build memory text
+    if (!response.memories || response.memories.length === 0) {
+      return;
+    }
+
     let memoryText = '';
-    for (const memory of memories) {
-      if (!memory.events || !memory.events.length) {
-        continue;
-      }
-      
-      // Format timestamp
-      const timestamp = memory.events[0].timestamp;
-      let timeStr = 'Unknown time';
-      if (timestamp !== undefined) {
-        const date = new Date(timestamp * 1000); // Convert to milliseconds if timestamp is in seconds
-        timeStr = date.toISOString();
-      }
+    for (const memory of response.memories) {
+      const timestamp = memory.events[0]?.timestamp || 0;
+      const timeStr = new Date(timestamp * 1000).toISOString();
       memoryText += `Time: ${timeStr}\n`;
       
-      // Add event content
       for (const event of memory.events) {
-        if (event.content && event.content.parts && event.content.parts.length) {
-          const text = event.content.parts[0].text || '';
-          if (text) {
-            memoryText += `${event.author}: ${text}\n`;
-          }
+        // TODO: support multi-part content.
+        if (
+          event.content &&
+          event.content.parts &&
+          event.content.parts[0] &&
+          event.content.parts[0].text
+        ) {
+          memoryText += `${event.author}: ${event.content.parts[0].text}\n`;
         }
       }
     }
-    
-    // If we have memory text, add it to the instructions
-    if (memoryText) {
-      const systemInstruction = `The following content is from your previous conversations with the user.
-They may be useful for answering the user's current query.
+
+    const si = `The following content is from your previous conversations with the user. They may be useful for answering the user's current query.
+
 <PAST_CONVERSATIONS>
 ${memoryText}
 </PAST_CONVERSATIONS>
 `;
-      
-      // Append the instructions
-      if (llmRequest.appendInstructions) {
-        llmRequest.appendInstructions([systemInstruction]);
-      }
-    }
+
+    llmRequest.appendInstructions([si]);
   }
-  
-  /**
-   * Execute the tool - this tool is not meant to be executed directly
-   * 
-   * @param params Parameters for execution
-   * @param context The tool context
-   * @returns Error message
-   */
-  async execute(params: Record<string, any>, context: ToolContext): Promise<any> {
-    return {
-      error: 'PreloadMemoryTool is not meant to be executed directly. It works automatically during LLM request processing.'
-    };
+
+  // Override execute method since this tool doesn't need to be executed directly
+  async execute(
+    params: Record<string, any>,
+    context: ToolContext
+  ): Promise<any> {
+    // This tool doesn't perform any direct execution
+    return {};
   }
 }
 
-/**
- * Singleton instance of the Preload Memory tool
- */
 export const preloadMemoryTool = new PreloadMemoryTool(); 

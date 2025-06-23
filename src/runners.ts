@@ -295,11 +295,9 @@ export class Runner {
   }
 
   /**
-   * Closes a session and adds it to the memory service.
-   *
-   * @param session The session to close.
-   * @experimental This feature is **experimental** and its API or behavior may change
-   *               in future releases.
+   * Closes a session and adds it to the memory service (experimental feature).
+   * 
+   * @param session The session to close
    */
   async closeSession(session: Session): Promise<void> {
     if (this.memoryService) {

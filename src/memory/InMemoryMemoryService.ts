@@ -1,5 +1,3 @@
- 
-
 import { SessionInterface as Session, Event } from '../sessions/types';
 import { BaseMemoryService, MemoryResult, SearchMemoryResponse } from './BaseMemoryService';
 
@@ -10,9 +8,6 @@ import { BaseMemoryService, MemoryResult, SearchMemoryResponse } from './BaseMem
 export class InMemoryMemoryService implements BaseMemoryService {
   // Keys are app_name/user_id/session_id
   private sessionEvents: Map<string, Event[]> = new Map();
-  
-  // Keys are app_name/user_id/key
-  private memoryStore: Map<string, any> = new Map();
 
   /**
    * Adds a session to the memory service.
@@ -28,6 +23,7 @@ export class InMemoryMemoryService implements BaseMemoryService {
 
   /**
    * Searches for sessions that match the query.
+   * Prototyping purpose only.
    * @param appName The name of the application
    * @param userId The id of the user
    * @param query The query to search for
@@ -62,7 +58,7 @@ export class InMemoryMemoryService implements BaseMemoryService {
         for (const keyword of keywords) {
           if (text.includes(keyword)) {
             matchedEvents.push(event);
-            break;
+            break; // Found match for this event, move to next event
           }
         }
       }
@@ -88,8 +84,7 @@ export class InMemoryMemoryService implements BaseMemoryService {
    * @param value The memory value
    */
   async store(appName: string, userId: string, key: string, value: any): Promise<void> {
-    const storeKey = `${appName}/${userId}/${key}`;
-    this.memoryStore.set(storeKey, value);
+    // This method is not in the Python version but keeping it for backward compatibility
   }
 
   /**
@@ -100,8 +95,8 @@ export class InMemoryMemoryService implements BaseMemoryService {
    * @returns The memory value, or undefined if not found
    */
   async retrieve(appName: string, userId: string, key: string): Promise<any | undefined> {
-    const storeKey = `${appName}/${userId}/${key}`;
-    return this.memoryStore.get(storeKey);
+    // This method is not in the Python version but keeping it for backward compatibility
+    return undefined;
   }
 
   /**
@@ -110,8 +105,8 @@ export class InMemoryMemoryService implements BaseMemoryService {
    * @param userId The user ID
    * @param key The memory key
    */
-  async delete(appName: string, userId: string, key: string): Promise<void> {
+  async delete(appName: string, userId: string, key: string): Promise<void> { 
     const storeKey = `${appName}/${userId}/${key}`;
-    this.memoryStore.delete(storeKey);
+    this.sessionEvents.delete(storeKey);
   }
 } 

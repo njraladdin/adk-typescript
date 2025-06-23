@@ -25,7 +25,7 @@ def get_file_content(commit_hash, file_path):
         return None
 
 def main():
-    commit_hash = "4c4cfb74ae1066c4920f599b03b6cccae8d4c069"
+    commit_hash = "bcf1deb58234c49ea7a425d84e11c54aabb5e4f8"
     output_file = "test.txt"
 
     try:

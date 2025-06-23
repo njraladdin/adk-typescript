@@ -1,5 +1,8 @@
 import { FunctionTool } from './FunctionTool';
 import { ToolContext } from './ToolContext';
+import { MemoryResult as BaseMemoryResult } from '../memory/BaseMemoryService';
+import { LlmRequest } from '../models/LlmRequest';
+import { FunctionDeclaration } from './BaseTool';
 
 /**
  * Interface for memory result events
@@ -29,48 +32,33 @@ export interface MemoryResult {
 }
 
 /**
- * Function to load memory by executing a search query
+ * Loads the memory for the current user.
  * 
- * @param params Parameters for the function
- * @param params.query The query to search memory for
- * @param context The tool context
- * @returns Array of memory results
+ * @param params The function parameters
+ * @param toolContext The tool context
+ * @returns A list of memory results
  */
-export async function loadMemory(
+async function loadMemory(
   params: Record<string, any>,
-  context: ToolContext
-): Promise<MemoryResult[]> {
+  toolContext: ToolContext
+): Promise<BaseMemoryResult[]> {
   const query = params.query;
-  
-  // Call the search_memory function on the context
-  if (context.searchMemory) {
-    const response = await context.searchMemory(query);
-    return response.memories || [];
-  } else if (typeof (context as any).searchMemory === 'function') {
-    const response = await (context as any).searchMemory(query);
-    return response.memories || [];
-  }
-  
-  // If no memory search function is available, return empty result
-  console.warn('No memory search function available in the context');
-  return [];
+  const response = await toolContext.searchMemory(query);
+  return response.memories;
 }
 
 /**
- * Tool for loading memory based on a query
+ * A tool that loads the memory for the current user.
  */
 export class LoadMemoryTool extends FunctionTool {
-  /**
-   * Creates a new load memory tool
-   */
   constructor() {
     super({
       name: 'load_memory',
-      description: 'Loads the memory for the current user based on a query',
+      description: 'Loads the memory for the current user',
       fn: loadMemory,
       functionDeclaration: {
         name: 'load_memory',
-        description: 'Loads the memory for the current user based on a query',
+        description: 'Loads the memory for the current user',
         parameters: {
           type: 'object',
           properties: {
@@ -84,35 +72,18 @@ export class LoadMemoryTool extends FunctionTool {
       }
     });
   }
-  
-  /**
-   * Process the LLM request to inform the model about memory
-   * 
-   * @param params Parameters for processing
-   * @param params.toolContext The tool context
-   * @param params.llmRequest The LLM request to process
-   */
-  async processLlmRequest({
-    toolContext,
-    llmRequest
-  }: {
-    toolContext: ToolContext,
-    llmRequest: any
+
+  async processLlmRequest(params: {
+    toolContext: ToolContext;
+    llmRequest: LlmRequest;
   }): Promise<void> {
-    // Call the parent class implementation
-    await super.processLlmRequest({ toolContext, llmRequest });
-    
-    // Tell the model about the memory capability
-    if (llmRequest.appendInstructions) {
-      llmRequest.appendInstructions([`
-You have memory. You can use it to answer questions. If any questions need
-you to look up the memory, you should call load_memory function with a query.
-`]);
-    }
+    await super.processLlmRequest(params);
+
+    // Tell the model about the memory
+    params.llmRequest.appendInstructions([
+      'You have memory. You can use it to answer questions. If any questions need you to look up the memory, you should call load_memory function with a query.'
+    ]);
   }
 }
 
-/**
- * Singleton instance of the Load Memory tool
- */
 export const loadMemoryTool = new LoadMemoryTool(); 
