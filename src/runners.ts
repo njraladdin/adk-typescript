@@ -17,6 +17,7 @@ import { InMemorySessionService } from './sessions/InMemorySessionService';
 import { Session } from './sessions/Session';
 import { tracer } from './telemetry';
 import { BuiltInCodeExecutionTool } from './tools/BuiltInCodeExecutionTool';
+import { ReadonlyContext } from './agents/ReadonlyContext';
 
 // Logger is a placeholder - implement with proper logging library
 const logger = {
@@ -101,16 +102,43 @@ export class Runner {
     newMessage: Content;
     runConfig?: RunConfig;
   }): AsyncGenerator<Event, void, unknown> {
-    const { userId, sessionId, newMessage, runConfig = new RunConfig() } = params;
-    // In JavaScript, we can just use the async generator directly
-    for await (const event of this.runAsync({
-      userId,
-      sessionId,
+    const { userId, sessionId, newMessage, runConfig } = params;
+    
+    // Get or create session
+    let session = await this.sessionService.getSession({
+      appName: this.appName,
+      userId: userId,
+      sessionId: sessionId
+    });
+    
+    if (!session) {
+      session = await this.sessionService.createSession({
+        appName: this.appName,
+        userId: userId,
+        sessionId: sessionId
+      });
+    }
+    
+    // Create invocation context
+    const invocationContext = await this._newInvocationContext({
+      session: session as any,
       newMessage,
       runConfig
-    })) {
-      yield event;
-    }
+    });
+    
+    // Append user message to session
+    await this._appendNewMessageToSession({
+      session: session as any,
+      newMessage,
+      invocationContext,
+      saveInputBlobsAsArtifacts: true
+    });
+    
+    // Find the appropriate agent to run
+    const agentToRun = this._findAgentToRun(session as any, this.agent);
+    
+    // Run the agent
+    yield* agentToRun.invoke(invocationContext);
   }
 
   /**
@@ -129,53 +157,43 @@ export class Runner {
     newMessage: Content;
     runConfig?: RunConfig;
   }): AsyncGenerator<Event, void, unknown> {
-    const { userId, sessionId, newMessage, runConfig = new RunConfig() } = params;
-
-    const span = tracer.startAsCurrentSpan('invocation');
-    try {
-      const session = await this.sessionService.getSession({
+    const { userId, sessionId, newMessage, runConfig } = params;
+    
+    // Get or create session
+    let session = await this.sessionService.getSession({
+      appName: this.appName,
+      userId: userId,
+      sessionId: sessionId
+    });
+    
+    if (!session) {
+      session = await this.sessionService.createSession({
         appName: this.appName,
         userId: userId,
         sessionId: sessionId
       });
-
-      if (!session) {
-        throw new Error(`Session not found: ${sessionId}`);
-      } 
-
-      const invocationContext = this._newInvocationContext({
-        session: session as any,
-        newMessage,
-        runConfig
-      });
-
-      const rootAgent = this.agent;
-
-      if (newMessage) {
-
-        await this._appendNewMessageToSession({
-          session: session as any,
-          newMessage,
-          invocationContext,
-          saveInputBlobsAsArtifacts: runConfig.saveInputBlobsAsArtifacts
-        });
-      } 
-
-      invocationContext.agent = this._findAgentToRun(session as any, rootAgent);
-
-      // Use invoke method which is guaranteed to exist
-      for await (const event of invocationContext.agent.invoke(invocationContext)) {
-        if (!event.partial) {
-          await this.sessionService.appendEvent({
-            session: session,
-            event: event as any
-          });
-        }
-        yield event;
-      }
-    } finally {
-      span.end();
     }
+    
+    // Create invocation context
+    const invocationContext = await this._newInvocationContext({
+      session: session as any,
+      newMessage,
+      runConfig
+    });
+    
+    // Append user message to session
+    await this._appendNewMessageToSession({
+      session: session as any,
+      newMessage,
+      invocationContext,
+      saveInputBlobsAsArtifacts: true
+    });
+    
+    // Find the appropriate agent to run
+    const agentToRun = this._findAgentToRun(session as any, this.agent);
+    
+    // Run the agent asynchronously
+    yield* agentToRun.runAsync(invocationContext);
   }
 
   /**
@@ -260,63 +278,20 @@ export class Runner {
     liveRequestQueue: LiveRequestQueue;
     runConfig?: RunConfig;
   }): AsyncGenerator<Event, void, unknown> {
-    const { session, liveRequestQueue, runConfig = new RunConfig() } = params;
+    const { session, liveRequestQueue, runConfig } = params;
     
-    // TODO: right now, only works for a single audio agent without FC.
-    const invocationContext = this._newInvocationContextForLive({
-      session: session as any,
+    // Create invocation context
+    const invocationContext = await this._newInvocationContextForLive({
+      session,
       liveRequestQueue,
       runConfig
     });
-
-    const rootAgent = this.agent;
-    invocationContext.agent = this._findAgentToRun(session as any, rootAgent);
-
-    invocationContext.activeStreamingTools = new Map<string, ActiveStreamingTool>();
     
-    // Get tools from the agent, assuming it has a canonicalTools property
-    const tools = (invocationContext.agent as any).canonicalTools || [];
+    // Find the appropriate agent to run
+    const agentToRun = this._findAgentToRun(session, this.agent);
     
-    // Initialize streaming tools that rely on LiveRequestQueue
-    for (const tool of tools) {
-      // Check if tool requires LiveRequestQueue
-      // This is a bit complex to port directly - in TypeScript we would need
-      // to use reflection or decorator metadata to check parameter types
-      if ((tool as any).usesLiveQueue) {
-        if (!invocationContext.activeStreamingTools) {
-          invocationContext.activeStreamingTools = new Map<string, ActiveStreamingTool>();
-        }
-        
-        // Create an object with appropriate structure for ActiveStreamingTool
-        // Based on inspected constructor, ActiveStreamingTool expects name, args, id
-        const streamObj = {
-          name: tool.name,
-          args: {},
-          id: uuidv4(),
-          stream: new LiveRequestQueue()
-        };
-        
-        // Add to map
-        invocationContext.activeStreamingTools.set(
-          tool.name, 
-          // Using any type assertion since we may not have the correct constructor
-          // signature but we know the object structure should work
-          streamObj as any
-        );
-      }
-    }
-
-    // Set invocation context to live mode
-    invocationContext.live = true;
-    
-    // Use invoke method which will call the appropriate implementation based on live flag
-    for await (const event of invocationContext.agent.invoke(invocationContext)) {
-      await this.sessionService.appendEvent({
-        session: session as any,
-        event: event as any
-      });
-      yield event;
-    }
+    // Run the agent live
+    yield* agentToRun.runLive(invocationContext);
   }
 
   /**
@@ -437,12 +412,12 @@ export class Runner {
    * @returns The new invocation context.
    * @private
    */
-  private _newInvocationContext(params: {
+  private async _newInvocationContext(params: {
     session: Session;
     newMessage?: Content;
     liveRequestQueue?: LiveRequestQueue;
     runConfig?: RunConfig;
-  }): InvocationContext {
+  }): Promise<InvocationContext> {
     const { session, newMessage, liveRequestQueue, runConfig = new RunConfig() } = params;
     
     const invocationId = uuidv4();
@@ -454,28 +429,6 @@ export class Runner {
         llm = this.agent.canonicalModel;
       } catch (error) {
         console.error('Error getting canonicalModel:', error);
-      }
-    }
-
-    if (runConfig.supportCfc && this.agent instanceof LlmAgent) {
-      // Get the agent's model name using canonicalModel
-      const llmAgent = this.agent as LlmAgent;
-      const modelName = llmAgent.canonicalModel.model || 'unknown';
-      
-      if (!modelName.startsWith('gemini-2')) {
-        throw new Error(
-          `CFC is not supported for model: ${modelName} in agent: ${this.agent.name}`
-        );
-      }
-      
-      // Check if built-in code execution tool is already included
-      const tools = llmAgent.canonicalTools || [];
-      const hasCodeExecutionTool = tools.some(
-        (tool: any) => tool instanceof BuiltInCodeExecutionTool
-      );
-      
-      if (!hasCodeExecutionTool) {
-        llmAgent.canonicalTools.push(new BuiltInCodeExecutionTool());
       }
     }
 
@@ -492,6 +445,31 @@ export class Runner {
       runConfig: runConfig,
       llm: llm
     });
+
+    if (runConfig.supportCfc && this.agent instanceof LlmAgent) {
+      // Get the agent's model name using canonicalModel
+      const llmAgent = this.agent as LlmAgent;
+      const modelName = llmAgent.canonicalModel.model || 'unknown';
+      
+      if (!modelName.startsWith('gemini-2')) {
+        throw new Error(
+          `CFC is not supported for model: ${modelName} in agent: ${this.agent.name}`
+        );
+      }
+      
+      // Check if built-in code execution tool is already included
+      const toolsFunc = llmAgent.canonicalTools;
+      const ctx = new ReadonlyContext(context);
+      const resolvedTools = await toolsFunc(ctx);
+      const hasCodeExecutionTool = resolvedTools.some(
+        (tool: any) => tool instanceof BuiltInCodeExecutionTool
+      );
+      
+      if (!hasCodeExecutionTool) {
+        // Add the built-in code execution tool
+        llmAgent.tools.push(new BuiltInCodeExecutionTool());
+      }
+    }
 
     // Debug log if model is missing
     if (!context.llm) {
@@ -511,11 +489,11 @@ export class Runner {
    * @returns The new invocation context.
    * @private
    */
-  private _newInvocationContextForLive(params: {
+  private async _newInvocationContextForLive(params: {
     session: Session;
     liveRequestQueue?: LiveRequestQueue;
     runConfig?: RunConfig;
-  }): InvocationContext {
+  }): Promise<InvocationContext> {
     const { session, liveRequestQueue, runConfig = new RunConfig() } = params;
     
     // For live multi-agent, we need model's text transcription as context for

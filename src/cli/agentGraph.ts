@@ -1,8 +1,7 @@
-
-
 import { BaseAgent } from '../agents/BaseAgent';
 import { LlmAgent } from '../agents/LlmAgent';
 import { BaseTool, FunctionTool, AgentTool } from '../tools';
+import { ReadonlyContext } from '../agents/ReadonlyContext';
 
 /**
  * Type for highlight pairs in the graph
@@ -165,10 +164,16 @@ function buildGraph(graph: any, agent: BaseAgent, highlightPairs?: HighlightPair
 
   // Draw tools if it's an LLM agent
   if (agent instanceof LlmAgent && agent.canonicalTools) {
-    for (const tool of agent.canonicalTools) {
-      drawNode(tool);
-      drawEdge(agent.name, getNodeName(tool));
-    }
+    const toolsFunc = agent.canonicalTools;
+    const ctx = new ReadonlyContext({} as any);
+    toolsFunc(ctx).then(tools => {
+      for (const tool of tools) {
+        drawNode(tool);
+        drawEdge(agent.name, getNodeName(tool));
+      }
+    }).catch(err => {
+      console.error('Error getting canonical tools:', err);
+    });
   }
 }
 

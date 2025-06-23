@@ -260,18 +260,13 @@ export async function handleFunctionCallsLive(
       } else {
         // before_tool_callback (sync or async)
         if (agent.beforeToolCallback) {
-          const beforeCallbackResult = agent.beforeToolCallback(
+          const beforeCallbackResult = await agent.executeBeforeToolCallbacks(
             tool,
             functionArgs,
             toolContext
           );
           
-          // Check if the response is a Promise and await it
-          if (beforeCallbackResult instanceof Promise) {
-            functionResponse = await beforeCallbackResult;
-          } else {
-            functionResponse = beforeCallbackResult;
-          }
+          functionResponse = beforeCallbackResult;
         }
         
         // Execute the tool if no callback response
@@ -287,22 +282,15 @@ export async function handleFunctionCallsLive(
         
         // after_tool_callback (sync or async)
         if (agent.afterToolCallback && functionResponse) {
-          const alteredFunctionResponse = agent.afterToolCallback(
+          const alteredFunctionResponse = await agent.executeAfterToolCallbacks(
             tool,
             functionArgs,
             toolContext,
             functionResponse
           );
           
-          // Check if the response is a Promise and await it
-          if (alteredFunctionResponse instanceof Promise) {
-            const awaitedResponse = await alteredFunctionResponse;
-            // Only update if the response is not undefined (equivalent to Python's "is not None")
-            if (awaitedResponse !== undefined) {
-              functionResponse = awaitedResponse;
-            }
-          } else if (alteredFunctionResponse !== undefined) {
-            // Only update if not undefined (equivalent to Python's "is not None")
+          // Only update if the response is not undefined
+          if (alteredFunctionResponse !== undefined) {
             functionResponse = alteredFunctionResponse;
           }
         }
@@ -406,18 +394,13 @@ export async function handleFunctionCallsAsync(
       } else {
         // before_tool_callback (sync or async)
         if (agent.beforeToolCallback) {
-          const beforeCallbackResult = agent.beforeToolCallback(
+          const beforeCallbackResult = await agent.executeBeforeToolCallbacks(
             tool,
             functionArgs,
             toolContext
           );
           
-          // Check if the response is a Promise and await it
-          if (beforeCallbackResult instanceof Promise) {
-            functionResponse = await beforeCallbackResult;
-          } else {
-            functionResponse = beforeCallbackResult;
-          }
+          functionResponse = beforeCallbackResult;
         }
         
         // Execute the tool if no callback response
@@ -431,22 +414,15 @@ export async function handleFunctionCallsAsync(
         
         // after_tool_callback (sync or async)
         if (agent.afterToolCallback && functionResponse) {
-          const alteredFunctionResponse = agent.afterToolCallback(
+          const alteredFunctionResponse = await agent.executeAfterToolCallbacks(
             tool,
             functionArgs,
             toolContext,
             functionResponse
           );
           
-          // Check if the response is a Promise and await it
-          if (alteredFunctionResponse instanceof Promise) {
-            const awaitedResponse = await alteredFunctionResponse;
-            // Only update if the response is not undefined (equivalent to Python's "is not None")
-            if (awaitedResponse !== undefined) {
-              functionResponse = awaitedResponse;
-            }
-          } else if (alteredFunctionResponse !== undefined) {
-            // Only update if not undefined (equivalent to Python's "is not None")
+          // Only update if the response is not undefined
+          if (alteredFunctionResponse !== undefined) {
             functionResponse = alteredFunctionResponse;
           }
         }

@@ -21,6 +21,7 @@ import { LiveRequestQueue } from '../../agents/LiveRequestQueue';
 import { EventActions } from '../../events/EventActions';
 import { AudioTranscriber } from './AudioTranscriber';
 import * as functions from './functions';
+import { ReadonlyContext } from '../../agents/ReadonlyContext';
 
 // Define interfaces for the telemetry module
 declare module '../../telemetry' {
@@ -438,8 +439,11 @@ export abstract class BaseLlmFlow {
     
     // Run processors for tools
     if (agent.canonicalTools) {
-      for (const tool of agent.canonicalTools) {
-        
+      const toolsFunc = agent.canonicalTools;
+      const ctx = new ReadonlyContext(invocationContext);
+      const tools = await toolsFunc(ctx);
+      
+      for (const tool of tools) {
         // Create a new ToolContext directly with the invocation context
         // This matches the Python implementation: tool_context = ToolContext(invocation_context)
         const toolContext = new ToolContext(
@@ -698,7 +702,7 @@ export abstract class BaseLlmFlow {
     modelResponseEvent: Event
   ): AsyncGenerator<LlmResponse, void, unknown> {
     // Run before_model_callback if it exists
-    const callbackResponse = this._handleBeforeModelCallback(
+    const callbackResponse = await this._handleBeforeModelCallback(
       invocationContext,
       llmRequest,
       modelResponseEvent
@@ -719,7 +723,7 @@ export abstract class BaseLlmFlow {
         invocationContext.liveRequestQueue = invocationContext.liveRequestQueue || new LiveRequestQueue();
         for await (const llmResponse of this.runLive(invocationContext)) {
           // Run after_model_callback if it exists
-          const alteredLlmResponse = this._handleAfterModelCallback(
+          const alteredLlmResponse = await this._handleAfterModelCallback(
             invocationContext,
             llmResponse,
             modelResponseEvent
@@ -759,7 +763,7 @@ export abstract class BaseLlmFlow {
           );
           
           // Run after_model_callback if it exists
-          const alteredLlmResponse = this._handleAfterModelCallback(
+          const alteredLlmResponse = await this._handleAfterModelCallback(
             invocationContext,
             llmResponse,
             modelResponseEvent
@@ -782,14 +786,13 @@ export abstract class BaseLlmFlow {
    * @param modelResponseEvent The model response event
    * @returns The callback response or undefined
    */
-  protected _handleBeforeModelCallback(
+  protected async _handleBeforeModelCallback(
     invocationContext: InvocationContext,
     llmRequest: LlmRequest,
     modelResponseEvent: Event
-  ): LlmResponse | undefined {
-    const agent = invocationContext.agent;
-    
-    if (!(agent instanceof LlmAgent) || !agent.beforeModelCallback) {
+  ): Promise<LlmResponse | undefined> {
+    const agent = invocationContext.agent as LlmAgent;
+    if (!agent || !agent.beforeModelCallback) {
       return undefined;
     }
     
@@ -798,7 +801,7 @@ export abstract class BaseLlmFlow {
       modelResponseEvent.actions
     );
     
-    return agent.beforeModelCallback(callbackContext, llmRequest);
+    return await agent.executeBeforeModelCallbacks(callbackContext, llmRequest);
   }
 
   /**
@@ -809,14 +812,13 @@ export abstract class BaseLlmFlow {
    * @param modelResponseEvent The model response event
    * @returns The altered LLM response or undefined
    */
-  protected _handleAfterModelCallback(
+  protected async _handleAfterModelCallback(
     invocationContext: InvocationContext,
     llmResponse: LlmResponse,
     modelResponseEvent: Event
-  ): LlmResponse | undefined {
-    const agent = invocationContext.agent;
-    
-    if (!(agent instanceof LlmAgent) || !agent.afterModelCallback) {
+  ): Promise<LlmResponse | undefined> {
+    const agent = invocationContext.agent as LlmAgent;
+    if (!agent || !agent.afterModelCallback) {
       return undefined;
     }
     
@@ -825,7 +827,7 @@ export abstract class BaseLlmFlow {
       modelResponseEvent.actions
     );
     
-    return agent.afterModelCallback(callbackContext, llmResponse);
+    return await agent.executeAfterModelCallbacks(callbackContext, llmResponse);
   }
 
   /**

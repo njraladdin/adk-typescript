@@ -1,160 +1,188 @@
-import { briefRequestProcessor, detailedRequestProcessor, makeInstructionsRequestProcessor } from '../../../../src/flows/llm_flows/instructions';
+import { requestProcessor as instructionsRequestProcessor } from '../../../../src/flows/llm_flows/instructions';
 import { LlmAgent } from '../../../../src/agents/LlmAgent';
 import { BaseAgent } from '../../../../src/agents/BaseAgent';
 import { LlmRequest } from '../../../../src/models/LlmRequest';
 import { InvocationContext } from '../../../../src/agents/InvocationContext';
-import { BaseLlmFlow } from '../../../../src/flows/llm_flows/BaseLlmFlow';
 import { Event } from '../../../../src/events/Event';
 import { ReadonlyContext } from '../../../../src/agents/ReadonlyContext';
 import { State } from '../../../../src/sessions/State';
-
-// Mock LLM Flow class for testing
-class MockLlmFlow extends BaseLlmFlow {
-  async *runAsync(): AsyncGenerator<Event, void, unknown> {
-    // Empty generator that yields nothing
-    return
-      yield {} as Event;
-    
-  }
-
-  async *runLive(): AsyncGenerator<Event, void, unknown> {
-    // Empty generator that yields nothing
-    return 
-      yield {} as Event;
-    
-  }
-}
-
-// Mock session for testing
-class MockSession {
-  id: string = 'test-id';
-  appName: string = 'test_app';
-  userId: string = 'test_user';
-  state: State;
-  events: any[] = [];
-  agents: Map<string, BaseAgent> = new Map();
-  lastUpdateTime: number = Date.now();
-  conversationHistory: any[] = [];
-
-  constructor(stateData: Record<string, any> = {}) {
-    this.state = new State(stateData);
-  }
-
-  addAgent(agent: BaseAgent): void {
-    this.agents.set(agent.name, agent);
-  }
-
-  getAgent(name: string): BaseAgent | undefined {
-    return this.agents.get(name);
-  }
-}
+import { Session } from '../../../../src/sessions/Session';
 
 // Helper function to create invocation context
 function createInvocationContext(agent: BaseAgent, stateData: Record<string, any> = {}): InvocationContext {
+  const session = new Session({
+    id: 'test_id',
+    appName: 'test_app',
+    userId: 'test_user',
+    state: new State(stateData),
+    events: [],
+  });
+
   const context = new InvocationContext({
     invocationId: 'test_id',
     agent,
-    session: new MockSession(stateData) as any
+    session: session,
   });
   return context;
 }
 
+// Helper function to consume async generator
+async function runProcessor(invocationContext: InvocationContext, request: LlmRequest): Promise<void> {
+  for await (const _ of instructionsRequestProcessor.runAsync(invocationContext, request)) {
+    // Consuming the generator
+  }
+}
+
 describe('Instructions LLM Flow', () => {
-  test('should add brief instructions', async () => {
-    // Create a request with empty system instruction
+  it('should build system instruction with context variables', async () => {
     const request = new LlmRequest();
-    request.model = 'gemini-2.0-flash';
-    request.config.systemInstruction = '';
+    request.model = 'gemini-1.5-flash';
+    request.config = { systemInstruction: '', tools: [] };
 
-    // Create an agent
-    const flow = new MockLlmFlow();
-    const agent = new LlmAgent({ name: 'agent', flow });
+    const agent = new LlmAgent({
+      name: 'agent',
+      model: 'gemini-1.5-flash',
+      instruction:
+        "Use the echo_info tool to echo {customerId}, {{customer_int  }, {  non-identifier-float}}, {'key1': 'value1'} and {{'key2': 'value2'}}.",
+    });
 
-    // Create invocation context
-    const invocationContext = createInvocationContext(agent);
+    const invocationContext = createInvocationContext(agent, {
+      customerId: '1234567890',
+      customer_int: 30,
+    });
 
-    // Run the processor
-    for await (const _ of briefRequestProcessor.runAsync(invocationContext, request)) {
-      // Nothing expected to be yielded
-    }
+    await runProcessor(invocationContext, request);
 
-    // Check that the system instruction was set correctly
     expect(request.config.systemInstruction).toBe(
-      'Be brief and concise in your answers. Prefer short responses over long ones.'
+      "Use the echo_info tool to echo 1234567890, 30, {  non-identifier-float}}, {'key1': 'value1'} and {{'key2': 'value2'}}."
     );
   });
 
-  test('should add detailed instructions', async () => {
-    // Create a request with empty system instruction
+  it('should use a function for system instruction', async () => {
+    const buildFunctionInstruction = (readonlyContext: ReadonlyContext): string => {
+      return `This is the function agent instruction for invocation: ${readonlyContext.invocationId}.`;
+    };
+
     const request = new LlmRequest();
-    request.model = 'gemini-2.0-flash';
-    request.config.systemInstruction = '';
+    request.model = 'gemini-1.5-flash';
+    request.config = { systemInstruction: '', tools: [] };
 
-    // Create an agent
-    const flow = new MockLlmFlow();
-    const agent = new LlmAgent({ name: 'agent', flow });
+    const agent = new LlmAgent({
+      name: 'agent',
+      model: 'gemini-1.5-flash',
+      instruction: buildFunctionInstruction,
+    });
 
-    // Create invocation context
     const invocationContext = createInvocationContext(agent);
 
-    // Run the processor
-    for await (const _ of detailedRequestProcessor.runAsync(invocationContext, request)) {
-      // Nothing expected to be yielded
-    }
+    await runProcessor(invocationContext, request);
 
-    // Check that the system instruction was set correctly
     expect(request.config.systemInstruction).toBe(
-      'Provide detailed and comprehensive explanations. Include relevant context and examples when appropriate.'
+      'This is the function agent instruction for invocation: test_id.'
     );
   });
 
-  test('should create custom instruction processor', async () => {
-    // Create a custom instruction processor
-    const customInstruction = 'This is a custom instruction.';
-    const customProcessor = makeInstructionsRequestProcessor(customInstruction);
-    
-    // Create a request with empty system instruction
+  it('should use an async function for system instruction', async () => {
+    const buildAsyncFunctionInstruction = async (readonlyContext: ReadonlyContext): Promise<string> => {
+        return `This is the async function agent instruction for invocation: ${readonlyContext.invocationId}.`;
+    };
+
     const request = new LlmRequest();
-    request.model = 'gemini-2.0-flash';
-    request.config.systemInstruction = '';
+    request.model = 'gemini-1.5-flash';
+    request.config = { systemInstruction: '', tools: [] };
 
-    // Create an agent
-    const flow = new MockLlmFlow();
-    const agent = new LlmAgent({ name: 'agent', flow });
+    const agent = new LlmAgent({
+        name: 'agent',
+        model: 'gemini-1.5-flash',
+        instruction: buildAsyncFunctionInstruction,
+    });
 
-    // Create invocation context
     const invocationContext = createInvocationContext(agent);
 
-    // Run the processor
-    for await (const _ of customProcessor.runAsync(invocationContext, request)) {
-      // Nothing expected to be yielded
-    }
+    await runProcessor(invocationContext, request);
 
-    // Check that the system instruction was set correctly
-    expect(request.config.systemInstruction).toBe(customInstruction);
-  });
-
-  test('should append instructions to existing system instructions', async () => {
-    // Create a request with existing system instruction
-    const request = new LlmRequest();
-    request.model = 'gemini-2.0-flash';
-    request.config.systemInstruction = 'Existing instruction.';
-
-    // Create an agent
-    const flow = new MockLlmFlow();
-    const agent = new LlmAgent({ name: 'agent', flow });
-
-    // Create invocation context
-    const invocationContext = createInvocationContext(agent);
-
-    // Run the processor
-    for await (const _ of briefRequestProcessor.runAsync(invocationContext, request)) {
-      // Nothing expected to be yielded
-    }
-
-    // Check that the system instruction was appended correctly
     expect(request.config.systemInstruction).toBe(
-      'Existing instruction.\n\nBe brief and concise in your answers. Prefer short responses over long ones.'
+        'This is the async function agent instruction for invocation: test_id.'
     );
   });
-}); 
+
+  it('should handle global and agent-specific instructions', async () => {
+    const subAgent = new LlmAgent({
+        name: 'sub_agent',
+        model: 'gemini-1.5-flash',
+        instruction: 'This is the sub agent instruction.',
+    });
+    const rootAgent = new LlmAgent({
+        name: 'root_agent',
+        model: 'gemini-1.5-flash',
+        globalInstruction: 'This is the global instruction.',
+        subAgents: [subAgent],
+    });
+
+    const request = new LlmRequest();
+    request.model = 'gemini-1.5-flash';
+    request.config = { systemInstruction: '', tools: [] };
+
+    const invocationContext = createInvocationContext(subAgent);
+
+    await runProcessor(invocationContext, request);
+
+    expect(request.config.systemInstruction).toBe(
+      'This is the global instruction.\n\nThis is the sub agent instruction.'
+    );
+  });
+
+  it('should handle async global and agent-specific instructions', async () => {
+    const subAgentInstruction = async (ctx: ReadonlyContext) => 'This is the sub agent instruction.';
+    const rootAgentGlobalInstruction = async (ctx: ReadonlyContext) => 'This is the global instruction.';
+
+    const subAgent = new LlmAgent({
+        name: 'sub_agent',
+        model: 'gemini-1.5-flash',
+        instruction: subAgentInstruction,
+    });
+    const rootAgent = new LlmAgent({
+        name: 'root_agent',
+        model: 'gemini-1.5-flash',
+        globalInstruction: rootAgentGlobalInstruction,
+        subAgents: [subAgent],
+    });
+
+    const request = new LlmRequest();
+    request.model = 'gemini-1.5-flash';
+    request.config = { systemInstruction: '', tools: [] };
+
+    const invocationContext = createInvocationContext(subAgent);
+
+    await runProcessor(invocationContext, request);
+
+    expect(request.config.systemInstruction).toBe(
+        'This is the global instruction.\n\nThis is the sub agent instruction.'
+    );
+  });
+
+  it('should populate values with namespace prefixes', async () => {
+    const request = new LlmRequest();
+    request.model = 'gemini-1.5-flash';
+    request.config = { systemInstruction: '', tools: [] };
+
+    const agent = new LlmAgent({
+      name: 'agent',
+      model: 'gemini-1.5-flash',
+      instruction:
+        'Use the echo_info tool to echo {customerId}, {app:key}, {user:key}, {a:key}.',
+    });
+
+    const invocationContext = createInvocationContext(agent, {
+      'customerId': '1234567890',
+      'app:key': 'app_value',
+      'user:key': 'user_value',
+    });
+
+    await runProcessor(invocationContext, request);
+
+    expect(request.config.systemInstruction).toBe(
+      'Use the echo_info tool to echo 1234567890, app_value, user_value, {a:key}.'
+    );
+  });
+});

@@ -6,10 +6,9 @@ import { InvocationContext } from './InvocationContext';
 import { ReadonlyContext } from './ReadonlyContext';
 import { CallbackContext } from './CallbackContext';
 import { Event } from '../events/Event';
-import { EventActions } from '../events/EventActions';
 import { BaseLlmFlow } from '../flows/llm_flows/BaseLlmFlow';
 import { SingleFlow } from '../flows/llm_flows/SingleFlow';
-import { Content, Part, MessageRole, Message } from '../models/types';
+import { Content, Part, Message, GenerateContentConfig } from '../models/types';
 import { BaseLlm } from '../models/BaseLlm';
 import { LlmRequest } from '../models/LlmRequest';
 import { LlmResponse } from '../models/LlmResponse';
@@ -22,6 +21,12 @@ import { BasePlanner } from '../planners/BasePlanner';
 import { BaseCodeExecutor } from '../code-executors/BaseCodeExecutor';
 import { v4 as uuidv4 } from 'uuid';
 import { State } from '../sessions/State';
+
+// Placeholder for BaseToolset since it's not defined in the original codebase
+// It's needed for the ToolUnion type.
+export interface BaseToolset {
+  getTools(ctx: ReadonlyContext): Promise<BaseTool[]>;
+}
 
 /**
  * Base interface for example providers
@@ -39,32 +44,57 @@ interface Example {
   [key: string]: any;
 }
 
-type InstructionProvider = (context: ReadonlyContext) => string;
-type ToolUnion = BaseTool | (((...args: any[]) => any) & FunctionToolOptions);
+type InstructionProvider = (
+  context: ReadonlyContext
+) => string | Promise<string>;
+type ToolUnion =
+  | BaseTool
+  | (((...args: any[]) => any) & FunctionToolOptions)
+  | BaseToolset;
 type ExamplesUnion = Example[] | BaseExampleProvider;
 
-type BeforeModelCallback = (
+type SingleBeforeModelCallback = (
   context: CallbackContext,
   request: LlmRequest
-) => LlmResponse | undefined;
+) => LlmResponse | undefined | Promise<LlmResponse | undefined>;
 
-type AfterModelCallback = (
+type BeforeModelCallback =
+  | SingleBeforeModelCallback
+  | SingleBeforeModelCallback[];
+
+type SingleAfterModelCallback = (
   context: CallbackContext,
   response: LlmResponse
-) => LlmResponse | undefined;
+) => LlmResponse | undefined | Promise<LlmResponse | undefined>;
 
-type BeforeToolCallback = (
+type AfterModelCallback =
+  | SingleAfterModelCallback
+  | SingleAfterModelCallback[];
+
+type SingleBeforeToolCallback = (
   tool: BaseTool,
   args: Record<string, any>,
   toolContext: ToolContext
-) => Record<string, any> | undefined | Promise<Record<string, any> | undefined>;
+) =>
+  | Record<string, any>
+  | undefined
+  | Promise<Record<string, any> | undefined>;
 
-type AfterToolCallback = (
+type BeforeToolCallback =
+  | SingleBeforeToolCallback
+  | SingleBeforeToolCallback[];
+
+type SingleAfterToolCallback = (
   tool: BaseTool,
   args: Record<string, any>,
   toolContext: ToolContext,
   response: Record<string, any>
-) => Record<string, any> | undefined | Promise<Record<string, any> | undefined>;
+) =>
+  | Record<string, any>
+  | undefined
+  | Promise<Record<string, any> | undefined>;
+
+type AfterToolCallback = SingleAfterToolCallback | SingleAfterToolCallback[];
 
 /**
  * Extended options for LLM agents.
@@ -95,7 +125,7 @@ export interface LlmAgentOptions extends AgentOptions {
   globalInstruction?: string | InstructionProvider;
   
   /** Content generation configuration */
-  generateContentConfig?: any;
+  generateContentConfig?: GenerateContentConfig;
   
   /** Include contents setting */
   includeContents?: 'default' | 'none';
@@ -134,11 +164,24 @@ export interface LlmAgentOptions extends AgentOptions {
 /**
  * Convert a tool union to a BaseTool instance
  */
-function convertToolUnionToTool(toolUnion: ToolUnion): BaseTool {
+async function convertToolUnionToTools(
+  toolUnion: ToolUnion,
+  ctx: ReadonlyContext
+): Promise<BaseTool[]> {
   if (toolUnion instanceof BaseTool) {
-    return toolUnion;
-  } else if (typeof toolUnion === 'function') {
-    return new FunctionTool(toolUnion);
+    return [toolUnion];
+  }
+  if (typeof toolUnion === 'function') {
+    return [new FunctionTool(toolUnion as any)];
+  }
+  // Check if it's a toolset by looking for a getTools method
+  if (
+    typeof toolUnion === 'object' &&
+    toolUnion !== null &&
+    'getTools' in toolUnion &&
+    typeof (toolUnion as BaseToolset).getTools === 'function'
+  ) {
+    return await (toolUnion as BaseToolset).getTools(ctx);
   }
   throw new Error('Invalid tool type');
 }
@@ -147,9 +190,6 @@ function convertToolUnionToTool(toolUnion: ToolUnion): BaseTool {
  * An agent that uses an LLM flow to process requests.
  */
 export class LlmAgent extends BaseAgent {
-  /** Optional custom flow for this agent */
-  private customFlow?: BaseLlmFlow;
-  
   /** The LLM model used by this agent */
   model: string | BaseLlm = '';
   
@@ -163,7 +203,7 @@ export class LlmAgent extends BaseAgent {
   tools: ToolUnion[] = [];
   
   /** Content generation configuration */
-  generateContentConfig?: any;
+  generateContentConfig: GenerateContentConfig;
   
   /** Whether to disallow transfers to the parent agent */
   disallowTransferToParent: boolean = false;
@@ -203,6 +243,8 @@ export class LlmAgent extends BaseAgent {
   
   /** Callback after tool invocation */
   afterToolCallback?: AfterToolCallback;
+
+  private readonly customFlow?: BaseLlmFlow;
   
   /**
    * Creates a new LLM agent.
@@ -222,7 +264,30 @@ export class LlmAgent extends BaseAgent {
     this.instruction = options.instruction || '';
     this.globalInstruction = options.globalInstruction || '';
     this.tools = options.tools || [];
-    this.generateContentConfig = options.generateContentConfig;
+
+    // Validate and set generateContentConfig
+    if (options.generateContentConfig) {
+      if (options.generateContentConfig.thinkingConfig) {
+        throw new Error('Thinking config should be set via LlmAgent.planner.');
+      }
+      if (options.generateContentConfig.tools) {
+        throw new Error('All tools must be set via LlmAgent.tools.');
+      }
+      if (options.generateContentConfig.systemInstruction) {
+        throw new Error(
+          'System instruction must be set via LlmAgent.instruction.'
+        );
+      }
+      if (options.generateContentConfig.responseSchema) {
+        throw new Error(
+          'Response schema must be set via LlmAgent.output_schema.'
+        );
+      }
+      this.generateContentConfig = options.generateContentConfig;
+    } else {
+      this.generateContentConfig = { tools: [] };
+    }
+    
     this.disallowTransferToParent = options.disallowTransferToParent || false;
     this.disallowTransferToPeers = options.disallowTransferToPeers || false;
     this.includeContents = options.includeContents || 'default';
@@ -239,102 +304,6 @@ export class LlmAgent extends BaseAgent {
     
     // Validate output schema configuration
     this.validateOutputSchema();
-  }
-  
-  /**
-   * Creates a new session for this agent
-   * 
-   * @returns A promise resolving to a new Session object
-   */
-  async createSession(options: Partial<SessionOptions> = {}): Promise<Session> {
-    const messages: Message[] = [];
-    
-    // Create a session with the Session class
-    const session = new Session({
-      id: options.id,
-      appName: options.appName || 'default-app',
-      userId: options.userId || 'default-user',
-      state: options.state || new State(),
-      events: options.events || []
-    });
-    
-    // Add this agent to the session's agents map
-    session.agents.set(this.name, this);
-    
-    // Extend the session with our custom methods for message handling
-    const extendedSession = session as Session & {
-      sendMessage: (message: Message | string) => Promise<Message>;
-      getMessages: () => Message[];
-    };
-    
-    // Add the sendMessage method
-    extendedSession.sendMessage = async (message: Message | string): Promise<Message> => {
-      // Convert string to Message if needed
-      const msgObj = typeof message === 'string'
-        ? {
-            id: uuidv4(),
-            role: MessageRole.USER,
-            parts: [{ text: message }] as Part[],
-            timestamp: new Date(),
-            text: () => typeof message === 'string' ? message : JSON.stringify(message)
-          }
-        : message;
-         
-      // Add to message history
-      messages.push(msgObj);
-      
-      // Create an invocation context
-      const context = new InvocationContext({
-        invocationId: uuidv4(),
-        session: session,
-        agent: this,
-        userContent: {
-          role: MessageRole.USER,
-          parts: msgObj.parts
-        } as Content
-      });
-      
-      // Process the message using the agent
-      const events: Event[] = [];
-      for await (const event of this.invoke(context)) {
-        events.push(event);
-        // Also add to session's events
-        session.events.push(event);
-      }
-      
-      // Create a response from the final event
-      const finalEvent = events[events.length - 1];
-      if (!finalEvent || !finalEvent.content) {
-        throw new Error('No response generated by agent');
-      }
-      
-      // Create response message
-      const responseMsg: Message = {
-        id: uuidv4(),
-        role: MessageRole.ASSISTANT,
-        parts: finalEvent.content.parts || [],
-        timestamp: new Date(),
-        text: () => {
-          if (!finalEvent.content || !finalEvent.content.parts) return '';
-          return finalEvent.content.parts
-            .filter(part => part.text !== undefined)
-            .map(part => part.text)
-            .join('');
-        }
-      };
-      
-      // Add to message history
-      messages.push(responseMsg);
-      
-      return responseMsg;
-    };
-    
-    // Add the getMessages method
-    extendedSession.getMessages = (): Message[] => {
-      return [...messages];
-    };
-    
-    return extendedSession;
   }
   
   /**
@@ -409,11 +378,12 @@ export class LlmAgent extends BaseAgent {
    * Gets the resolved instruction for this agent.
    * This method is only for use by Agent Development Kit.
    */
-  canonicalInstruction(ctx: ReadonlyContext): string {
+  async canonicalInstruction(ctx: ReadonlyContext): Promise<string> {
     if (typeof this.instruction === 'string') {
       return this.instruction;
     } else {
-      return this.instruction(ctx);
+      const instruction = this.instruction(ctx);
+      return instruction instanceof Promise ? await instruction : instruction;
     }
   }
   
@@ -421,11 +391,12 @@ export class LlmAgent extends BaseAgent {
    * Gets the resolved global instruction.
    * This method is only for use by Agent Development Kit.
    */
-  canonicalGlobalInstruction(ctx: ReadonlyContext): string {
+  async canonicalGlobalInstruction(ctx: ReadonlyContext): Promise<string> {
     if (typeof this.globalInstruction === 'string') {
       return this.globalInstruction;
     } else {
-      return this.globalInstruction(ctx);
+      const instruction = this.globalInstruction(ctx);
+      return instruction instanceof Promise ? await instruction : instruction;
     }
   }
   
@@ -433,8 +404,43 @@ export class LlmAgent extends BaseAgent {
    * Gets the resolved tools as BaseTool instances.
    * This method is only for use by Agent Development Kit.
    */
-  get canonicalTools(): BaseTool[] {
-    return this.tools.map(tool => convertToolUnionToTool(tool));
+  get canonicalTools(): (ctx: ReadonlyContext) => Promise<BaseTool[]> {
+    return async (ctx: ReadonlyContext): Promise<BaseTool[]> => {
+      const resolvedTools: BaseTool[] = [];
+      for (const toolUnion of this.tools) {
+        const tools = await convertToolUnionToTools(toolUnion, ctx);
+        resolvedTools.push(...tools);
+      }
+      return resolvedTools;
+    };
+  }
+
+  get canonicalBeforeModelCallbacks(): SingleBeforeModelCallback[] {
+    if (!this.beforeModelCallback) return [];
+    return Array.isArray(this.beforeModelCallback)
+      ? this.beforeModelCallback
+      : [this.beforeModelCallback];
+  }
+
+  get canonicalAfterModelCallbacks(): SingleAfterModelCallback[] {
+    if (!this.afterModelCallback) return [];
+    return Array.isArray(this.afterModelCallback)
+      ? this.afterModelCallback
+      : [this.afterModelCallback];
+  }
+
+  get canonicalBeforeToolCallbacks(): SingleBeforeToolCallback[] {
+    if (!this.beforeToolCallback) return [];
+    return Array.isArray(this.beforeToolCallback)
+      ? this.beforeToolCallback
+      : [this.beforeToolCallback];
+  }
+
+  get canonicalAfterToolCallbacks(): SingleAfterToolCallback[] {
+    if (!this.afterToolCallback) return [];
+    return Array.isArray(this.afterToolCallback)
+      ? this.afterToolCallback
+      : [this.afterToolCallback];
   }
   
   /**
@@ -563,4 +569,87 @@ export class LlmAgent extends BaseAgent {
       );
     }
   }
-} 
+
+  /**
+   * Execute before model callbacks
+   */
+  async executeBeforeModelCallbacks(
+    context: CallbackContext,
+    request: LlmRequest
+  ): Promise<LlmResponse | undefined> {
+    const callbacks = this.canonicalBeforeModelCallbacks;
+    if (callbacks.length === 0) return undefined;
+    
+    let result: LlmResponse | undefined = undefined;
+    for (const callback of callbacks) {
+      const callbackResult = await callback(context, request);
+      if (callbackResult) {
+        result = callbackResult;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Execute after model callbacks
+   */
+  async executeAfterModelCallbacks(
+    context: CallbackContext,
+    response: LlmResponse
+  ): Promise<LlmResponse | undefined> {
+    const callbacks = this.canonicalAfterModelCallbacks;
+    if (callbacks.length === 0) return undefined;
+    
+    let result: LlmResponse | undefined = undefined;
+    for (const callback of callbacks) {
+      const callbackResult = await callback(context, response);
+      if (callbackResult) {
+        result = callbackResult;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Execute before tool callbacks
+   */
+  async executeBeforeToolCallbacks(
+    tool: BaseTool,
+    args: Record<string, any>,
+    toolContext: ToolContext
+  ): Promise<Record<string, any> | undefined> {
+    const callbacks = this.canonicalBeforeToolCallbacks;
+    if (callbacks.length === 0) return undefined;
+    
+    let result: Record<string, any> | undefined = undefined;
+    for (const callback of callbacks) {
+      const callbackResult = await callback(tool, args, toolContext);
+      if (callbackResult) {
+        result = callbackResult;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Execute after tool callbacks
+   */
+  async executeAfterToolCallbacks(
+    tool: BaseTool,
+    args: Record<string, any>,
+    toolContext: ToolContext,
+    response: Record<string, any>
+  ): Promise<Record<string, any> | undefined> {
+    const callbacks = this.canonicalAfterToolCallbacks;
+    if (callbacks.length === 0) return undefined;
+    
+    let result: Record<string, any> | undefined = response;
+    for (const callback of callbacks) {
+      const callbackResult = await callback(tool, args, toolContext, result);
+      if (callbackResult) {
+        result = callbackResult;
+      }
+    }
+    return result;
+  }
+}

@@ -473,7 +473,19 @@ export class EvaluationGenerator {
 
     // Apply callback to matching tools
     for (const tool of agent.tools) {
-      const toolName = tool.name;
+      let toolName: string;
+      
+      // Handle different tool types in ToolUnion
+      if (tool instanceof BaseTool) {
+        toolName = tool.name;
+      } else if (typeof tool === 'function') {
+        toolName = tool.name || 'anonymous_function';
+      } else if (typeof tool === 'object' && tool !== null && 'name' in tool) {
+        toolName = (tool as any).name;
+      } else {
+        continue; // Skip tools without names
+      }
+      
       if (allMockTools.has(toolName)) {
         // Assign the callback with the proper type/return value
         agent.beforeToolCallback = (tool: BaseTool, args: Record<string, any>, toolContext: ToolContext) => 

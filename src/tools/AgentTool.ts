@@ -1,6 +1,8 @@
 import { BaseTool, BaseToolOptions } from './BaseTool';
 import { ToolContext } from './ToolContext';
 import { LlmAgent } from '../agents';
+import { InvocationContext } from '../agents/InvocationContext';
+import { v4 as uuidv4 } from 'uuid';
 
 // Define a type that can be either Agent or LlmAgent
 export type BaseAgentType = LlmAgent;
@@ -117,7 +119,7 @@ export class AgentTool extends BaseTool {
     const input = params.input || Object.values(params)[0];
     
     if (!isLlmAgent(this.agent)) {
-      throw new Error(`Agent ${this.name} does not support createSession method`);
+      throw new Error(`Agent ${this.name} does not support running as a tool`);
     }
     
     // Create a new session for the agent
@@ -129,16 +131,42 @@ export class AgentTool extends BaseTool {
       sessionOptions.state = context.session.state;
     }
     
-    // Create a new session for the agent
-    const session: any = await this.agent.createSession(sessionOptions);
+    // Create a new session - access invocationContext through the getter
+    const session = await (context as any).invocationContext.sessionService.createSession({
+      appName: (context as any).invocationContext.session.appName,
+      userId: (context as any).invocationContext.session.userId,
+      sessionId: undefined,
+      state: sessionOptions.state
+    });
     
     // Send the input to the agent and get the response
-    const response = await session.sendMessage(input);
+    const invocationContext = new InvocationContext({
+      invocationId: uuidv4(),
+      agent: this.agent,
+      session: session as any
+    });
     
-    // Get the response text and try to parse it as JSON
-    const responseText = await response.text();
+    // Add the user message to the context
+    const userContent = {
+      role: 'user',
+      parts: [{ text: input }]
+    };
+    invocationContext.userContent = userContent;
+    
+    // Run the agent
+    let responseText = '';
+    for await (const event of this.agent.runAsync(invocationContext)) {
+      if (event.content && event.author === this.agent.name) {
+        // Collect the response text
+        responseText += event.content.parts
+          .filter(part => part.text !== undefined)
+          .map(part => part.text)
+          .join('');
+      }
+    }
+    
+    // Try to parse the response as JSON
     let parsedResponse;
-    
     try {
       parsedResponse = JSON.parse(responseText);
     } catch (e) {

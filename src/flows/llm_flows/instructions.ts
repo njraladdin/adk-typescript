@@ -34,21 +34,21 @@ class InstructionsLlmRequestProcessor implements BaseLlmRequestProcessor {
 
     const rootAgent = agent.rootAgent;
 
-    // Append global instructions if set
+    // Append global instructions if set.
     if (rootAgent instanceof LlmAgent && rootAgent.globalInstruction) {
-      const rawSi = rootAgent.canonicalGlobalInstruction(
+      const rawSi = await rootAgent.canonicalGlobalInstruction(
         new ReadonlyContext(invocationContext)
       );
-      const si = populateValues(rawSi, invocationContext);
+      const si = await populateValues(rawSi, invocationContext);
       llmRequest.appendInstructions([si]);
     }
 
-    // Append agent instructions if set
+    // Append agent instructions if set.
     if (agent.instruction) {
-      const rawSi = agent.canonicalInstruction(
+      const rawSi = await agent.canonicalInstruction(
         new ReadonlyContext(invocationContext)
       );
-      const si = populateValues(rawSi, invocationContext);
+      const si = await populateValues(rawSi, invocationContext);
       llmRequest.appendInstructions([si]);
     }
 
@@ -71,60 +71,75 @@ export const requestProcessor = new InstructionsLlmRequestProcessor();
  * @param context The invocation context
  * @returns The populated instruction
  */
-function populateValues(
+async function populateValues(
   instructionTemplate: string,
   context: InvocationContext
-): string {
-  return instructionTemplate.replace(
-    /{+[^{}]*}+/g,
-    (match) => {
-      let varName = match.slice(1, -1).trim();
-      let optional = false;
+): Promise<string> {
+  const replacer = async (match: string): Promise<string> => {
+    let varName = match.slice(1, -1).trim();
+    let optional = false;
 
-      if (varName.endsWith('?')) {
-        optional = true;
-        varName = varName.slice(0, -1);
+    if (varName.endsWith('?')) {
+      optional = true;
+      varName = varName.slice(0, -1);
+    }
+
+    if (varName.startsWith('artifact.')) {
+      varName = varName.substring('artifact.'.length);
+      if (!context.artifactService) {
+        throw new Error('Artifact service is not initialized.');
+      }
+      try {
+        const artifactParams: ArtifactParams = {
+          appName: context.session.appName,
+          userId: context.session.userId,
+          sessionId: context.session.id,
+          filename: varName,
+        };
+        const artifactPromise = context.artifactService.loadArtifact(
+          artifactParams
+        );
+        const artifact = await Promise.resolve(artifactPromise);
+
+        if (!artifact) {
+          throw new Error(`Artifact ${varName} not found.`);
+        }
+        return String(artifact);
+      } catch (error) {
+        if (optional) return '';
+        throw error;
+      }
+    } else {
+      if (!isValidStateName(varName)) {
+        return match;
       }
 
-      if (varName.startsWith('artifact.')) {
-        varName = varName.substring('artifact.'.length);
-        if (context.artifactService) {
-          try {
-            const artifactParams: ArtifactParams = {
-              appName: context.session.appName,
-              userId: context.session.userId,
-              sessionId: context.session.id,
-              filename: varName
-            };
-            
-            const artifact = context.artifactService.loadArtifact(
-              artifactParams
-            );
-            return String(artifact);
-          } catch (error) {
-            if (optional) return '';
-            throw new Error(`Artifact ${varName} not found.`);
-          }
-        } else {
-          throw new Error('Artifact service is not initialized.');
-        }
+      if (context.session.state.has(varName)) {
+        return String(context.session.state.get(varName));
       } else {
-        if (!isValidStateName(varName)) {
-          return match;
-        }
-        
-        if (context.session.state.has(varName)) {
-          return String(context.session.state.get(varName));
+        if (optional) {
+          return '';
         } else {
-          if (optional) {
-            return '';
-          } else {
-            throw new Error(`Context variable not found: \`${varName}\`.`);
-          }
+          throw new Error(`Context variable not found: \`${varName}\`.`);
         }
       }
     }
-  );
+  };
+
+  const regex = /{+[^{}]*}+/g;
+  const matches = [...instructionTemplate.matchAll(regex)];
+  let result = '';
+  let lastIndex = 0;
+
+  for (const match of matches) {
+    result += instructionTemplate.substring(lastIndex, match.index);
+    const replacement = await replacer(match[0]);
+    result += replacement;
+    lastIndex = (match.index ?? 0) + match[0].length;
+  }
+  result += instructionTemplate.substring(lastIndex);
+  
+  return result;
 }
 
 /**
@@ -245,4 +260,4 @@ export const stepByStepRequestProcessor = makeInstructionsRequestProcessor(
  */
 export const safetyRequestProcessor = makeInstructionsRequestProcessor(
   'Be helpful, harmless, and honest in your responses. Avoid responses that could be harmful, illegal, unethical, deceptive, or promote misinformation.'
-); 
+);

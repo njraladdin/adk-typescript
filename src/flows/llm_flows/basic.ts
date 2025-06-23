@@ -7,6 +7,7 @@ import { LlmRequest } from '../../models/LlmRequest';
 import { BaseLlmRequestProcessor } from './BaseLlmProcessor';
 import { Content } from '../../models/types';
 import { LlmAgent } from '../../agents/LlmAgent';
+import { ReadonlyContext } from '../../agents/ReadonlyContext';
 
 /**
  * A request processor that adds the user's content to the request and handles basic LLM request setup.
@@ -111,8 +112,11 @@ class ContentLlmRequestProcessor implements BaseLlmRequestProcessor {
     
     // Append tool definitions for any available tools on the agent
     if (agent.canonicalTools) {
-      llmRequest.appendTools(agent.canonicalTools);
-      console.debug('Added tools to request:', agent.canonicalTools.map(t => t.name));
+      const toolsFunc = agent.canonicalTools;
+      const ctx = new ReadonlyContext(invocationContext);
+      const tools = await toolsFunc(ctx);
+      llmRequest.appendTools(tools);
+      console.debug('Added tools to request:', tools.map(t => t.name));
     }
     
     // Return early - no events to yield
