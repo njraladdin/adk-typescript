@@ -42,6 +42,7 @@ program
   .command('run <agent>')
   .description('Runs an interactive CLI for a certain agent.')
   .option('--save_session', 'Whether to save the session to a json file on exit.', false)
+  .option('--session_id <sessionId>', 'Optional. The session ID to save the session to on exit when --save_session is set to true. User will be prompted to enter a session ID if not set.')
   .option('--replay <replayFile>', 'Path to a JSON file with initial state and user queries. Creates a new session with this state and runs the queries without interactive mode.')
   .option('--resume <resumeFile>', 'Path to a previously saved session file. Replays the session and continues in interactive mode.')
   .action((agent: string, options: any) => {
@@ -76,6 +77,7 @@ program
           replayFile: options.replay,
           resumeFile: options.resume,
           saveSession: options.save_session,
+          sessionId: options.session_id,
         });
       } else {
         const agentParentDir = path.dirname(agentPath);
@@ -89,6 +91,7 @@ program
           replayFile: options.replay,
           resumeFile: options.resume,
           saveSession: options.save_session,
+          sessionId: options.session_id,
         });
       }
     } catch (error) {

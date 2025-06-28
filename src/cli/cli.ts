@@ -170,6 +170,7 @@ function getSessionContents(session: Session): Content[] {
  * @param options.replayFile Optional path to a replay JSON file with initial state and queries
  * @param options.resumeFile Optional path to a previously saved session file
  * @param options.saveSession Whether to save the session after running
+ * @param options.sessionId Optional session ID to save the session to on exit
  */
 export async function runCli({
   agentParentDir,
@@ -177,12 +178,14 @@ export async function runCli({
   replayFile,
   resumeFile,
   saveSession = false,
+  sessionId,
 }: {
   agentParentDir: string;
   agentFolderName: string;
   replayFile?: string;
   resumeFile?: string;
   saveSession: boolean;
+  sessionId?: string;
 }): Promise<void> {
   // Add agent parent directory to the module search path
   if (!process.env.PYTHONPATH?.includes(agentParentDir)) {
@@ -304,17 +307,19 @@ export async function runCli({
         if (replayFile) {
           sessionPath = replayFile.replace('.input.json', '.session.json');
         } else {
-          // Ask for session ID
-          const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout,
+          // Use provided session ID or ask for one
+          const finalSessionId = sessionId || await new Promise<string>(resolve => {
+            const rl = readline.createInterface({
+              input: process.stdin,
+              output: process.stdout,
+            });
+            rl.question('Session ID to save: ', (answer) => {
+              rl.close();
+              resolve(answer);
+            });
           });
-          const sessionId = await new Promise<string>(resolve => {
-            rl.question('Session ID to save: ', resolve);
-          });
-          rl.close();
           
-          sessionPath = path.join(path.dirname(agentModulePath), `${sessionId}.session.json`);
+          sessionPath = path.join(path.dirname(agentModulePath), `${finalSessionId}.session.json`);
         }
         
         // Fetch updated session
