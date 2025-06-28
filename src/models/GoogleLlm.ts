@@ -678,13 +678,18 @@ export class Gemini extends BaseLlm {
   private get _liveApiClient(): GenAIClient {
     if (!this.liveApiClientCache) {
       if (this._apiBackend === 'vertex') {
-        // Use default API version for Vertex
-        this.liveApiClientCache = new GenAIClient({ headers: this._trackingHeaders });
-      } else {
-        // Use v1alpha for ML Dev
+        // Use beta version for vertex api
+        const apiVersion = 'v1beta1'; // use default api version for vertex
         this.liveApiClientCache = new GenAIClient({
           headers: this._trackingHeaders,
-          api_version: 'v1alpha'
+          api_version: apiVersion
+        });
+      } else {
+        // Use v1alpha for ML Dev
+        const apiVersion = 'v1alpha';
+        this.liveApiClientCache = new GenAIClient({
+          headers: this._trackingHeaders,
+          api_version: apiVersion
         });
       }
     }
