@@ -7,6 +7,7 @@ import cors from 'cors';
 import * as chokidar from 'chokidar';
 import { BaseAgent } from '../agents/BaseAgent';
 import { LlmAgent } from '../agents/LlmAgent';
+import { BaseToolset } from '../tools/BaseToolset';
 import { RunConfig, StreamingMode } from '../agents/RunConfig';
 import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 import { InMemoryMemoryService } from '../memory/InMemoryMemoryService';
@@ -119,6 +120,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
   // Initialize services
   const runnerDict: Record<string, Runner> = {};
   const rootAgentDict: Record<string, BaseAgent> = {};
+  const toolsetsToClose: Set<BaseToolset> = new Set();
 
   // Build the Artifact service
   const artifactService = new InMemoryArtifactService();
@@ -137,6 +139,23 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     }
   } else {
     sessionService = new InMemorySessionService();
+  }
+
+  // Helper function to collect all toolsets from an agent tree
+  function getAllToolsets(agent: BaseAgent): Set<BaseToolset> {
+    const toolsets = new Set<BaseToolset>();
+    if (agent instanceof LlmAgent) {
+      for (const toolUnion of agent.tools) {
+        if (toolUnion instanceof BaseToolset) {
+          toolsets.add(toolUnion);
+        }
+      }
+    }
+    for (const subAgent of agent.subAgents) {
+      const subToolsets = getAllToolsets(subAgent);
+      subToolsets.forEach(toolset => toolsets.add(toolset));
+    }
+    return toolsets;
   }
 
   // Define API endpoints
@@ -721,62 +740,59 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     }
   });
 
-  // Event graph endpoint
-  app.get('/apps/:appName/users/:userId/sessions/:sessionId/events/:eventId/graph', 
-    async (req: express.Request, res: express.Response) => {
+  // Agent graph endpoint
+  app.get('/apps/:appName/users/:userId/sessions/:sessionId/events/:eventId/graph', async (req: express.Request, res: express.Response) => {
+    try {
       const { appName, userId, sessionId, eventId } = req.params;
       
       // Connect to managed session if agent_engine_id is set
-      const effectiveAppName = agentEngineId || appName;
+      const appId = agentEngineId || appName;
       
       const session = sessionService.getSession({
-        appName: effectiveAppName,
+        appName: appId,
         userId,
         sessionId
       });
       
-      if (!session || !session.events) {
-        return res.json({});
-      }
+      const sessionEvents = session?.events || [];
+      const event = sessionEvents.find((x: any) => x.id === eventId);
       
-      const event = session.events.find((e: RunnerEvent) => e.id === eventId);
       if (!event) {
         return res.json({});
       }
       
-      try {
-        const rootAgent = await getRootAgent(appName);
-        let dotGraph = null;
-        
-        // Check for function calls
-        const functionCalls = event.getFunctionCalls ? event.getFunctionCalls() : [];
-        const functionResponses = event.getFunctionResponses ? event.getFunctionResponses() : [];
-        
-        if (functionCalls && functionCalls.length > 0) {
-          const functionCallHighlights = functionCalls.map((call: any) => 
-            [event.author, call.name] as [string, string]
-          );
-          dotGraph = agentGraph.getAgentGraph(rootAgent, functionCallHighlights);
-        } else if (functionResponses && functionResponses.length > 0) {
-          const functionResponseHighlights = functionResponses.map((response: any) => 
-            [response.name, event.author] as [string, string]
-          );
-          dotGraph = agentGraph.getAgentGraph(rootAgent, functionResponseHighlights);
-        } else {
-          dotGraph = agentGraph.getAgentGraph(rootAgent, [[event.author, '']]);
-        }
-        
-        if (dotGraph) {
-          // For TypeScript, we'll return the dot source directly
-          return res.json({ dot_src: dotGraph.to_string() });
-        } else {
-          return res.json({});
-        }
-      } catch (error) {
-        console.error('Error generating agent graph:', error);
-        return res.status(500).json({ error: 'Error generating agent graph' });
+      const rootAgent = await getRootAgent(appName);
+      let dotGraph;
+      
+      // Check for function calls
+      const functionCalls = event.getFunctionCalls ? event.getFunctionCalls() : [];
+      const functionResponses = event.getFunctionResponses ? event.getFunctionResponses() : [];
+      
+      if (functionCalls && functionCalls.length > 0) {
+        const functionCallHighlights = functionCalls.map((call: any) => 
+          [event.author, call.name] as [string, string]
+        );
+        dotGraph = await agentGraph.getAgentGraph(rootAgent, functionCallHighlights);
+      } else if (functionResponses && functionResponses.length > 0) {
+        const functionResponseHighlights = functionResponses.map((response: any) => 
+          [response.name, event.author] as [string, string]
+        );
+        dotGraph = await agentGraph.getAgentGraph(rootAgent, functionResponseHighlights);
+      } else {
+        dotGraph = await agentGraph.getAgentGraph(rootAgent, [[event.author, '']]);
       }
-    });
+      
+      if (dotGraph) {
+        // For TypeScript, we'll return the dot source directly
+        return res.json({ dot_src: dotGraph.to_string() });
+      } else {
+        return res.json({});
+      }
+    } catch (error) {
+      console.error('Error generating agent graph:', error);
+      return res.status(500).json({ error: 'Error generating agent graph' });
+    }
+  });
 
   // Helper functions for eval set management
   function getEvalSetFilePath(appName: string, evalSetId: string): string {
@@ -846,6 +862,11 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       
       const rootAgent = agentModule.agent.rootAgent;
       rootAgentDict[appName] = rootAgent;
+      
+      // Collect all toolsets for cleanup
+      const agentToolsets = getAllToolsets(rootAgent);
+      agentToolsets.forEach(toolset => toolsetsToClose.add(toolset));
+      
       return rootAgent;
     } catch (error) {
       console.error(`Error loading root agent for ${appName}:`, error);
@@ -923,6 +944,33 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       setupAutoReload(server, agentDir, port);
     }
   }
+
+  // Setup graceful shutdown handler for toolsets
+  const gracefulShutdown = async () => {
+    console.log('Shutting down server and cleaning up toolsets...');
+    
+    // Close all toolsets
+    const closePromises = Array.from(toolsetsToClose).map(async (toolset) => {
+      try {
+        await toolset.close();
+      } catch (error) {
+        console.error('Error closing toolset:', error);
+      }
+    });
+    
+    await Promise.all(closePromises);
+    console.log('All toolsets closed.');
+    
+    // Close the server
+    server.close(() => {
+      console.log('Server closed.');
+      process.exit(0);
+    });
+  };
+
+  // Handle graceful shutdown signals
+  process.on('SIGTERM', gracefulShutdown);
+  process.on('SIGINT', gracefulShutdown);
 
   // Return both the app and server
   return { app, server };

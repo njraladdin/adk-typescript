@@ -4,6 +4,7 @@
 
 // Base tool exports
 export * from './BaseTool';
+export * from './BaseToolset';
 export * from './FunctionTool';
 export * from './AgentTool';
 export * from './CrewaiTool';

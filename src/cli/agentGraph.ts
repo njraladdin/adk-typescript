@@ -37,7 +37,7 @@ try {
  * @param agent The agent to build the graph for
  * @param highlightPairs Optional pairs of node names to highlight
  */
-function buildGraph(graph: any, agent: BaseAgent, highlightPairs?: HighlightPair[]): void {
+async function buildGraph(graph: any, agent: BaseAgent, highlightPairs?: HighlightPair[]): Promise<void> {
   const darkGreen = '#0F5223';
   const lightGreen = '#69CB87';
   const lightGray = '#cccccc';
@@ -158,22 +158,22 @@ function buildGraph(graph: any, agent: BaseAgent, highlightPairs?: HighlightPair
 
   // Draw sub-agents
   for (const subAgent of agent.subAgents) {
-    buildGraph(graph, subAgent, highlightPairs);
+    await buildGraph(graph, subAgent, highlightPairs);
     drawEdge(agent.name, subAgent.name);
   }
 
   // Draw tools if it's an LLM agent
-  if (agent instanceof LlmAgent && agent.canonicalTools) {
-    const toolsFunc = agent.canonicalTools;
-    const ctx = new ReadonlyContext({} as any);
-    toolsFunc(ctx).then(tools => {
+  if (agent instanceof LlmAgent) {
+    try {
+      const ctx = new ReadonlyContext({} as any);
+      const tools = await agent.canonicalTools(ctx);
       for (const tool of tools) {
         drawNode(tool);
         drawEdge(agent.name, getNodeName(tool));
       }
-    }).catch(err => {
+    } catch (err) {
       console.error('Error getting canonical tools:', err);
-    });
+    }
   }
 }
 
@@ -185,11 +185,11 @@ function buildGraph(graph: any, agent: BaseAgent, highlightPairs?: HighlightPair
  * @param asImage Whether to return the graph as an image (PNG) or as a graphviz object
  * @returns The graph as PNG binary data or as a graphviz object
  */
-export function getAgentGraph(
+export async function getAgentGraph(
   rootAgent: BaseAgent,
   highlightPairs?: HighlightPair[],
   asImage = false
-): Buffer | any {
+): Promise<Buffer | any> {
   if (!graphviz) {
     throw new Error('Graphviz module not found. Please install it with: npm install graphviz');
   }
@@ -201,7 +201,7 @@ export function getAgentGraph(
   graph.set('rankdir', 'LR');
   graph.set('bgcolor', '#333537');
 
-  buildGraph(graph, rootAgent, highlightPairs);
+  await buildGraph(graph, rootAgent, highlightPairs);
 
   if (asImage) {
     return graph.output('png');

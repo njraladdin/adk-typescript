@@ -106,7 +106,7 @@ program
   .description('Generates a graph visualization of the agent and its tools.')
   .option('--output <outputFile>', 'Path to save the graph image. Default is "<agent_name>_graph.png"')
   .option('--highlight <pairs...>', 'Pairs of node names to highlight in the graph, e.g., "agent1,agent2"', [])
-  .action((agent: string, options: any) => {
+  .action(async (agent: string, options: any) => {
     try {
       // Import agent module and get root agent
       const agentParentDir = path.dirname(agent);
@@ -134,7 +134,7 @@ program
       
       // Generate the graph
       const outputFile = options.output || `${agentFolderName}_graph.png`;
-      const graph = getAgentGraph(rootAgent, highlightPairs, true);
+      const graph = await getAgentGraph(rootAgent, highlightPairs, true);
       
       // Save the graph image
       fs.writeFileSync(outputFile, graph);

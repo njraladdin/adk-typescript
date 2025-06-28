@@ -39,13 +39,6 @@ export class CallbackContext extends ReadonlyContext {
   }
 
   /**
-   * The user content that started this invocation. READONLY field.
-   */
-  get userContent(): Content | undefined {
-    return this.invocationContext.userContent;
-  }
-
-  /**
    * Loads an artifact attached to the current session.
    * 
    * @param filename The filename of the artifact.

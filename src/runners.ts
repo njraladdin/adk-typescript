@@ -451,9 +451,8 @@ export class Runner {
       }
       
       // Check if built-in code execution tool is already included
-      const toolsFunc = llmAgent.canonicalTools;
       const ctx = new ReadonlyContext(context);
-      const resolvedTools = await toolsFunc(ctx);
+      const resolvedTools = await llmAgent.canonicalTools(ctx);
       const hasCodeExecutionTool = resolvedTools.some(
         (tool: any) => tool instanceof BuiltInCodeExecutionTool
       );

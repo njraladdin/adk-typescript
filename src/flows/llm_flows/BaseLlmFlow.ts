@@ -437,23 +437,20 @@ export abstract class BaseLlmFlow {
     }
     
     // Run processors for tools
-    if (agent.canonicalTools) {
-      const toolsFunc = agent.canonicalTools;
-      const ctx = new ReadonlyContext(invocationContext);
-      const tools = await toolsFunc(ctx);
+    const ctx = new ReadonlyContext(invocationContext);
+    const tools = await agent.canonicalTools(ctx);
+    
+    for (const tool of tools) {
+      // Create a new ToolContext directly with the invocation context
+      // This matches the Python implementation: tool_context = ToolContext(invocation_context)
+      const toolContext = new ToolContext(
+        invocationContext
+      );
       
-      for (const tool of tools) {
-        // Create a new ToolContext directly with the invocation context
-        // This matches the Python implementation: tool_context = ToolContext(invocation_context)
-        const toolContext = new ToolContext(
-          invocationContext
-        );
-        
-        await tool.processLlmRequest({ 
-          toolContext, 
-          llmRequest 
-        });
-      }
+      await tool.processLlmRequest({ 
+        toolContext, 
+        llmRequest 
+      });
     }
     
   }

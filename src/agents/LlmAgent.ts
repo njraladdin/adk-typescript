@@ -14,6 +14,7 @@ import { LlmRequest } from '../models/LlmRequest';
 import { LlmResponse } from '../models/LlmResponse';
 import { LlmRegistry } from '../models';
 import { BaseTool } from '../tools/BaseTool';
+import { BaseToolset } from '../tools/BaseToolset';
 import { FunctionTool, FunctionToolOptions } from '../tools/FunctionTool';
 import { ToolContext } from '../tools/ToolContext';
 import { Session, SessionOptions } from '../sessions/Session';
@@ -21,12 +22,6 @@ import { BasePlanner } from '../planners/BasePlanner';
 import { BaseCodeExecutor } from '../code-executors/BaseCodeExecutor';
 import { v4 as uuidv4 } from 'uuid';
 import { State } from '../sessions/State';
-
-// Placeholder for BaseToolset since it's not defined in the original codebase
-// It's needed for the ToolUnion type.
-export interface BaseToolset {
-  getTools(ctx: ReadonlyContext): Promise<BaseTool[]>;
-}
 
 /**
  * Base interface for example providers
@@ -174,14 +169,8 @@ async function convertToolUnionToTools(
   if (typeof toolUnion === 'function') {
     return [new FunctionTool(toolUnion as any)];
   }
-  // Check if it's a toolset by looking for a getTools method
-  if (
-    typeof toolUnion === 'object' &&
-    toolUnion !== null &&
-    'getTools' in toolUnion &&
-    typeof (toolUnion as BaseToolset).getTools === 'function'
-  ) {
-    return await (toolUnion as BaseToolset).getTools(ctx);
+  if (toolUnion instanceof BaseToolset) {
+    return await toolUnion.getTools(ctx);
   }
   throw new Error('Invalid tool type');
 }
@@ -404,15 +393,13 @@ export class LlmAgent extends BaseAgent {
    * Gets the resolved tools as BaseTool instances.
    * This method is only for use by Agent Development Kit.
    */
-  get canonicalTools(): (ctx: ReadonlyContext) => Promise<BaseTool[]> {
-    return async (ctx: ReadonlyContext): Promise<BaseTool[]> => {
-      const resolvedTools: BaseTool[] = [];
-      for (const toolUnion of this.tools) {
-        const tools = await convertToolUnionToTools(toolUnion, ctx);
-        resolvedTools.push(...tools);
-      }
-      return resolvedTools;
-    };
+  async canonicalTools(ctx?: ReadonlyContext): Promise<BaseTool[]> {
+    const resolvedTools: BaseTool[] = [];
+    for (const toolUnion of this.tools) {
+      const tools = await convertToolUnionToTools(toolUnion, ctx || new ReadonlyContext({} as any));
+      resolvedTools.push(...tools);
+    }
+    return resolvedTools;
   }
 
   get canonicalBeforeModelCallbacks(): SingleBeforeModelCallback[] {

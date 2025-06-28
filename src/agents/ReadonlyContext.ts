@@ -1,6 +1,5 @@
- 
-
 import { InvocationContext } from './InvocationContext';
+import { Content } from '../models/types';
 
 /**
  * Readonly context for agent invocations.
@@ -11,6 +10,13 @@ export class ReadonlyContext {
 
   constructor(invocationContext: InvocationContext) {
     this.invocationContext = invocationContext;
+  }
+
+  /**
+   * The user content that started this invocation. READONLY field.
+   */
+  get userContent(): Content | undefined {
+    return this.invocationContext.userContent;
   }
 
   /**

@@ -111,13 +111,10 @@ class ContentLlmRequestProcessor implements BaseLlmRequestProcessor {
     }
     
     // Append tool definitions for any available tools on the agent
-    if (agent.canonicalTools) {
-      const toolsFunc = agent.canonicalTools;
-      const ctx = new ReadonlyContext(invocationContext);
-      const tools = await toolsFunc(ctx);
-      llmRequest.appendTools(tools);
-      console.debug('Added tools to request:', tools.map(t => t.name));
-    }
+    const ctx = new ReadonlyContext(invocationContext);
+    const tools = await agent.canonicalTools(ctx);
+    llmRequest.appendTools(tools);
+    console.debug('Added tools to request:', tools.map(t => t.name));
     
     // Return early - no events to yield
     return;
