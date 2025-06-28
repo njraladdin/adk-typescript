@@ -10,7 +10,7 @@ import { InvocationContext } from './InvocationContext';
  * @returns The content to return to the user. When set, the agent run will be skipped and
  * the provided content will be returned to user.
  */
-export type BeforeAgentCallback = (callbackContext: CallbackContext) => Content | undefined;
+export type BeforeAgentCallback = (callbackContext: CallbackContext) => Content | undefined | Promise<Content | undefined>;
 
 /**
  * Callback signature that is invoked after the agent run.
@@ -19,7 +19,7 @@ export type BeforeAgentCallback = (callbackContext: CallbackContext) => Content 
  * @returns The content to return to the user. When set, the agent run will be skipped and
  * the provided content will be appended to event history as agent response.
  */
-export type AfterAgentCallback = (callbackContext: CallbackContext) => Content | undefined;
+export type AfterAgentCallback = (callbackContext: CallbackContext) => Content | undefined | Promise<Content | undefined>;
 
 /**
  * Options for agent configuration.
@@ -105,7 +105,7 @@ export abstract class BaseAgent {
     invocationContext.agent = this;
     
     // Run before-agent callback if present
-    const beforeEvent = this.handleBeforeAgentCallback(invocationContext);
+    const beforeEvent = await this.handleBeforeAgentCallback(invocationContext);
     if (beforeEvent) {
       yield beforeEvent;
       if (invocationContext.endInvocation) {
@@ -121,7 +121,7 @@ export abstract class BaseAgent {
     }
     
     // Run after-agent callback if present
-    const afterEvent = this.handleAfterAgentCallback(invocationContext);
+    const afterEvent = await this.handleAfterAgentCallback(invocationContext);
     if (afterEvent) {
       yield afterEvent;
     }
@@ -258,13 +258,13 @@ export abstract class BaseAgent {
    * @param invocationContext The invocation context
    * @returns The event if the callback returns content, undefined otherwise
    */
-  private handleBeforeAgentCallback(invocationContext: InvocationContext): Event | undefined {
+  private async handleBeforeAgentCallback(invocationContext: InvocationContext): Promise<Event | undefined> {
     if (!this.beforeAgentCallback) {
       return undefined;
     }
     
     const callbackContext = new CallbackContext(invocationContext);
-    const content = this.beforeAgentCallback(callbackContext);
+    const content = await this.beforeAgentCallback(callbackContext);
     
     if (!content) {
       return undefined;
@@ -284,13 +284,13 @@ export abstract class BaseAgent {
    * @param invocationContext The invocation context
    * @returns The event if the callback returns content, undefined otherwise
    */
-  private handleAfterAgentCallback(invocationContext: InvocationContext): Event | undefined {
+  private async handleAfterAgentCallback(invocationContext: InvocationContext): Promise<Event | undefined> {
     if (!this.afterAgentCallback) {
       return undefined;
     }
     
     const callbackContext = new CallbackContext(invocationContext);
-    const content = this.afterAgentCallback(callbackContext);
+    const content = await this.afterAgentCallback(callbackContext);
     
     if (!content) {
       return undefined;

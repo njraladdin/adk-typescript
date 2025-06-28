@@ -18,9 +18,29 @@ function beforeAgentCallbackNoop(callbackContext: CallbackContext): Content | un
 }
 
 /**
+ * Helper function for async before agent callback that does nothing
+ */
+async function asyncBeforeAgentCallbackNoop(callbackContext: CallbackContext): Promise<Content | undefined> {
+  return undefined;
+}
+
+/**
  * Helper function for before agent callback that bypasses the agent
  */
 function beforeAgentCallbackBypassAgent(callbackContext: CallbackContext): Content {
+  // Access the invocationContext property and set endInvocation to true
+  (callbackContext as any).invocationContext.endInvocation = true;
+  
+  return {
+    role: 'model',
+    parts: [{ text: 'agent run is bypassed.' } as Part]
+  };
+}
+
+/**
+ * Helper function for async before agent callback that bypasses the agent
+ */
+async function asyncBeforeAgentCallbackBypassAgent(callbackContext: CallbackContext): Promise<Content> {
   // Access the invocationContext property and set endInvocation to true
   (callbackContext as any).invocationContext.endInvocation = true;
   
@@ -38,9 +58,26 @@ function afterAgentCallbackNoop(callbackContext: CallbackContext): Content | und
 }
 
 /**
+ * Helper function for async after agent callback that does nothing
+ */
+async function asyncAfterAgentCallbackNoop(callbackContext: CallbackContext): Promise<Content | undefined> {
+  return undefined;
+}
+
+/**
  * Helper function for after agent callback that appends to agent reply
  */
 function afterAgentCallbackAppendAgentReply(callbackContext: CallbackContext): Content {
+  return {
+    role: 'model',
+    parts: [{ text: 'Agent reply from after agent callback.' } as Part]
+  };
+}
+
+/**
+ * Helper function for async after agent callback that appends to agent reply
+ */
+async function asyncAfterAgentCallbackAppendAgentReply(callbackContext: CallbackContext): Promise<Content> {
   return {
     role: 'model',
     parts: [{ text: 'Agent reply from after agent callback.' } as Part]
@@ -272,9 +309,56 @@ describe('BaseAgent', () => {
     expect(events.length).toBe(1);
   });
 
+  test('should run with async before agent callback (noop)', async () => {
+    const agent = new TestingAgent('test_agent', {
+      beforeAgentCallback: asyncBeforeAgentCallbackNoop
+    });
+    const parentCtx = createParentInvocationContext(
+      'test_run_async_before_agent_callback_noop',
+      agent
+    );
+
+    // Spy on the runAsyncImpl method
+    const spy = jest.spyOn(agent as any, 'runAsyncImpl');
+    
+    const events: Event[] = [];
+    for await (const event of agent.invoke(parentCtx)) {
+      events.push(event);
+    }
+
+    expect(spy).toHaveBeenCalled();
+    expect(events.length).toBe(1);
+  });
+
   test('should bypass agent when before agent callback returns content', async () => {
     const agent = new TestingAgent('test_agent', {
       beforeAgentCallback: beforeAgentCallbackBypassAgent
+    });
+    
+    // Spy on runAsyncImpl to verify it's not called
+    const runAsyncSpy = jest.spyOn(agent as any, 'runAsyncImpl');
+    
+    const parentCtx = createParentInvocationContext(
+      'test_run_async_before_agent_callback_bypass_agent',
+      agent
+    );
+    
+    const events: Event[] = [];
+    for await (const event of agent.invoke(parentCtx)) {
+      events.push(event);
+    }
+
+    // Ensure runAsyncImpl was not called because it's bypassed
+    expect(runAsyncSpy).not.toHaveBeenCalled();
+    
+    // We should have exactly one event with the bypass content
+    expect(events.length).toBe(1);
+    expect(events[0].content?.parts?.[0]?.text).toBe('agent run is bypassed.');
+  });
+
+  test('should bypass agent when async before agent callback returns content', async () => {
+    const agent = new TestingAgent('test_agent', {
+      beforeAgentCallback: asyncBeforeAgentCallbackBypassAgent
     });
     
     // Spy on runAsyncImpl to verify it's not called
@@ -315,9 +399,53 @@ describe('BaseAgent', () => {
     expect(events.length).toBe(1);
   });
 
+  test('should run with async after agent callback (noop)', async () => {
+    const agent = new TestingAgent('test_agent', {
+      afterAgentCallback: asyncAfterAgentCallbackNoop
+    });
+    const parentCtx = createParentInvocationContext(
+      'test_run_async_after_agent_callback_noop',
+      agent
+    );
+
+    const events: Event[] = [];
+    for await (const event of agent.invoke(parentCtx)) {
+      events.push(event);
+    }
+
+    expect(events.length).toBe(1);
+  });
+
   test('should append reply when after agent callback returns content', async () => {
     const agent = new TestingAgent('test_agent', {
       afterAgentCallback: afterAgentCallbackAppendAgentReply
+    });
+    
+    const parentCtx = createParentInvocationContext(
+      'test_run_async_after_agent_callback_append_reply',
+      agent
+    );
+
+    const events: Event[] = [];
+    for await (const event of agent.invoke(parentCtx)) {
+      events.push(event);
+    }
+
+    // Should have 2 events: one from runAsyncImpl and one from the after callback
+    expect(events.length).toBe(2);
+    
+    // First event is from the agent's implementation
+    expect(events[0].author).toBe(agent.name);
+    expect(events[0].content?.parts?.[0]?.text).toBe('Hello, world!');
+    
+    // Second event is from the after callback
+    expect(events[1].author).toBe(agent.name);
+    expect(events[1].content?.parts?.[0]?.text).toBe('Agent reply from after agent callback.');
+  });
+
+  test('should append reply when async after agent callback returns content', async () => {
+    const agent = new TestingAgent('test_agent', {
+      afterAgentCallback: asyncAfterAgentCallbackAppendAgentReply
     });
     
     const parentCtx = createParentInvocationContext(
