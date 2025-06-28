@@ -2,6 +2,8 @@ import { Session } from '../../sessions/Session';
 import { Event } from '../../events/Event';
 import { Content } from '../../models/types';
 import { Part } from '../../models/types';
+import { Invocation, IntermediateData, createInvocation, createIntermediateData } from '../../evaluation/EvalCase';
+import { FunctionCall } from '../../models/types';
 
 /**
  * Agent response during an evaluation
@@ -45,6 +47,7 @@ interface EvaluationCase {
 /**
  * Converts a session into an evaluation format
  * 
+ * @deprecated Use convertSessionToEvalInvocations instead.
  * @param session The session to convert
  * @returns Array of evaluation cases extracted from the session
  */
@@ -113,4 +116,97 @@ export function convertSessionToEvalFormat(session: Session): EvaluationCase[] {
   }
   
   return evalCases;
+}
+
+/**
+ * Converts a session data into a list of Invocation.
+ * 
+ * @param session The session that should be converted.
+ * @returns A list of invocation.
+ */
+export function convertSessionToEvalInvocations(session: Session): Invocation[] {
+  const invocations: Invocation[] = [];
+  const events = session.events || [];
+
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
+    
+    if (event.author !== 'user') {
+      continue;
+    }
+
+    if (!event.content || !event.content.parts) {
+      continue;
+    }
+
+    // The content present in this event is the user content.
+    const userContent = event.content;
+    const invocationId = event.invocationId;
+    const invocationTimestamp = event.timestamp;
+
+    // Find the corresponding tool usage or response for the query
+    const toolUses: FunctionCall[] = [];
+    const intermediateResponses: [string, Part[]][] = [];
+
+    // Check subsequent events to extract tool uses or responses for this turn.
+    for (let j = i + 1; j < events.length; j++) {
+      const subsequentEvent = events[j];
+      const eventAuthor = subsequentEvent.author || 'agent';
+      
+      if (eventAuthor === 'user') {
+        // We found an event where the author was the user. This means that a
+        // new turn has started. So close this turn here.
+        break;
+      }
+
+      if (!subsequentEvent.content || !subsequentEvent.content.parts) {
+        continue;
+      }
+
+      const intermediateResponseParts: Part[] = [];
+      for (const subsequentPart of subsequentEvent.content.parts) {
+        // Some events have both function call and reference
+        if (subsequentPart.functionCall) {
+          toolUses.push(subsequentPart.functionCall);
+        } else if (subsequentPart.text) {
+          // Also keep track of all the natural language responses that
+          // agent (or sub agents) generated.
+          intermediateResponseParts.push(subsequentPart);
+        }
+      }
+
+      if (intermediateResponseParts.length > 0) {
+        // Only add an entry if there are any intermediate entries.
+        intermediateResponses.push([eventAuthor, intermediateResponseParts]);
+      }
+    }
+
+    // If we are here then either we are done reading all the events or we
+    // encountered an event that had content authored by the end-user.
+    // This, basically means an end of turn.
+    // We assume that the last natural language intermediate response is the
+    // final response from the agent/model. We treat that as a reference.
+    const finalResponse = intermediateResponses.length > 0 ? 
+      {
+        role: 'model',
+        parts: intermediateResponses[intermediateResponses.length - 1][1]
+      } : undefined;
+
+    invocations.push(
+      createInvocation(
+        invocationId,
+        userContent,
+        {
+          intermediateData: createIntermediateData({
+            toolUses: toolUses,
+            intermediateResponses: intermediateResponses.slice(0, -1)
+          }),
+          finalResponse: finalResponse,
+          creationTimestamp: invocationTimestamp
+        }
+      )
+    );
+  }
+
+  return invocations;
 } 
