@@ -79,7 +79,7 @@ describe('ApplicationIntegrationToolset', () => {
     const getOpenApiSpecForIntegration = jest.fn().mockReturnValue(integrationOpenApiSpec);
     const getOpenApiSpecForConnection = jest.fn().mockReturnValue(connectionOpenApiSpec);
     const getConnectionDetails = jest.fn().mockReturnValue(connectionDetails);
-    const getTools = jest.fn().mockReturnValue([mockRestApiTool]);
+    const getTools = jest.fn().mockResolvedValue([mockRestApiTool]);
     
     // Create mock instances
     mockIntegrationClient = {
@@ -97,12 +97,12 @@ describe('ApplicationIntegrationToolset', () => {
     
     // Setup mock constructors
     (IntegrationClient as jest.Mock).mockImplementation(() => mockIntegrationClient);
-    (ConnectionsClient as jest.Mock).mockImplementation(() => mockConnectionsClient);
+    (ConnectionsClient as unknown as jest.Mock).mockImplementation(() => mockConnectionsClient);
     (OpenAPIToolset as jest.Mock).mockImplementation(() => mockOpenAPIToolset);
   });
 
   describe('Initialization', () => {
-    it('should initialize with integration and trigger', () => {
+    it('should initialize with integration and trigger', async () => {
       const integrationName = 'test-integration';
       const triggerName = 'test-trigger';
       
@@ -121,11 +121,11 @@ describe('ApplicationIntegrationToolset', () => {
       );
       
       // Check that tools were created
-      const tools = toolset.getTools();
+      const tools = await toolset.getTools();
       expect(tools.length).toBeGreaterThan(0);
     });
 
-    it('should initialize with integration and list of triggers', () => {
+    it('should initialize with integration and list of triggers', async () => {
       const integrationName = 'test-integration';
       const triggers = ['test-trigger1', 'test-trigger2'];
       
@@ -144,11 +144,11 @@ describe('ApplicationIntegrationToolset', () => {
       );
       
       // Check that tools were created
-      const tools = toolset.getTools();
+      const tools = await toolset.getTools();
       expect(tools.length).toBeGreaterThan(0);
     });
 
-    it('should initialize with integration and empty trigger list', () => {
+    it('should initialize with integration and empty trigger list', async () => {
       const integrationName = 'test-integration';
       
       const toolset = new ApplicationIntegrationToolset(
@@ -165,11 +165,11 @@ describe('ApplicationIntegrationToolset', () => {
       );
       
       // Check that tools were created
-      const tools = toolset.getTools();
+      const tools = await toolset.getTools();
       expect(tools.length).toBeGreaterThan(0);
     });
     
-    it('should initialize with connection and entity operations', () => {
+    it('should initialize with connection and entity operations', async () => {
       const connectionName = 'test-connection';
       const entityOperationsList = ['list', 'get'];
       const toolName = 'My Connection Tool';
@@ -202,11 +202,11 @@ describe('ApplicationIntegrationToolset', () => {
       );
       
       // Check that tools were created
-      const tools = toolset.getTools();
+      const tools = await toolset.getTools();
       expect(tools.length).toBeGreaterThan(0);
     });
     
-    it('should initialize with connection and actions', () => {
+    it('should initialize with connection and actions', async () => {
       const connectionName = 'test-connection';
       const actionsList = ['create', 'delete'];
       const toolName = 'My Actions Tool';
@@ -239,7 +239,7 @@ describe('ApplicationIntegrationToolset', () => {
       );
       
       // Check that tools were created
-      const tools = toolset.getTools();
+      const tools = await toolset.getTools();
       expect(tools.length).toBeGreaterThan(0);
     });
     
@@ -312,7 +312,7 @@ describe('ApplicationIntegrationToolset', () => {
   });
   
   describe('Tool Retrieval', () => {
-    it('should get tools correctly', () => {
+    it('should get tools correctly', async () => {
       const integrationName = 'test-integration';
       const triggerName = 'test-trigger';
       
@@ -327,7 +327,7 @@ describe('ApplicationIntegrationToolset', () => {
       
       // We can't make specific assertions about the tools since we're not mocking
       // the internal implementation, but we can check that tools are returned
-      const tools = toolset.getTools();
+      const tools = await toolset.getTools();
       expect(tools.length).toBeGreaterThan(0);
     });
   });

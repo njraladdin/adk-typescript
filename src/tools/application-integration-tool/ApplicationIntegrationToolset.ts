@@ -15,6 +15,8 @@
  */
 
 import { BaseTool } from '../BaseTool';
+import { BaseToolset, ToolPredicate } from '../BaseToolset';
+import { ReadonlyContext } from '../../agents/ReadonlyContext';
 import { OpenAPIToolset } from '../openapi-tool/openapi-spec-parser/OpenAPIToolset';
 import { IntegrationConnectorTool } from './IntegrationConnectorTool';
 import { RestApiTool } from '../openapi-tool/openapi-spec-parser/RestApiTool';
@@ -88,12 +90,51 @@ export interface ApplicationIntegrationToolsetOptions {
    * Service account JSON
    */
   serviceAccountJson?: string;
+  
+  /**
+   * Tool filter
+   */
+  toolFilter?: ToolPredicate | string[];
 }
 
 /**
- * Toolset for Application Integration
+ * ApplicationIntegrationToolset generates tools from a given Application Integration or Integration Connector resource.
+ * 
+ * Example Usage:
+ * ```typescript
+ * // Get all available tools for an integration with api trigger
+ * const applicationIntegrationToolset = new ApplicationIntegrationToolset(
+ *   "test-project",
+ *   "us-central1",
+ *   {
+ *     integration: "test-integration",
+ *     triggers: ["api_trigger/test_trigger"],
+ *     serviceAccountJson: "...",
+ *   }
+ * );
+ * 
+ * // Get all available tools for a connection using entity operations and actions
+ * const applicationIntegrationToolset2 = new ApplicationIntegrationToolset(
+ *   "test-project",
+ *   "us-central1",
+ *   {
+ *     connection: "test-connection",
+ *     entityOperations: ["EntityId1", "EntityId2"],
+ *     actions: ["action1"],
+ *     serviceAccountJson: "...",
+ *   }
+ * );
+ * 
+ * // Feed the toolset to agent
+ * const agent = new LlmAgent({
+ *   tools: [
+ *     ...,
+ *     applicationIntegrationToolset,
+ *   ]
+ * });
+ * ```
  */
-export class ApplicationIntegrationToolset {
+export class ApplicationIntegrationToolset extends BaseToolset {
   /**
    * Integration client
    */
@@ -110,24 +151,14 @@ export class ApplicationIntegrationToolset {
   private openApiToolset: OpenAPIToolset | null = null;
   
   /**
-   * OpenAPI spec parser
+   * Single tool for connection-based operations
    */
-  private openApiSpecParser: OpenApiSpecParser | null = null;
+  private tool: IntegrationConnectorTool | null = null;
   
   /**
-   * Tools
+   * Tool filter
    */
-  private tools: BaseTool[] = [];
-  
-  /**
-   * Whether tools have been initialized
-   */
-  private toolsInitialized: boolean = false;
-  
-  /**
-   * Initialization options
-   */
-  private initOptions: ApplicationIntegrationToolsetOptions;
+  private toolFilter?: ToolPredicate | string[];
 
   /**
    * Creates a new ApplicationIntegrationToolset
@@ -141,11 +172,12 @@ export class ApplicationIntegrationToolset {
     private readonly location: string,
     options: ApplicationIntegrationToolsetOptions
   ) {
+    super();
+    
     // Validate required parameters
     this.validateParams(options);
     
-    // Store options for lazy initialization
-    this.initOptions = options;
+    this.toolFilter = options.toolFilter;
 
     // Initialize client
     this.integrationClient = new IntegrationClient(
@@ -168,6 +200,31 @@ export class ApplicationIntegrationToolset {
         options.serviceAccountJson || null
       );
     }
+
+    // Create auth credential
+    const authCredential = this.createAuthCredential(options.serviceAccountJson);
+
+    // Get spec and connection details
+    let spec: Record<string, any>;
+    let connectionDetails: Record<string, any> = {};
+
+    if (options.integration) {
+      spec = this.integrationClient.getOpenApiSpecForIntegration();
+    } else if (options.connection && (options.entityOperations || options.actions)) {
+      connectionDetails = this.connectionsClient!.getConnectionDetails();
+      spec = this.integrationClient.getOpenApiSpecForConnection(
+        options.toolName || '',
+        options.toolInstructions || ''
+      );
+    } else {
+      throw new Error(
+        'Either (integration and triggers) or (connection and ' +
+        '(entityOperations or actions)) should be provided.'
+      );
+    }
+
+    // Parse spec to toolset
+    this._parseSpecToToolset(spec, connectionDetails, authCredential, options);
   }
 
   /**
@@ -217,132 +274,87 @@ export class ApplicationIntegrationToolset {
   }
 
   /**
-   * Sets up tools for integration
+   * Parses the spec dict to OpenAPI toolset
+   * @param specDict The OpenAPI spec dictionary
+   * @param connectionDetails Connection details
    * @param authCredential Auth credential
+   * @param options Toolset options
    */
-  private async setupIntegrationTools(authCredential: AuthCredential): Promise<void> {
-    // Get OpenAPI spec for integration
-    const openApiSpec = this.integrationClient.getOpenApiSpecForIntegration();
-    
-    // Create OpenAPI toolset - we need to cast the authCredential to any to bypass type checking
-    // since this is just a mock implementation for tests
-    this.openApiToolset = new OpenAPIToolset({
-      specDict: openApiSpec,
-      authCredential: authCredential as any
-    });
-    
-    // Get tools from OpenAPI toolset
-    this.tools = await this.openApiToolset.getTools();
-  }
-
-  /**
-   * Sets up tools for connection
-   * @param connection Connection name
-   * @param entityOperations Entity operations
-   * @param actions Actions
-   * @param toolName Tool name
-   * @param toolInstructions Tool instructions
-   * @param authCredential Auth credential
-   */
-  private async setupConnectionTools(
-    connection: string,
-    entityOperations: string[],
-    actions: string[],
-    toolName: string,
-    toolInstructions: string,
-    authCredential: AuthCredential
-  ): Promise<void> {
-    // Get connection details
-    const connectionDetails = this.connectionsClient!.getConnectionDetails();
-    
-    // Get OpenAPI spec for connection
-    const openApiSpec = this.integrationClient.getOpenApiSpecForConnection(
-      toolName,
-      toolInstructions
-    );
-    
-    // Create OpenAPI toolset with the spec directly instead of using OpenApiSpecParser
-    this.openApiToolset = new OpenAPIToolset({
-      specDict: openApiSpec,
-      authCredential: authCredential as any
-    });
-    
-    // Get tools from OpenAPI toolset
-    const parsedTools = await this.openApiToolset.getTools();
-    
-    // Create IntegrationConnectorTool wrappers for each parsed tool
-    this.tools = parsedTools.map((restApiTool: any) => {
-      // Get the underlying operation from the REST API tool
-      const operation = (restApiTool as any).parsedOperation?.operation;
-      
-      if (!operation) {
-        return restApiTool;
-      }
-      
-      // Check if the operation has entity or action metadata
-      if (operation['x-entity'] && operation['x-operation'] === 'LIST_ENTITIES') {
-        // Entity operation
-        return new IntegrationConnectorTool(
-          restApiTool.name,
-          restApiTool.description,
-          connectionDetails.name,
-          connectionDetails.host,
-          connectionDetails.serviceName,
-          operation['x-entity'],
-          operation['x-operation'],
-          '',
-          restApiTool
-        );
-      } else if (operation['x-action'] && operation['x-operation'] === 'EXECUTE_ACTION') {
-        // Action operation
-        return new IntegrationConnectorTool(
-          restApiTool.name,
-          restApiTool.description,
-          connectionDetails.name,
-          connectionDetails.host,
-          connectionDetails.serviceName,
-          '',
-          operation['x-operation'],
-          operation['x-action'],
-          restApiTool
-        );
-      }
-      
-      return restApiTool;
-    });
-  }
-
-  /**
-   * Gets the tools
-   * @returns The tools
-   */
-  public async getTools(): Promise<BaseTool[]> {
-    if (!this.toolsInitialized) {
-      await this.initializeTools();
-      this.toolsInitialized = true;
+  private _parseSpecToToolset(
+    specDict: Record<string, any>,
+    connectionDetails: Record<string, any>,
+    authCredential: AuthCredential,
+    options: ApplicationIntegrationToolsetOptions
+  ): void {
+    // For integration case
+    if (options.integration) {
+      this.openApiToolset = new OpenAPIToolset({
+        specDict,
+        authCredential: authCredential as any,
+        toolFilter: this.toolFilter,
+      });
+      return;
     }
-    return this.tools;
+
+    // For connection case - create a single tool
+    const operations = new OpenApiSpecParser().parse(specDict);
+    
+    for (const openApiOperation of operations) {
+      const operation = (openApiOperation.operation as any)['x-operation'];
+      let entity: string | undefined;
+      let action: string | undefined;
+      
+      if ((openApiOperation.operation as any)['x-entity']) {
+        entity = (openApiOperation.operation as any)['x-entity'];
+      } else if ((openApiOperation.operation as any)['x-action']) {
+        action = (openApiOperation.operation as any)['x-action'];
+      }
+      
+      const restApiTool = RestApiTool.fromParsedOperation(openApiOperation);
+      
+      // Configure auth (simplified for TypeScript)
+      if (authCredential) {
+        restApiTool.configureAuthCredential(authCredential as any);
+      }
+      
+      this.tool = new IntegrationConnectorTool(
+        restApiTool.name,
+        restApiTool.description,
+        connectionDetails.name,
+        connectionDetails.host,
+        connectionDetails.serviceName,
+        entity || '',
+        operation || '',
+        action || '',
+        restApiTool as any
+      );
+      
+      // Only create one tool for the connection case
+      break;
+    }
   }
 
   /**
-   * Initializes the tools
+   * Gets all tools from the toolset
+   * @param readonlyContext Context used to filter tools available to the agent.
+   *   If undefined, all tools in the toolset are returned.
+   * @returns Array of tools
    */
-  private async initializeTools(): Promise<void> {
-    // Create auth credential
-    const authCredential = this.createAuthCredential(this.initOptions.serviceAccountJson);
+  async getTools(readonlyContext?: ReadonlyContext): Promise<BaseTool[]> {
+    if (this.tool) {
+      return [this.tool];
+    } else if (this.openApiToolset) {
+      return await this.openApiToolset.getTools(readonlyContext);
+    }
+    return [];
+  }
 
-    // Setup tools based on the provided options
-    if (this.initOptions.integration) {
-      await this.setupIntegrationTools(authCredential);
-    } else if (this.initOptions.connection && (this.initOptions.entityOperations || this.initOptions.actions)) {
-      await this.setupConnectionTools(
-        this.initOptions.connection,
-        this.initOptions.entityOperations || [],
-        this.initOptions.actions || [],
-        this.initOptions.toolName || 'Connection Tool',
-        this.initOptions.toolInstructions || 'Use this tool to interact with the connection',
-        authCredential
-      );
+  /**
+   * Performs cleanup and releases resources held by the toolset.
+   */
+  async close(): Promise<void> {
+    if (this.openApiToolset) {
+      await this.openApiToolset.close();
     }
   }
 } 
