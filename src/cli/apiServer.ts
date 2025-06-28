@@ -18,6 +18,7 @@ import { Content } from '../models/types';
 import { SessionInterface as Session } from '../sessions/types';
 import { createEmptyState, loadDotenvForAgent, convertSessionToEvalFormat } from './utils';
 import { v4 as uuidv4 } from 'uuid';
+import { LocalEvalSetsManager } from '../evaluation/LocalEvalSetsManager';
 
 // Fix for the Event type conflict - import directly from events directory
 import { Event as RunnerEvent } from '../events/Event';
@@ -195,6 +196,8 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
   // Build the Artifact service
   const artifactService = new InMemoryArtifactService();
   const memoryService = new InMemoryMemoryService();
+
+  const evalSetsManager = new LocalEvalSetsManager(agentDir);
 
   // Build the Session service
   const agentEngineId = '';
@@ -574,14 +577,6 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     const requestData: AddSessionToEvalSetRequest = req.body;
     
     try {
-      // Validate eval ID
-      const pattern = /^[a-zA-Z0-9_]+$/;
-      if (!pattern.test(requestData.evalId)) {
-        return res.status(400).json({ 
-          error: `Invalid eval id. Eval id should have the ${pattern} format` 
-        });
-      }
-      
       // Get the session
       const session = sessionService.getSession({
         appName,
@@ -593,17 +588,6 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
         return res.status(404).json({ error: 'Session not found' });
       }
       
-      // Load the eval set file data
-      const evalSetFilePath = getEvalSetFilePath(appName, evalSetId);
-      const evalSetData = JSON.parse(fs.readFileSync(evalSetFilePath, 'utf-8'));
-      
-      // Check if eval ID already exists
-      if (evalSetData.some((x: any) => x.name === requestData.evalId)) {
-        return res.status(400).json({ 
-          error: `Eval id \`${requestData.evalId}\` already exists in \`${evalSetId}\` eval set.` 
-        });
-      }
-      
       // Convert the session data to evaluation format
       const testData = convertSessionToEvalFormat(session);
       
@@ -611,7 +595,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       const rootAgent = await getRootAgent(appName);
       const initialSessionState = createEmptyState(rootAgent);
       
-      evalSetData.push({
+      const evalCase = {
         name: requestData.evalId,
         data: testData,
         initial_session: {
@@ -619,12 +603,17 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
           app_name: appName,
           user_id: requestData.userId
         }
-      });
+      };
       
-      // Write back to file
-      fs.writeFileSync(evalSetFilePath, JSON.stringify(evalSetData, null, 2));
-      
-      res.status(201).send();
+      try {
+        evalSetsManager.addEvalCase(appName, evalSetId, evalCase);
+        res.status(201).send();
+      } catch (error) {
+        if (error instanceof Error) {
+          return res.status(400).json({ error: error.message });
+        }
+        return res.status(400).json({ error: 'Unknown error occurred' });
+      }
     } catch (error) {
       console.error('Error adding session to eval set:', error);
       res.status(500).json({ error: 'Error adding session to eval set' });
@@ -636,10 +625,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     const { appName, evalSetId } = req.params;
     
     try {
-      // Load the eval set file data
-      const evalSetFilePath = getEvalSetFilePath(appName, evalSetId);
-      const evalSetData = JSON.parse(fs.readFileSync(evalSetFilePath, 'utf-8'));
-      
+      const evalSetData = evalSetsManager.getEvalSet(appName, evalSetId);
       const evalNames = evalSetData.map((x: any) => x.name).sort();
       res.json(evalNames);
     } catch (error) {
@@ -712,7 +698,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       // Load environment variables
       loadDotenvForAgent(path.basename(appName), agentDir);
       
-      const evalSetFilePath = getEvalSetFilePath(appName, evalSetId);
+      const evalSetFilePath = path.join(agentDir, appName, evalSetId + EVAL_SET_FILE_EXTENSION);
       
       if (!fs.existsSync(evalSetFilePath)) {
         return res.status(404).json({ error: 'Eval set not found' });
@@ -880,54 +866,33 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     }
   });
 
-  // Helper functions for eval set management
-  function getEvalSetFilePath(appName: string, evalSetId: string): string {
-    return path.join(
-      agentDir,
-      appName,
-      evalSetId + EVAL_SET_FILE_EXTENSION
-    );
-  }
+
 
   // Eval set endpoints
   app.post('/apps/:appName/eval_sets/:evalSetId', (req: express.Request, res: express.Response) => {
     const { appName, evalSetId } = req.params;
     
-    // Validate eval set ID
-    const pattern = /^[a-zA-Z0-9_]+$/;
-    if (!pattern.test(evalSetId)) {
-      return res.status(400).json({ 
-        error: `Invalid eval set id. Eval set id should have the ${pattern} format` 
-      });
+    try {
+      evalSetsManager.createEvalSet(appName, evalSetId);
+      res.status(201).send();
+    } catch (error) {
+      if (error instanceof Error) {
+        return res.status(400).json({ error: error.message });
+      }
+      return res.status(400).json({ error: 'Unknown error occurred' });
     }
-    
-    // Define the file path
-    const newEvalSetPath = getEvalSetFilePath(appName, evalSetId);
-    
-    console.log(`Creating eval set file ${newEvalSetPath}`);
-    
-    if (!fs.existsSync(newEvalSetPath)) {
-      // Write the JSON string to the file
-      console.log("Eval set file doesn't exist, we will create a new one.");
-      fs.writeFileSync(newEvalSetPath, JSON.stringify([], null, 2));
-    }
-    
-    res.status(201).send();
   });
 
   app.get('/apps/:appName/eval_sets', (req: express.Request, res: express.Response) => {
     const { appName } = req.params;
-    const evalSetFilePath = path.join(agentDir, appName);
     
-    if (!fs.existsSync(evalSetFilePath)) {
-      return res.status(404).json({ error: 'App directory not found' });
+    try {
+      const evalSets = evalSetsManager.listEvalSets(appName);
+      res.json(evalSets);
+    } catch (error) {
+      console.error('Error listing eval sets:', error);
+      res.status(500).json({ error: 'Error listing eval sets' });
     }
-    
-    const evalSets = fs.readdirSync(evalSetFilePath)
-      .filter(file => file.endsWith(EVAL_SET_FILE_EXTENSION))
-      .map(file => path.basename(file).replace(EVAL_SET_FILE_EXTENSION, ''));
-    
-    res.json(evalSets.sort());
   });
 
   /**
