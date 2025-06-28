@@ -118,6 +118,7 @@ export function traceCallLlm(
   span.setAttribute('gen_ai.system', 'gcp.vertex.agent');
   span.setAttribute('gen_ai.request.model', llmRequest.model || 'unknown');
   span.setAttribute('gcp.vertex.agent.invocation_id', invocationContext.invocationId);
+  span.setAttribute('gcp.vertex.agent.session_id', invocationContext.session.id);
   span.setAttribute('gcp.vertex.agent.event_id', eventId);
   
   // Consider removing once GenAI SDK provides a way to record this info.

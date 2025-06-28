@@ -78,6 +78,66 @@ const EVAL_SESSION_ID_PREFIX = 'eval_';
 const EVAL_SET_FILE_EXTENSION = '.evalset.json';
 const EVAL_SET_RESULT_FILE_EXTENSION = '.evalset_result.json';
 
+// Interface for OpenTelemetry-like span structure
+interface ReadableSpan {
+  name: string;
+  context: {
+    traceId: number;
+    spanId: number;
+  };
+  startTime: number;
+  endTime: number;
+  attributes: Record<string, any>;
+  parent?: {
+    spanId: number;
+  };
+}
+
+// In-memory span exporter class
+class InMemoryExporter {
+  private spans: ReadableSpan[] = [];
+  private traceDict: Record<string, number[]>;
+
+  constructor(traceDict: Record<string, number[]>) {
+    this.traceDict = traceDict;
+  }
+
+  export(spans: ReadableSpan[]): boolean {
+    for (const span of spans) {
+      const traceId = span.context.traceId;
+      if (span.name === "call_llm") {
+        const attributes = span.attributes;
+        const sessionId = attributes['gcp.vertex.agent.session_id'];
+        if (sessionId) {
+          if (!this.traceDict[sessionId]) {
+            this.traceDict[sessionId] = [traceId];
+          } else {
+            this.traceDict[sessionId].push(traceId);
+          }
+        }
+      }
+    }
+    this.spans.push(...spans);
+    return true;
+  }
+
+  getFinishedSpans(sessionId: string): ReadableSpan[] {
+    const traceIds = this.traceDict[sessionId];
+    if (!traceIds || traceIds.length === 0) {
+      return [];
+    }
+    return this.spans.filter(span => traceIds.includes(span.context.traceId));
+  }
+
+  forceFlush(timeoutMillis: number = 30000): boolean {
+    return true;
+  }
+
+  clear(): void {
+    this.spans.length = 0;
+  }
+}
+
 /**
  * Creates an Express app that serves as an API server for agents
  * 
@@ -97,6 +157,10 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
 
   // Trace dictionary for storing trace information
   const traceDict: Record<string, any> = {};
+  const sessionTraceDict: Record<string, number[]> = {};
+
+  // Create in-memory exporter for session tracing
+  const memoryExporter = new InMemoryExporter(sessionTraceDict);
 
   // Create the Express app
   const app = express();
@@ -195,6 +259,26 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     res.json(eventDict);
   });
 
+  app.get('/debug/trace/session/:sessionId', (req: express.Request, res: express.Response) => {
+    const { sessionId } = req.params;
+    const spans = memoryExporter.getFinishedSpans(sessionId);
+    if (!spans || spans.length === 0) {
+      return res.json([]);
+    }
+    
+    const result = spans.map(span => ({
+      name: span.name,
+      span_id: span.context.spanId,
+      trace_id: span.context.traceId,
+      start_time: span.startTime,
+      end_time: span.endTime,
+      attributes: span.attributes,
+      parent_span_id: span.parent?.spanId || null
+    }));
+    
+    res.json(result);
+  });
+
   // Session management endpoints
   app.get('/apps/:appName/users/:userId/sessions/:sessionId', (req: express.Request, res: express.Response) => {
     const { appName, userId, sessionId } = req.params;
@@ -247,7 +331,6 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       return res.status(400).json({ error: `Session already exists: ${sessionId}` });
     }
     
-    console.info(`New session created: ${sessionId}`);
     const newSession = sessionService.createSession({
       appName: effectiveAppName,
       userId,
@@ -264,7 +347,6 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     // Connect to managed session if agent_engine_id is set
     const effectiveAppName = agentEngineId || appName;
     
-    console.info('New session created');
     const newSession = sessionService.createSession({
       appName: effectiveAppName,
       userId,
