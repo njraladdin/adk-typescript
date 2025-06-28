@@ -685,6 +685,38 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     }
   });
 
+  // Helper function to collect and transform eval results
+  async function collectAndTransformEvalResults(
+    evalSetToEvals: Record<string, string[]>,
+    rootAgent: any,
+    evalMetrics: any[],
+    sessionService: any,
+    artifactService: any,
+    evalSetId: string
+  ): Promise<RunEvalResult[]> {
+    const { runEvals } = require('./cliEval');
+    const results: RunEvalResult[] = [];
+    for await (const evalResult of runEvals({
+      evalSetToEvals,
+      rootAgent,
+      resetFunc: undefined,
+      evalMetrics,
+      sessionService,
+      artifactService,
+      printDetailedResults: false
+    })) {
+      results.push({
+        evalSetId,
+        evalId: evalResult.evalId,
+        finalEvalStatus: evalResult.finalEvalStatus === 1 ? 'PASSED' : 
+                         evalResult.finalEvalStatus === 2 ? 'FAILED' : 'NOT_EVALUATED',
+        evalMetricResults: evalResult.evalMetricResults,
+        sessionId: evalResult.sessionId
+      });
+    }
+    return results;
+  }
+
   // Run eval endpoint
   app.post('/apps/:appName/eval_sets/:evalSetId/run_eval', async (req: express.Request, res: express.Response) => {
     const { appName, evalSetId } = req.params;
@@ -709,30 +741,14 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
         console.log('Eval ids to run list is empty. We will run all evals in the eval set.');
       }
       
-      // Import runEvals function
-      const { runEvals } = require('./cliEval');
-      
-      // Run the evaluations
-      const results: RunEvalResult[] = [];
-      for await (const evalResult of runEvals({
+      const results = await collectAndTransformEvalResults(
         evalSetToEvals,
         rootAgent,
-        resetFunc: undefined, // Could be enhanced to support reset functions
-        evalMetrics: requestData.evalMetrics,
+        requestData.evalMetrics,
         sessionService,
         artifactService,
-        printDetailedResults: false
-      })) {
-        results.push({
-          evalSetId,
-          evalId: evalResult.evalId,
-          finalEvalStatus: evalResult.finalEvalStatus === 1 ? 'PASSED' : 
-                           evalResult.finalEvalStatus === 2 ? 'FAILED' : 'NOT_EVALUATED',
-          evalMetricResults: evalResult.evalMetricResults,
-          sessionId: evalResult.sessionId
-        });
-      }
-      
+        evalSetId
+      );
       res.json(results);
     } catch (error) {
       console.error('Error running eval:', error);

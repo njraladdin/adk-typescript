@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import path from 'path';
 import { runCli, runInputFile } from './cli';
-import { runEvals, getEvaluationCriteriaOrDefault, getRootAgent, tryGetResetFunc, parseAndGetEvalsToRun, EvalMetric } from './cliEval';
+import { runEvals, getEvaluationCriteriaOrDefault, getRootAgent, tryGetResetFunc, parseAndGetEvalsToRun, EvalMetric, EvalStatus } from './cliEval';
 import { toCloudRun } from './cliDeploy';
 import { runCmd } from './cliCreate';
 import { getAgentGraph } from './agentGraph';
@@ -152,28 +152,64 @@ program
   .option('--config_file_path <configFilePath>', 'Optional. The path to config file.')
   .option('--print_detailed_results', 'Whether to print detailed results on console.', false)
   .action(async (agentModuleFilePath: string, evalSetFilePaths: string[], options: any) => {
-    // Load evaluation criteria
-    const evaluationCriteria = getEvaluationCriteriaOrDefault(options.config_file_path);
-    const evalMetrics: EvalMetric[] = [];
-    for (const metricName in evaluationCriteria) {
-      evalMetrics.push({ metricName, threshold: evaluationCriteria[metricName] });
+    // Helper function to collect async generator results
+    async function collectAsyncGen<T>(asyncGen: AsyncGenerator<T, void, unknown>): Promise<T[]> {
+      const results: T[] = [];
+      for await (const result of asyncGen) {
+        results.push(result);
+      }
+      return results;
     }
-    console.log(`Using evaluation criteria:`, evaluationCriteria);
-    // Load agent and reset function
-    const rootAgent = getRootAgent(agentModuleFilePath);
-    const resetFunc = tryGetResetFunc(agentModuleFilePath);
-    // Parse eval sets
-    const evalSetToEvals = parseAndGetEvalsToRun(evalSetFilePaths);
-    // Run evals
-    for await (const result of runEvals({
-      evalSetToEvals,
-      rootAgent,
-      resetFunc,
-      evalMetrics,
-      printDetailedResults: options.print_detailed_results,
-    })) {
-      // Print or process results as needed
-      // (You can add summary logic here if desired)
+
+    try {
+      // Load evaluation criteria
+      const evaluationCriteria = getEvaluationCriteriaOrDefault(options.config_file_path);
+      const evalMetrics: EvalMetric[] = [];
+      for (const metricName in evaluationCriteria) {
+        evalMetrics.push({ metricName, threshold: evaluationCriteria[metricName] });
+      }
+      console.log(`Using evaluation criteria:`, evaluationCriteria);
+      
+      // Load agent and reset function
+      const rootAgent = getRootAgent(agentModuleFilePath);
+      const resetFunc = tryGetResetFunc(agentModuleFilePath);
+      
+      // Parse eval sets
+      const evalSetToEvals = parseAndGetEvalsToRun(evalSetFilePaths);
+      
+      // Run evals and collect all results
+      const evalResults = await collectAsyncGen(runEvals({
+        evalSetToEvals,
+        rootAgent,
+        resetFunc,
+        evalMetrics,
+        printDetailedResults: options.print_detailed_results,
+      }));
+
+      console.log("*********************************************************************");
+      
+      // Generate and print summary
+      const evalRunSummary: Record<string, [number, number]> = {};
+      for (const evalResult of evalResults) {
+        if (!(evalResult.evalSetFile in evalRunSummary)) {
+          evalRunSummary[evalResult.evalSetFile] = [0, 0];
+        }
+        if (evalResult.finalEvalStatus === EvalStatus.PASSED) {
+          evalRunSummary[evalResult.evalSetFile][0] += 1;
+        } else {
+          evalRunSummary[evalResult.evalSetFile][1] += 1;
+        }
+      }
+      
+      console.log("Eval Run Summary");
+      for (const [evalSetFile, passFailCount] of Object.entries(evalRunSummary)) {
+        console.log(
+          `${evalSetFile}:\n  Tests passed: ${passFailCount[0]}\n  Tests failed: ${passFailCount[1]}`
+        );
+      }
+    } catch (error) {
+      console.error('Error running eval:', error);
+      process.exit(1);
     }
   });
 
