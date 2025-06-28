@@ -28,6 +28,9 @@ import { LiveRequest, LiveRequestQueue } from '../agents/LiveRequestQueue';
 // Import agent_graph
 import * as agentGraph from './agentGraph';
 
+// Import evaluation types
+import { EvalCaseResult, EvalSetResult } from './cliEval';
+
 // Interface definitions to replace Pydantic models
 interface AgentRunRequest {
   appName: string;
@@ -49,10 +52,12 @@ interface RunEvalRequest {
 }
 
 interface RunEvalResult {
+  evalSetFile: string;
   evalSetId: string;
   evalId: string;
   finalEvalStatus: string;
   evalMetricResults: any[];
+  userId: string;
   sessionId: string;
 }
 
@@ -71,6 +76,7 @@ const EVAL_SESSION_ID_PREFIX = 'eval_';
 
 // Constant for eval set file extension
 const EVAL_SET_FILE_EXTENSION = '.evalset.json';
+const EVAL_SET_RESULT_FILE_EXTENSION = '.evalset_result.json';
 
 /**
  * Creates an Express app that serves as an API server for agents
@@ -226,45 +232,46 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
 
   app.post('/apps/:appName/users/:userId/sessions/:sessionId', (req: express.Request, res: express.Response) => {
     const { appName, userId, sessionId } = req.params;
-    const state = req.body?.state || undefined;
-    
+    const { state } = req.body;
     // Connect to managed session if agent_engine_id is set
     const effectiveAppName = agentEngineId || appName;
     
-    if (sessionService.getSession({
+    const existingSession = sessionService.getSession({
       appName: effectiveAppName,
       userId,
-      sessionId
-    })) {
-      return res.status(400).json({ error: `Session already exists: ${sessionId}` });
-    }
-    
-    const session = sessionService.createSession({
-      appName: effectiveAppName,
-      userId,
-      state,
       sessionId
     });
     
-    console.log(`New session created: ${sessionId}`);
-    res.json(session);
+    if (existingSession) {
+      console.warn(`Session already exists: ${sessionId}`);
+      return res.status(400).json({ error: `Session already exists: ${sessionId}` });
+    }
+    
+    console.info(`New session created: ${sessionId}`);
+    const newSession = sessionService.createSession({
+      appName: effectiveAppName,
+      userId,
+      sessionId,
+      state: state || {}
+    });
+    
+    res.json(newSession);
   });
 
   app.post('/apps/:appName/users/:userId/sessions', (req: express.Request, res: express.Response) => {
     const { appName, userId } = req.params;
-    const state = req.body?.state || undefined;
-    
+    const { state } = req.body;
     // Connect to managed session if agent_engine_id is set
     const effectiveAppName = agentEngineId || appName;
     
-    const session = sessionService.createSession({
+    console.info('New session created');
+    const newSession = sessionService.createSession({
       appName: effectiveAppName,
       userId,
-      state
+      state: state || {}
     });
     
-    console.log('New session created');
-    res.json(session);
+    res.json(newSession);
   });
 
   app.delete('/apps/:appName/users/:userId/sessions/:sessionId', (req: express.Request, res: express.Response) => {
@@ -281,367 +288,247 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     res.status(204).send();
   });
 
-  // Artifact management endpoints
-  app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName', 
-    async (req: express.Request, res: express.Response) => {
-      const { appName, userId, sessionId, artifactName } = req.params;
-      const version = req.query.version ? parseInt(req.query.version as string) : undefined;
-      
-      // Connect to managed session if agent_engine_id is set
-      const effectiveAppName = agentEngineId || appName;
-      
-      try {
-        const artifact = await artifactService.loadArtifact({
-          appName: effectiveAppName,
-          userId,
-          sessionId,
-          filename: artifactName,
-          version
-        });
-        
-        if (!artifact) {
-          return res.status(404).json({ error: 'Artifact not found' });
-        }
-        
-        res.json(artifact);
-      } catch (error) {
-        console.error('Error loading artifact:', error);
-        res.status(500).json({ error: 'Error loading artifact' });
-      }
-  });
-
-  app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName/versions/:versionId', 
-    async (req: express.Request, res: express.Response) => {
-      const { appName, userId, sessionId, artifactName, versionId } = req.params;
-      const version = parseInt(versionId);
-      
-      // Connect to managed session if agent_engine_id is set
-      const effectiveAppName = agentEngineId || appName;
-      
-      try {
-        const artifact = await artifactService.loadArtifact({
-          appName: effectiveAppName,
-          userId,
-          sessionId,
-          filename: artifactName,
-          version
-        });
-        
-        if (!artifact) {
-          return res.status(404).json({ error: 'Artifact not found' });
-        }
-        
-        res.json(artifact);
-      } catch (error) {
-        console.error('Error loading artifact version:', error);
-        res.status(500).json({ error: 'Error loading artifact version' });
-      }
-  });
-
-  app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts', 
-    async (req: express.Request, res: express.Response) => {
-      const { appName, userId, sessionId } = req.params;
-      
-      // Connect to managed session if agent_engine_id is set
-      const effectiveAppName = agentEngineId || appName;
-      
-      try {
-        // Fix for listArtifactKeys - no filename parameter needed
-        const artifactNames = await artifactService.listArtifactKeys({
-          appName: effectiveAppName,
-          userId,
-          sessionId,
-          filename: '' // Placeholder for required field
-        });
-        
-        res.json(artifactNames);
-      } catch (error) {
-        console.error('Error listing artifacts:', error);
-        res.status(500).json({ error: 'Error listing artifacts' });
-      }
-  });
-
-  app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName/versions', 
-    async (req: express.Request, res: express.Response) => {
-      const { appName, userId, sessionId, artifactName } = req.params;
-      
-      // Connect to managed session if agent_engine_id is set
-      const effectiveAppName = agentEngineId || appName;
-      
-      try {
-        const versions = await artifactService.listVersions({
-          appName: effectiveAppName,
-          userId,
-          sessionId,
-          filename: artifactName
-        });
-        
-        res.json(versions);
-      } catch (error) {
-        console.error('Error listing versions:', error);
-        res.status(500).json({ error: 'Error listing versions' });
-      }
-  });
-
-  app.delete('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName', 
-    async (req: express.Request, res: express.Response) => {
-      const { appName, userId, sessionId, artifactName } = req.params;
-      
-      // Connect to managed session if agent_engine_id is set
-      const effectiveAppName = agentEngineId || appName;
-      
-      try {
-        await artifactService.deleteArtifact({
-          appName: effectiveAppName,
-          userId,
-          sessionId,
-          filename: artifactName
-        });
-        
-        res.status(204).send();
-      } catch (error) {
-        console.error('Error deleting artifact:', error);
-        res.status(500).json({ error: 'Error deleting artifact' });
-      }
-  });
-
-  // Agent run endpoint
-  app.post('/run', async (req: express.Request, res: express.Response) => {
-    const runRequest: AgentRunRequest = req.body;
-    
-    // Connect to managed session if agent_engine_id is set
-    const appId = agentEngineId || runRequest.appName;
-    
-    const session = sessionService.getSession({
-      appName: appId,
-      userId: runRequest.userId,
-      sessionId: runRequest.sessionId
-    });
-    
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
+  // Artifact endpoints
+  app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName', async (req: express.Request, res: express.Response) => {
+    const { appName, userId, sessionId, artifactName } = req.params;
+    const { version } = req.query;
+    const effectiveAppName = agentEngineId || appName;
     
     try {
-      const runner = await getRunner(runRequest.appName);
+      const artifact = await artifactService.loadArtifact({
+        appName: effectiveAppName,
+        userId,
+        sessionId,
+        filename: artifactName,
+        version: version ? parseInt(version as string) : undefined
+      });
+      
+      if (!artifact) {
+        return res.status(404).json({ error: 'Artifact not found' });
+      }
+      
+      res.json(artifact);
+    } catch (error) {
+      console.error('Error loading artifact:', error);
+      res.status(500).json({ error: 'Error loading artifact' });
+    }
+  });
+
+  app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName/versions/:versionId', async (req: express.Request, res: express.Response) => {
+    const { appName, userId, sessionId, artifactName, versionId } = req.params;
+    const effectiveAppName = agentEngineId || appName;
+    
+    try {
+      const artifact = await artifactService.loadArtifact({
+        appName: effectiveAppName,
+        userId,
+        sessionId,
+        filename: artifactName,
+        version: parseInt(versionId)
+      });
+      
+      if (!artifact) {
+        return res.status(404).json({ error: 'Artifact not found' });
+      }
+      
+      res.json(artifact);
+    } catch (error) {
+      console.error('Error loading artifact version:', error);
+      res.status(500).json({ error: 'Error loading artifact version' });
+    }
+  });
+
+  app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts', async (req: express.Request, res: express.Response) => {
+    const { appName, userId, sessionId } = req.params;
+    const effectiveAppName = agentEngineId || appName;
+    
+    try {
+      const artifactNames = await artifactService.listArtifactKeys({
+        appName: effectiveAppName,
+        userId,
+        sessionId,
+        filename: '' // Required by interface but not used by implementation
+      });
+      
+      res.json(artifactNames);
+    } catch (error) {
+      console.error('Error listing artifacts:', error);
+      res.status(500).json({ error: 'Error listing artifacts' });
+    }
+  });
+
+  app.get('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName/versions', async (req: express.Request, res: express.Response) => {
+    const { appName, userId, sessionId, artifactName } = req.params;
+    const effectiveAppName = agentEngineId || appName;
+    
+    try {
+      const versions = await artifactService.listVersions({
+        appName: effectiveAppName,
+        userId,
+        sessionId,
+        filename: artifactName
+      });
+      
+      res.json(versions);
+    } catch (error) {
+      console.error('Error listing artifact versions:', error);
+      res.status(500).json({ error: 'Error listing artifact versions' });
+    }
+  });
+
+  app.delete('/apps/:appName/users/:userId/sessions/:sessionId/artifacts/:artifactName', async (req: express.Request, res: express.Response) => {
+    const { appName, userId, sessionId, artifactName } = req.params;
+    const effectiveAppName = agentEngineId || appName;
+    
+    try {
+      await artifactService.deleteArtifact({
+        appName: effectiveAppName,
+        userId,
+        sessionId,
+        filename: artifactName
+      });
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting artifact:', error);
+      res.status(500).json({ error: 'Error deleting artifact' });
+    }
+  });
+
+  // Agent run endpoints
+  app.post('/run', async (req: express.Request, res: express.Response) => {
+    const requestData: AgentRunRequest = req.body;
+    const { appName, userId, sessionId, newMessage } = requestData;
+    
+    try {
+      // Connect to managed session if agent_engine_id is set
+      const appId = agentEngineId || appName;
+      
+      const session = sessionService.getSession({
+        appName: appId,
+        userId,
+        sessionId
+      });
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      const runner = await getRunner(appName);
       const events: RunnerEvent[] = [];
       
-      // Collect all events from the runner
       for await (const event of runner.runAsync({
-        userId: runRequest.userId,
-        sessionId: runRequest.sessionId,
-        newMessage: runRequest.newMessage
+        userId,
+        sessionId,
+        newMessage
       })) {
         events.push(event);
       }
       
-      console.log(`Generated ${events.length} events in agent run:`, events);
+      console.info(`Generated ${events.length} events in agent run:`, events);
       res.json(events);
     } catch (error) {
       console.error('Error in agent run:', error);
-      res.status(500).json({ error: 'Error running agent' });
+      res.status(500).json({ error: 'Error in agent run' });
     }
   });
 
-  // SSE endpoint for streaming responses
   app.post('/run_sse', async (req: express.Request, res: express.Response) => {
-    const runRequest: AgentRunRequest = req.body;
-    
-    // Connect to managed session if agent_engine_id is set
-    const appId = agentEngineId || runRequest.appName;
-    
-    const session = sessionService.getSession({
-      appName: appId,
-      userId: runRequest.userId,
-      sessionId: runRequest.sessionId
-    });
-    
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
-    
-    // Set up SSE
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    
-    // Helper to send SSE data
-    const sendEvent = (data: any) => {
-      res.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
+    const requestData: AgentRunRequest = req.body;
+    const { appName, userId, sessionId, newMessage, streaming } = requestData;
     
     try {
-      const runner = await getRunner(runRequest.appName);
-      const streamingMode = runRequest.streaming ? StreamingMode.SSE : StreamingMode.NONE;
+      // Connect to managed session if agent_engine_id is set
+      const appId = agentEngineId || appName;
       
-      // Run the agent and stream events
-      for await (const event of runner.runAsync({
-        userId: runRequest.userId,
-        sessionId: runRequest.sessionId,
-        newMessage: runRequest.newMessage,
-        runConfig: { streamingMode }
-      })) {
-        console.log('Generated event in agent run streaming:', event);
-        sendEvent(event);
+      const session = sessionService.getSession({
+        appName: appId,
+        userId,
+        sessionId
+      });
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
       }
       
-      // End the response
+      // Set up SSE headers
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control'
+      });
+      
+      const runner = await getRunner(appName);
+      const streamMode = streaming ? StreamingMode.SSE : StreamingMode.NONE;
+      
+      try {
+        for await (const event of runner.runAsync({
+          userId,
+          sessionId,
+          newMessage,
+          runConfig: new RunConfig({ streamingMode: streamMode })
+        })) {
+          const sseEvent = JSON.stringify(event);
+          console.info('Generated event in agent run streaming:', sseEvent);
+          res.write(`data: ${sseEvent}\n\n`);
+        }
+      } catch (error) {
+        console.error('Error in event generator:', error);
+        res.write(`data: ${JSON.stringify({ error: String(error) })}\n\n`);
+      }
+      
       res.end();
     } catch (error) {
-      console.error('Error in SSE streaming:', error);
-      sendEvent({ error: String(error) });
-      res.end();
+      console.error('Error in SSE agent run:', error);
+      res.status(500).json({ error: 'Error in SSE agent run' });
     }
   });
-
-  // Set up WebSocket for live interaction
-  io.on('connection', async (socket) => {
-    console.log(`New WebSocket connection: ${socket.id}`);
-    
-    // Handle run_live event
-    socket.on('run_live', async (data: { 
-      appName: string, 
-      userId: string, 
-      sessionId: string, 
-      modalities?: string[] 
-    }) => {
-      try {
-        const { appName, userId, sessionId, modalities = ['TEXT'] } = data;
-        
-        // Connect to managed session if agent_engine_id is set
-        const effectiveAppName = agentEngineId || appName;
-        
-        const session = sessionService.getSession({
-          appName: effectiveAppName,
-          userId,
-          sessionId
-        });
-        
-        if (!session) {
-          socket.emit('error', { error: 'Session not found' });
-          socket.disconnect(true);
-          return;
-        }
-        
-        // Create a live request queue for this socket
-        const liveRequestQueue = new LiveRequestQueue();
-        
-        // Set up two tasks - one for forwarding events and one for processing messages
-        
-        // Task 1: Forward events from the runner to the client
-        const forwardEvents = async () => {
-          try {
-            const runner = await getRunner(appName);
-            for await (const event of runner.runLive({
-              session,
-              liveRequestQueue
-            })) {
-              // Send event to client
-              socket.emit('event', event);
-            }
-          } catch (error) {
-            console.error('Error in forwardEvents:', error);
-            socket.emit('error', { error: String(error) });
-          }
-        };
-        
-        // Task 2: Process incoming messages from the client
-        const processMessages = async () => {
-          // Set up message handler
-          socket.on('message', (messageData: any) => {
-            try {
-              // Validate and forward to the live request queue
-              // Use appropriate method on LiveRequestQueue based on message type
-              if (messageData.content) {
-                liveRequestQueue.sendContent(messageData.content);
-              } else if (messageData.blob) {
-                liveRequestQueue.sendBlob(messageData.blob);
-              } else if (messageData.close) {
-                liveRequestQueue.sendClose();
-              }
-            } catch (error) {
-              console.error('Error processing message:', error);
-              socket.emit('error', { error: String(error) });
-            }
-          });
-        };
-        
-        // Start both tasks
-        forwardEvents().catch(error => {
-          console.error('Error in forward events task:', error);
-          socket.emit('error', { error: String(error) });
-        });
-        
-        processMessages().catch(error => {
-          console.error('Error in process messages task:', error);
-          socket.emit('error', { error: String(error) });
-        });
-        
-        // Handle disconnect - cleanup resources
-        socket.on('disconnect', () => {
-          console.log(`WebSocket client disconnected: ${socket.id}`);
-          // Any cleanup needed for the live request queue
-        });
-        
-      } catch (error) {
-        console.error('Error in run_live setup:', error);
-        socket.emit('error', { error: String(error) });
-      }
-    });
-  });
-
-  // Add more endpoints to match Python's fast_api.py functionality
 
   // Add session to eval set endpoint
   app.post('/apps/:appName/eval_sets/:evalSetId/add_session', async (req: express.Request, res: express.Response) => {
     const { appName, evalSetId } = req.params;
     const requestData: AddSessionToEvalSetRequest = req.body;
     
-    // Validate eval ID format
-    const pattern = /^[a-zA-Z0-9_]+$/;
-    if (!pattern.test(requestData.evalId)) {
-      return res.status(400).json({ 
-        error: `Invalid eval id. Eval id should have the \`${pattern}\` format` 
-      });
-    }
-    
-    // Get the session
-    const session = sessionService.getSession({
-      appName,
-      userId: requestData.userId,
-      sessionId: requestData.sessionId
-    });
-    
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' });
-    }
-    
-    // Load the eval set file data
-    const evalSetFilePath = getEvalSetFilePath(appName, evalSetId);
-    
-    if (!fs.existsSync(evalSetFilePath)) {
-      return res.status(404).json({ error: 'Eval set not found' });
-    }
-    
     try {
-      const evalSetDataRaw = fs.readFileSync(evalSetFilePath, 'utf-8');
-      const evalSetData = JSON.parse(evalSetDataRaw);
-      
-      // Check if eval ID already exists
-      if (evalSetData.some((item: any) => item.name === requestData.evalId)) {
-        return res.status(400).json({
-          error: `Eval id \`${requestData.evalId}\` already exists in \`${evalSetId}\` eval set.`
+      // Validate eval ID
+      const pattern = /^[a-zA-Z0-9_]+$/;
+      if (!pattern.test(requestData.evalId)) {
+        return res.status(400).json({ 
+          error: `Invalid eval id. Eval id should have the ${pattern} format` 
         });
       }
       
-      // Convert session to evaluation format
+      // Get the session
+      const session = sessionService.getSession({
+        appName,
+        userId: requestData.userId,
+        sessionId: requestData.sessionId
+      });
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      
+      // Load the eval set file data
+      const evalSetFilePath = getEvalSetFilePath(appName, evalSetId);
+      const evalSetData = JSON.parse(fs.readFileSync(evalSetFilePath, 'utf-8'));
+      
+      // Check if eval ID already exists
+      if (evalSetData.some((x: any) => x.name === requestData.evalId)) {
+        return res.status(400).json({ 
+          error: `Eval id \`${requestData.evalId}\` already exists in \`${evalSetId}\` eval set.` 
+        });
+      }
+      
+      // Convert the session data to evaluation format
       const testData = convertSessionToEvalFormat(session);
       
-      // Get root agent for initial session state
+      // Populate the session with initial session state
       const rootAgent = await getRootAgent(appName);
       const initialSessionState = createEmptyState(rootAgent);
       
-      // Add to eval set
       evalSetData.push({
         name: requestData.evalId,
         data: testData,
@@ -652,13 +539,13 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
         }
       });
       
-      // Write updated eval set back to file
+      // Write back to file
       fs.writeFileSync(evalSetFilePath, JSON.stringify(evalSetData, null, 2));
       
-      res.status(201).json({ status: 'success' });
+      res.status(201).send();
     } catch (error) {
       console.error('Error adding session to eval set:', error);
-      res.status(500).json({ error: 'Failed to add session to eval set' });
+      res.status(500).json({ error: 'Error adding session to eval set' });
     }
   });
 
@@ -666,22 +553,16 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
   app.get('/apps/:appName/eval_sets/:evalSetId/evals', (req: express.Request, res: express.Response) => {
     const { appName, evalSetId } = req.params;
     
-    // Load the eval set file data
-    const evalSetFilePath = getEvalSetFilePath(appName, evalSetId);
-    
-    if (!fs.existsSync(evalSetFilePath)) {
-      return res.status(404).json({ error: 'Eval set not found' });
-    }
-    
     try {
-      const evalSetDataRaw = fs.readFileSync(evalSetFilePath, 'utf-8');
-      const evalSetData = JSON.parse(evalSetDataRaw);
+      // Load the eval set file data
+      const evalSetFilePath = getEvalSetFilePath(appName, evalSetId);
+      const evalSetData = JSON.parse(fs.readFileSync(evalSetFilePath, 'utf-8'));
       
-      const evalIds = evalSetData.map((item: any) => item.name);
-      res.json(evalIds.sort());
+      const evalNames = evalSetData.map((x: any) => x.name).sort();
+      res.json(evalNames);
     } catch (error) {
-      console.error('Error listing evals:', error);
-      res.status(500).json({ error: 'Failed to list evals' });
+      console.error('Error listing evals in eval set:', error);
+      res.status(500).json({ error: 'Error listing evals in eval set' });
     }
   });
 
@@ -692,10 +573,13 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     evalMetrics: any[],
     sessionService: any,
     artifactService: any,
-    evalSetId: string
-  ): Promise<RunEvalResult[]> {
+    evalSetId: string,
+    appName: string
+  ): Promise<{ runEvalResults: RunEvalResult[], evalCaseResults: EvalCaseResult[] }> {
     const { runEvals } = require('./cliEval');
-    const results: RunEvalResult[] = [];
+    const runEvalResults: RunEvalResult[] = [];
+    const evalCaseResults: EvalCaseResult[] = [];
+    
     for await (const evalResult of runEvals({
       evalSetToEvals,
       rootAgent,
@@ -705,16 +589,36 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       artifactService,
       printDetailedResults: false
     })) {
-      results.push({
+      runEvalResults.push({
+        evalSetFile: evalResult.evalSetFile,
         evalSetId,
         evalId: evalResult.evalId,
         finalEvalStatus: evalResult.finalEvalStatus === 1 ? 'PASSED' : 
                          evalResult.finalEvalStatus === 2 ? 'FAILED' : 'NOT_EVALUATED',
         evalMetricResults: evalResult.evalMetricResults,
+        userId: evalResult.userId || 'test_user_id',
         sessionId: evalResult.sessionId
       });
+      
+      // Get session details for the eval case result
+      const session = sessionService.getSession({
+        appName,
+        userId: evalResult.userId || 'test_user_id',
+        sessionId: evalResult.sessionId
+      });
+      
+      evalCaseResults.push({
+        evalSetFile: evalResult.evalSetFile,
+        evalId: evalResult.evalId,
+        finalEvalStatus: evalResult.finalEvalStatus,
+        evalMetricResults: evalResult.evalMetricResults,
+        sessionId: evalResult.sessionId,
+        sessionDetails: session,
+        userId: evalResult.userId || 'test_user_id'
+      });
     }
-    return results;
+    
+    return { runEvalResults, evalCaseResults };
   }
 
   // Run eval endpoint
@@ -723,6 +627,9 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     const requestData: RunEvalRequest = req.body;
     
     try {
+      // Load environment variables
+      loadDotenvForAgent(path.basename(appName), agentDir);
+      
       const evalSetFilePath = getEvalSetFilePath(appName, evalSetId);
       
       if (!fs.existsSync(evalSetFilePath)) {
@@ -741,18 +648,99 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
         console.log('Eval ids to run list is empty. We will run all evals in the eval set.');
       }
       
-      const results = await collectAndTransformEvalResults(
+      const { runEvalResults, evalCaseResults } = await collectAndTransformEvalResults(
         evalSetToEvals,
         rootAgent,
         requestData.evalMetrics,
         sessionService,
         artifactService,
-        evalSetId
+        evalSetId,
+        appName
       );
-      res.json(results);
+      
+      // Create eval set result
+      const timestamp = Date.now() / 1000; // Convert to seconds
+      const evalSetResultName = `${appName}_${evalSetId}_${timestamp}`;
+      const evalSetResult: EvalSetResult = {
+        evalSetResultId: evalSetResultName,
+        evalSetResultName,
+        evalSetId,
+        evalCaseResults,
+        creationTimestamp: timestamp
+      };
+      
+      // Write eval result file
+      const appEvalHistoryDir = path.join(agentDir, appName, '.adk', 'eval_history');
+      if (!fs.existsSync(appEvalHistoryDir)) {
+        fs.mkdirSync(appEvalHistoryDir, { recursive: true });
+      }
+      
+      // Convert to JSON and write to file
+      const evalSetResultFilePath = path.join(
+        appEvalHistoryDir,
+        evalSetResultName + EVAL_SET_RESULT_FILE_EXTENSION
+      );
+      
+      console.info('Writing eval result to file:', evalSetResultFilePath);
+      fs.writeFileSync(evalSetResultFilePath, JSON.stringify(evalSetResult, null, 2));
+      
+      res.json(runEvalResults);
     } catch (error) {
       console.error('Error running eval:', error);
       res.status(500).json({ error: 'Failed to run eval' });
+    }
+  });
+
+  // Get eval result endpoint
+  app.get('/apps/:appName/eval_results/:evalResultId', (req: express.Request, res: express.Response) => {
+    const { appName, evalResultId } = req.params;
+    
+    try {
+      // Load the eval set result file data
+      const maybeEvalResultFilePath = path.join(
+        agentDir,
+        appName,
+        '.adk',
+        'eval_history',
+        evalResultId + EVAL_SET_RESULT_FILE_EXTENSION
+      );
+      
+      if (!fs.existsSync(maybeEvalResultFilePath)) {
+        return res.status(404).json({ 
+          error: `Eval result \`${evalResultId}\` not found.` 
+        });
+      }
+      
+      const evalResultData = JSON.parse(fs.readFileSync(maybeEvalResultFilePath, 'utf-8'));
+      
+      // Validate and return the eval result
+      const evalResult: EvalSetResult = evalResultData;
+      res.json(evalResult);
+    } catch (error) {
+      console.error('get_eval_result validation error:', error);
+      res.status(500).json({ error: 'Error loading eval result' });
+    }
+  });
+
+  // List eval results endpoint
+  app.get('/apps/:appName/eval_results', (req: express.Request, res: express.Response) => {
+    const { appName } = req.params;
+    
+    try {
+      const appEvalHistoryDirectory = path.join(agentDir, appName, '.adk', 'eval_history');
+      
+      if (!fs.existsSync(appEvalHistoryDirectory)) {
+        return res.json([]);
+      }
+      
+      const evalResultFiles = fs.readdirSync(appEvalHistoryDirectory)
+        .filter(file => file.endsWith(EVAL_SET_RESULT_FILE_EXTENSION))
+        .map(file => file.replace(EVAL_SET_RESULT_FILE_EXTENSION, ''));
+      
+      res.json(evalResultFiles);
+    } catch (error) {
+      console.error('Error listing eval results:', error);
+      res.status(500).json({ error: 'Error listing eval results' });
     }
   });
 
@@ -885,15 +873,17 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       
       return rootAgent;
     } catch (error) {
-      console.error(`Error loading root agent for ${appName}:`, error);
-      throw error;
+      console.error(`Error getting root agent for ${appName}:`, error);
+      throw new Error(`Error getting root agent for ${appName}: ${error}`);
     }
   }
 
   /**
-   * Helper function to get a runner for an app
+   * Helper function to get the runner for an app
    */
   async function getRunner(appName: string): Promise<Runner> {
+    loadDotenvForAgent(path.basename(appName), agentDir);
+    
     if (runnerDict[appName]) {
       return runnerDict[appName];
     }
@@ -906,7 +896,8 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       appName: agentEngineId || appName,
       agent: rootAgent,
       artifactService,
-      sessionService
+      sessionService,
+      memoryService
     });
     
     runnerDict[appName] = runner;
@@ -963,78 +954,61 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
 
   // Setup graceful shutdown handler for toolsets
   const gracefulShutdown = async () => {
-    console.log('Shutting down server and cleaning up toolsets...');
+    console.log('Received shutdown signal, closing server gracefully...');
     
     // Close all toolsets
-    const closePromises = Array.from(toolsetsToClose).map(async (toolset) => {
+    for (const toolset of toolsetsToClose) {
       try {
         await toolset.close();
       } catch (error) {
         console.error('Error closing toolset:', error);
       }
-    });
+    }
     
-    await Promise.all(closePromises);
-    console.log('All toolsets closed.');
-    
-    // Close the server
     server.close(() => {
-      console.log('Server closed.');
+      console.log('Server closed');
       process.exit(0);
     });
   };
 
-  // Handle graceful shutdown signals
   process.on('SIGTERM', gracefulShutdown);
   process.on('SIGINT', gracefulShutdown);
 
-  // Return both the app and server
+  // Auto-reload functionality
+  if (reload) {
+    setupAutoReload(server, agentDir, port);
+  }
+
   return { app, server };
 }
 
-/**
- * Sets up auto-reload functionality by watching for file changes
- * 
- * @param server HTTP server instance
- * @param agentDir Directory to watch for changes
- * @param port Port number for restarting the server
- */
+// Auto-reload setup
 function setupAutoReload(server: http.Server, agentDir: string, port: number): void {
-  // Watch for changes in TypeScript and JavaScript files
-  const watcher = chokidar.watch([
-    path.join(agentDir, '**/*.ts'),
-    path.join(agentDir, '**/*.js'),
-    path.join(agentDir, '**/*.json')
-  ], {
+  const watcher = chokidar.watch(agentDir, {
     ignored: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/*.d.ts',
-      '**/coverage/**',
-      '**/.git/**'
+      /node_modules/,
+      /\.git/,
+      /\.adk/,
+      /\.DS_Store/,
+      /\.pyc$/,
+      /__pycache__/
     ],
     persistent: true,
     ignoreInitial: true
   });
 
-  let restarting = false;
-
-  watcher.on('change', (filePath) => {
-    if (restarting) return;
-    
-    console.log(`File changed: ${path.relative(process.cwd(), filePath)}`);
+  watcher.on('change', (filePath: string) => {
+    console.log(`File changed: ${filePath}`);
     console.log('Restarting server...');
     
-    restarting = true;
+    // Clear the require cache for the changed file and related modules
+    clearRequireCache(agentDir);
     
-    // Close the current server
+    // Close the server and restart
     server.close(() => {
-      // Clear require cache for changed modules
-      clearRequireCache(agentDir);
-      
-      // Exit the process - this will cause the parent process to restart
-      // if using nodemon or similar process manager
-      console.log('Server stopped. Please restart manually or use a process manager like nodemon for automatic restart.');
+      console.log('Server restarted');
+      // Note: In a production environment, you'd want to use a process manager
+      // like PM2 or nodemon for proper restart functionality
       process.exit(0);
     });
   });
@@ -1053,17 +1027,11 @@ function setupAutoReload(server: http.Server, agentDir: string, port: number): v
   });
 }
 
-/**
- * Clears the require cache for modules in the specified directory
- * 
- * @param dir Directory to clear cache for
- */
+// Clear require cache for a directory
 function clearRequireCache(dir: string): void {
-  const absoluteDir = path.resolve(dir);
-  
-  Object.keys(require.cache).forEach(id => {
-    if (id.startsWith(absoluteDir)) {
-      delete require.cache[id];
+  Object.keys(require.cache).forEach(key => {
+    if (key.startsWith(dir)) {
+      delete require.cache[key];
     }
   });
 }

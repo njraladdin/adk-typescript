@@ -1,5 +1,3 @@
- 
-
 import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
@@ -13,6 +11,7 @@ import { TrajectoryEvaluator } from '../evaluation/TrajectoryEvaluator';
 
 // Types for agent and session (assume these exist)
 import type { LlmAgent } from '../agents/LlmAgent';
+import { SessionInterface as Session } from '../sessions/types';
 
 // --- Enums & Data Models ---
 export enum EvalStatus {
@@ -37,6 +36,25 @@ export interface EvalResult {
   finalEvalStatus: EvalStatus;
   evalMetricResults: Array<[EvalMetric, EvalMetricResult]>;
   sessionId: string;
+  userId?: string;
+}
+
+export interface EvalCaseResult {
+  evalSetFile: string;
+  evalId: string;
+  finalEvalStatus: EvalStatus;
+  evalMetricResults: Array<[EvalMetric, EvalMetricResult]>;
+  sessionId: string;
+  sessionDetails?: Session;
+  userId?: string;
+}
+
+export interface EvalSetResult {
+  evalSetResultId: string;
+  evalSetResultName: string;
+  evalSetId: string;
+  evalCaseResults: EvalCaseResult[];
+  creationTimestamp: number;
 }
 
 // --- Constants ---
@@ -137,6 +155,8 @@ export async function* runEvals({
       const evalName = evalItem['name'];
       const evalData = evalItem['data'];
       const initialSession = evalItem['initial_session'] || {};
+      const userId = initialSession['user_id'] || 'test_user_id';
+      
       if (evalsToRun.length > 0 && !evalsToRun.includes(evalName)) {
         continue;
       }
@@ -174,7 +194,7 @@ export async function* runEvals({
               score['coherence/mean']
             );
           } else {
-            console.warn(`[33m${evalMetric.metricName} is not supported.[0m`);
+            console.warn(`[33m${evalMetric.metricName} is not supported.[0m`);
             evalMetricResults.push([
               evalMetric,
               { score: undefined, evalStatus: EvalStatus.NOT_EVALUATED },
@@ -207,6 +227,7 @@ export async function* runEvals({
           finalEvalStatus,
           evalMetricResults,
           sessionId,
+          userId,
         };
         if (finalEvalStatus === EvalStatus.PASSED) {
           console.log('Result: ✅ Passed\n');
