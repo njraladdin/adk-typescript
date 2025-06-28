@@ -1,10 +1,10 @@
-
-
 import * as yaml from 'js-yaml';
 import { APIHubClient } from './clients';
 import { OpenAPIToolset, RestApiTool } from '../openapi-tool';
 import { toSnakeCase } from '../openapi-tool/common/common';
 import { AuthCredential, AuthScheme } from '../openapi-tool/auth/AuthTypes';
+import { BaseToolset, ToolPredicate } from '../BaseToolset';
+import { ReadonlyContext } from '../../agents/ReadonlyContext';
 
 /**
  * APIHubToolset generates tools from a given API Hub resource.
@@ -15,18 +15,11 @@ import { AuthCredential, AuthScheme } from '../openapi-tool/auth/AuthTypes';
  * const apihubToolset = new APIHubToolset({
  *   apihubResourceName: "projects/test-project/locations/us-central1/apis/test-api",
  *   serviceAccountJson: "...",
+ *   toolFilter: (tool, ctx) => tool.name === 'my_tool' || tool.name === 'my_other_tool'
  * });
  * 
  * // Get all available tools
- * const agent = new LlmAgent({ tools: apihubToolset.getTools() });
- * 
- * // Get a specific tool
- * const agent = new LlmAgent({
- *   tools: [
- *     ...
- *     apihubToolset.getTool('my_tool'),
- *   ]
- * });
+ * const agent = new LlmAgent({ tools: [apihubToolset] });
  * ```
  * 
  * **apihubResourceName** is the resource name from API Hub. It must include
@@ -36,15 +29,16 @@ import { AuthCredential, AuthScheme } from '../openapi-tool/auth/AuthTypes';
  * - If apihubResourceName includes only an api or a version name, the
  *   first spec of the first version of that API will be used.
  */
-export class APIHubToolset {
+export class APIHubToolset extends BaseToolset {
   private name: string;
   private description: string;
   private apihubResourceName: string;
   private lazyLoadSpec: boolean;
   private apihubClient: APIHubClient;
-  private generatedTools: Record<string, RestApiTool> = {};
+  private openApiToolset?: OpenAPIToolset;
   private authScheme?: AuthScheme;
   private authCredential?: AuthCredential;
+  private toolFilter?: ToolPredicate | string[];
 
   /**
    * Initializes the APIHubToolset with the given parameters.
@@ -57,13 +51,19 @@ export class APIHubToolset {
    * });
    * 
    * // Get all available tools
-   * const agent = new LlmAgent({ tools: apihubToolset.getTools() });
+   * const agent = new LlmAgent({ tools: [apihubToolset] });
+   * 
+   * const apihubToolset2 = new APIHubToolset({
+   *   apihubResourceName: "projects/test-project/locations/us-central1/apis/test-api",
+   *   serviceAccountJson: "...",
+   *   toolFilter: ['my_tool']
+   * });
    * 
    * // Get a specific tool
-   * const agent = new LlmAgent({
+   * const agent2 = new LlmAgent({
    *   tools: [
-   *     ...
-   *     apihubToolset.getTool('my_tool'),
+   *     ...,
+   *     apihubToolset2,
    *   ]
    * });
    * ```
@@ -78,6 +78,7 @@ export class APIHubToolset {
    * @param params.authScheme Auth scheme that applies to all the tool in the toolset.
    * @param params.authCredential Auth credential that applies to all the tool in the toolset.
    * @param params.lazyLoadSpec If true, the spec will be loaded lazily when needed. Otherwise, the spec will be loaded immediately and the tools will be generated during initialization.
+   * @param params.toolFilter The filter used to filter the tools in the toolset. It can be either a tool predicate or a list of tool names of the tools to expose.
    */
   constructor(params: {
     apihubResourceName: string;
@@ -89,7 +90,9 @@ export class APIHubToolset {
     authScheme?: AuthScheme;
     authCredential?: AuthCredential;
     apihubClient?: APIHubClient;
+    toolFilter?: ToolPredicate | string[];
   }) {
+    super();
     this.name = params.name || '';
     this.description = params.description || '';
     this.apihubResourceName = params.apihubResourceName;
@@ -100,81 +103,41 @@ export class APIHubToolset {
     });
     this.authScheme = params.authScheme;
     this.authCredential = params.authCredential;
+    this.toolFilter = params.toolFilter;
 
     if (!this.lazyLoadSpec) {
-      this.prepareTools();
+      this._prepareToolset();
     }
-  }
-
-  /**
-   * Retrieves a specific tool by its name.
-   * 
-   * Example:
-   * ```typescript
-   * const apihubTool = apihubToolset.getTool('my_tool');
-   * ```
-   * 
-   * @param name The name of the tool to retrieve.
-   * @returns The tool with the given name, or undefined if no such tool exists.
-   */
-  getTool(name: string): RestApiTool | undefined {
-    if (!this.areToolsReady()) {
-      this.prepareTools();
-    }
-
-    return this.generatedTools[name];
   }
 
   /**
    * Retrieves all available tools.
    * 
+   * @param readonlyContext Context used to filter tools available to the agent.
+   *   If undefined, all tools in the toolset are returned.
    * @returns A list of all available RestApiTool objects.
    */
-  getTools(): RestApiTool[] {
-    if (!this.areToolsReady()) {
-      this.prepareTools();
+  async getTools(readonlyContext?: ReadonlyContext): Promise<RestApiTool[]> {
+    if (!this.openApiToolset) {
+      await this._prepareToolset();
     }
-
-    return Object.values(this.generatedTools);
+    if (!this.openApiToolset) {
+      return [];
+    }
+    return await this.openApiToolset.getTools(readonlyContext);
   }
 
   /**
-   * Checks if tools are ready for use
-   * 
-   * @returns True if tools are ready, false otherwise
-   * @private
-   */
-  private areToolsReady(): boolean {
-    return !this.lazyLoadSpec || Object.keys(this.generatedTools).length > 0;
-  }
-
-  /**
-   * Fetches the spec from API Hub and generates the tools.
+   * Fetches the spec from API Hub and generates the toolset.
    * 
    * @private
    */
-  private async prepareTools(): Promise<void> {
+  private async _prepareToolset(): Promise<void> {
     // For each API, get the first version and the first spec of that version.
-    const spec = await this.apihubClient.getSpecContent(this.apihubResourceName);
-    this.generatedTools = {};
-
-    const tools = await this.parseSpecToTools(spec);
-    for (const tool of tools) {
-      this.generatedTools[tool.name] = tool;
-    }
-  }
-
-  /**
-   * Parses the spec string to a list of RestApiTool
-   * 
-   * @param specStr The spec string to parse
-   * @returns A list of RestApiTool objects
-   * @private
-   */
-  private async parseSpecToTools(specStr: string): Promise<RestApiTool[]> {
+    const specStr = await this.apihubClient.getSpecContent(this.apihubResourceName);
     const specDict = yaml.load(specStr) as Record<string, any>;
     if (!specDict) {
-      return [];
+      return;
     }
 
     this.name = this.name || toSnakeCase(
@@ -182,12 +145,20 @@ export class APIHubToolset {
     );
     this.description = this.description || specDict.info?.description || '';
     
-    const toolset = new OpenAPIToolset({
+    this.openApiToolset = new OpenAPIToolset({
       specDict,
       authCredential: this.authCredential,
       authScheme: this.authScheme,
+      toolFilter: this.toolFilter,
     });
-    
-    return toolset.getTools();
+  }
+
+  /**
+   * Performs cleanup and releases resources held by the toolset.
+   */
+  async close(): Promise<void> {
+    if (this.openApiToolset) {
+      await this.openApiToolset.close();
+    }
   }
 } 

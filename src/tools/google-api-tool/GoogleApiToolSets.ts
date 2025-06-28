@@ -1,38 +1,36 @@
-
-
-import { GoogleApiToolSet } from './GoogleApiToolSet';
+import { GoogleApiToolset } from './GoogleApiToolSet';
 
 /**
- * This module provides access to GoogleApiToolSet instances for various Google APIs.
+ * This module provides access to GoogleApiToolset instances for various Google APIs.
  * Each tool set is loaded lazily when first requested to avoid unnecessary initialization.
  */
 
 // Tool set instances and promises
-let _bigqueryToolSet: GoogleApiToolSet | null = null;
-let _calendarToolSet: GoogleApiToolSet | null = null;
-let _gmailToolSet: GoogleApiToolSet | null = null;
-let _youtubeToolSet: GoogleApiToolSet | null = null;
-let _slidesToolSet: GoogleApiToolSet | null = null;
-let _sheetsToolSet: GoogleApiToolSet | null = null;
-let _docsToolSet: GoogleApiToolSet | null = null;
+let _bigqueryToolSet: GoogleApiToolset | null = null;
+let _calendarToolSet: GoogleApiToolset | null = null;
+let _gmailToolSet: GoogleApiToolset | null = null;
+let _youtubeToolSet: GoogleApiToolset | null = null;
+let _slidesToolSet: GoogleApiToolset | null = null;
+let _sheetsToolSet: GoogleApiToolset | null = null;
+let _docsToolSet: GoogleApiToolset | null = null;
 
 // Loading promises
-let _bigqueryToolSetPromise: Promise<GoogleApiToolSet> | null = null;
-let _calendarToolSetPromise: Promise<GoogleApiToolSet> | null = null;
-let _gmailToolSetPromise: Promise<GoogleApiToolSet> | null = null;
-let _youtubeToolSetPromise: Promise<GoogleApiToolSet> | null = null;
-let _slidesToolSetPromise: Promise<GoogleApiToolSet> | null = null;
-let _sheetsToolSetPromise: Promise<GoogleApiToolSet> | null = null;
-let _docsToolSetPromise: Promise<GoogleApiToolSet> | null = null;
+let _bigqueryToolSetPromise: Promise<GoogleApiToolset> | null = null;
+let _calendarToolSetPromise: Promise<GoogleApiToolset> | null = null;
+let _gmailToolSetPromise: Promise<GoogleApiToolset> | null = null;
+let _youtubeToolSetPromise: Promise<GoogleApiToolset> | null = null;
+let _slidesToolSetPromise: Promise<GoogleApiToolset> | null = null;
+let _sheetsToolSetPromise: Promise<GoogleApiToolset> | null = null;
+let _docsToolSetPromise: Promise<GoogleApiToolset> | null = null;
 
 /**
  * Get the BigQuery tool set
  * @returns A promise that resolves to the BigQuery tool set
  */
-export async function getBigqueryToolSet(): Promise<GoogleApiToolSet> {
+export async function getBigqueryToolSet(): Promise<GoogleApiToolset> {
   if (_bigqueryToolSet === null) {
     if (_bigqueryToolSetPromise === null) {
-      _bigqueryToolSetPromise = GoogleApiToolSet.loadToolSet('bigquery', 'v2');
+      _bigqueryToolSetPromise = GoogleApiToolset.loadToolset('bigquery', 'v2');
       _bigqueryToolSet = await _bigqueryToolSetPromise;
     } else {
       _bigqueryToolSet = await _bigqueryToolSetPromise;
@@ -45,10 +43,10 @@ export async function getBigqueryToolSet(): Promise<GoogleApiToolSet> {
  * Get the Calendar tool set
  * @returns A promise that resolves to the Calendar tool set
  */
-export async function getCalendarToolSet(): Promise<GoogleApiToolSet> {
+export async function getCalendarToolSet(): Promise<GoogleApiToolset> {
   if (_calendarToolSet === null) {
     if (_calendarToolSetPromise === null) {
-      _calendarToolSetPromise = GoogleApiToolSet.loadToolSet('calendar', 'v3');
+      _calendarToolSetPromise = GoogleApiToolset.loadToolset('calendar', 'v3');
       _calendarToolSet = await _calendarToolSetPromise;
     } else {
       _calendarToolSet = await _calendarToolSetPromise;
@@ -61,10 +59,10 @@ export async function getCalendarToolSet(): Promise<GoogleApiToolSet> {
  * Get the Gmail tool set
  * @returns A promise that resolves to the Gmail tool set
  */
-export async function getGmailToolSet(): Promise<GoogleApiToolSet> {
+export async function getGmailToolSet(): Promise<GoogleApiToolset> {
   if (_gmailToolSet === null) {
     if (_gmailToolSetPromise === null) {
-      _gmailToolSetPromise = GoogleApiToolSet.loadToolSet('gmail', 'v1');
+      _gmailToolSetPromise = GoogleApiToolset.loadToolset('gmail', 'v1');
       _gmailToolSet = await _gmailToolSetPromise;
     } else {
       _gmailToolSet = await _gmailToolSetPromise;
@@ -77,10 +75,10 @@ export async function getGmailToolSet(): Promise<GoogleApiToolSet> {
  * Get the YouTube tool set
  * @returns A promise that resolves to the YouTube tool set
  */
-export async function getYoutubeToolSet(): Promise<GoogleApiToolSet> {
+export async function getYoutubeToolSet(): Promise<GoogleApiToolset> {
   if (_youtubeToolSet === null) {
     if (_youtubeToolSetPromise === null) {
-      _youtubeToolSetPromise = GoogleApiToolSet.loadToolSet('youtube', 'v3');
+      _youtubeToolSetPromise = GoogleApiToolset.loadToolset('youtube', 'v3');
       _youtubeToolSet = await _youtubeToolSetPromise;
     } else {
       _youtubeToolSet = await _youtubeToolSetPromise;
@@ -93,10 +91,10 @@ export async function getYoutubeToolSet(): Promise<GoogleApiToolSet> {
  * Get the Slides tool set
  * @returns A promise that resolves to the Slides tool set
  */
-export async function getSlidesToolSet(): Promise<GoogleApiToolSet> {
+export async function getSlidesToolSet(): Promise<GoogleApiToolset> {
   if (_slidesToolSet === null) {
     if (_slidesToolSetPromise === null) {
-      _slidesToolSetPromise = GoogleApiToolSet.loadToolSet('slides', 'v1');
+      _slidesToolSetPromise = GoogleApiToolset.loadToolset('slides', 'v1');
       _slidesToolSet = await _slidesToolSetPromise;
     } else {
       _slidesToolSet = await _slidesToolSetPromise;
@@ -109,10 +107,10 @@ export async function getSlidesToolSet(): Promise<GoogleApiToolSet> {
  * Get the Sheets tool set
  * @returns A promise that resolves to the Sheets tool set
  */
-export async function getSheetsToolSet(): Promise<GoogleApiToolSet> {
+export async function getSheetsToolSet(): Promise<GoogleApiToolset> {
   if (_sheetsToolSet === null) {
     if (_sheetsToolSetPromise === null) {
-      _sheetsToolSetPromise = GoogleApiToolSet.loadToolSet('sheets', 'v4');
+      _sheetsToolSetPromise = GoogleApiToolset.loadToolset('sheets', 'v4');
       _sheetsToolSet = await _sheetsToolSetPromise;
     } else {
       _sheetsToolSet = await _sheetsToolSetPromise;
@@ -125,10 +123,10 @@ export async function getSheetsToolSet(): Promise<GoogleApiToolSet> {
  * Get the Docs tool set
  * @returns A promise that resolves to the Docs tool set
  */
-export async function getDocsToolSet(): Promise<GoogleApiToolSet> {
+export async function getDocsToolSet(): Promise<GoogleApiToolset> {
   if (_docsToolSet === null) {
     if (_docsToolSetPromise === null) {
-      _docsToolSetPromise = GoogleApiToolSet.loadToolSet('docs', 'v1');
+      _docsToolSetPromise = GoogleApiToolset.loadToolset('docs', 'v1');
       _docsToolSet = await _docsToolSetPromise;
     } else {
       _docsToolSet = await _docsToolSetPromise;

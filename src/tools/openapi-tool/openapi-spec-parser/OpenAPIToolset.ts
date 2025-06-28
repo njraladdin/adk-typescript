@@ -1,18 +1,19 @@
-
-
 import * as yaml from 'js-yaml';
 import { AuthCredential, AuthScheme } from '../auth/AuthTypes';
 import { OpenApiSpecParser } from './OpenApiSpecParser';
 import { RestApiTool } from './RestApiTool';
+import { BaseToolset, ToolPredicate } from '../../BaseToolset';
+import { ReadonlyContext } from '../../../agents/ReadonlyContext';
 
 /**
  * Class for parsing OpenAPI spec into a list of RestApiTool instances
  */
-export class OpenAPIToolset {
+export class OpenAPIToolset extends BaseToolset {
   /**
    * The tools in this toolset
    */
   private tools: RestApiTool[] = [];
+  private toolFilter?: ToolPredicate | string[];
 
   /**
    * Create a new OpenAPIToolset
@@ -24,7 +25,9 @@ export class OpenAPIToolset {
     specStrType?: 'json' | 'yaml';
     authScheme?: AuthScheme;
     authCredential?: AuthCredential;
+    toolFilter?: ToolPredicate | string[];
   }) {
+    super();
     let specDict = options.specDict;
     
     if (!specDict && options.specStr) {
@@ -38,6 +41,8 @@ export class OpenAPIToolset {
         this._configureAuthAll(options.authScheme, options.authCredential);
       }
     }
+    
+    this.toolFilter = options.toolFilter;
   }
 
   /**
@@ -62,10 +67,24 @@ export class OpenAPIToolset {
 
   /**
    * Get all tools in the toolset
+   * @param readonlyContext Context used to filter tools available to the agent.
+   *   If undefined, all tools in the toolset are returned.
    * @returns All RestApiTool instances in this toolset
    */
-  getTools(): RestApiTool[] {
-    return this.tools;
+  async getTools(readonlyContext?: ReadonlyContext): Promise<RestApiTool[]> {
+    return this.tools.filter(tool => {
+      if (this.toolFilter === undefined) {
+        return true;
+      }
+      
+      if (typeof this.toolFilter === 'function') {
+        return this.toolFilter(tool, readonlyContext);
+      } else if (Array.isArray(this.toolFilter)) {
+        return this.toolFilter.includes(tool.name);
+      }
+      
+      return true;
+    });
   }
 
   /**
@@ -75,6 +94,13 @@ export class OpenAPIToolset {
    */
   getTool(toolName: string): RestApiTool | undefined {
     return this.tools.find(tool => tool.name === toolName);
+  }
+
+  /**
+   * Performs cleanup and releases resources held by the toolset.
+   */
+  async close(): Promise<void> {
+    // No resources to clean up for OpenAPIToolset
   }
 
   /**

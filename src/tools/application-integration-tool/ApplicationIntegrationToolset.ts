@@ -118,6 +118,16 @@ export class ApplicationIntegrationToolset {
    * Tools
    */
   private tools: BaseTool[] = [];
+  
+  /**
+   * Whether tools have been initialized
+   */
+  private toolsInitialized: boolean = false;
+  
+  /**
+   * Initialization options
+   */
+  private initOptions: ApplicationIntegrationToolsetOptions;
 
   /**
    * Creates a new ApplicationIntegrationToolset
@@ -133,6 +143,9 @@ export class ApplicationIntegrationToolset {
   ) {
     // Validate required parameters
     this.validateParams(options);
+    
+    // Store options for lazy initialization
+    this.initOptions = options;
 
     // Initialize client
     this.integrationClient = new IntegrationClient(
@@ -153,23 +166,6 @@ export class ApplicationIntegrationToolset {
         location,
         options.connection,
         options.serviceAccountJson || null
-      );
-    }
-
-    // Create auth credential
-    const authCredential = this.createAuthCredential(options.serviceAccountJson);
-
-    // Setup tools based on the provided options
-    if (options.integration) {
-      this.setupIntegrationTools(authCredential);
-    } else if (options.connection && (options.entityOperations || options.actions)) {
-      this.setupConnectionTools(
-        options.connection,
-        options.entityOperations || [],
-        options.actions || [],
-        options.toolName || 'Connection Tool',
-        options.toolInstructions || 'Use this tool to interact with the connection',
-        authCredential
       );
     }
   }
@@ -224,7 +220,7 @@ export class ApplicationIntegrationToolset {
    * Sets up tools for integration
    * @param authCredential Auth credential
    */
-  private setupIntegrationTools(authCredential: AuthCredential): void {
+  private async setupIntegrationTools(authCredential: AuthCredential): Promise<void> {
     // Get OpenAPI spec for integration
     const openApiSpec = this.integrationClient.getOpenApiSpecForIntegration();
     
@@ -236,7 +232,7 @@ export class ApplicationIntegrationToolset {
     });
     
     // Get tools from OpenAPI toolset
-    this.tools = this.openApiToolset.getTools();
+    this.tools = await this.openApiToolset.getTools();
   }
 
   /**
@@ -248,14 +244,14 @@ export class ApplicationIntegrationToolset {
    * @param toolInstructions Tool instructions
    * @param authCredential Auth credential
    */
-  private setupConnectionTools(
+  private async setupConnectionTools(
     connection: string,
     entityOperations: string[],
     actions: string[],
     toolName: string,
     toolInstructions: string,
     authCredential: AuthCredential
-  ): void {
+  ): Promise<void> {
     // Get connection details
     const connectionDetails = this.connectionsClient!.getConnectionDetails();
     
@@ -272,10 +268,10 @@ export class ApplicationIntegrationToolset {
     });
     
     // Get tools from OpenAPI toolset
-    const parsedTools = this.openApiToolset.getTools();
+    const parsedTools = await this.openApiToolset.getTools();
     
     // Create IntegrationConnectorTool wrappers for each parsed tool
-    this.tools = parsedTools.map(restApiTool => {
+    this.tools = parsedTools.map((restApiTool: any) => {
       // Get the underlying operation from the REST API tool
       const operation = (restApiTool as any).parsedOperation?.operation;
       
@@ -320,7 +316,33 @@ export class ApplicationIntegrationToolset {
    * Gets the tools
    * @returns The tools
    */
-  public getTools(): BaseTool[] {
+  public async getTools(): Promise<BaseTool[]> {
+    if (!this.toolsInitialized) {
+      await this.initializeTools();
+      this.toolsInitialized = true;
+    }
     return this.tools;
+  }
+
+  /**
+   * Initializes the tools
+   */
+  private async initializeTools(): Promise<void> {
+    // Create auth credential
+    const authCredential = this.createAuthCredential(this.initOptions.serviceAccountJson);
+
+    // Setup tools based on the provided options
+    if (this.initOptions.integration) {
+      await this.setupIntegrationTools(authCredential);
+    } else if (this.initOptions.connection && (this.initOptions.entityOperations || this.initOptions.actions)) {
+      await this.setupConnectionTools(
+        this.initOptions.connection,
+        this.initOptions.entityOperations || [],
+        this.initOptions.actions || [],
+        this.initOptions.toolName || 'Connection Tool',
+        this.initOptions.toolInstructions || 'Use this tool to interact with the connection',
+        authCredential
+      );
+    }
   }
 } 

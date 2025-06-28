@@ -25,23 +25,23 @@ export class MCPToolset extends BaseToolset {
   private errlog?: any;
   private sessionManager: MCPSessionManager;
   private session?: ClientSession;
-  private toolPredicate?: ToolPredicate;
+  private toolFilter?: ToolPredicate | string[];
 
   /**
    * Initializes the MCPToolset.
    * @param options Configuration options
    * @param options.connectionParams The connection parameters to the MCP server
    * @param options.errlog Optional error logging stream
-   * @param options.toolPredicate Optional predicate to filter tools
+   * @param options.toolFilter Optional filter to filter tools
    */
   constructor({
     connectionParams,
     errlog,
-    toolPredicate,
+    toolFilter,
   }: {
     connectionParams: StdioServerParameters | SseServerParams;
     errlog?: any;
-    toolPredicate?: ToolPredicate;
+    toolFilter?: ToolPredicate | string[];
   }) {
     super();
     
@@ -52,7 +52,7 @@ export class MCPToolset extends BaseToolset {
     this.connectionParams = connectionParams;
     this.errlog = errlog;
     this.exitStack = new AsyncExitStack();
-    this.toolPredicate = toolPredicate;
+    this.toolFilter = toolFilter;
     
     this.sessionManager = new MCPSessionManager(
       this.connectionParams,
@@ -93,17 +93,25 @@ export class MCPToolset extends BaseToolset {
     const toolsResponse = await this.session!.listTools();
     
     return toolsResponse.tools
-      .filter(tool => 
-        this.toolPredicate === undefined || 
-        this.toolPredicate(
-          new MCPTool({
-            mcpTool: tool,
-            mcpSession: this.session!,
-            mcpSessionManager: this.sessionManager,
-          }),
-          readonlyContext
-        )
-      )
+      .filter(tool => {
+        if (this.toolFilter === undefined) {
+          return true;
+        }
+        
+        const mcpTool = new MCPTool({
+          mcpTool: tool,
+          mcpSession: this.session!,
+          mcpSessionManager: this.sessionManager,
+        });
+        
+        if (typeof this.toolFilter === 'function') {
+          return this.toolFilter(mcpTool, readonlyContext);
+        } else if (Array.isArray(this.toolFilter)) {
+          return this.toolFilter.includes(mcpTool.name);
+        }
+        
+        return true;
+      })
       .map(tool => 
         new MCPTool({
           mcpTool: tool,
