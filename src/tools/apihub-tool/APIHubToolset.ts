@@ -1,5 +1,5 @@
 import * as yaml from 'js-yaml';
-import { APIHubClient } from './clients';
+import { APIHubClient, BaseAPIHubClient } from './clients';
 import { OpenAPIToolset, RestApiTool } from '../openapi-tool';
 import { toSnakeCase } from '../openapi-tool/common/common';
 import { AuthCredential, AuthScheme } from '../openapi-tool/auth/AuthTypes';
@@ -34,7 +34,7 @@ export class APIHubToolset extends BaseToolset {
   public description: string;
   private _apihubResourceName: string;
   private _lazyLoadSpec: boolean;
-  private _apihubClient: APIHubClient;
+  private _apihubClient: BaseAPIHubClient;
   private _openApiToolset?: OpenAPIToolset;
   private _authScheme?: AuthScheme;
   private _authCredential?: AuthCredential;
@@ -89,7 +89,7 @@ export class APIHubToolset extends BaseToolset {
     lazyLoadSpec?: boolean;
     authScheme?: AuthScheme;
     authCredential?: AuthCredential;
-    apihubClient?: APIHubClient;
+    apihubClient?: BaseAPIHubClient;
     toolFilter?: ToolPredicate | string[];
   }) {
     super();
