@@ -111,13 +111,57 @@ describe('ApplicationIntegrationToolset', () => {
         location, 
         {
           integration: integrationName, 
-          trigger: triggerName
+          triggers: [triggerName]
         }
       );
       
       // Check that the IntegrationClient was called with correct parameters
       expect(IntegrationClient).toHaveBeenCalledWith(
-        project, location, integrationName, triggerName, null, null, null, null
+        project, location, integrationName, [triggerName], null, null, null, null
+      );
+      
+      // Check that tools were created
+      const tools = toolset.getTools();
+      expect(tools.length).toBeGreaterThan(0);
+    });
+
+    it('should initialize with integration and list of triggers', () => {
+      const integrationName = 'test-integration';
+      const triggers = ['test-trigger1', 'test-trigger2'];
+      
+      const toolset = new ApplicationIntegrationToolset(
+        project, 
+        location, 
+        {
+          integration: integrationName, 
+          triggers: triggers
+        }
+      );
+      
+      // Check that the IntegrationClient was called with correct parameters
+      expect(IntegrationClient).toHaveBeenCalledWith(
+        project, location, integrationName, triggers, null, null, null, null
+      );
+      
+      // Check that tools were created
+      const tools = toolset.getTools();
+      expect(tools.length).toBeGreaterThan(0);
+    });
+
+    it('should initialize with integration and empty trigger list', () => {
+      const integrationName = 'test-integration';
+      
+      const toolset = new ApplicationIntegrationToolset(
+        project, 
+        location, 
+        {
+          integration: integrationName
+        }
+      );
+      
+      // Check that the IntegrationClient was called with correct parameters
+      expect(IntegrationClient).toHaveBeenCalledWith(
+        project, location, integrationName, null, null, null, null, null
       );
       
       // Check that tools were created
@@ -202,19 +246,15 @@ describe('ApplicationIntegrationToolset', () => {
     it('should throw error without required params', () => {
       expect(() => {
         new ApplicationIntegrationToolset(project, location, {});
-      }).toThrow(/Either \(integration and trigger\) or \(connection and \(entityOperations or actions\)\) should be provided/);
+      }).toThrow(/Either \(integration and triggers\) or \(connection and \(entityOperations or actions\)\) should be provided/);
       
       expect(() => {
-        new ApplicationIntegrationToolset(project, location, { integration: 'test' });
-      }).toThrow(/Either \(integration and trigger\) or \(connection and \(entityOperations or actions\)\) should be provided/);
-      
-      expect(() => {
-        new ApplicationIntegrationToolset(project, location, { trigger: 'test' });
-      }).toThrow(/Either \(integration and trigger\) or \(connection and \(entityOperations or actions\)\) should be provided/);
+        new ApplicationIntegrationToolset(project, location, { triggers: ['test'] });
+      }).toThrow(/Either \(integration and triggers\) or \(connection and \(entityOperations or actions\)\) should be provided/);
       
       expect(() => {
         new ApplicationIntegrationToolset(project, location, { connection: 'test' });
-      }).toThrow(/Either \(integration and trigger\) or \(connection and \(entityOperations or actions\)\) should be provided/);
+      }).toThrow(/Either \(integration and triggers\) or \(connection and \(entityOperations or actions\)\) should be provided/);
     });
     
     it('should initialize with service account credentials', () => {
@@ -240,14 +280,14 @@ describe('ApplicationIntegrationToolset', () => {
         location, 
         {
           integration: integrationName,
-          trigger: triggerName,
+          triggers: [triggerName],
           serviceAccountJson
         }
       );
       
       // Check that the IntegrationClient was called with service account JSON
       expect(IntegrationClient).toHaveBeenCalledWith(
-        project, location, integrationName, triggerName, null, null, null, serviceAccountJson
+        project, location, integrationName, [triggerName], null, null, null, serviceAccountJson
       );
     });
     
@@ -260,13 +300,13 @@ describe('ApplicationIntegrationToolset', () => {
         location, 
         {
           integration: integrationName,
-          trigger: triggerName
+          triggers: [triggerName]
         }
       );
       
       // Check that the IntegrationClient was called without service account JSON
       expect(IntegrationClient).toHaveBeenCalledWith(
-        project, location, integrationName, triggerName, null, null, null, null
+        project, location, integrationName, [triggerName], null, null, null, null
       );
     });
   });
@@ -281,7 +321,7 @@ describe('ApplicationIntegrationToolset', () => {
         location, 
         {
           integration: integrationName,
-          trigger: triggerName
+          triggers: [triggerName]
         }
       );
       

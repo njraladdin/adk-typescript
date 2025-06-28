@@ -24,7 +24,7 @@ export class IntegrationClient {
    * @param project GCP project ID
    * @param location GCP location
    * @param integration Integration name
-   * @param trigger Trigger name
+   * @param triggers List of trigger names
    * @param connection Connection name
    * @param entityOperations List of entity operations
    * @param actions List of actions
@@ -34,7 +34,7 @@ export class IntegrationClient {
     private readonly project: string,
     private readonly location: string,
     private readonly integration: string | null,
-    private readonly trigger: string | null,
+    private readonly triggers: string[] | null,
     private readonly connection: string | null,
     private readonly entityOperations: string[] | null,
     private readonly actions: string[] | null,

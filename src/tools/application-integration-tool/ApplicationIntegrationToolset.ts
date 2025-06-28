@@ -55,9 +55,9 @@ export interface ApplicationIntegrationToolsetOptions {
   integration?: string;
   
   /**
-   * Trigger name
+   * List of trigger names
    */
-  trigger?: string;
+  triggers?: string[];
   
   /**
    * Connection name
@@ -139,7 +139,7 @@ export class ApplicationIntegrationToolset {
       project,
       location,
       options.integration || null,
-      options.trigger || null,
+      options.triggers || null,
       options.connection || null,
       options.entityOperations || null,
       options.actions || null,
@@ -160,7 +160,7 @@ export class ApplicationIntegrationToolset {
     const authCredential = this.createAuthCredential(options.serviceAccountJson);
 
     // Setup tools based on the provided options
-    if (options.integration && options.trigger) {
+    if (options.integration) {
       this.setupIntegrationTools(authCredential);
     } else if (options.connection && (options.entityOperations || options.actions)) {
       this.setupConnectionTools(
@@ -180,13 +180,13 @@ export class ApplicationIntegrationToolset {
    * @throws Error if parameters are invalid
    */
   private validateParams(options: ApplicationIntegrationToolsetOptions): void {
-    const hasIntegrationAndTrigger = !!(options.integration && options.trigger);
+    const hasIntegration = !!options.integration;
     const hasConnectionAndOperations = !!(options.connection && 
       (options.entityOperations?.length || options.actions?.length));
 
-    if (!hasIntegrationAndTrigger && !hasConnectionAndOperations) {
+    if (!hasIntegration && !hasConnectionAndOperations) {
       throw new Error(
-        'Either (integration and trigger) or (connection and ' +
+        'Either (integration and triggers) or (connection and ' +
         '(entityOperations or actions)) should be provided.'
       );
     }
