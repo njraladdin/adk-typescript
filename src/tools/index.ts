@@ -14,6 +14,8 @@ export * from './toolActions';
 // Additional tool exports
 export * from './GoogleSearchTool';
 export { googleSearch } from './GoogleSearchTool';
+export * from './EnterpriseWebSearchTool';
+export { enterpriseWebSearch } from './EnterpriseWebSearchTool';
 export * from './LoadWebPageTool';
 export * from './LongRunningTool';
 export * from './TransferToAgentTool';
