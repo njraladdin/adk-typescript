@@ -110,18 +110,20 @@ export abstract class BaseLlmFlow {
       if (llmRequest.contents) {
         // Send conversation history to the model
         if (invocationContext.transcriptionCache) {
-          // Use AudioTranscriber if available
-          try {
-            const audioTranscriber = new AudioTranscriber();
-            const contents = audioTranscriber.transcribeFile(invocationContext);
+                  // Use AudioTranscriber if available
+        try {
+          const audioTranscriber = new AudioTranscriber(
+            invocationContext.runConfig?.inputAudioTranscription === undefined
+          );
+          const contents = audioTranscriber.transcribeFile(invocationContext);
 
-            await llmConnection.sendHistory(contents);
-            invocationContext.transcriptionCache = undefined;
-            telemetry.traceSendData(invocationContext, eventId, contents);
-          } catch (error) {
-            console.error('Error transcribing audio:', error);
-            invocationContext.transcriptionCache = undefined;
-          }
+          await llmConnection.sendHistory(contents);
+          invocationContext.transcriptionCache = undefined;
+          telemetry.traceSendData(invocationContext, eventId, contents);
+        } catch (error) {
+          console.error('Error transcribing audio:', error);
+          invocationContext.transcriptionCache = undefined;
+        }
         } else {
           await llmConnection.sendHistory(llmRequest.contents);
           telemetry.traceSendData(invocationContext, eventId, llmRequest.contents);
@@ -156,13 +158,18 @@ export abstract class BaseLlmFlow {
           if (event.content && event.content.parts && 
               event.content.parts.some(part => part.text) && 
               !event.partial) {
+            // This can be either user data or transcription data.
+            // when output transcription enabled, it will contain model's
+            // transcription.
+            // when input transcription enabled, it will contain user
+            // transcription.
             if (!invocationContext.transcriptionCache) {
               invocationContext.transcriptionCache = [];
             }
             invocationContext.transcriptionCache.push(
               new TranscriptionEntry({ 
-                textContent: JSON.stringify(event.content),
-                metadata: { type: 'model' }
+                role: event.content.role,
+                data: event.content
               })
             );
           }
@@ -255,17 +262,20 @@ export abstract class BaseLlmFlow {
         }
 
         if (liveRequest.blob) {
-          // Cache audio data for transcription
+          // Cache audio data here for transcription
           if (!invocationContext.transcriptionCache) {
             invocationContext.transcriptionCache = [];
           }
-          // Store the transcription entry with metadata
-          invocationContext.transcriptionCache.push(
-            new TranscriptionEntry({ 
-              audioData: liveRequest.blob,
-              metadata: { type: 'user' }
-            })
-          );
+          if (!invocationContext.runConfig?.inputAudioTranscription) {
+            // if the live model's input transcription is not enabled, then
+            // we use our own audio transcriber to achieve that.
+            invocationContext.transcriptionCache.push(
+              new TranscriptionEntry({ 
+                role: 'user',
+                data: liveRequest.blob
+              })
+            );
+          }
           
           // Create a proper Blob object
           const blob: Blob = { 
@@ -281,6 +291,27 @@ export abstract class BaseLlmFlow {
       }
     } catch (error) {
       console.error('Error in send task:', error);
+    }
+  }
+
+  /**
+   * Get the author of the event.
+   * When the model returns transcription, the author is "user". Otherwise, the
+   * author is the agent name (not 'model').
+   * 
+   * @param llmResponse The LLM response from the LLM call.
+   * @param invocationContext The invocation context.
+   * @returns The author name.
+   */
+  private getAuthorForEvent(llmResponse: any, invocationContext: InvocationContext): string {
+    if (
+      llmResponse &&
+      llmResponse.content &&
+      llmResponse.content.role === 'user'
+    ) {
+      return 'user';
+    } else {
+      return invocationContext.agent.name;
     }
   }
 
@@ -311,7 +342,7 @@ export abstract class BaseLlmFlow {
           const modelResponseEvent = new Event({
             id: Event.newId(),
             invocationId: invocationContext.invocationId,
-            author: invocationContext.agent.name,
+            author: this.getAuthorForEvent(llmResponse, invocationContext),
             content: llmResponse.content,
           });
 

@@ -537,6 +537,10 @@ export class Runner {
           runConfig.outputAudioTranscription = {};
         }
       }
+      if (!runConfig.inputAudioTranscription) {
+        // need this input transcription for agent transferring in live mode.
+        runConfig.inputAudioTranscription = {};
+      }
     }
     
     return this._newInvocationContext({

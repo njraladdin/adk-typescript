@@ -1,5 +1,3 @@
-
-
 /**
  * Available streaming modes for agent responses
  */
@@ -86,9 +84,14 @@ export class RunConfig {
   responseModalities?: string[];
   
   /**
-   * Configuration for audio transcription
+   * Configuration for output audio transcription
    */
   outputAudioTranscription?: AudioTranscriptionConfig;
+  
+  /**
+   * Configuration for input audio transcription
+   */
+  inputAudioTranscription?: AudioTranscriptionConfig;
   
   /**
    * Creates a new RunConfig with default values
