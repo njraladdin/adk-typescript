@@ -260,30 +260,65 @@ export class Runner {
    * Runs the agent in live mode.
    *
    * @param params The parameters for live mode.
-   * @param params.session The session to use.
+   * @param params.session The session to use. This parameter is deprecated, please use
+   *   `userId` and `sessionId` instead.
+   * @param params.userId The user ID for the session. Required if `session` is not provided.
+   * @param params.sessionId The session ID for the session. Required if `session` is not provided.
    * @param params.liveRequestQueue The queue for live requests.
    * @param params.runConfig The run config for the agent.
    * @returns An async generator of events.
    *
    * @experimental This feature is **experimental** and its API or behavior may change
    *               in future releases.
+   * 
+   * @note Either `session` or both `userId` and `sessionId` must be provided.
    */
   async *runLive(params: {
-    session: Session;
+    userId?: string;
+    sessionId?: string;
     liveRequestQueue: LiveRequestQueue;
     runConfig?: RunConfig;
+    session?: Session;
   }): AsyncGenerator<Event, void, unknown> {
-    const { session, liveRequestQueue, runConfig } = params;
+    const { userId, sessionId, liveRequestQueue, runConfig, session } = params;
+    
+    // Validate parameters
+    if (session === undefined && (userId === undefined || sessionId === undefined)) {
+      throw new Error(
+        'Either session or userId and sessionId must be provided.'
+      );
+    }
+    
+    // Issue deprecation warning if session parameter is used
+    if (session !== undefined) {
+      logger.warning(
+        'The `session` parameter is deprecated. Please use `userId` and `sessionId` instead.'
+      );
+    }
+    
+    // Get session if not provided
+    let actualSession = session;
+    if (!actualSession) {
+      const retrievedSession = await this.sessionService.getSession({
+        appName: this.appName,
+        userId: userId!,
+        sessionId: sessionId!
+      });
+      if (!retrievedSession) {
+        throw new Error(`Session not found: ${sessionId}`);
+      }
+      actualSession = retrievedSession as Session;
+    }
     
     // Create invocation context
     const invocationContext = await this._newInvocationContextForLive({
-      session,
+      session: actualSession,
       liveRequestQueue,
       runConfig
     });
     
     // Find the appropriate agent to run
-    const agentToRun = this._findAgentToRun(session, this.agent);
+    const agentToRun = this._findAgentToRun(actualSession, this.agent);
     
     // Run the agent live
     yield* agentToRun.runLive(invocationContext);

@@ -321,7 +321,8 @@ function startAgentSession(sessionId: string) {
 
   // Start agent session
   const liveEvents = runner.runLive({
-    session: session,
+    userId: 'user_123',
+    sessionId: session.id,
     liveRequestQueue: liveRequestQueue,
     runConfig: runConfig,
   });

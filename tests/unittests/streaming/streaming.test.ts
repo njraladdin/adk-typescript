@@ -93,7 +93,8 @@ describe('Streaming Tests', () => {
 
     const events: Event[] = [];
     for await (const event of runner.runLive({
-      session,
+      userId: 'test_user',
+      sessionId: session.id,
       liveRequestQueue,
       runConfig
     })) {
