@@ -386,6 +386,7 @@ export abstract class BaseLlmFlow {
 
     // Create model response event after preprocessing, like in Python
     const modelResponseEvent = new Event({
+      id: Event.newId(),
       invocationId: invocationContext.invocationId,
       author: invocationContext.agent.name,
       branch: invocationContext.branch,
@@ -486,8 +487,8 @@ export abstract class BaseLlmFlow {
     // Generate the finalized model response event
     const finalEvent = this._finalizeModelResponseEvent(llmRequest, llmResponse, modelResponseEvent);
     
-    // Use a new id for every event.
-    finalEvent.id = Event.newId();
+    // Update the mutable event id to avoid conflict
+    modelResponseEvent.id = Event.newId();
     
     // Yield the event first
     yield finalEvent;
