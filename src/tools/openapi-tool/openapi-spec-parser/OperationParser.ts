@@ -12,17 +12,17 @@ export class OperationParser {
   /**
    * The OpenAPI operation
    */
-  operation: any;
+  private _operation: any;
 
   /**
    * Parameters for the operation
    */
-  params: ApiParameter[] = [];
+  private _params: ApiParameter[] = [];
 
   /**
    * Return value for the operation
    */
-  returnValue: ApiParameter | null = null;
+  private _returnValue: ApiParameter | null = null;
 
   /**
    * Initializes the OperationParser with an OpenApiOperation.
@@ -32,9 +32,9 @@ export class OperationParser {
    */
   constructor(operation: any, shouldParse = true) {
     if (typeof operation === 'string') {
-      this.operation = JSON.parse(operation);
+      this._operation = JSON.parse(operation);
     } else {
-      this.operation = operation;
+      this._operation = operation;
     }
 
     if (shouldParse) {
@@ -59,8 +59,8 @@ export class OperationParser {
     returnValue: ApiParameter | null = null
   ): OperationParser {
     const parser = new OperationParser(operation, false);
-    parser.params = params;
-    parser.returnValue = returnValue;
+    parser._params = params;
+    parser._returnValue = returnValue;
     return parser;
   }
 
@@ -68,7 +68,7 @@ export class OperationParser {
    * Processes parameters from the OpenAPI operation
    */
   private _processOperationParameters(): void {
-    const parameters = this.operation.parameters || [];
+    const parameters = this._operation.parameters || [];
     for (const param of parameters) {
       const originalName = param.name;
       const description = param.description || '';
@@ -83,7 +83,7 @@ export class OperationParser {
       // param.required can be null/undefined
       const required = param.required !== null && param.required !== undefined ? param.required : false;
 
-      this.params.push(
+      this._params.push(
         new ApiParameter(
           originalName,
           location,
@@ -100,7 +100,7 @@ export class OperationParser {
    * Processes the request body from the OpenAPI operation
    */
   private _processRequestBody(): void {
-    const requestBody = this.operation.requestBody;
+    const requestBody = this._operation.requestBody;
     if (!requestBody) {
       return;
     }
@@ -125,7 +125,7 @@ export class OperationParser {
       Object.entries(properties).forEach(([propName, propDetails]) => {
         // Check if property is in the required array
         const propRequired = Array.isArray(schema.required) && schema.required.includes(propName);
-        this.params.push(
+        this._params.push(
           new ApiParameter(
             propName,
             'body',
@@ -137,7 +137,7 @@ export class OperationParser {
         );
       });
     } else if (schema.type === 'array') {
-      this.params.push(
+      this._params.push(
         new ApiParameter(
           'array',
           'body',
@@ -149,7 +149,7 @@ export class OperationParser {
       );
     } else {
       // Empty name for unnamed body param
-      this.params.push(
+      this._params.push(
         new ApiParameter(
           '',
           'body',
@@ -168,7 +168,7 @@ export class OperationParser {
   private _dedupeParamNames(): void {
     const paramsCnt: Record<string, number> = {};
     
-    for (const param of this.params) {
+    for (const param of this._params) {
       const name = param.pyName;
       if (!(name in paramsCnt)) {
         paramsCnt[name] = 0;
@@ -183,7 +183,7 @@ export class OperationParser {
    * Processes the return value from the OpenAPI operation
    */
   private _processReturnValue(): void {
-    const responses = this.operation.responses || {};
+    const responses = this._operation.responses || {};
     
     // Default to Any if no 2xx response or if schema is missing
     let returnSchema: Schema = { type: 'any' };
@@ -207,7 +207,7 @@ export class OperationParser {
       }
     }
 
-    this.returnValue = new ApiParameter(
+    this._returnValue = new ApiParameter(
       '',
       '',
       returnSchema,
@@ -220,7 +220,7 @@ export class OperationParser {
    * @returns The function name
    */
   getFunctionName(): string {
-    const operationId = this.operation.operationId;
+    const operationId = this._operation.operationId;
     if (!operationId) {
       throw new Error('Operation ID is missing');
     }
@@ -232,7 +232,7 @@ export class OperationParser {
    * @returns The return type hint
    */
   getReturnTypeHint(): string {
-    return this.returnValue ? this.returnValue.typeHint : 'any';
+    return this._returnValue ? this._returnValue.typeHint : 'any';
   }
 
   /**
@@ -240,7 +240,7 @@ export class OperationParser {
    * @returns The return type value
    */
   getReturnTypeValue(): any {
-    return this.returnValue ? this.returnValue.typeValue : Object;
+    return this._returnValue ? this._returnValue.typeValue : Object;
   }
 
   /**
@@ -248,7 +248,7 @@ export class OperationParser {
    * @returns The parameters
    */
   getParameters(): ApiParameter[] {
-    return this.params;
+    return this._params;
   }
 
   /**
@@ -256,7 +256,7 @@ export class OperationParser {
    * @returns The return value
    */
   getReturnValue(): ApiParameter | null {
-    return this.returnValue;
+    return this._returnValue;
   }
 
   /**
@@ -264,8 +264,8 @@ export class OperationParser {
    * @returns The auth scheme name
    */
   getAuthSchemeName(): string {
-    if (this.operation.security && this.operation.security.length > 0) {
-      const schemeNames = Object.keys(this.operation.security[0]);
+    if (this._operation.security && this._operation.security.length > 0) {
+      const schemeNames = Object.keys(this._operation.security[0]);
       if (schemeNames.length > 0) {
         return schemeNames[0];
       }
@@ -278,9 +278,9 @@ export class OperationParser {
    * @returns The JSDoc string
    */
   getJSDocString(): string {
-    const jsDocParams = this.params.map(param => param.toJSDocString());
-    const jsDocDescription = this.operation.summary || this.operation.description || '';
-    const jsDocReturn = JsDocHelper.generateReturnDoc(this.operation.responses || {});
+    const jsDocParams = this._params.map(param => param.toJSDocString());
+    const jsDocDescription = this._operation.summary || this._operation.description || '';
+    const jsDocReturn = JsDocHelper.generateReturnDoc(this._operation.responses || {});
     
     return `/**
  * ${jsDocDescription}
@@ -298,17 +298,17 @@ ${jsDocParams.map(param => ` * ${param}`).join('\n')}
   getJsonSchema(): Record<string, any> {
     const properties: Record<string, any> = {};
     
-    for (const p of this.params) {
+    for (const p of this._params) {
       properties[p.pyName] = p.paramSchema;
     }
     
-    const requiredParams = this.params
+    const requiredParams = this._params
       .filter(p => p.required === true)
       .map(p => p.pyName);
     
     const jsonSchema: Record<string, any> = {
       properties,
-      title: `${this.operation.operationId || 'unnamed'}_Arguments`,
+      title: `${this._operation.operationId || 'unnamed'}_Arguments`,
       type: 'object'
     };
     

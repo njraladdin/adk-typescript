@@ -43,17 +43,20 @@ describe('OperationParser', () => {
     const operation = createSampleOperation();
     const parser = new OperationParser(operation);
     
-    expect(parser.params.length).toBe(2);
-    expect(parser.params[0].originalName).toBe('param1');
-    expect(parser.params[0].paramLocation).toBe('query');
-    expect(parser.params[0].typeValue).toBe(String);
+    const params = parser.getParameters();
+    const returnValue = parser.getReturnValue();
     
-    expect(parser.params[1].originalName).toBe('param2');
-    expect(parser.params[1].paramLocation).toBe('path');
-    expect(parser.params[1].typeValue).toBe(Number);
+    expect(params.length).toBe(2);
+    expect(params[0].originalName).toBe('param1');
+    expect(params[0].paramLocation).toBe('query');
+    expect(params[0].typeValue).toBe(String);
     
-    expect(parser.returnValue).not.toBeNull();
-    expect(parser.returnValue?.typeValue).toBe(String);
+    expect(params[1].originalName).toBe('param2');
+    expect(params[1].paramLocation).toBe('path');
+    expect(params[1].typeValue).toBe(Number);
+    
+    expect(returnValue).not.toBeNull();
+    expect(returnValue?.typeValue).toBe(String);
   });
   
   test('getFunctionName', () => {
@@ -79,12 +82,15 @@ describe('OperationParser', () => {
     
     const parser = OperationParser.load(operation, params, returnValue);
     
-    expect(parser.params.length).toBe(1);
-    expect(parser.params[0].originalName).toBe('customParam');
-    expect(parser.params[0].typeValue).toBe(Boolean);
+    const loadedParams = parser.getParameters();
+    const loadedReturnValue = parser.getReturnValue();
     
-    expect(parser.returnValue).not.toBeNull();
-    expect(parser.returnValue?.typeValue).toBe(Number);
+    expect(loadedParams.length).toBe(1);
+    expect(loadedParams[0].originalName).toBe('customParam');
+    expect(loadedParams[0].typeValue).toBe(Boolean);
+    
+    expect(loadedReturnValue).not.toBeNull();
+    expect(loadedReturnValue?.typeValue).toBe(Number);
   });
   
   test('process_request_body_object', () => {
@@ -107,15 +113,16 @@ describe('OperationParser', () => {
     };
     
     const parser = new OperationParser(operation);
+    const params = parser.getParameters();
     
-    expect(parser.params.length).toBe(2);
-    expect(parser.params[0].originalName).toBe('name');
-    expect(parser.params[0].paramLocation).toBe('body');
-    expect(parser.params[0].typeValue).toBe(String);
+    expect(params.length).toBe(2);
+    expect(params[0].originalName).toBe('name');
+    expect(params[0].paramLocation).toBe('body');
+    expect(params[0].typeValue).toBe(String);
     
-    expect(parser.params[1].originalName).toBe('age');
-    expect(parser.params[1].paramLocation).toBe('body');
-    expect(parser.params[1].typeValue).toBe(Number);
+    expect(params[1].originalName).toBe('age');
+    expect(params[1].paramLocation).toBe('body');
+    expect(params[1].typeValue).toBe(Number);
   });
   
   test('process_request_body_empty_object', () => {
@@ -132,9 +139,10 @@ describe('OperationParser', () => {
     };
     
     const parser = new OperationParser(operation);
+    const params = parser.getParameters();
     
     // No parameters should be added for an empty object
-    expect(parser.params.length).toBe(0);
+    expect(params.length).toBe(0);
   });
   
   test('process_request_body_no_name', () => {
@@ -151,11 +159,12 @@ describe('OperationParser', () => {
     };
     
     const parser = new OperationParser(operation);
+    const params = parser.getParameters();
     
-    expect(parser.params.length).toBe(1);
-    expect(parser.params[0].originalName).toBe('');
-    expect(parser.params[0].paramLocation).toBe('body');
-    expect(parser.params[0].typeValue).toBe(String);
+    expect(params.length).toBe(1);
+    expect(params[0].originalName).toBe('');
+    expect(params[0].paramLocation).toBe('body');
+    expect(params[0].typeValue).toBe(String);
   });
   
   test('dedupe_param_names', () => {
@@ -180,14 +189,15 @@ describe('OperationParser', () => {
     };
     
     const parser = new OperationParser(operation);
+    const params = parser.getParameters();
     
-    expect(parser.params.length).toBe(2);
+    expect(params.length).toBe(2);
     
     // Find the parameters by location
     let queryParam: ApiParameter | undefined;
     let bodyParam: ApiParameter | undefined;
     
-    for (const param of parser.params) {
+    for (const param of params) {
       if (param.paramLocation === 'query') {
         queryParam = param;
       } else if (param.paramLocation === 'body') {
@@ -231,10 +241,11 @@ describe('OperationParser', () => {
     };
     
     const parser = new OperationParser(operation);
+    const returnValue = parser.getReturnValue();
     
     // Should use the 200 response (smallest success code)
-    expect(parser.returnValue).not.toBeNull();
-    expect(parser.returnValue?.typeValue).toBe(String);
+    expect(returnValue).not.toBeNull();
+    expect(returnValue?.typeValue).toBe(String);
   });
   
   test('get_auth_scheme_name', () => {

@@ -12,7 +12,7 @@ export class OpenAPIToolset extends BaseToolset {
   /**
    * The tools in this toolset
    */
-  private tools: RestApiTool[] = [];
+  private _tools: RestApiTool[] = [];
   private toolFilter?: ToolPredicate | string[];
 
   /**
@@ -35,7 +35,7 @@ export class OpenAPIToolset extends BaseToolset {
     }
     
     if (specDict) {
-      this.tools = this._parse(specDict);
+      this._tools = this._parse(specDict);
       
       if (options.authScheme || options.authCredential) {
         this._configureAuthAll(options.authScheme, options.authCredential);
@@ -54,7 +54,7 @@ export class OpenAPIToolset extends BaseToolset {
     authScheme?: AuthScheme,
     authCredential?: AuthCredential
   ): void {
-    for (const tool of this.tools) {
+    for (const tool of this._tools) {
       if (authScheme) {
         tool.configureAuthScheme(authScheme);
       }
@@ -72,7 +72,7 @@ export class OpenAPIToolset extends BaseToolset {
    * @returns All RestApiTool instances in this toolset
    */
   async getTools(readonlyContext?: ReadonlyContext): Promise<RestApiTool[]> {
-    return this.tools.filter(tool => {
+    return this._tools.filter(tool => {
       if (this.toolFilter === undefined) {
         return true;
       }
@@ -93,7 +93,7 @@ export class OpenAPIToolset extends BaseToolset {
    * @returns The matching RestApiTool or undefined if not found
    */
   getTool(toolName: string): RestApiTool | undefined {
-    return this.tools.find(tool => tool.name === toolName);
+    return this._tools.find(tool => tool.name === toolName);
   }
 
   /**
