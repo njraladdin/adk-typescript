@@ -30,15 +30,15 @@ import { ReadonlyContext } from '../../agents/ReadonlyContext';
  *   first spec of the first version of that API will be used.
  */
 export class APIHubToolset extends BaseToolset {
-  private name: string;
-  private description: string;
-  private apihubResourceName: string;
-  private lazyLoadSpec: boolean;
-  private apihubClient: APIHubClient;
-  private openApiToolset?: OpenAPIToolset;
-  private authScheme?: AuthScheme;
-  private authCredential?: AuthCredential;
-  private toolFilter?: ToolPredicate | string[];
+  public name: string;
+  public description: string;
+  private _apihubResourceName: string;
+  private _lazyLoadSpec: boolean;
+  private _apihubClient: APIHubClient;
+  private _openApiToolset?: OpenAPIToolset;
+  private _authScheme?: AuthScheme;
+  private _authCredential?: AuthCredential;
+  public toolFilter?: ToolPredicate | string[];
 
   /**
    * Initializes the APIHubToolset with the given parameters.
@@ -95,17 +95,18 @@ export class APIHubToolset extends BaseToolset {
     super();
     this.name = params.name || '';
     this.description = params.description || '';
-    this.apihubResourceName = params.apihubResourceName;
-    this.lazyLoadSpec = params.lazyLoadSpec || false;
-    this.apihubClient = params.apihubClient || new APIHubClient({
+    this._apihubResourceName = params.apihubResourceName;
+    this._lazyLoadSpec = params.lazyLoadSpec || false;
+    this._apihubClient = params.apihubClient || new APIHubClient({
       accessToken: params.accessToken,
       serviceAccountJson: params.serviceAccountJson,
     });
-    this.authScheme = params.authScheme;
-    this.authCredential = params.authCredential;
+    this._openApiToolset = undefined;
+    this._authScheme = params.authScheme;
+    this._authCredential = params.authCredential;
     this.toolFilter = params.toolFilter;
 
-    if (!this.lazyLoadSpec) {
+    if (!this._lazyLoadSpec) {
       this._prepareToolset();
     }
   }
@@ -118,13 +119,13 @@ export class APIHubToolset extends BaseToolset {
    * @returns A list of all available RestApiTool objects.
    */
   async getTools(readonlyContext?: ReadonlyContext): Promise<RestApiTool[]> {
-    if (!this.openApiToolset) {
+    if (!this._openApiToolset) {
       await this._prepareToolset();
     }
-    if (!this.openApiToolset) {
+    if (!this._openApiToolset) {
       return [];
     }
-    return await this.openApiToolset.getTools(readonlyContext);
+    return await this._openApiToolset.getTools(readonlyContext);
   }
 
   /**
@@ -134,7 +135,7 @@ export class APIHubToolset extends BaseToolset {
    */
   private async _prepareToolset(): Promise<void> {
     // For each API, get the first version and the first spec of that version.
-    const specStr = await this.apihubClient.getSpecContent(this.apihubResourceName);
+    const specStr = await this._apihubClient.getSpecContent(this._apihubResourceName);
     const specDict = yaml.load(specStr) as Record<string, any>;
     if (!specDict) {
       return;
@@ -145,10 +146,10 @@ export class APIHubToolset extends BaseToolset {
     );
     this.description = this.description || specDict.info?.description || '';
     
-    this.openApiToolset = new OpenAPIToolset({
+    this._openApiToolset = new OpenAPIToolset({
       specDict,
-      authCredential: this.authCredential,
-      authScheme: this.authScheme,
+      authCredential: this._authCredential,
+      authScheme: this._authScheme,
       toolFilter: this.toolFilter,
     });
   }
@@ -157,8 +158,8 @@ export class APIHubToolset extends BaseToolset {
    * Performs cleanup and releases resources held by the toolset.
    */
   async close(): Promise<void> {
-    if (this.openApiToolset) {
-      await this.openApiToolset.close();
+    if (this._openApiToolset) {
+      await this._openApiToolset.close();
     }
   }
 } 
