@@ -1,5 +1,3 @@
- 
-
 /**
  * Function call type for LLM interactions
  */
@@ -102,6 +100,15 @@ export interface LiveConnectConfig {
  */
 export interface GroundingMetadata {
   // Define grounding metadata structure based on usage
+}
+
+/**
+ * Usage metadata for LLM responses
+ */
+export interface UsageMetadata {
+  prompt_token_count?: number;
+  candidates_token_count?: number;
+  total_token_count?: number;
 }
 
 /**

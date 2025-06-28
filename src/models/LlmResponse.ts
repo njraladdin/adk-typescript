@@ -1,6 +1,4 @@
- 
-
-import { Content, GroundingMetadata } from './types';
+import { Content, GroundingMetadata, UsageMetadata } from './types';
 
 /**
  * Interface representing a response from the LLM model API.
@@ -16,6 +14,7 @@ export interface GenerateContentResponse {
     block_reason?: string;
     block_reason_message?: string;
   };
+  usage_metadata?: UsageMetadata;
 }
 
 /**
@@ -31,6 +30,11 @@ export interface LlmResponseOptions {
    * The grounding metadata of the response.
    */
   groundingMetadata?: GroundingMetadata;
+
+  /**
+   * The usage metadata of the response.
+   */
+  usageMetadata?: UsageMetadata;
 
   /**
    * Indicates whether the text content is part of an unfinished text stream.
@@ -84,6 +88,11 @@ export class LlmResponse {
   groundingMetadata?: GroundingMetadata;
 
   /**
+   * The usage metadata of the response.
+   */
+  usageMetadata?: UsageMetadata;
+
+  /**
    * Indicates whether the text content is part of an unfinished text stream.
    * Only used for streaming mode and when the content is plain text.
    */
@@ -125,6 +134,7 @@ export class LlmResponse {
   constructor(options: LlmResponseOptions = {}) {
     this.content = options.content;
     this.groundingMetadata = options.groundingMetadata;
+    this.usageMetadata = options.usageMetadata;
     this.partial = options.partial;
     this.turnComplete = options.turnComplete;
     this.errorCode = options.errorCode;
@@ -152,29 +162,34 @@ export class LlmResponse {
       });
     }
 
+    const usageMetadata = generateContentResponse.usage_metadata;
     if (generateContentResponse.candidates && generateContentResponse.candidates.length > 0) {
       const candidate = generateContentResponse.candidates[0];
       if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
         return new LlmResponse({
           content: candidate.content,
-          groundingMetadata: candidate.grounding_metadata
+          groundingMetadata: candidate.grounding_metadata,
+          usageMetadata: usageMetadata
         });
       } else {
         return new LlmResponse({
           errorCode: candidate.finish_reason,
-          errorMessage: candidate.finish_message
+          errorMessage: candidate.finish_message,
+          usageMetadata: usageMetadata
         });
       }
     } else if (generateContentResponse.prompt_feedback) {
       const promptFeedback = generateContentResponse.prompt_feedback;
       return new LlmResponse({
         errorCode: promptFeedback.block_reason,
-        errorMessage: promptFeedback.block_reason_message
+        errorMessage: promptFeedback.block_reason_message,
+        usageMetadata: usageMetadata
       });
     } else {
       return new LlmResponse({
         errorCode: 'UNKNOWN_ERROR',
-        errorMessage: 'Unknown error.'
+        errorMessage: 'Unknown error.',
+        usageMetadata: usageMetadata
       });
     }
   }
@@ -211,6 +226,7 @@ export class LlmResponse {
     return new LlmResponse({
       content: this.content,
       groundingMetadata: this.groundingMetadata,
+      usageMetadata: this.usageMetadata,
       partial,
       turnComplete: this.turnComplete,
       errorCode: this.errorCode,
@@ -229,6 +245,7 @@ export class LlmResponse {
     return new LlmResponse({
       content: this.content,
       groundingMetadata: this.groundingMetadata,
+      usageMetadata: this.usageMetadata,
       partial: this.partial,
       turnComplete,
       errorCode: this.errorCode,
@@ -247,6 +264,7 @@ export class LlmResponse {
     return new LlmResponse({
       content: this.content,
       groundingMetadata: this.groundingMetadata,
+      usageMetadata: this.usageMetadata,
       partial: this.partial,
       turnComplete: this.turnComplete,
       errorCode: this.errorCode,
@@ -265,12 +283,32 @@ export class LlmResponse {
     return new LlmResponse({
       content: this.content,
       groundingMetadata: this.groundingMetadata,
+      usageMetadata: this.usageMetadata,
       partial: this.partial,
       turnComplete: this.turnComplete,
       errorCode: this.errorCode,
       errorMessage: this.errorMessage,
       interrupted: this.interrupted,
       customMetadata
+    });
+  }
+
+  /**
+   * Creates a copy of this LlmResponse with the given usage metadata.
+   * @param usageMetadata The usage metadata.
+   * @returns A new LlmResponse with the updated usage metadata.
+   */
+  withUsageMetadata(usageMetadata: UsageMetadata): LlmResponse {
+    return new LlmResponse({
+      content: this.content,
+      groundingMetadata: this.groundingMetadata,
+      usageMetadata,
+      partial: this.partial,
+      turnComplete: this.turnComplete,
+      errorCode: this.errorCode,
+      errorMessage: this.errorMessage,
+      interrupted: this.interrupted,
+      customMetadata: this.customMetadata
     });
   }
 } 
