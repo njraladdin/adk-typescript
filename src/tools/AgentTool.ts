@@ -153,32 +153,90 @@ export class AgentTool extends BaseTool {
     };
     invocationContext.userContent = userContent;
     
-    // Run the agent
-    let responseText = '';
+    // Run the agent and collect the last event
+    let lastEvent: any = null;
     for await (const event of this.agent.runAsync(invocationContext)) {
       if (event.content && event.author === this.agent.name) {
-        // Collect the response text
-        responseText += event.content.parts
-          .filter(part => part.text !== undefined)
-          .map(part => part.text)
-          .join('');
+        lastEvent = event;
       }
     }
     
-    // Try to parse the response as JSON
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(responseText);
-    } catch (e) {
-      // If not valid JSON, just return the text
-      parsedResponse = responseText;
+    // Check if we have a valid last event with content and parts
+    if (!lastEvent || !lastEvent.content || !lastEvent.content.parts) {
+      return '';
+    }
+    
+    // Concatenate all text parts from the last event with newlines
+    const mergedText = lastEvent.content.parts
+      .filter((part: any) => part.text !== undefined && part.text !== null)
+      .map((part: any) => part.text)
+      .join('\n');
+    
+    let toolResult: any;
+    
+    // Handle output schema if the agent has one
+    if (isLlmAgent(this.agent) && this.agent.outputSchema) {
+      try {
+        // Parse JSON and validate against schema
+        const parsed = JSON.parse(mergedText);
+        
+        // Validate against the schema if it's provided
+        // In TypeScript we don't have Pydantic's model_validate_json,
+        // so we do basic validation based on the schema type
+        if (typeof this.agent.outputSchema === 'function') {
+          // Assuming outputSchema is a constructor function or class
+          try {
+            // Try to instantiate using the schema class/constructor
+            const validated = new this.agent.outputSchema(parsed);
+            toolResult = validated;
+          } catch (validationError) {
+            console.warn(`Schema validation failed: ${validationError}`);
+            // Still use the parsed result, even if validation failed
+            toolResult = parsed;
+          }
+        } else if (typeof this.agent.outputSchema === 'object') {
+          // Basic property validation if schema is an object with properties
+          const schemaProps = Object.keys(this.agent.outputSchema.properties || {});
+          const requiredProps = this.agent.outputSchema.required || [];
+          
+          // Check required properties
+          for (const prop of requiredProps) {
+            if (parsed[prop] === undefined) {
+              console.warn(`Schema validation failed: missing required property '${prop}'`);
+            }
+          }
+          
+          // Remove properties not in schema if strict
+          if (this.agent.outputSchema.additionalProperties === false) {
+            const filteredResult: Record<string, any> = {};
+            for (const key of schemaProps) {
+              if (parsed[key] !== undefined) {
+                filteredResult[key] = parsed[key];
+              }
+            }
+            toolResult = filteredResult;
+          } else {
+            toolResult = parsed;
+          }
+        } else {
+          // If we can't determine schema type, just use parsed JSON
+          toolResult = parsed;
+        }
+      } catch (error) {
+        console.warn(`Failed to parse output as JSON: ${error}`);
+        // If JSON parsing fails, return the merged text
+        toolResult = mergedText;
+      }
+    } else {
+      // No output schema, just return the merged text
+      toolResult = mergedText;
     }
     
     // If an output key is specified, store the result in the state
     if (this.outputKey && context?.session?.state) {
-      context.session.state[this.outputKey] = parsedResponse;
+      context.session.state[this.outputKey] = toolResult;
     }
     
-    return parsedResponse;
+    return toolResult;
   }
 } 
