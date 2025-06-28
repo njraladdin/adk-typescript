@@ -61,7 +61,14 @@ export class VertexAiSessionService extends BaseSessionService {
     sessionId?: string;
     state?: Record<string, any>;
   }): Promise<Session> {
-    const { appName, userId, state } = options;
+    const { appName, userId, sessionId, state } = options;
+    
+    if (sessionId) {
+      throw new Error(
+        'User-provided Session id is not supported for VertexAISessionService.'
+      );
+    }
+    
     const reasoningEngineId = this.parseReasoningEngineId(appName);
 
     const sessionJsonDict: Record<string, any> = { 
@@ -82,7 +89,7 @@ export class VertexAiSessionService extends BaseSessionService {
     console.log('Create Session response', apiResponse);
 
     // Extract session ID and operation ID from the response
-    const sessionId = apiResponse.name.split('/').slice(-3)[0];
+    const createdSessionId = apiResponse.name.split('/').slice(-3)[0];
     const operationId = apiResponse.name.split('/').slice(-1)[0];
 
     // Poll for operation completion
@@ -105,7 +112,7 @@ export class VertexAiSessionService extends BaseSessionService {
     // Get the session resource
     const getSessionApiResponse = await this.apiClient.request({
       httpMethod: 'GET',
-      path: `reasoningEngines/${reasoningEngineId}/sessions/${sessionId}`,
+      path: `reasoningEngines/${reasoningEngineId}/sessions/${createdSessionId}`,
       requestDict: {}
     });
 
@@ -114,7 +121,7 @@ export class VertexAiSessionService extends BaseSessionService {
     
     // Create and return the session
     const session: Session = {
-      id: sessionId,
+      id: createdSessionId,
       appName: appName,
       userId: userId,
       state: getSessionApiResponse.sessionState || {},

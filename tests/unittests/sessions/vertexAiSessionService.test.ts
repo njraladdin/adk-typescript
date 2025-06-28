@@ -341,4 +341,16 @@ describe('VertexAiSessionService', () => {
     const invalidName = 'invalid-name';
     expect(() => (sessionService as any).parseReasoningEngineId(invalidName)).toThrow();
   });
+
+  test('create session with custom session id', async () => {
+    const sessionService = mockVertexAiSessionService();
+    
+    await expect(sessionService.createSession({
+      appName: '123',
+      userId: 'user',
+      sessionId: '1'
+    })).rejects.toThrow(
+      'User-provided Session id is not supported for VertexAISessionService.'
+    );
+  });
 }); 
