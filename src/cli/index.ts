@@ -217,6 +217,8 @@ program
   .description('Starts a web server for agents with Socket.IO for live interaction.')
   .option('--port <port>', 'Port to run the server on.', '3000')
   .option('--allow_origin <origins...>', 'Allowed origins for CORS.', ['*'])
+  .option('--reload', 'Enable auto reload for server.', true)
+  .option('--no-reload', 'Disable auto reload for server.')
   .option('--session_db_url <sessionDbUrl>', 
     'Optional. The database URL to store the session.\n' +
     '  - Use \'agentengine://<agent_engine_resource_id>\' to connect to Agent Engine sessions.\n' +
@@ -238,7 +240,8 @@ program
         agentDir,
         port: parseInt(options.port, 10),
         allowOrigins: options.allow_origin,
-        sessionDbUrl: options.session_db_url
+        sessionDbUrl: options.session_db_url,
+        reload: options.reload
       });
     } catch (error) {
       console.error('Error starting web server:', error);
@@ -260,6 +263,8 @@ program
   .option('--allow_origin <origins...>', 'Allowed origins for CORS.', ['*'])
   .option('--with_ui', 'Serve web UI if set.', false)
   .option('--trace_to_cloud', 'Enable Cloud Trace.', false)
+  .option('--reload', 'Enable auto reload for server.', true)
+  .option('--no-reload', 'Disable auto reload for server.')
   .action((options: any) => {
     try {
       const { app, server } = createApiServer({
@@ -268,7 +273,8 @@ program
         allowOrigins: options.allow_origin,
         web: options.with_ui,
         traceToCloud: options.trace_to_cloud,
-        port: parseInt(options.port, 10)
+        port: parseInt(options.port, 10),
+        reload: options.reload
       });
       
       console.log(`API server started on port ${options.port}`);

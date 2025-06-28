@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import cors from 'cors';
 import { Server as SocketIOServer } from 'socket.io';
+import * as chokidar from 'chokidar';
 import { InMemorySessionService } from '../sessions/InMemorySessionService';
 import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 import { Runner } from '../runners';
@@ -126,8 +127,9 @@ export function createWebServer(params: {
   port: number;
   allowOrigins: string[];
   sessionDbUrl?: string;
+  reload?: boolean;
 }): { app: express.Express; server: http.Server } {
-  const { agentDir, port, allowOrigins, sessionDbUrl } = params;
+  const { agentDir, port, allowOrigins, sessionDbUrl, reload } = params;
   
   // Create Express app
   const app = express();
@@ -1045,6 +1047,18 @@ export function createWebServer(params: {
     });
   }
   
+  // Setup auto-reload functionality if enabled
+  if (reload) {
+    // Disable auto-reload on Windows to avoid subprocess transport errors
+    // similar to the Python fix for uvicorn reload=True on Windows
+    if (process.platform === 'win32') {
+      console.log('Auto-reload disabled on Windows to avoid potential subprocess transport errors.');
+    } else {
+      setupAutoReload(server, agentDir, port);
+      console.log('Auto-reload enabled. Watching for file changes...');
+    }
+  }
+
   return { app, server };
 }
 
@@ -1062,15 +1076,17 @@ export function startWebServer(params: {
   port: number;
   allowOrigins: string[];
   sessionDbUrl?: string;
+  reload?: boolean;
 }): void {
-  const { agentDir, port, allowOrigins, sessionDbUrl } = params;
+  const { agentDir, port, allowOrigins, sessionDbUrl, reload } = params;
   
   try {
     const { server } = createWebServer({
       agentDir,
       port,
       allowOrigins,
-      sessionDbUrl
+      sessionDbUrl,
+      reload
     });
     
     server.listen(port, () => {
@@ -1091,4 +1107,80 @@ export function startWebServer(params: {
     console.error('Error starting web server:', error);
     process.exit(1);
   }
-} 
+}
+
+/**
+ * Sets up auto-reload functionality by watching for file changes
+ * 
+ * @param server HTTP server instance
+ * @param agentDir Directory to watch for changes
+ * @param port Port number for restarting the server
+ */
+function setupAutoReload(server: http.Server, agentDir: string, port: number): void {
+  // Watch for changes in TypeScript and JavaScript files
+  const watcher = chokidar.watch([
+    path.join(agentDir, '**/*.ts'),
+    path.join(agentDir, '**/*.js'),
+    path.join(agentDir, '**/*.json')
+  ], {
+    ignored: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/*.d.ts',
+      '**/coverage/**',
+      '**/.git/**'
+    ],
+    persistent: true,
+    ignoreInitial: true
+  });
+
+  let restarting = false;
+
+  watcher.on('change', (filePath) => {
+    if (restarting) return;
+    
+    console.log(`File changed: ${path.relative(process.cwd(), filePath)}`);
+    console.log('Restarting server...');
+    
+    restarting = true;
+    
+    // Close the current server
+    server.close(() => {
+      // Clear require cache for changed modules
+      clearRequireCache(agentDir);
+      
+      // Exit the process - this will cause the parent process to restart
+      // if using nodemon or similar process manager
+      console.log('Server stopped. Please restart manually or use a process manager like nodemon for automatic restart.');
+      process.exit(0);
+    });
+  });
+
+  watcher.on('error', (error) => {
+    console.error('File watcher error:', error);
+  });
+
+  // Clean up watcher on process exit
+  process.on('SIGINT', () => {
+    watcher.close();
+  });
+
+  process.on('SIGTERM', () => {
+    watcher.close();
+  });
+}
+
+/**
+ * Clears the require cache for modules in the specified directory
+ * 
+ * @param dir Directory to clear cache for
+ */
+function clearRequireCache(dir: string): void {
+  const absoluteDir = path.resolve(dir);
+  
+  Object.keys(require.cache).forEach(id => {
+    if (id.startsWith(absoluteDir)) {
+      delete require.cache[id];
+    }
+  });
+}
