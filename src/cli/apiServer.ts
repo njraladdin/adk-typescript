@@ -668,9 +668,6 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     const { appName, evalSetId } = req.params;
     const requestData: RunEvalRequest = req.body;
     
-    // This is a placeholder implementation as the full eval runner would require more code
-    // In a complete implementation, this would use the cliEval module
-    
     try {
       const evalSetFilePath = getEvalSetFilePath(appName, evalSetId);
       
@@ -681,14 +678,38 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       // Get root agent
       const rootAgent = await getRootAgent(appName);
       
-      // Mock response - in a real implementation, this would run the actual evaluations
-      const results: RunEvalResult[] = requestData.evalIds.map(evalId => ({
-        evalSetId,
-        evalId,
-        finalEvalStatus: 'SUCCESS',
-        evalMetricResults: [],
-        sessionId: `eval_${evalId}_${Date.now()}`
-      }));
+      // Create a mapping from eval set file to all the evals that needed to be run
+      const evalSetToEvals: Record<string, string[]> = {
+        [evalSetFilePath]: requestData.evalIds
+      };
+      
+      if (!requestData.evalIds || requestData.evalIds.length === 0) {
+        console.log('Eval ids to run list is empty. We will run all evals in the eval set.');
+      }
+      
+      // Import runEvals function
+      const { runEvals } = require('./cliEval');
+      
+      // Run the evaluations
+      const results: RunEvalResult[] = [];
+      for await (const evalResult of runEvals({
+        evalSetToEvals,
+        rootAgent,
+        resetFunc: undefined, // Could be enhanced to support reset functions
+        evalMetrics: requestData.evalMetrics,
+        sessionService,
+        artifactService,
+        printDetailedResults: false
+      })) {
+        results.push({
+          evalSetId,
+          evalId: evalResult.evalId,
+          finalEvalStatus: evalResult.finalEvalStatus === 1 ? 'PASSED' : 
+                           evalResult.finalEvalStatus === 2 ? 'FAILED' : 'NOT_EVALUATED',
+          evalMetricResults: evalResult.evalMetricResults,
+          sessionId: evalResult.sessionId
+        });
+      }
       
       res.json(results);
     } catch (error) {

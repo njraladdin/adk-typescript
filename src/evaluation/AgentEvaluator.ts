@@ -418,7 +418,7 @@ export class AgentEvaluator {
 
           // Apply the tool callback to mock tool outputs if agent is an LlmAgent
           if (agent instanceof LlmAgent) {
-            EvaluationGenerator.applyBeforeToolCallback(
+            await EvaluationGenerator.applyBeforeToolCallback(
               agent,
               (tool, args, toolContext, evalDataset) => 
                 EvaluationGenerator.beforeToolCallback(tool, args, toolContext, evalDataset),

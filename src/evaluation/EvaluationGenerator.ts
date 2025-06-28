@@ -243,7 +243,7 @@ export class EvaluationGenerator {
 
     // Apply the tool callback to mock tool outputs if agent is an LlmAgent
     if (rootAgent instanceof LlmAgent) {
-      EvaluationGenerator.applyBeforeToolCallback(
+      await EvaluationGenerator.applyBeforeToolCallback(
         rootAgent,
         (tool, args, toolContext, evalDataset) => 
           EvaluationGenerator.beforeToolCallback(tool, args, toolContext, evalDataset),
@@ -460,12 +460,12 @@ export class EvaluationGenerator {
    * @param allMockTools Set of tool names that need to be mocked
    * @param evalDataset The evaluation dataset
    */
-  static applyBeforeToolCallback(
+  static async applyBeforeToolCallback(
     agent: BaseAgent,
     callback: BeforeToolCallback,
     allMockTools: Set<string>,
     evalDataset: EvalEntry[]
-  ): void {
+  ): Promise<void> {
     // Check if the agent is an LlmAgent
     if (!(agent instanceof LlmAgent)) {
       return;
@@ -495,7 +495,7 @@ export class EvaluationGenerator {
 
     // Apply recursively to subagents
     for (const subAgent of agent.subAgents) {
-      EvaluationGenerator.applyBeforeToolCallback(
+      await EvaluationGenerator.applyBeforeToolCallback(
         subAgent, 
         callback, 
         allMockTools,
