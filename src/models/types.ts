@@ -57,6 +57,10 @@ export interface FunctionDeclaration {
  */
 export interface Tool {
   functionDeclarations: FunctionDeclaration[];
+  codeExecution?: {
+    // Code execution tool configuration
+    [key: string]: any;
+  };
 }
 
 /**

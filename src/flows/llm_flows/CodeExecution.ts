@@ -18,6 +18,7 @@ import {
   File 
 } from '../../code-executors/CodeExecutionUtils';
 import { CodeExecutorContext } from '../../code-executors/CodeExecutorContext';
+import { GeminiCodeExecutor } from '../../code-executors/GeminiCodeExecutor';
 import { LlmAgent } from '../../agents/LlmAgent';
 import { BaseLlmRequestProcessor, BaseLlmResponseProcessor } from './BaseLlmProcessor';
 
@@ -190,6 +191,11 @@ async function* runPreProcessor(
   if (!codeExecutor || !(codeExecutor instanceof BaseCodeExecutor)) {
     return;
   }
+
+  if (codeExecutor instanceof GeminiCodeExecutor) {
+    codeExecutor.processLlmRequest(llmRequest);
+    return;
+  }
   
   if (!codeExecutor.optimizeDataFile) {
     return;
@@ -297,6 +303,10 @@ async function* runPostProcessor(
   }
   
   if (!llmResponse || !llmResponse.content) {
+    return;
+  }
+
+  if (codeExecutor instanceof GeminiCodeExecutor) {
     return;
   }
 

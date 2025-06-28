@@ -1,5 +1,6 @@
 import { BaseCodeExecutor } from './BaseCodeExecutor';
 import { CodeExecutorContext } from './CodeExecutorContext';
+import { GeminiCodeExecutor } from './GeminiCodeExecutor';
 import { UnsafeLocalCodeExecutor } from './UnsafeLocalCodeExecutor';
 import { 
   CodeExecutionInput, 
@@ -13,6 +14,7 @@ import { VertexAiCodeExecutor, VertexAiCodeExecutorOptions } from './VertexAiCod
 export {
   BaseCodeExecutor,
   CodeExecutorContext,
+  GeminiCodeExecutor,
   UnsafeLocalCodeExecutor,
   VertexAiCodeExecutor,
   CodeExecutionInput,
