@@ -326,17 +326,19 @@ export const Tools = {
         // Import dynamically to avoid circular dependencies
         const { MCPToolset } = require('./mcp_tool');
         
-        const [tools, exitStack] = await MCPToolset.fromServer({
+        const toolset = new MCPToolset({
           connectionParams: {
             command: params.command,
             args: params.args
           }
         });
         
+        const tools = await toolset.getTools();
+        
         return {
           status: 'MCP Toolset created',
           tools,
-          exitStack
+          toolset
         };
       }
     },
@@ -351,17 +353,19 @@ export const Tools = {
         // Import dynamically to avoid circular dependencies
         const { MCPToolset, SseServerParams } = require('./mcp_tool');
         
-        const [tools, exitStack] = await MCPToolset.fromServer({
+        const toolset = new MCPToolset({
           connectionParams: new SseServerParams({
             url: params.url,
             headers: params.headers
           })
         });
         
+        const tools = await toolset.getTools();
+        
         return {
           status: 'MCP Toolset created',
           tools,
-          exitStack
+          toolset
         };
       }
     }

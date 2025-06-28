@@ -71,9 +71,9 @@ async function getToolsAsync() {
    */
   console.log("Attempting to connect to MCP Filesystem server...");
   
-  const { tools, exitStack } = await MCPToolset.fromServer({
+  const toolset = new MCPToolset({
     // Use StdioServerParameters for local process communication
-    connectionParams: new StdioServerParameters({
+    connectionParams: {
       command: 'npx', // Command to run the server
       args: [
         "-y",    // Arguments for the command
@@ -81,7 +81,7 @@ async function getToolsAsync() {
         // TODO: IMPORTANT! Change the path below to an ABSOLUTE path on your system.
         "/path/to/your/folder"
       ],
-    })
+    }
     // For remote servers, you would use SseServerParams instead:
     // connectionParams: new SseServerParams({
     //   url: "http://remote-server:port/path", 
@@ -89,10 +89,12 @@ async function getToolsAsync() {
     // })
   });
   
+  const tools = await toolset.getTools();
+  
   console.log("MCP Toolset created successfully.");
   // MCP requires maintaining a connection to the local MCP Server.
-  // exitStack manages the cleanup of this connection.
-  return { tools, exitStack };
+  // toolset manages the cleanup of this connection.
+  return { tools, toolset };
 }
 
 // --- Step 2: Agent Definition ---
@@ -100,17 +102,17 @@ async function getAgentAsync() {
   /**
    * Creates an ADK Agent equipped with tools from the MCP Server.
    */
-  const { tools, exitStack } = await getToolsAsync();
+  const { tools, toolset } = await getToolsAsync();
   console.log(`Fetched ${tools.length} tools from MCP server.`);
   
   const rootAgent = new Agent({
     model: 'gemini-2.0-flash', // Adjust model name if needed based on availability
     name: 'filesystem_assistant',
     instruction: 'Help user interact with the local filesystem using available tools.',
-    tools: tools, // Provide the MCP tools to the ADK agent
+    tools: toolset, // Provide the MCP toolset to the ADK agent
   });
   
-  return { rootAgent, exitStack };
+  return { rootAgent, toolset };
 }
 
 // --- Step 3: Main Execution Logic ---
@@ -134,7 +136,7 @@ async function main() {
     parts: [{ text: query }]
   };
 
-  const { rootAgent, exitStack } = await getAgentAsync();
+  const { rootAgent, toolset } = await getAgentAsync();
 
   const runner = new Runner({
     appName: 'mcp_filesystem_app',
@@ -157,7 +159,7 @@ async function main() {
   } finally {
     // Crucial Cleanup: Ensure the MCP server process connection is closed.
     console.log("Closing MCP server connection...");
-    await exitStack.close();
+    await toolset.close();
     console.log("Cleanup complete.");
   }
 }
@@ -233,8 +235,8 @@ async function getToolsAsync() {
   }
 
   console.log("Attempting to connect to MCP Google Maps server...");
-  const { tools, exitStack } = await MCPToolset.fromServer({
-    connectionParams: new StdioServerParameters({
+  const toolset = new MCPToolset({
+    connectionParams: {
       command: 'npx',
       args: [
         "-y",
@@ -244,27 +246,29 @@ async function getToolsAsync() {
       env: {
         "GOOGLE_MAPS_API_KEY": googleMapsApiKey
       }
-    })
+    }
   });
   
+  const tools = await toolset.getTools();
+  
   console.log("MCP Toolset created successfully.");
-  return { tools, exitStack };
+  return { tools, toolset };
 }
 
 // --- Step 2: Agent Definition ---
 async function getAgentAsync() {
   /** Creates an ADK Agent equipped with tools from the MCP Server. */
-  const { tools, exitStack } = await getToolsAsync();
+  const { tools, toolset } = await getToolsAsync();
   console.log(`Fetched ${tools.length} tools from MCP server.`);
   
   const rootAgent = new Agent({
     model: 'gemini-2.0-flash', // Adjust if needed
     name: 'maps_assistant',
     instruction: 'Help user with mapping and directions using available tools.',
-    tools: tools,
+    tools: toolset,
   });
   
-  return { rootAgent, exitStack };
+  return { rootAgent, toolset };
 }
 
 // --- Step 3: Main Execution Logic (modify query) ---
@@ -286,7 +290,7 @@ async function main() {
     parts: [{ text: query }]
   };
 
-  const { rootAgent, exitStack } = await getAgentAsync();
+  const { rootAgent, toolset } = await getAgentAsync();
 
   const runner = new Runner({
     appName: 'mcp_maps_app',
@@ -307,7 +311,7 @@ async function main() {
     }
   } finally {
     console.log("Closing MCP server connection...");
-    await exitStack.close();
+    await toolset.close();
     console.log("Cleanup complete.");
   }
 }
@@ -490,14 +494,16 @@ async function main() {
   // Connect to our custom MCP server
   console.log("Connecting to custom ADK MCP Server...");
   
-  const { tools, exitStack } = await MCPToolset.fromServer({
-    connectionParams: new StdioServerParameters({
+  const toolset = new MCPToolset({
+    connectionParams: {
       command: 'node', // Or 'ts-node' depending on your setup
       args: [
         "./adk_mcp_server.js" // Path to your compiled server or use ts-node with .ts file
       ]
-    })
+    }
   });
+  
+  const tools = await toolset.getTools();
   
   console.log(`Connected to MCP Server, discovered ${tools.length} tools`);
   
