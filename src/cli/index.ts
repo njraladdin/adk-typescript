@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import path from 'path';
 import { runCli, runInputFile } from './cli';
-import { runEvals, getEvaluationCriteriaOrDefault, getRootAgent, tryGetResetFunc, parseAndGetEvalsToRun, EvalMetric, EvalStatus } from './cliEval';
+import { runEvals, getEvaluationCriteriaOrDefault, getRootAgent, tryGetResetFunc, parseAndGetEvalsToRun, EvalMetric, EvalStatus, EvalResult } from './cliEval';
 import { toCloudRun } from './cliDeploy';
 import { runCmd } from './cliCreate';
 import { getAgentGraph } from './agentGraph';
@@ -152,15 +152,6 @@ program
   .option('--config_file_path <configFilePath>', 'Optional. The path to config file.')
   .option('--print_detailed_results', 'Whether to print detailed results on console.', false)
   .action(async (agentModuleFilePath: string, evalSetFilePaths: string[], options: any) => {
-    // Helper function to collect async generator results
-    async function collectAsyncGen<T>(asyncGen: AsyncGenerator<T, void, unknown>): Promise<T[]> {
-      const results: T[] = [];
-      for await (const result of asyncGen) {
-        results.push(result);
-      }
-      return results;
-    }
-
     try {
       // Load evaluation criteria
       const evaluationCriteria = getEvaluationCriteriaOrDefault(options.config_file_path);
@@ -178,13 +169,16 @@ program
       const evalSetToEvals = parseAndGetEvalsToRun(evalSetFilePaths);
       
       // Run evals and collect all results
-      const evalResults = await collectAsyncGen(runEvals({
+      const evalResults: EvalResult[] = [];
+      for await (const result of runEvals({
         evalSetToEvals,
         rootAgent,
         resetFunc,
         evalMetrics,
         printDetailedResults: options.print_detailed_results,
-      }));
+      })) {
+        evalResults.push(result);
+      }
 
       console.log("*********************************************************************");
       
