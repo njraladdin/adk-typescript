@@ -259,14 +259,11 @@ export async function handleFunctionCallsLive(
         functionResponse = missingArgsError;
       } else {
         // before_tool_callback (sync or async)
-        if (agent.beforeToolCallback) {
-          const beforeCallbackResult = await agent.executeBeforeToolCallbacks(
-            tool,
-            functionArgs,
-            toolContext
-          );
-          
-          functionResponse = beforeCallbackResult;
+        for (const callback of agent.canonicalBeforeToolCallbacks) {
+          functionResponse = await callback(tool, functionArgs, toolContext);
+          if (functionResponse) {
+            break;
+          }
         }
         
         // Execute the tool if no callback response
@@ -281,17 +278,18 @@ export async function handleFunctionCallsLive(
         }
         
         // after_tool_callback (sync or async)
-        if (agent.afterToolCallback && functionResponse) {
-          const alteredFunctionResponse = await agent.executeAfterToolCallbacks(
-            tool,
-            functionArgs,
-            toolContext,
-            functionResponse
-          );
-          
-          // Only update if the response is not undefined
-          if (alteredFunctionResponse !== undefined) {
-            functionResponse = alteredFunctionResponse;
+        if (functionResponse) {
+          for (const callback of agent.canonicalAfterToolCallbacks) {
+            const alteredFunctionResponse = await callback(
+              tool,
+              functionArgs,
+              toolContext,
+              functionResponse
+            );
+            if (alteredFunctionResponse !== undefined) {
+              functionResponse = alteredFunctionResponse;
+              break;
+            }
           }
         }
       }
@@ -393,14 +391,11 @@ export async function handleFunctionCallsAsync(
         functionResponse = missingArgsError;
       } else {
         // before_tool_callback (sync or async)
-        if (agent.beforeToolCallback) {
-          const beforeCallbackResult = await agent.executeBeforeToolCallbacks(
-            tool,
-            functionArgs,
-            toolContext
-          );
-          
-          functionResponse = beforeCallbackResult;
+        for (const callback of agent.canonicalBeforeToolCallbacks) {
+          functionResponse = await callback(tool, functionArgs, toolContext);
+          if (functionResponse) {
+            break;
+          }
         }
         
         // Execute the tool if no callback response
@@ -413,17 +408,18 @@ export async function handleFunctionCallsAsync(
         }
         
         // after_tool_callback (sync or async)
-        if (agent.afterToolCallback && functionResponse) {
-          const alteredFunctionResponse = await agent.executeAfterToolCallbacks(
-            tool,
-            functionArgs,
-            toolContext,
-            functionResponse
-          );
-          
-          // Only update if the response is not undefined
-          if (alteredFunctionResponse !== undefined) {
-            functionResponse = alteredFunctionResponse;
+        if (functionResponse) {
+          for (const callback of agent.canonicalAfterToolCallbacks) {
+            const alteredFunctionResponse = await callback(
+              tool,
+              functionArgs,
+              toolContext,
+              functionResponse
+            );
+            if (alteredFunctionResponse !== undefined) {
+              functionResponse = alteredFunctionResponse;
+              break;
+            }
           }
         }
       }

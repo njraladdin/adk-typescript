@@ -621,14 +621,13 @@ export class LlmAgent extends BaseAgent {
     const callbacks = this.canonicalBeforeToolCallbacks;
     if (callbacks.length === 0) return undefined;
     
-    let result: Record<string, any> | undefined = undefined;
     for (const callback of callbacks) {
       const callbackResult = await callback(tool, args, toolContext);
       if (callbackResult) {
-        result = callbackResult;
+        return callbackResult;
       }
     }
-    return result;
+    return undefined;
   }
 
   /**
@@ -646,8 +645,8 @@ export class LlmAgent extends BaseAgent {
     let result: Record<string, any> | undefined = response;
     for (const callback of callbacks) {
       const callbackResult = await callback(tool, args, toolContext, result);
-      if (callbackResult) {
-        result = callbackResult;
+      if (callbackResult !== undefined) {
+        return callbackResult;
       }
     }
     return result;
