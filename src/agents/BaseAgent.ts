@@ -4,22 +4,37 @@ import { CallbackContext } from './CallbackContext';
 import { InvocationContext } from './InvocationContext';
 
 /**
- * Callback signature that is invoked before the agent run.
+ * Single callback signature that is invoked before/after the agent run.
  * 
  * @param callbackContext The callback context.
  * @returns The content to return to the user. When set, the agent run will be skipped and
  * the provided content will be returned to user.
  */
-export type BeforeAgentCallback = (callbackContext: CallbackContext) => Content | undefined | Promise<Content | undefined>;
+export type SingleAgentCallback = (callbackContext: CallbackContext) => Content | undefined | Promise<Content | undefined>;
 
 /**
- * Callback signature that is invoked after the agent run.
+ * Callback or list of callbacks to be invoked before the agent run.
+ * 
+ * When a list of callbacks is provided, the callbacks will be called in the
+ * order they are listed until a callback does not return undefined.
+ * 
+ * @param callbackContext The callback context.
+ * @returns The content to return to the user. When set, the agent run will be skipped and
+ * the provided content will be returned to user.
+ */
+export type BeforeAgentCallback = SingleAgentCallback | SingleAgentCallback[];
+
+/**
+ * Callback or list of callbacks to be invoked after the agent run.
+ * 
+ * When a list of callbacks is provided, the callbacks will be called in the
+ * order they are listed until a callback does not return undefined.
  * 
  * @param callbackContext The callback context.
  * @returns The content to return to the user. When set, the agent run will be skipped and
  * the provided content will be appended to event history as agent response.
  */
-export type AfterAgentCallback = (callbackContext: CallbackContext) => Content | undefined | Promise<Content | undefined>;
+export type AfterAgentCallback = SingleAgentCallback | SingleAgentCallback[];
 
 /**
  * Options for agent configuration.
@@ -52,7 +67,10 @@ export abstract class BaseAgent {
   subAgents: BaseAgent[] = [];
   
   /** 
-   * Callback signature that is invoked before the agent run.
+   * Callback or list of callbacks to be invoked before the agent run.
+   * 
+   * When a list of callbacks is provided, the callbacks will be called in the
+   * order they are listed until a callback does not return undefined.
    * 
    * @param callbackContext The callback context.
    * @returns Content | undefined: The content to return to the user.
@@ -62,7 +80,10 @@ export abstract class BaseAgent {
   beforeAgentCallback?: BeforeAgentCallback;
   
   /** 
-   * Callback signature that is invoked after the agent run.
+   * Callback or list of callbacks to be invoked after the agent run.
+   * 
+   * When a list of callbacks is provided, the callbacks will be called in the
+   * order they are listed until a callback does not return undefined.
    * 
    * @param callbackContext The callback context.
    * @returns Content | undefined: The content to return to the user.
@@ -253,29 +274,66 @@ export abstract class BaseAgent {
   }
   
   /**
+   * The resolved beforeAgentCallback field as a list of SingleAgentCallback.
+   * 
+   * This method is only for use by Agent Development Kit.
+   */
+  get canonicalBeforeAgentCallbacks(): SingleAgentCallback[] {
+    if (!this.beforeAgentCallback) {
+      return [];
+    }
+    if (Array.isArray(this.beforeAgentCallback)) {
+      return this.beforeAgentCallback;
+    }
+    return [this.beforeAgentCallback];
+  }
+
+  /**
+   * The resolved afterAgentCallback field as a list of SingleAgentCallback.
+   * 
+   * This method is only for use by Agent Development Kit.
+   */
+  get canonicalAfterAgentCallbacks(): SingleAgentCallback[] {
+    if (!this.afterAgentCallback) {
+      return [];
+    }
+    if (Array.isArray(this.afterAgentCallback)) {
+      return this.afterAgentCallback;
+    }
+    return [this.afterAgentCallback];
+  }
+  
+  /**
    * Handles the before-agent callback.
    * 
    * @param invocationContext The invocation context
    * @returns The event if the callback returns content, undefined otherwise
    */
   private async handleBeforeAgentCallback(invocationContext: InvocationContext): Promise<Event | undefined> {
-    if (!this.beforeAgentCallback) {
-      return undefined;
+    let retEvent: Event | undefined = undefined;
+
+    if (!this.canonicalBeforeAgentCallbacks.length) {
+      return retEvent;
     }
-    
+
     const callbackContext = new CallbackContext(invocationContext);
-    const content = await this.beforeAgentCallback(callbackContext);
     
-    if (!content) {
-      return undefined;
+    for (const callback of this.canonicalBeforeAgentCallbacks) {
+      const beforeAgentCallbackContent = await callback(callbackContext);
+      
+      if (beforeAgentCallbackContent) {
+        retEvent = new Event({
+          invocationId: invocationContext.invocationId,
+          author: this.name,
+          branch: invocationContext.branch,
+          content: beforeAgentCallbackContent,
+        });
+        invocationContext.endInvocation = true;
+        return retEvent;
+      }
     }
-    
-    return new Event({
-      author: this.name,
-      content,
-      invocationId: invocationContext.invocationId,
-      branch: invocationContext.branch
-    });
+
+    return retEvent;
   }
   
   /**
@@ -285,22 +343,28 @@ export abstract class BaseAgent {
    * @returns The event if the callback returns content, undefined otherwise
    */
   private async handleAfterAgentCallback(invocationContext: InvocationContext): Promise<Event | undefined> {
-    if (!this.afterAgentCallback) {
-      return undefined;
+    let retEvent: Event | undefined = undefined;
+
+    if (!this.canonicalAfterAgentCallbacks.length) {
+      return retEvent;
     }
-    
+
     const callbackContext = new CallbackContext(invocationContext);
-    const content = await this.afterAgentCallback(callbackContext);
     
-    if (!content) {
-      return undefined;
+    for (const callback of this.canonicalAfterAgentCallbacks) {
+      const afterAgentCallbackContent = await callback(callbackContext);
+      
+      if (afterAgentCallbackContent) {
+        retEvent = new Event({
+          invocationId: invocationContext.invocationId,
+          author: this.name,
+          branch: invocationContext.branch,
+          content: afterAgentCallbackContent,
+        });
+        return retEvent;
+      }
     }
-    
-    return new Event({
-      author: this.name,
-      content,
-      invocationId: invocationContext.invocationId,
-      branch: invocationContext.branch
-    });
+
+    return retEvent;
   }
 } 
