@@ -28,6 +28,7 @@ export * from './CodeExecutionTool';
 export * from './ExampleTool';
 export * from './VertexAISearchTool';
 export * from './ToolboxTool';
+export * from './ToolboxToolset';
 export * from './LangchainTool';
 
 // Export MCP tools

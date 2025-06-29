@@ -1,12 +1,10 @@
-
-
 import axios from 'axios';
 import { FunctionTool } from './FunctionTool';
 
 /**
  * Interface for a Toolbox client
  */
-interface ToolboxClient {
+export interface ToolboxClient {
   /**
    * Load a tool from the Toolbox server
    * @param toolName The name of the tool to load
@@ -23,7 +21,7 @@ interface ToolboxClient {
 /**
  * A simple Toolbox client implementation
  */
-class SimpleToolboxClient implements ToolboxClient {
+export class SimpleToolboxClient implements ToolboxClient {
   /**
    * The base URL of the Toolbox server
    */
