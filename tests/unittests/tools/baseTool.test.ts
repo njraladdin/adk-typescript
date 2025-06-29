@@ -43,11 +43,11 @@ function createToolContext(): ToolContext {
   
   // Create a proper Session instance for the test
   const session = new Session({
-    id: sessionData.id,
-    appName: sessionData.appName,
-    userId: sessionData.userId,
+    id: sessionData.then(session => session.id) as unknown as string,
+    appName: sessionData.then(session => session.appName) as unknown as string,
+    userId: sessionData.then(session => session.userId) as unknown as string,
     // Convert the Record<string, any> to a proper State instance
-    state: new State(sessionData.state),
+    state: new State(sessionData.then(session => session.state)),
     // Just pass an empty events array
     events: []
   });

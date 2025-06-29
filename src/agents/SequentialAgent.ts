@@ -24,7 +24,7 @@ export class SequentialAgent extends BaseAgent {
    */
   protected async* runAsyncImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
     for (const subAgent of this.subAgents) {
-      yield* subAgent.invoke(ctx);
+      yield* subAgent.runAsync(ctx);
     }
   }
 
@@ -33,7 +33,7 @@ export class SequentialAgent extends BaseAgent {
    */
   protected async* runLiveImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
     for (const subAgent of this.subAgents) {
-      yield* subAgent.invoke(ctx);
+      yield* subAgent.runLive(ctx);
     }
   }
 } 

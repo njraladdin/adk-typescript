@@ -100,7 +100,7 @@ export class ParallelAgent extends BaseAgent {
   protected async* runAsyncImpl(ctx: InvocationContext): AsyncGenerator<Event, void, unknown> {
     setBranchForCurrentAgent(this, ctx);
     
-    const agentRuns = this.subAgents.map(agent => agent.invoke(ctx));
+    const agentRuns = this.subAgents.map(agent => agent.runAsync(ctx));
     
     yield* mergeAgentRuns(agentRuns);
   }

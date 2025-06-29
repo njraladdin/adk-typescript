@@ -45,7 +45,7 @@ export class LoopAgent extends BaseAgent {
     
     while (!this.maxIterations || timesLooped < this.maxIterations) {
       for (const subAgent of this.subAgents) {
-        for await (const event of subAgent.invoke(ctx)) {
+        for await (const event of subAgent.runAsync(ctx)) {
           yield event;
           
           if (event.actions.escalate) {

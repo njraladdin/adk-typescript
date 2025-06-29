@@ -114,16 +114,16 @@ export abstract class BaseAgent {
   }
   
   /**
-   * Invokes the agent with the given context.
+   * Entry method to run an agent via text-based conversation.
    * 
-   * @param invocationContext The invocation context
+   * @param parentContext The invocation context of the parent agent
    * @returns An async generator of events
    */
-  async *invoke(
-    invocationContext: InvocationContext
+  async *runAsync(
+    parentContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
-    // Set the agent in the invocation context
-    invocationContext.agent = this;
+    // Create invocation context for this agent
+    const invocationContext = this.createInvocationContext(parentContext);
     
     // Run before-agent callback if present
     const beforeEvent = await this.handleBeforeAgentCallback(invocationContext);
@@ -132,13 +132,13 @@ export abstract class BaseAgent {
       if (invocationContext.endInvocation) {
         return;
       }
-
     }
-    // Run the agent implementation based on invocation mode
-    if (invocationContext.live) {
-      yield* this.runLiveImpl(invocationContext);
-    } else {
-      yield* this.runAsyncImpl(invocationContext);
+    
+    // Run the agent's async implementation
+    yield* this.runAsyncImpl(invocationContext);
+    
+    if (invocationContext.endInvocation) {
+      return;
     }
     
     // Run after-agent callback if present
@@ -147,6 +147,26 @@ export abstract class BaseAgent {
       yield afterEvent;
     }
   }
+  
+  /**
+   * Entry method to run an agent via video/audio-based conversation.
+   * 
+   * @param parentContext The invocation context of the parent agent
+   * @returns An async generator of events
+   */
+  async *runLive(
+    parentContext: InvocationContext
+  ): AsyncGenerator<Event, void, unknown> {
+    // Create invocation context for this agent
+    const invocationContext = this.createInvocationContext(parentContext);
+    
+    // TODO: support before/after_agent_callback for live mode
+    
+    // Run the agent's live implementation
+    yield* this.runLiveImpl(invocationContext);
+  }
+
+
   
   /**
    * Implementation of the agent's async invocation logic.
@@ -309,7 +329,7 @@ export abstract class BaseAgent {
    * @param invocationContext The invocation context
    * @returns The event if the callback returns content, undefined otherwise
    */
-  private async handleBeforeAgentCallback(invocationContext: InvocationContext): Promise<Event | undefined> {
+  protected async handleBeforeAgentCallback(invocationContext: InvocationContext): Promise<Event | undefined> {
     let retEvent: Event | undefined = undefined;
 
     if (!this.canonicalBeforeAgentCallbacks.length) {
@@ -342,7 +362,7 @@ export abstract class BaseAgent {
    * @param invocationContext The invocation context
    * @returns The event if the callback returns content, undefined otherwise
    */
-  private async handleAfterAgentCallback(invocationContext: InvocationContext): Promise<Event | undefined> {
+  protected async handleAfterAgentCallback(invocationContext: InvocationContext): Promise<Event | undefined> {
     let retEvent: Event | undefined = undefined;
 
     if (!this.canonicalAfterAgentCallbacks.length) {

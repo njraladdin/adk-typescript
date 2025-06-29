@@ -27,6 +27,7 @@ TODO:
 - get project up to date with v0.5.0, done 
 
 
-- get project up to date with v1.0.1
+- v1.0.0: get project up to date with v1.0.0, make agnet interface more similar, add most sample agnets 
 
-- make it run globally 
+
+
