@@ -69,7 +69,7 @@ export abstract class BaseSessionService implements SessionService {
     userId: string;
     sessionId?: string;
     state?: Record<string, any>;
-  }): Promise<Session> | Session;
+  }): Promise<Session>;
 
   /**
    * Gets a session by its ID.
@@ -83,7 +83,7 @@ export abstract class BaseSessionService implements SessionService {
     appName: string;
     userId: string;
     sessionId: string;
-  }): Promise<Session | null> | Session | null;
+  }): Promise<Session | null>;
 
   /**
    * Lists all sessions for a user in an app.
@@ -95,7 +95,7 @@ export abstract class BaseSessionService implements SessionService {
   abstract listSessions(options: {
     appName: string;
     userId: string;
-  }): Promise<SessionsList> | SessionsList;
+  }): Promise<SessionsList>;
 
   /**
    * Deletes a session.
@@ -108,7 +108,7 @@ export abstract class BaseSessionService implements SessionService {
     appName: string;
     userId: string;
     sessionId: string;
-  }): Promise<void> | void;
+  }): Promise<void>;
 
   /**
    * Updates a session's state.
@@ -125,7 +125,7 @@ export abstract class BaseSessionService implements SessionService {
    * 
    * @param options.session - The session to close
    */
-  closeSession(options: { session: Session }): Promise<void> | void {
+  async closeSession(options: { session: Session }): Promise<void> {
     // TODO: determine whether we want to finalize the session here.
     return;
   }
@@ -137,19 +137,19 @@ export abstract class BaseSessionService implements SessionService {
    * @param options.event - The event to append
    * @returns The event that was appended
    */
-  appendEvent(options: {
+  async appendEvent(options: {
     session: Session;
     event: Event;
-  }): Promise<void> | void {
+  }): Promise<Event> {
     const { session, event } = options;
     
     if (event.partial) {
-      session.events.push(event);
-      return;
+      return event;
     }
 
     this._updateSessionStateFromEvent(session, event);
     session.events.push(event);
+    return event;
   }
 
   /**

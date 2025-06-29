@@ -83,27 +83,27 @@ export interface SessionService {
     userId: string;
     sessionId?: string;
     state?: Record<string, any>;
-  }): Promise<SessionInterface> | SessionInterface;
+  }): Promise<SessionInterface>;
   
   getSession(options: {
     appName: string;
     userId: string;
     sessionId: string;
-  }): Promise<SessionInterface | null> | SessionInterface | null;
+  }): Promise<SessionInterface | null>;
   
   listSessions(options: {
     appName: string;
     userId: string;
-  }): Promise<SessionsList> | SessionsList;
+  }): Promise<SessionsList>;
   
   deleteSession(options: {
     appName: string;
     userId: string;
     sessionId: string;
-  }): Promise<void> | void;
+  }): Promise<void>;
   
   appendEvent(options: {
     session: SessionInterface;
     event: Event;
-  }): Promise<void> | void;
+  }): Promise<Event>;
 } 

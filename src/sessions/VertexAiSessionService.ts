@@ -261,11 +261,11 @@ export class VertexAiSessionService extends BaseSessionService {
   async appendEvent(options: {
     session: Session;
     event: Event;
-  }): Promise<void> {
+  }): Promise<Event> {
     const { session, event } = options;
     
     // Update the in-memory session
-    super.appendEvent(options);
+    await super.appendEvent(options);
 
     // Update the session in Vertex AI
     const reasoningEngineId = this.parseReasoningEngineId(session.appName);
@@ -279,6 +279,8 @@ export class VertexAiSessionService extends BaseSessionService {
     } catch (error) {
       console.error('Error appending event:', error);
     }
+    
+    return event;
   }
 
   /**

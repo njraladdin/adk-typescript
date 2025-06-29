@@ -28,7 +28,7 @@ export class InMemorySessionService extends BaseSessionService {
     sessionId: string,
     stateDelta: Record<string, any>
   ): Promise<Session> {
-    const session = this.getSession({ appName, userId, sessionId });
+    const session = await this.getSession({ appName, userId, sessionId });
     if (!session) {
       throw new Error(`Session not found: ${sessionId}`);
     }
@@ -57,12 +57,12 @@ export class InMemorySessionService extends BaseSessionService {
     return session;
   }
 
-  createSession(options: {
+  async createSession(options: {
     appName: string;
     userId: string;
     sessionId?: string;
     state?: Record<string, any>;
-  }): Session {
+  }): Promise<Session> {
     return this._createSessionImpl(options);
   }
 
@@ -111,11 +111,11 @@ export class InMemorySessionService extends BaseSessionService {
     return this.mergeState(appName, userId, copiedSession);
   }
 
-  getSession(options: {
+  async getSession(options: {
     appName: string;
     userId: string;
     sessionId: string;
-  }): Session | null {
+  }): Promise<Session | null> {
     return this._getSessionImpl(options);
   }
 
@@ -150,10 +150,10 @@ export class InMemorySessionService extends BaseSessionService {
     return this.mergeState(appName, userId, copiedSession);
   }
 
-  listSessions(options: {
+  async listSessions(options: {
     appName: string;
     userId: string;
-  }): SessionsList {
+  }): Promise<SessionsList> {
     return this._listSessionsImpl(options);
   }
 
@@ -187,11 +187,11 @@ export class InMemorySessionService extends BaseSessionService {
     return { sessions: sessionsWithoutEvents };
   }
 
-  deleteSession(options: {
+  async deleteSession(options: {
     appName: string;
     userId: string;
     sessionId: string;
-  }): void {
+  }): Promise<void> {
     this._deleteSessionImpl(options);
   }
 
@@ -212,9 +212,7 @@ export class InMemorySessionService extends BaseSessionService {
     const { appName, userId, sessionId } = options;
     
     // Check if session exists
-    if (!this.sessions[appName] || 
-        !this.sessions[appName][userId] || 
-        !this.sessions[appName][userId][sessionId]) {
+    if (this._getSessionImpl({ appName, userId, sessionId }) === null) {
       return;
     }
     
@@ -222,61 +220,38 @@ export class InMemorySessionService extends BaseSessionService {
     delete this.sessions[appName][userId][sessionId];
   }
 
-  appendEvent(options: {
+  async appendEvent(options: {
     session: Session;
     event: Event;
-  }): void {
-    this._appendEventImpl(options);
-  }
-
-  appendEventSync(options: {
-    session: Session;
-    event: Event;
-  }): void {
-    console.warn('Deprecated. Please migrate to the async method.');
-    this._appendEventImpl(options);
-  }
-
-  private _appendEventImpl(options: {
-    session: Session;
-    event: Event;
-  }): void {
+  }): Promise<Event> {
+    // Update the in-memory session.
+    await super.appendEvent(options);
     const { session, event } = options;
-    
-    // Generate an ID for the event if one wasn't provided
-    if (!event.id) {
-      event.id = uuidv4();
-    }
-    
-    // Use the base class to handle appending the event
-    super.appendEvent(options);
-    
-    // Get app and user info
+    session.lastUpdateTime = event.timestamp;
+
+    // Update the storage session
     const appName = session.appName;
     const userId = session.userId;
     const sessionId = session.id;
-    
-    // Check if session exists in storage
-    if (!this.sessions[appName] || 
-        !this.sessions[appName][userId] || 
-        !this.sessions[appName][userId][sessionId]) {
-      return;
+
+    if (!this.sessions[appName]) {
+      return event;
     }
-    
-    // Handle state deltas
-    if (event.actions?.stateDelta) {
+    if (!this.sessions[appName][userId]) {
+      return event;
+    }
+    if (!this.sessions[appName][userId][sessionId]) {
+      return event;
+    }
+
+    if (event.actions && event.actions.stateDelta) {
       for (const [key, value] of Object.entries(event.actions.stateDelta)) {
-        // App state
         if (key.startsWith(StatePrefix.APP_PREFIX)) {
           if (!this.appState[appName]) {
             this.appState[appName] = {};
           }
-          
-          const appKey = key.substring(StatePrefix.APP_PREFIX.length);
-          this.appState[appName][appKey] = value;
+          this.appState[appName][key.substring(StatePrefix.APP_PREFIX.length)] = value;
         }
-        
-        // User state
         if (key.startsWith(StatePrefix.USER_PREFIX)) {
           if (!this.userState[appName]) {
             this.userState[appName] = {};
@@ -284,35 +259,123 @@ export class InMemorySessionService extends BaseSessionService {
           if (!this.userState[appName][userId]) {
             this.userState[appName][userId] = {};
           }
-          
-          const userKey = key.substring(StatePrefix.USER_PREFIX.length);
-          this.userState[appName][userId][userKey] = value;
+          this.userState[appName][userId][key.substring(StatePrefix.USER_PREFIX.length)] = value;
+        }
+      }
+    }
+
+    const storageSession = this.sessions[appName][userId][sessionId];
+    await super.appendEvent({ session: storageSession, event });
+    storageSession.lastUpdateTime = event.timestamp;
+
+    return event;
+  }
+
+  appendEventSync(options: {
+    session: Session;
+    event: Event;
+  }): Event {
+    console.warn('Deprecated. Please migrate to the async method.');
+    return this._appendEventImpl(options);
+  }
+
+  private _appendEventImpl(options: {
+    session: Session;
+    event: Event;
+  }): Event {
+    const { session, event } = options;
+    
+    if (event.partial) {
+      session.events.push(event);
+      return event;
+    }
+
+    // Update session state based on event
+    if (event.actions && event.actions.stateDelta) {
+      const statesToUpdate: Record<string, any> = {};
+      
+      for (const [key, value] of Object.entries(event.actions.stateDelta)) {
+        if (key.startsWith(StatePrefix.TEMP_PREFIX)) {
+          continue;
+        }
+        statesToUpdate[key] = value;
+      }
+      
+      // Use the update method if available
+      if (session.state.update) {
+        session.state.update(statesToUpdate);
+      } else {
+        // Fallback to using set method
+        for (const [key, value] of Object.entries(statesToUpdate)) {
+          session.state.set(key, value);
         }
       }
     }
     
-    // Update the storage session by appending the event
-    const storageEvent = this.copyEventPreservingSpecialTypes(event);
+    session.events.push(event);
+    session.lastUpdateTime = event.timestamp;
+
+    // Update the storage session
+    const appName = session.appName;
+    const userId = session.userId;
+    const sessionId = session.id;
+
+    if (!this.sessions[appName]) {
+      return event;
+    }
+    if (!this.sessions[appName][userId]) {
+      return event;
+    }
+    if (!this.sessions[appName][userId][sessionId]) {
+      return event;
+    }
+
+    if (event.actions && event.actions.stateDelta) {
+      for (const [key, value] of Object.entries(event.actions.stateDelta)) {
+        if (key.startsWith(StatePrefix.APP_PREFIX)) {
+          if (!this.appState[appName]) {
+            this.appState[appName] = {};
+          }
+          this.appState[appName][key.substring(StatePrefix.APP_PREFIX.length)] = value;
+        }
+        if (key.startsWith(StatePrefix.USER_PREFIX)) {
+          if (!this.userState[appName]) {
+            this.userState[appName] = {};
+          }
+          if (!this.userState[appName][userId]) {
+            this.userState[appName][userId] = {};
+          }
+          this.userState[appName][userId][key.substring(StatePrefix.USER_PREFIX.length)] = value;
+        }
+      }
+    }
+
     const storageSession = this.sessions[appName][userId][sessionId];
     
-    // Ensure storageSession.state is a State instance
-    if (!(storageSession.state instanceof State)) {
-      storageSession.state = new State(storageSession.state);
-    }
-    
-    // Use a special event appending that doesn't try to deep copy
-    if (!storageEvent.partial) {
-      if (storageEvent.actions?.stateDelta) {
-        for (const [key, value] of Object.entries(storageEvent.actions.stateDelta)) {
-          if (!key.startsWith(StatePrefix.TEMP_PREFIX)) {
-            storageSession.state.set(key, value);
-          }
+    // Update storage session state and events
+    if (event.actions && event.actions.stateDelta) {
+      const statesToUpdate: Record<string, any> = {};
+      
+      for (const [key, value] of Object.entries(event.actions.stateDelta)) {
+        if (key.startsWith(StatePrefix.TEMP_PREFIX)) {
+          continue;
+        }
+        statesToUpdate[key] = value;
+      }
+      
+      if (storageSession.state.update) {
+        storageSession.state.update(statesToUpdate);
+      } else {
+        for (const [key, value] of Object.entries(statesToUpdate)) {
+          storageSession.state.set(key, value);
         }
       }
-      storageSession.events.push(storageEvent);
-    } else {
-      storageSession.events.push(storageEvent);
     }
+    
+    storageSession.events.push(event);
+    storageSession.lastUpdateTime = event.timestamp;
+
+    return event;
   }
 
   // Helper methods
@@ -392,6 +455,7 @@ export class InMemorySessionService extends BaseSessionService {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         result[key as keyof T] = this.deepCopy(obj[key as keyof T]);
       }
+
     }
     return result;
   }
@@ -444,4 +508,4 @@ export class InMemorySessionService extends BaseSessionService {
     
     return result;
   }
-} 
+}

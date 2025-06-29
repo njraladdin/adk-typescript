@@ -188,7 +188,7 @@ export function createWebServer(params: {
    */
   async function findSession(appName: string, userId: string, sessionId: string): Promise<any | null> {
     // First try with the provided app name
-    let session = sessionService.getSession({
+    let session = await sessionService.getSession({
       appName,
       userId,
       sessionId
@@ -214,7 +214,7 @@ export function createWebServer(params: {
           console.log(`Loaded agent with name: ${rootAgent.name}, trying this as app name`);
           
           // Try with the original app name from request instead of agent's name
-          session = sessionService.getSession({
+          session = await sessionService.getSession(await {
             appName,
             userId,
             sessionId
@@ -231,7 +231,7 @@ export function createWebServer(params: {
               console.log(`Loaded agent directly with name: ${rootAgent.name}, trying this as app name`);
               
               // Try with the original app name from request instead of agent's name
-              session = sessionService.getSession({
+              session = await sessionService.getSession(await {
                 appName,
                 userId,
                 sessionId
@@ -302,7 +302,7 @@ export function createWebServer(params: {
   });
   
   // Create a new session
-  app.post('/apps/:appName/users/:userId/sessions', (req: Request, res: Response) => {
+  app.post('/apps/:appName/users/:userId/sessions', async (req: Request, res: Response) => {
     try {
       const { appName, userId } = req.params;
       const state = req.body.state || {};
@@ -346,7 +346,7 @@ export function createWebServer(params: {
       
       // Create a new session using the shared session service
       // IMPORTANT: Use the app name from the request parameters (like Python implementation)
-      const session = sessionService.createSession({
+      const session = await sessionService.createSession({
         appName,  // Simply use appName as provided in the URL
         userId,
         state
@@ -363,14 +363,14 @@ export function createWebServer(params: {
   });
   
   // Get a specific session
-  app.get('/apps/:appName/users/:userId/sessions/:sessionId', (req: Request, res: Response) => {
+  app.get('/apps/:appName/users/:userId/sessions/:sessionId', async (req: Request, res: Response) => {
     try {
       const { appName, userId, sessionId } = req.params;
       
       console.log(`Getting session: app=${appName}, user=${userId}, session=${sessionId}`);
       
       // Direct lookup without fallbacks (like Python version)
-      const session = sessionService.getSession({
+      const session = await sessionService.getSession({
         appName,
         userId,
         sessionId
@@ -389,12 +389,12 @@ export function createWebServer(params: {
   });
   
   // List sessions for a user
-  app.get('/apps/:appName/users/:userId/sessions', (req: Request, res: Response) => {
+  app.get('/apps/:appName/users/:userId/sessions', async (req: Request, res: Response) => {
     try {
       const { appName, userId } = req.params;
       
       // Get sessions from the shared service
-      const sessions = sessionService.listSessions({ appName, userId });
+      const sessions = await sessionService.listSessions({ appName, userId });
       
       // Return the sessions or an empty array
       res.json(sessions?.sessions || []);
@@ -431,7 +431,7 @@ export function createWebServer(params: {
       console.log(`Regular run request for app: ${runRequest.app_name}, user: ${runRequest.user_id}, session: ${runRequest.session_id}`);
       
       // Verify the session exists - direct lookup without fallbacks
-      const session = sessionService.getSession({
+      const session = await sessionService.getSession({
         appName: runRequest.app_name,
         userId: runRequest.user_id,
         sessionId: runRequest.session_id
@@ -496,7 +496,7 @@ export function createWebServer(params: {
       console.log(`SSE run request for app: ${runRequest.app_name}, user: ${runRequest.user_id}, session: ${runRequest.session_id}`);
       
       // Verify the session exists - direct lookup without fallbacks
-      const session = sessionService.getSession({
+      const session = await sessionService.getSession({
         appName: runRequest.app_name,
         userId: runRequest.user_id,
         sessionId: runRequest.session_id
@@ -717,7 +717,7 @@ export function createWebServer(params: {
         
         // Verify the session exists
         if (sessionId) {
-          const session = sessionService.getSession({
+          const session = await sessionService.getSession({
             appName: rootAgent.name,
             userId: userId,
             sessionId: sessionId
@@ -733,7 +733,7 @@ export function createWebServer(params: {
         
         // Create a new session if needed
         if (!sessionId) {
-          const session = sessionService.createSession({
+          const session = await sessionService.createSession({
             appName: rootAgent.name,
             userId: userId
           });
@@ -777,7 +777,7 @@ export function createWebServer(params: {
         const { app_name, user_id, session_id } = data;
         
         // Verify the session exists
-        const session = sessionService.getSession({
+        const session = await sessionService.getSession({
           appName: app_name,
           userId: user_id,
           sessionId: session_id
@@ -885,7 +885,7 @@ export function createWebServer(params: {
         const userId = userIdsBySocketId.get(socket.id) || socket.id;
         
         // Verify the session exists - direct lookup without fallbacks
-        const session = sessionService.getSession({
+        const session = await sessionService.getSession({
           appName: runner.appName,
           userId: userId,
           sessionId

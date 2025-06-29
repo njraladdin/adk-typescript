@@ -551,7 +551,7 @@ export class DatabaseSessionService extends BaseSessionService {
   async appendEvent(options: {
     session: Session;
     event: Event;
-  }): Promise<void> {
+  }): Promise<Event> {
     await this.ensureConnection();
     
     const { session, event } = options;
@@ -559,7 +559,7 @@ export class DatabaseSessionService extends BaseSessionService {
     if (event.partial) {
       // Don't persist partial events
       session.events.push(event);
-      return;
+      return event;
     }
     
     // Make sure the session exists
@@ -687,6 +687,8 @@ export class DatabaseSessionService extends BaseSessionService {
       event.id = storageEvent.id;
     }
     session.events.push(event);
+    
+    return event;
   }
 
   /**

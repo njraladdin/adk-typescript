@@ -271,7 +271,7 @@ export class EvaluationGenerator {
     // Get existing session or create a new one
     let session: Session;
     try {
-      const existingSession = sessionService.getSession({
+      const existingSession = await sessionService.getSession({
         appName,
         userId,
         sessionId
@@ -281,7 +281,7 @@ export class EvaluationGenerator {
         session = existingSession;
       } else {
         // Create new session if none exists
-        session = sessionService.createSession({
+        session = await sessionService.createSession({
           appName,
           userId,
           sessionId,
@@ -290,7 +290,7 @@ export class EvaluationGenerator {
       }
     } catch (e) {
       // Session doesn't exist, create a new one
-      session = sessionService.createSession({
+      session = await sessionService.createSession({
         appName,
         userId,
         sessionId,

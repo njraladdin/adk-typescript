@@ -290,12 +290,12 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
   });
 
   // Session management endpoints
-  app.get('/apps/:appName/users/:userId/sessions/:sessionId', (req: express.Request, res: express.Response) => {
+  app.get('/apps/:appName/users/:userId/sessions/:sessionId', async (req: express.Request, res: express.Response) => {
     const { appName, userId, sessionId } = req.params;
     // Connect to managed session if agent_engine_id is set
     const effectiveAppName = agentEngineId || appName;
     
-    const session = sessionService.getSession({
+    const session = await sessionService.getSession({
       appName: effectiveAppName,
       userId,
       sessionId
@@ -308,15 +308,17 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     res.json(session);
   });
 
-  app.get('/apps/:appName/users/:userId/sessions', (req: express.Request, res: express.Response) => {
+  app.get('/apps/:appName/users/:userId/sessions', async (req: express.Request, res: express.Response) => {
     const { appName, userId } = req.params;
     // Connect to managed session if agent_engine_id is set
     const effectiveAppName = agentEngineId || appName;
     
-    const sessions = sessionService.listSessions({
+    const sessionsList = await sessionService.listSessions({
       appName: effectiveAppName,
       userId
-    }).sessions.filter((session: Session) => 
+    });
+    
+    const sessions = sessionsList.sessions.filter((session: Session) => 
       // Remove sessions that were generated as a part of Eval
       !session.id.startsWith(EVAL_SESSION_ID_PREFIX)
     );
@@ -324,13 +326,13 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     res.json(sessions);
   });
 
-  app.post('/apps/:appName/users/:userId/sessions/:sessionId', (req: express.Request, res: express.Response) => {
+  app.post('/apps/:appName/users/:userId/sessions/:sessionId', async (req: express.Request, res: express.Response) => {
     const { appName, userId, sessionId } = req.params;
     const { state } = req.body;
     // Connect to managed session if agent_engine_id is set
     const effectiveAppName = agentEngineId || appName;
     
-    const existingSession = sessionService.getSession({
+    const existingSession = await sessionService.getSession({
       appName: effectiveAppName,
       userId,
       sessionId
@@ -341,7 +343,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       return res.status(400).json({ error: `Session already exists: ${sessionId}` });
     }
     
-    const newSession = sessionService.createSession({
+    const newSession = await sessionService.createSession({
       appName: effectiveAppName,
       userId,
       sessionId,
@@ -351,13 +353,13 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     res.json(newSession);
   });
 
-  app.post('/apps/:appName/users/:userId/sessions', (req: express.Request, res: express.Response) => {
+  app.post('/apps/:appName/users/:userId/sessions', async (req: express.Request, res: express.Response) => {
     const { appName, userId } = req.params;
     const { state } = req.body;
     // Connect to managed session if agent_engine_id is set
     const effectiveAppName = agentEngineId || appName;
     
-    const newSession = sessionService.createSession({
+    const newSession = await sessionService.createSession({
       appName: effectiveAppName,
       userId,
       state: state || {}
@@ -366,12 +368,12 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     res.json(newSession);
   });
 
-  app.delete('/apps/:appName/users/:userId/sessions/:sessionId', (req: express.Request, res: express.Response) => {
+  app.delete('/apps/:appName/users/:userId/sessions/:sessionId', async (req: express.Request, res: express.Response) => {
     const { appName, userId, sessionId } = req.params;
     // Connect to managed session if agent_engine_id is set
     const effectiveAppName = agentEngineId || appName;
     
-    sessionService.deleteSession({
+    await sessionService.deleteSession({
       appName: effectiveAppName,
       userId,
       sessionId
@@ -496,7 +498,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       // Connect to managed session if agent_engine_id is set
       const appId = agentEngineId || appName;
       
-      const session = sessionService.getSession({
+      const session = await sessionService.getSession({
         appName: appId,
         userId,
         sessionId
@@ -533,7 +535,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       // Connect to managed session if agent_engine_id is set
       const appId = agentEngineId || appName;
       
-      const session = sessionService.getSession({
+      const session = await sessionService.getSession({
         appName: appId,
         userId,
         sessionId
@@ -585,7 +587,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     
     try {
       // Get the session
-      const session = sessionService.getSession({
+      const session = await sessionService.getSession({
         appName,
         userId: requestData.userId,
         sessionId: requestData.sessionId
@@ -678,7 +680,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       });
       
       // Get session details for the eval case result
-      evalCaseResult.sessionDetails = sessionService.getSession({
+      evalCaseResult.sessionDetails = await sessionService.getSession({
         appName,
         userId: evalCaseResult.userId || 'test_user_id',
         sessionId: evalCaseResult.sessionId
@@ -826,7 +828,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       // Connect to managed session if agent_engine_id is set
       const appId = agentEngineId || appName;
       
-      const session = sessionService.getSession({
+      const session = await sessionService.getSession({
         appName: appId,
         userId,
         sessionId
