@@ -11,6 +11,7 @@ import { createApiServer } from './apiServer';
 import { startWebServer } from './webServer';
 import * as fs from 'fs';
 import { VERSION } from '../index';
+import { HelpfulCommand } from './HelpfulCommand';
 
 const program = new Command();
 
@@ -21,84 +22,90 @@ program
 
 // create
 program
-  .command('create <appName>')
-  .description('Creates a new app in the current folder with prepopulated agent template.')
-  .option('--model <model>', 'Optional. The model used for the root agent.')
-  .option('--api_key <apiKey>', 'Optional. The API Key needed to access the model.')
-  .option('--project <project>', 'Optional. The Google Cloud Project for using VertexAI as backend.')
-  .option('--region <region>', 'Optional. The Google Cloud Region for using VertexAI as backend.')
-  .action(async (appName: string, options: any) => {
-    await runCmd({
-      agentName: appName,
-      model: options.model,
-      googleApiKey: options.api_key,
-      googleCloudProject: options.project,
-      googleCloudRegion: options.region,
-    });
-  });
+  .addCommand(
+    new HelpfulCommand('create')
+      .argument('<appName>', 'The folder name for the agent source code')
+      .description('Creates a new app in the current folder with prepopulated agent template.')
+      .option('--model <model>', 'Optional. The model used for the root agent.')
+      .option('--api_key <apiKey>', 'Optional. The API Key needed to access the model.')
+      .option('--project <project>', 'Optional. The Google Cloud Project for using VertexAI as backend.')
+      .option('--region <region>', 'Optional. The Google Cloud Region for using VertexAI as backend.')
+      .action(async (appName: string, options: any) => {
+        await runCmd({
+          agentName: appName,
+          model: options.model,
+          googleApiKey: options.api_key,
+          googleCloudProject: options.project,
+          googleCloudRegion: options.region,
+        });
+      })
+  );
 
 // run
 program
-  .command('run <agent>')
-  .description('Runs an interactive CLI for a certain agent.')
-  .option('--save_session', 'Whether to save the session to a json file on exit.', false)
-  .option('--session_id <sessionId>', 'Optional. The session ID to save the session to on exit when --save_session is set to true. User will be prompted to enter a session ID if not set.')
-  .option('--replay <replayFile>', 'Path to a JSON file with initial state and user queries. Creates a new session with this state and runs the queries without interactive mode.')
-  .option('--resume <resumeFile>', 'Path to a previously saved session file. Replays the session and continues in interactive mode.')
-  .action((agent: string, options: any) => {
-    try {
-      // Validate that replay and resume are not both specified
-      if (options.replay && options.resume) {
-        console.error('Error: The --replay and --resume options cannot be used together.');
-        process.exit(1);
-      }
-      
-      // Register ts-node to handle TypeScript files
-      try {
-        require('ts-node/register');
-      } catch (error) {
-        console.warn('Failed to register ts-node. If you have TypeScript files, this might cause issues.');
-      }
-      
-      // Resolve the agent path more carefully
-      const cwd = process.cwd();
-      const agentPath = path.resolve(cwd, agent);
-      
-      // If agent is "." (current directory), use current directory name as agent name
-      if (agent === '.') {
-        const agentParentDir = path.dirname(cwd);
-        const agentFolderName = path.basename(cwd);
-        
-        console.log(`Running agent with parent dir: ${agentParentDir}, folder name: ${agentFolderName}`);
-        
-        runCli({
-          agentParentDir,
-          agentFolderName,
-          replayFile: options.replay,
-          resumeFile: options.resume,
-          saveSession: options.save_session,
-          sessionId: options.session_id,
-        });
-      } else {
-        const agentParentDir = path.dirname(agentPath);
-        const agentFolderName = path.basename(agentPath);
-        
-        console.log(`Running agent with parent dir: ${agentParentDir}, folder name: ${agentFolderName}`);
-        
-        runCli({
-          agentParentDir,
-          agentFolderName,
-          replayFile: options.replay,
-          resumeFile: options.resume,
-          saveSession: options.save_session,
-          sessionId: options.session_id,
-        });
-      }
-    } catch (error) {
-      console.error('Error running agent:', error);
-      process.exit(1);
-    }
-  });
+  .addCommand(
+    new HelpfulCommand('run')
+      .argument('<agent>', 'The path to the agent source code folder')
+      .description('Runs an interactive CLI for a certain agent.')
+      .option('--save_session', 'Whether to save the session to a json file on exit.', false)
+      .option('--session_id <sessionId>', 'Optional. The session ID to save the session to on exit when --save_session is set to true. User will be prompted to enter a session ID if not set.')
+      .option('--replay <replayFile>', 'Path to a JSON file with initial state and user queries. Creates a new session with this state and runs the queries without interactive mode.')
+      .option('--resume <resumeFile>', 'Path to a previously saved session file. Replays the session and continues in interactive mode.')
+      .action((agent: string, options: any) => {
+        try {
+          // Validate that replay and resume are not both specified
+          if (options.replay && options.resume) {
+            console.error('Error: The --replay and --resume options cannot be used together.');
+            process.exit(1);
+          }
+          
+          // Register ts-node to handle TypeScript files
+          try {
+            require('ts-node/register');
+          } catch (error) {
+            console.warn('Failed to register ts-node. If you have TypeScript files, this might cause issues.');
+          }
+          
+          // Resolve the agent path more carefully
+          const cwd = process.cwd();
+          const agentPath = path.resolve(cwd, agent);
+          
+          // If agent is "." (current directory), use current directory name as agent name
+          if (agent === '.') {
+            const agentParentDir = path.dirname(cwd);
+            const agentFolderName = path.basename(cwd);
+            
+            console.log(`Running agent with parent dir: ${agentParentDir}, folder name: ${agentFolderName}`);
+            
+            runCli({
+              agentParentDir,
+              agentFolderName,
+              replayFile: options.replay,
+              resumeFile: options.resume,
+              saveSession: options.save_session,
+              sessionId: options.session_id,
+            });
+          } else {
+            const agentParentDir = path.dirname(agentPath);
+            const agentFolderName = path.basename(agentPath);
+            
+            console.log(`Running agent with parent dir: ${agentParentDir}, folder name: ${agentFolderName}`);
+            
+            runCli({
+              agentParentDir,
+              agentFolderName,
+              replayFile: options.replay,
+              resumeFile: options.resume,
+              saveSession: options.save_session,
+              sessionId: options.session_id,
+            });
+          }
+        } catch (error) {
+          console.error('Error running agent:', error);
+          process.exit(1);
+        }
+      })
+  );
 
 // graph
 program
@@ -147,65 +154,69 @@ program
 
 // eval
 program
-  .command('eval <agentModuleFilePath> [evalSetFilePaths...]')
-  .description('Evaluates an agent given the eval sets.')
-  .option('--config_file_path <configFilePath>', 'Optional. The path to config file.')
-  .option('--print_detailed_results', 'Whether to print detailed results on console.', false)
-  .action(async (agentModuleFilePath: string, evalSetFilePaths: string[], options: any) => {
-    try {
-      // Load evaluation criteria
-      const evaluationCriteria = getEvaluationCriteriaOrDefault(options.config_file_path);
-      const evalMetrics: EvalMetric[] = [];
-      for (const metricName in evaluationCriteria) {
-        evalMetrics.push({ metricName, threshold: evaluationCriteria[metricName] });
-      }
-      console.log(`Using evaluation criteria:`, evaluationCriteria);
-      
-      // Load agent and reset function
-      const rootAgent = getRootAgent(agentModuleFilePath);
-      const resetFunc = tryGetResetFunc(agentModuleFilePath);
-      
-      // Parse eval sets
-      const evalSetToEvals = parseAndGetEvalsToRun(evalSetFilePaths);
-      
-      // Run evals and collect all results
-      const evalResults: EvalResult[] = [];
-      for await (const result of runEvals({
-        evalSetToEvals,
-        rootAgent,
-        resetFunc,
-        evalMetrics,
-        printDetailedResults: options.print_detailed_results,
-      })) {
-        evalResults.push(result);
-      }
+  .addCommand(
+    new HelpfulCommand('eval')
+      .argument('<agentModuleFilePath>', 'The path to the agent module file that contains a root_agent')
+      .argument('[evalSetFilePaths...]', 'One or more eval set file paths. You can specify specific evals from a set using colon syntax: file.json:eval1,eval2')
+      .description('Evaluates an agent given the eval sets.')
+      .option('--config_file_path <configFilePath>', 'Optional. The path to config file.')
+      .option('--print_detailed_results', 'Whether to print detailed results on console.', false)
+      .action(async (agentModuleFilePath: string, evalSetFilePaths: string[], options: any) => {
+        try {
+          // Load evaluation criteria
+          const evaluationCriteria = getEvaluationCriteriaOrDefault(options.config_file_path);
+          const evalMetrics: EvalMetric[] = [];
+          for (const metricName in evaluationCriteria) {
+            evalMetrics.push({ metricName, threshold: evaluationCriteria[metricName] });
+          }
+          console.log(`Using evaluation criteria:`, evaluationCriteria);
+          
+          // Load agent and reset function
+          const rootAgent = getRootAgent(agentModuleFilePath);
+          const resetFunc = tryGetResetFunc(agentModuleFilePath);
+          
+          // Parse eval sets
+          const evalSetToEvals = parseAndGetEvalsToRun(evalSetFilePaths);
+          
+          // Run evals and collect all results
+          const evalResults: EvalResult[] = [];
+          for await (const result of runEvals({
+            evalSetToEvals,
+            rootAgent,
+            resetFunc,
+            evalMetrics,
+            printDetailedResults: options.print_detailed_results,
+          })) {
+            evalResults.push(result);
+          }
 
-      console.log("*********************************************************************");
-      
-      // Generate and print summary
-      const evalRunSummary: Record<string, [number, number]> = {};
-      for (const evalResult of evalResults) {
-        if (!(evalResult.evalSetFile in evalRunSummary)) {
-          evalRunSummary[evalResult.evalSetFile] = [0, 0];
+          console.log("*********************************************************************");
+          
+          // Generate and print summary
+          const evalRunSummary: Record<string, [number, number]> = {};
+          for (const evalResult of evalResults) {
+            if (!(evalResult.evalSetFile in evalRunSummary)) {
+              evalRunSummary[evalResult.evalSetFile] = [0, 0];
+            }
+            if (evalResult.finalEvalStatus === EvalStatus.PASSED) {
+              evalRunSummary[evalResult.evalSetFile][0] += 1;
+            } else {
+              evalRunSummary[evalResult.evalSetFile][1] += 1;
+            }
+          }
+          
+          console.log("Eval Run Summary");
+          for (const [evalSetFile, passFailCount] of Object.entries(evalRunSummary)) {
+            console.log(
+              `${evalSetFile}:\n  Tests passed: ${passFailCount[0]}\n  Tests failed: ${passFailCount[1]}`
+            );
+          }
+        } catch (error) {
+          console.error('Error running eval:', error);
+          process.exit(1);
         }
-        if (evalResult.finalEvalStatus === EvalStatus.PASSED) {
-          evalRunSummary[evalResult.evalSetFile][0] += 1;
-        } else {
-          evalRunSummary[evalResult.evalSetFile][1] += 1;
-        }
-      }
-      
-      console.log("Eval Run Summary");
-      for (const [evalSetFile, passFailCount] of Object.entries(evalRunSummary)) {
-        console.log(
-          `${evalSetFile}:\n  Tests passed: ${passFailCount[0]}\n  Tests failed: ${passFailCount[1]}`
-        );
-      }
-    } catch (error) {
-      console.error('Error running eval:', error);
-      process.exit(1);
-    }
-  });
+      })
+  );
 
 // deploy cloud_run
 program
