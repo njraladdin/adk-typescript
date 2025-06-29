@@ -73,24 +73,30 @@ describe('LlmAgent Fields', () => {
     it('should return instruction from a string', async () => {
       const agent = new LlmAgent({ name: 'test_agent', instruction: 'instruction' });
       const ctx = createReadonlyContext(agent);
-      const instruction = await agent.canonicalInstruction(ctx);
+      const [instruction, bypassStateInjection] =
+        await agent.canonicalInstruction(ctx);
       expect(instruction).toBe('instruction');
+      expect(bypassStateInjection).toBe(false);
     });
 
     it('should return instruction from a provider function', async () => {
-      const instructionProvider = (ctx: ReadonlyContext) => `instruction: ${ctx.state['state_var']}`;
+      const instructionProvider = (ctx: ReadonlyContext) => `instruction: ${ctx.state.get('state_var')}`;
       const agent = new LlmAgent({ name: 'test_agent', instruction: instructionProvider });
       const ctx = createReadonlyContext(agent, { state_var: 'state_value' });
-      const instruction = await agent.canonicalInstruction(ctx);
+      const [instruction, bypassStateInjection] =
+        await agent.canonicalInstruction(ctx);
       expect(instruction).toBe('instruction: state_value');
+      expect(bypassStateInjection).toBe(true);
     });
 
     it('should return instruction from an async provider function', async () => {
-      const asyncInstructionProvider = async (ctx: ReadonlyContext) => `instruction: ${ctx.state['state_var']}`;
+      const asyncInstructionProvider = async (ctx: ReadonlyContext) => `instruction: ${ctx.state.get('state_var')}`;
       const agent = new LlmAgent({ name: 'test_agent', instruction: asyncInstructionProvider });
       const ctx = createReadonlyContext(agent, { state_var: 'state_value' });
-      const instruction = await agent.canonicalInstruction(ctx);
+      const [instruction, bypassStateInjection] =
+        await agent.canonicalInstruction(ctx);
       expect(instruction).toBe('instruction: state_value');
+      expect(bypassStateInjection).toBe(true);
     });
   });
 
@@ -98,16 +104,30 @@ describe('LlmAgent Fields', () => {
     it('should return global instruction from a string', async () => {
         const agent = new LlmAgent({ name: 'test_agent', globalInstruction: 'global instruction' });
         const ctx = createReadonlyContext(agent);
-        const instruction = await agent.canonicalGlobalInstruction(ctx);
+        const [instruction, bypassStateInjection] =
+          await agent.canonicalGlobalInstruction(ctx);
         expect(instruction).toBe('global instruction');
+        expect(bypassStateInjection).toBe(false);
+    });
+
+    it('should return global instruction from a provider function', async () => {
+      const globalInstructionProvider = (ctx: ReadonlyContext) => `global instruction: ${ctx.state.get('state_var')}`;
+      const agent = new LlmAgent({ name: 'test_agent', globalInstruction: globalInstructionProvider });
+      const ctx = createReadonlyContext(agent, { state_var: 'state_value' });
+      const [instruction, bypassStateInjection] =
+        await agent.canonicalGlobalInstruction(ctx);
+      expect(instruction).toBe('global instruction: state_value');
+      expect(bypassStateInjection).toBe(true);
     });
 
     it('should return global instruction from an async provider function', async () => {
-        const asyncGlobalInstructionProvider = async (ctx: ReadonlyContext) => `global instruction: ${ctx.state['state_var']}`;
+        const asyncGlobalInstructionProvider = async (ctx: ReadonlyContext) => `global instruction: ${ctx.state.get('state_var')}`;
         const agent = new LlmAgent({ name: 'test_agent', globalInstruction: asyncGlobalInstructionProvider });
         const ctx = createReadonlyContext(agent, { state_var: 'state_value' });
-        const instruction = await agent.canonicalGlobalInstruction(ctx);
+        const [instruction, bypassStateInjection] =
+          await agent.canonicalGlobalInstruction(ctx);
         expect(instruction).toBe('global instruction: state_value');
+        expect(bypassStateInjection).toBe(true);
     });
   });
 

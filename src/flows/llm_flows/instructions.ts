@@ -36,19 +36,26 @@ class InstructionsLlmRequestProcessor implements BaseLlmRequestProcessor {
 
     // Append global instructions if set.
     if (rootAgent instanceof LlmAgent && rootAgent.globalInstruction) {
-      const rawSi = await rootAgent.canonicalGlobalInstruction(
-        new ReadonlyContext(invocationContext)
-      );
-      const si = await populateValues(rawSi, invocationContext);
+      const [rawSi, bypassStateInjection] =
+        await rootAgent.canonicalGlobalInstruction(
+          new ReadonlyContext(invocationContext)
+        );
+      let si = rawSi;
+      if (!bypassStateInjection) {
+        si = await populateValues(rawSi, invocationContext);
+      }
       llmRequest.appendInstructions([si]);
     }
 
     // Append agent instructions if set.
     if (agent.instruction) {
-      const rawSi = await agent.canonicalInstruction(
+      const [rawSi, bypassStateInjection] = await agent.canonicalInstruction(
         new ReadonlyContext(invocationContext)
       );
-      const si = await populateValues(rawSi, invocationContext);
+      let si = rawSi;
+      if (!bypassStateInjection) {
+        si = await populateValues(rawSi, invocationContext);
+      }
       llmRequest.appendInstructions([si]);
     }
 

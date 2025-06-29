@@ -59,8 +59,13 @@ describe('Instructions LLM Flow', () => {
   });
 
   it('should use a function for system instruction', async () => {
-    const buildFunctionInstruction = (readonlyContext: ReadonlyContext): string => {
-      return `This is the function agent instruction for invocation: ${readonlyContext.invocationId}.`;
+    const buildFunctionInstruction = (
+      readonlyContext: ReadonlyContext
+    ): string => {
+      return (
+        'This is the function agent instruction for invocation: {customerId}' +
+        ` ${readonlyContext.invocationId}.`
+      );
     };
 
     const request = new LlmRequest();
@@ -73,18 +78,25 @@ describe('Instructions LLM Flow', () => {
       instruction: buildFunctionInstruction,
     });
 
-    const invocationContext = createInvocationContext(agent);
+    const invocationContext = createInvocationContext(agent, {
+      customerId: '1234567890',
+    });
 
     await runProcessor(invocationContext, request);
 
     expect(request.config.systemInstruction).toBe(
-      'This is the function agent instruction for invocation: test_id.'
+      'This is the function agent instruction for invocation: {customerId} test_id.'
     );
   });
 
   it('should use an async function for system instruction', async () => {
-    const buildAsyncFunctionInstruction = async (readonlyContext: ReadonlyContext): Promise<string> => {
-        return `This is the async function agent instruction for invocation: ${readonlyContext.invocationId}.`;
+    const buildAsyncFunctionInstruction = async (
+      readonlyContext: ReadonlyContext
+    ): Promise<string> => {
+      return (
+        'This is the async function agent instruction for invocation: {customerId}' +
+        ` ${readonlyContext.invocationId}.`
+      );
     };
 
     const request = new LlmRequest();
@@ -92,17 +104,19 @@ describe('Instructions LLM Flow', () => {
     request.config = { systemInstruction: '', tools: [] };
 
     const agent = new LlmAgent({
-        name: 'agent',
-        model: 'gemini-1.5-flash',
-        instruction: buildAsyncFunctionInstruction,
+      name: 'agent',
+      model: 'gemini-1.5-flash',
+      instruction: buildAsyncFunctionInstruction,
     });
 
-    const invocationContext = createInvocationContext(agent);
+    const invocationContext = createInvocationContext(agent, {
+      customerId: '1234567890',
+    });
 
     await runProcessor(invocationContext, request);
 
     expect(request.config.systemInstruction).toBe(
-        'This is the async function agent instruction for invocation: test_id.'
+      'This is the async function agent instruction for invocation: {customerId} test_id.'
     );
   });
 

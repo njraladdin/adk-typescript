@@ -367,12 +367,14 @@ export class LlmAgent extends BaseAgent {
    * Gets the resolved instruction for this agent.
    * This method is only for use by Agent Development Kit.
    */
-  async canonicalInstruction(ctx: ReadonlyContext): Promise<string> {
+  async canonicalInstruction(ctx: ReadonlyContext): Promise<[string, boolean]> {
     if (typeof this.instruction === 'string') {
-      return this.instruction;
+      return [this.instruction, false];
     } else {
       const instruction = this.instruction(ctx);
-      return instruction instanceof Promise ? await instruction : instruction;
+      const resolvedInstruction =
+        instruction instanceof Promise ? await instruction : instruction;
+      return [resolvedInstruction, true];
     }
   }
   
@@ -380,12 +382,16 @@ export class LlmAgent extends BaseAgent {
    * Gets the resolved global instruction.
    * This method is only for use by Agent Development Kit.
    */
-  async canonicalGlobalInstruction(ctx: ReadonlyContext): Promise<string> {
+  async canonicalGlobalInstruction(
+    ctx: ReadonlyContext
+  ): Promise<[string, boolean]> {
     if (typeof this.globalInstruction === 'string') {
-      return this.globalInstruction;
+      return [this.globalInstruction, false];
     } else {
       const instruction = this.globalInstruction(ctx);
-      return instruction instanceof Promise ? await instruction : instruction;
+      const resolvedInstruction =
+        instruction instanceof Promise ? await instruction : instruction;
+      return [resolvedInstruction, true];
     }
   }
   
