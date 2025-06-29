@@ -1,5 +1,3 @@
-
-
 /**
  * Google API Tool module
  * 
@@ -21,4 +19,11 @@ export {
   getSlidesToolSet as slidesToolSet,
   getSheetsToolSet as sheetsToolSet,
   getDocsToolSet as docsToolSet,
+  BigQueryToolset,
+  CalendarToolset,
+  GmailToolset,
+  YoutubeToolset,
+  SlidesToolset,
+  SheetsToolset,
+  DocsToolset,
 } from './GoogleApiToolSets'; 

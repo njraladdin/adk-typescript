@@ -1,4 +1,6 @@
 import { GoogleApiToolset } from './GoogleApiToolSet';
+import { OpenAPIToolset as OpenAPIToolsetImpl } from '../openapi-tool';
+import { ToolPredicate } from '../BaseToolset';
 
 /**
  * This module provides access to GoogleApiToolset instances for various Google APIs.
@@ -133,4 +135,76 @@ export async function getDocsToolSet(): Promise<GoogleApiToolset> {
     }
   }
   return _docsToolSet;
+}
+
+// Add class-based toolsets for direct use (Python-style)
+
+export class BigQueryToolset extends GoogleApiToolset {
+  constructor(openApiToolset: OpenAPIToolsetImpl, clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]) {
+    super(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+  static async create(clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]): Promise<BigQueryToolset> {
+    const openApiToolset = await GoogleApiToolset._loadToolsetWithOidcAuth({ specDict: await new (require('./GoogleApiToOpenApiConverter').GoogleApiToOpenApiConverterImpl)('bigquery', 'v2').convert(), scopes: ['https://www.googleapis.com/auth/bigquery'] });
+    return new BigQueryToolset(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+}
+
+export class CalendarToolset extends GoogleApiToolset {
+  constructor(openApiToolset: OpenAPIToolsetImpl, clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]) {
+    super(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+  static async create(clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]): Promise<CalendarToolset> {
+    const openApiToolset = await GoogleApiToolset._loadToolsetWithOidcAuth({ specDict: await new (require('./GoogleApiToOpenApiConverter').GoogleApiToOpenApiConverterImpl)('calendar', 'v3').convert(), scopes: ['https://www.googleapis.com/auth/calendar'] });
+    return new CalendarToolset(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+}
+
+export class GmailToolset extends GoogleApiToolset {
+  constructor(openApiToolset: OpenAPIToolsetImpl, clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]) {
+    super(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+  static async create(clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]): Promise<GmailToolset> {
+    const openApiToolset = await GoogleApiToolset._loadToolsetWithOidcAuth({ specDict: await new (require('./GoogleApiToOpenApiConverter').GoogleApiToOpenApiConverterImpl)('gmail', 'v1').convert(), scopes: ['https://www.googleapis.com/auth/gmail.readonly'] });
+    return new GmailToolset(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+}
+
+export class YoutubeToolset extends GoogleApiToolset {
+  constructor(openApiToolset: OpenAPIToolsetImpl, clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]) {
+    super(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+  static async create(clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]): Promise<YoutubeToolset> {
+    const openApiToolset = await GoogleApiToolset._loadToolsetWithOidcAuth({ specDict: await new (require('./GoogleApiToOpenApiConverter').GoogleApiToOpenApiConverterImpl)('youtube', 'v3').convert(), scopes: ['https://www.googleapis.com/auth/youtube.readonly'] });
+    return new YoutubeToolset(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+}
+
+export class SlidesToolset extends GoogleApiToolset {
+  constructor(openApiToolset: OpenAPIToolsetImpl, clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]) {
+    super(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+  static async create(clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]): Promise<SlidesToolset> {
+    const openApiToolset = await GoogleApiToolset._loadToolsetWithOidcAuth({ specDict: await new (require('./GoogleApiToOpenApiConverter').GoogleApiToOpenApiConverterImpl)('slides', 'v1').convert(), scopes: ['https://www.googleapis.com/auth/presentations.readonly'] });
+    return new SlidesToolset(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+}
+
+export class SheetsToolset extends GoogleApiToolset {
+  constructor(openApiToolset: OpenAPIToolsetImpl, clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]) {
+    super(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+  static async create(clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]): Promise<SheetsToolset> {
+    const openApiToolset = await GoogleApiToolset._loadToolsetWithOidcAuth({ specDict: await new (require('./GoogleApiToOpenApiConverter').GoogleApiToOpenApiConverterImpl)('sheets', 'v4').convert(), scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] });
+    return new SheetsToolset(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+}
+
+export class DocsToolset extends GoogleApiToolset {
+  constructor(openApiToolset: OpenAPIToolsetImpl, clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]) {
+    super(openApiToolset, clientId, clientSecret, toolFilter);
+  }
+  static async create(clientId?: string, clientSecret?: string, toolFilter?: ToolPredicate | string[]): Promise<DocsToolset> {
+    const openApiToolset = await GoogleApiToolset._loadToolsetWithOidcAuth({ specDict: await new (require('./GoogleApiToOpenApiConverter').GoogleApiToOpenApiConverterImpl)('docs', 'v1').convert(), scopes: ['https://www.googleapis.com/auth/documents.readonly'] });
+    return new DocsToolset(openApiToolset, clientId, clientSecret, toolFilter);
+  }
 } 

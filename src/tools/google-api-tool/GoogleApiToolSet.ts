@@ -129,7 +129,7 @@ export class GoogleApiToolset extends BaseToolset {
    * @param options Configuration options
    * @returns An OpenAPIToolsetImpl
    */
-  private static _loadToolsetWithOidcAuth(options: {
+  public static _loadToolsetWithOidcAuth(options: {
     specFile?: string;
     specDict?: Record<string, any>;
     scopes?: string[];
