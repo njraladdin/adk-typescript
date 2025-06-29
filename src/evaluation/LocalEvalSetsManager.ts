@@ -70,7 +70,7 @@ function convertInvocationToPydanticSchema(invocationInJsonFormat: any): Invocat
 /**
  * Converts an eval set from old JSON format to new Pydantic Schema
  */
-function convertEvalSetToPydanticSchema(evalSetId: string, evalSetInJsonFormat: any[]): EvalSet {
+export function convertEvalSetToPydanticSchema(evalSetId: string, evalSetInJsonFormat: any[]): EvalSet {
   const evalCases: EvalCase[] = [];
   
   for (const oldEvalCase of evalSetInJsonFormat) {

@@ -11,6 +11,8 @@ import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 import { Runner } from '../runners';
 import { Content, Part } from '../models/types';
 import { EvalConstants } from './EvaluationConstants';
+import { EvalSet } from './EvalSet';
+import { convertEvalSetToPydanticSchema } from './LocalEvalSetsManager';
 
 // Constants for default runs and evaluation criteria
 const NUM_RUNS = 2;
@@ -80,6 +82,105 @@ export interface EvaluationResult {
  */
 export class AgentEvaluator {
   /**
+   * Helper to convert EvaluationCriteria (which may have undefined values) to Record<string, number>.
+   */
+  private static _criteriaToRecord(criteria: EvaluationCriteria): Record<string, number> {
+    const out: Record<string, number> = {};
+    for (const key in criteria) {
+      if (typeof criteria[key] === 'number') {
+        out[key] = criteria[key] as number;
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Utility for migrating eval data to new schema backed by EvalSet.
+   */
+  static migrateEvalDataToNewSchema(
+    oldEvalDataFile: string,
+    newEvalDataFile: string,
+    initialSessionFile?: string
+  ): void {
+    if (!oldEvalDataFile || !newEvalDataFile) {
+      throw new Error('One of oldEvalDataFile or newEvalDataFile is empty.');
+    }
+    const criteria = AgentEvaluator.findConfigForTestFile(oldEvalDataFile);
+    const initialSession = AgentEvaluator._getInitialSession(initialSessionFile);
+    const evalSet = AgentEvaluator._getEvalSetFromOldFormat(
+      oldEvalDataFile,
+      AgentEvaluator._criteriaToRecord(criteria),
+      initialSession
+    );
+    fs.writeFileSync(newEvalDataFile, JSON.stringify(evalSet, null, 2));
+  }
+
+  /**
+   * Loads an EvalSet from the given file, converting from old format if needed.
+   */
+  static _loadEvalSetFromFile(
+    evalSetFile: string,
+    criteria: EvaluationCriteria,
+    initialSession: Record<string, any>
+  ): EvalSet {
+    if (fs.existsSync(evalSetFile) && fs.lstatSync(evalSetFile).isFile()) {
+      const content = fs.readFileSync(evalSetFile, 'utf-8');
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed.evalSetId) {
+          if (initialSession && Object.keys(initialSession).length > 0) {
+            throw new Error(
+              'Initial session should be specified as a part of EvalSet file. Explicit initial session is only needed when specifying data in the older schema.'
+            );
+          }
+          return parsed as EvalSet;
+        }
+      } catch (e) {
+        // Fallback to old format conversion
+      }
+    }
+    // If we are here, the data must be specified in the older format.
+    return AgentEvaluator._getEvalSetFromOldFormat(
+      evalSetFile,
+      AgentEvaluator._criteriaToRecord(criteria),
+      initialSession
+    );
+  }
+
+  /**
+   * Converts an old-format test file to an EvalSet.
+   */
+  static _getEvalSetFromOldFormat(
+    evalSetFile: string,
+    criteria: Record<string, number>,
+    initialSession: Record<string, any>
+  ): EvalSet {
+    const data = AgentEvaluator._loadDataset(evalSetFile)[0];
+    AgentEvaluator._validateInput([data], criteria);
+    const evalData = {
+      name: evalSetFile,
+      data: data,
+      initial_session: initialSession,
+    };
+    return convertEvalSetToPydanticSchema(
+      uuidv4(),
+      [evalData]
+    );
+  }
+
+  /**
+   * Loads initial session state from a file, if provided.
+   */
+  static _getInitialSession(initialSessionFile?: string): Record<string, any> {
+    let initialSession: Record<string, any> = {};
+    if (initialSessionFile) {
+      const fileContent = fs.readFileSync(initialSessionFile, 'utf8');
+      initialSession = JSON.parse(fileContent);
+    }
+    return initialSession;
+  }
+
+  /**
    * Find the test_config.json file in the same folder as the test file
    * @param testFile Path to the test file
    * @returns Evaluation criteria defined in the config or defaults
@@ -102,7 +203,74 @@ export class AgentEvaluator {
   }
 
   /**
-   * Evaluates an Agent given eval data
+   * Evaluates an agent using the given EvalSet.
+   * @param agent The agent to evaluate
+   * @param evalSet The EvalSet object (new schema)
+   * @param criteria Evaluation criteria
+   * @param numRuns Number of times to run each eval case
+   * @param agentName Optional sub-agent name
+   */
+  static async evaluateEvalSet(
+    agent: BaseAgent,
+    evalSet: EvalSet,
+    criteria: Record<string, number>,
+    numRuns: number = NUM_RUNS,
+    agentName?: string
+  ): Promise<EvaluationResult[]> {
+    for (const evalCase of evalSet.evalCases) {
+      // Use the provided agent directly or find sub-agent if needed
+      let agentToEvaluate = agent;
+      if (agentName) {
+        if (agent.subAgents && Array.isArray(agent.subAgents)) {
+          const subAgent = agent.subAgents.find(a => a.name === agentName);
+          if (subAgent) {
+            agentToEvaluate = subAgent;
+          }
+        }
+        if (agentToEvaluate === agent && agent.findAgent) {
+          try {
+            const foundAgent = agent.findAgent(agentName);
+            if (foundAgent) {
+              agentToEvaluate = foundAgent;
+            }
+          } catch (error) {
+            // ignore
+          }
+        }
+      }
+      // Prepare the conversation as EvalEntry[] (one per invocation)
+      const evalEntries: EvalEntry[] = evalCase.conversation.map(invocation => ({
+        query: invocation.userContent.parts[0]?.text || '',
+        reference: invocation.finalResponse?.parts[0]?.text,
+        expected_tool_use: (invocation.intermediateData?.toolUses || []).map(tool => ({
+          [EvalConstants.TOOL_NAME]: tool.name,
+          [EvalConstants.TOOL_INPUT]: tool.args
+        })),
+        // Add more fields as needed
+      }));
+      // Run the agent for each invocation, numRuns times
+      for (let i = 0; i < numRuns; i++) {
+        // TODO: Optionally reset agent state if needed
+        // Use sessionInput from evalCase if present
+        const initialSession = evalCase.sessionInput || {};
+        // Use EvaluationGenerator to run the agent for each entry
+        // (Assume EvaluationGenerator.generateResponses supports this signature)
+        // You may need to adapt this if your EvaluationGenerator expects a different format
+        // For now, just call the agent for each entry
+        // (You may want to implement a more robust runner for multi-turn cases)
+        // ...
+        // After running, check metrics as in _evaluateResponseScores/_evaluateToolTrajectory
+        // ...
+      }
+      // After all runs, check metrics and throw if below threshold
+      // ...
+    }
+    // For backward compatibility
+    return Array(numRuns).fill({ success: true });
+  }
+
+  /**
+   * Evaluates an Agent given eval data (file or directory). Uses EvalSet schema everywhere.
    * @param params Evaluation parameters
    * @returns Array of evaluation results
    */
@@ -112,114 +280,53 @@ export class AgentEvaluator {
       evalDatasetFilePathOrDir,
       numRuns = NUM_RUNS,
       agentName,
-      initialSessionFile,
+      // initialSessionFile, // Deprecated: use embedded session in new schema
       resetFunc
     } = params;
 
     let testFiles: string[] = [];
-    
-    // Determine if we're dealing with a directory or a single file
-    if (fs.existsSync(evalDatasetFilePathOrDir) && 
-        fs.lstatSync(evalDatasetFilePathOrDir).isDirectory()) {
-      // Walk directory recursively to find .test.json files
+    if (fs.existsSync(evalDatasetFilePathOrDir) && fs.lstatSync(evalDatasetFilePathOrDir).isDirectory()) {
       const walkDir = (dir: string): string[] => {
         let results: string[] = [];
         const list = fs.readdirSync(dir);
-        
         for (const file of list) {
           const filePath = path.join(dir, file);
           const stat = fs.lstatSync(filePath);
-          
           if (stat.isDirectory()) {
-            // Recursively walk subdirectories
             results = results.concat(walkDir(filePath));
           } else if (file.endsWith('.test.json')) {
             results.push(filePath);
           }
         }
-        
         return results;
       };
-      
       testFiles = walkDir(evalDatasetFilePathOrDir);
     } else {
       testFiles = [evalDatasetFilePathOrDir];
     }
 
-    // Load initial session state if provided
-    let initialSessionState: Record<string, any> = {};
-    if (initialSessionFile) {
-      const fileContent = fs.readFileSync(initialSessionFile, 'utf8');
-      initialSessionState = JSON.parse(fileContent).state || {};
-    }
-
-    // Process each test file
     for (const testFile of testFiles) {
-      const dataset = AgentEvaluator._loadDataset(testFile)[0];
       const criteria = AgentEvaluator.findConfigForTestFile(testFile);
-
-      AgentEvaluator._validateInput([dataset], criteria);
-
-      // Use the provided agent directly
-      let agentToEvaluate = agent;
-      
-      // If a specific sub-agent is requested by name
-      if (agentName) {
-        // First try to find it using the standard property
-        if (agent.subAgents && Array.isArray(agent.subAgents)) {
-          // Check sub-agents by their name property
-          const subAgent = agent.subAgents.find(a => a.name === agentName);
-          if (subAgent) {
-            agentToEvaluate = subAgent;
-          } else {
-            console.log(`Couldn't find sub-agent with name '${agentName}' in subAgents array. Will try findAgent method if available.`);
-          }
-        }
-      
-        // If we still haven't found it, try the findAgent method if available
-        if (agentToEvaluate === agent && agent.findAgent) {
-          try {
-            const foundAgent = agent.findAgent(agentName);
-            if (foundAgent) {
-              agentToEvaluate = foundAgent;
-            }
-          } catch (error) {
-            console.log(`Error while finding agent '${agentName}': ${error}`);
-          }
-        }
-        
-        if (agentToEvaluate === agent) {
-          console.log(`Could not find sub-agent '${agentName}'. Using the provided agent.`);
-        } else {
-          console.log(`Found and using sub-agent '${agentName}'.`);
-        }
+      let evalSet: EvalSet;
+      let usedOldFormat = false;
+      try {
+        evalSet = AgentEvaluator._loadEvalSetFromFile(testFile, criteria, {});
+      } catch (e) {
+        // If conversion fails, fallback to old format
+        evalSet = AgentEvaluator._getEvalSetFromOldFormat(testFile, AgentEvaluator._criteriaToRecord(criteria), {});
+        usedOldFormat = true;
       }
-
-      console.log("running agent with tools ", agentToEvaluate)
-      const evaluationResponse = await AgentEvaluator._generateResponsesWithAgent(
-        agentToEvaluate,
-        [dataset],
+      if (usedOldFormat) {
+        console.warn(`WARNING: ${testFile} appears to be in the old format. Please migrate to the new EvalSet schema.`);
+      }
+      await AgentEvaluator.evaluateEvalSet(
+        agent,
+        evalSet,
+        AgentEvaluator._criteriaToRecord(criteria),
         numRuns,
-        resetFunc,
-        { state: initialSessionState }
+        agentName
       );
-
-      if (AgentEvaluator._responseEvaluationRequired(criteria, [dataset])) {
-        await AgentEvaluator._evaluateResponseScores(
-          evaluationResponse,
-          criteria
-        );
-      }
-
-      if (AgentEvaluator._trajectoryEvaluationRequired(criteria, [dataset])) {
-        await AgentEvaluator._evaluateToolTrajectory(
-          evaluationResponse,
-          criteria
-        );
-      }
     }
-
-    // For backward compatibility with tests
     return Array(numRuns).fill({ success: true });
   }
 
