@@ -63,6 +63,25 @@ export class InMemorySessionService extends BaseSessionService {
     sessionId?: string;
     state?: Record<string, any>;
   }): Session {
+    return this._createSessionImpl(options);
+  }
+
+  createSessionSync(options: {
+    appName: string;
+    userId: string;
+    sessionId?: string;
+    state?: Record<string, any>;
+  }): Session {
+    console.warn('Deprecated. Please migrate to the async method.');
+    return this._createSessionImpl(options);
+  }
+
+  private _createSessionImpl(options: {
+    appName: string;
+    userId: string;
+    sessionId?: string;
+    state?: Record<string, any>;
+  }): Session {
     const { appName, userId, state = {} } = options;
     // Use provided sessionId or generate a new one
     const sessionId = options.sessionId?.trim() || uuidv4();
@@ -97,6 +116,23 @@ export class InMemorySessionService extends BaseSessionService {
     userId: string;
     sessionId: string;
   }): Session | null {
+    return this._getSessionImpl(options);
+  }
+
+  getSessionSync(options: {
+    appName: string;
+    userId: string;
+    sessionId: string;
+  }): Session | null {
+    console.warn('Deprecated. Please migrate to the async method.');
+    return this._getSessionImpl(options);
+  }
+
+  private _getSessionImpl(options: {
+    appName: string;
+    userId: string;
+    sessionId: string;
+  }): Session | null {
     const { appName, userId, sessionId } = options;
     
     // Check if session exists
@@ -115,6 +151,21 @@ export class InMemorySessionService extends BaseSessionService {
   }
 
   listSessions(options: {
+    appName: string;
+    userId: string;
+  }): SessionsList {
+    return this._listSessionsImpl(options);
+  }
+
+  listSessionsSync(options: {
+    appName: string;
+    userId: string;
+  }): SessionsList {
+    console.warn('Deprecated. Please migrate to the async method.');
+    return this._listSessionsImpl(options);
+  }
+
+  private _listSessionsImpl(options: {
     appName: string;
     userId: string;
   }): SessionsList {
@@ -137,6 +188,23 @@ export class InMemorySessionService extends BaseSessionService {
   }
 
   deleteSession(options: {
+    appName: string;
+    userId: string;
+    sessionId: string;
+  }): void {
+    this._deleteSessionImpl(options);
+  }
+
+  deleteSessionSync(options: {
+    appName: string;
+    userId: string;
+    sessionId: string;
+  }): void {
+    console.warn('Deprecated. Please migrate to the async method.');
+    this._deleteSessionImpl(options);
+  }
+
+  private _deleteSessionImpl(options: {
     appName: string;
     userId: string;
     sessionId: string;
@@ -168,6 +236,21 @@ export class InMemorySessionService extends BaseSessionService {
   }
 
   appendEvent(options: {
+    session: Session;
+    event: Event;
+  }): void {
+    this._appendEventImpl(options);
+  }
+
+  appendEventSync(options: {
+    session: Session;
+    event: Event;
+  }): void {
+    console.warn('Deprecated. Please migrate to the async method.');
+    this._appendEventImpl(options);
+  }
+
+  private _appendEventImpl(options: {
     session: Session;
     event: Event;
   }): void {
