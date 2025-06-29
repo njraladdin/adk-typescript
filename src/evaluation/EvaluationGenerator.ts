@@ -12,6 +12,9 @@ import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 import { Event } from '../events/Event';
 import { BaseTool } from '../tools/BaseTool';
 import { ToolContext } from '../tools/ToolContext';
+import { Invocation, SessionInput, IntermediateData } from './EvalCase';
+import { BaseSessionService } from '../sessions/BaseSessionService';
+import { BaseArtifactService } from '../artifacts/BaseArtifactService';
 
 /**
  * Type for tool callback function
@@ -353,6 +356,93 @@ export class EvaluationGenerator {
     response.actual_tool_use = turnActualToolUses;
     
     return response;
+  }
+
+  /**
+   * Scrapes the root agent given the list of Invocations.
+   */
+  static async _generateInferencesFromRootAgent(
+    invocations: Invocation[],
+    rootAgent: LlmAgent,
+    resetFunc?: any,
+    initialSession?: SessionInput,
+    sessionId?: string,
+    sessionService?: BaseSessionService,
+    artifactService?: BaseArtifactService
+  ): Promise<Invocation[]> {
+    if (!sessionService) {
+      sessionService = new InMemorySessionService();
+    }
+
+    const appName = initialSession?.appName || 'EvaluationGenerator';
+    const userId = initialSession?.userId || 'test_user_id';
+    const actualSessionId = sessionId || uuidv4();
+
+    await sessionService.createSession({
+      appName: appName,
+      userId: userId,
+      state: initialSession?.state || {},
+      sessionId: actualSessionId,
+    });
+
+    if (!artifactService) {
+      artifactService = new InMemoryArtifactService();
+    }
+
+    const runner = new Runner({
+      appName: appName,
+      agent: rootAgent,
+      artifactService: artifactService,
+      sessionService: sessionService,
+    });
+
+    // Reset agent state for each query
+    if (typeof resetFunc === 'function') {
+      resetFunc();
+    }
+
+    const responseInvocations: Invocation[] = [];
+
+    for (const invocation of invocations) {
+      let finalResponse: Content | undefined = undefined;
+      const userContent = invocation.userContent;
+      const toolUses: FunctionCall[] = [];
+      let invocationId = '';
+
+      const events: Event[] = [];
+      for await (const event of runner.run({
+        userId: userId,
+        sessionId: actualSessionId,
+        newMessage: userContent,
+      })) {
+        events.push(event);
+      }
+
+      for (const event of events) {
+        invocationId = event.invocationId || invocationId;
+
+        if (event.isFinalResponse() && event.content && event.content.parts) {
+          finalResponse = event.content;
+        } else if (event.getFunctionCalls()) {
+          for (const call of event.getFunctionCalls()) {
+            toolUses.push(call);
+          }
+        }
+      }
+
+      responseInvocations.push({
+        invocationId: invocationId,
+        userContent: userContent,
+        finalResponse: finalResponse,
+        intermediateData: {
+          toolUses: toolUses,
+          intermediateResponses: [],
+        },
+        creationTimestamp: Date.now() / 1000,
+      });
+    }
+
+    return responseInvocations;
   }
 
   /**

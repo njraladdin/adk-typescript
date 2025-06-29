@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import path from 'path';
 import { runCli, runInputFile } from './cli';
-import { runEvals, getEvaluationCriteriaOrDefault, getRootAgent, tryGetResetFunc, parseAndGetEvalsToRun, EvalMetric, EvalStatus, EvalResult } from './cliEval';
+import { runEvals, getEvaluationCriteriaOrDefault, getRootAgent, tryGetResetFunc, parseAndGetEvalsToRun, EvalMetric, EvalStatus, EvalCaseResult } from './cliEval';
 import { toCloudRun } from './cliDeploy';
 import { runCmd } from './cliCreate';
 import { getAgentGraph } from './agentGraph';
@@ -178,15 +178,24 @@ program
           // Parse eval sets
           const evalSetToEvals = parseAndGetEvalsToRun(evalSetFilePaths);
           
+          // Convert to new format for runEvals
+          const evalCasesByEvalSetId: Record<string, any[]> = {};
+          for (const [evalSetFile, evalIds] of Object.entries(evalSetToEvals)) {
+            // For now, we'll need to load the eval set files and convert them
+            // This is a simplified approach - in a real implementation you'd use the LocalEvalSetsManager
+            const evalSetData = JSON.parse(require('fs').readFileSync(evalSetFile, 'utf-8'));
+            const evalCases = evalSetData.filter((item: any) => !evalIds.length || evalIds.includes(item.name));
+            evalCasesByEvalSetId[evalSetFile] = evalCases;
+          }
+          
           // Run evals and collect all results
-          const evalResults: EvalResult[] = [];
-          for await (const result of runEvals({
-            evalSetToEvals,
+          const evalResults: EvalCaseResult[] = [];
+          for await (const result of runEvals(
+            evalCasesByEvalSetId,
             rootAgent,
             resetFunc,
-            evalMetrics,
-            printDetailedResults: options.print_detailed_results,
-          })) {
+            evalMetrics
+          )) {
             evalResults.push(result);
           }
 
@@ -195,13 +204,13 @@ program
           // Generate and print summary
           const evalRunSummary: Record<string, [number, number]> = {};
           for (const evalResult of evalResults) {
-            if (!(evalResult.evalSetFile in evalRunSummary)) {
-              evalRunSummary[evalResult.evalSetFile] = [0, 0];
+            if (!(evalResult.evalSetId in evalRunSummary)) {
+              evalRunSummary[evalResult.evalSetId] = [0, 0];
             }
             if (evalResult.finalEvalStatus === EvalStatus.PASSED) {
-              evalRunSummary[evalResult.evalSetFile][0] += 1;
+              evalRunSummary[evalResult.evalSetId][0] += 1;
             } else {
-              evalRunSummary[evalResult.evalSetFile][1] += 1;
+              evalRunSummary[evalResult.evalSetId][1] += 1;
             }
           }
           

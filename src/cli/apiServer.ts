@@ -59,7 +59,12 @@ interface RunEvalResult {
   evalSetId: string;
   evalId: string;
   finalEvalStatus: string;
+  /** @deprecated This field is deprecated, use overallEvalMetricResults instead. */
   evalMetricResults: any[];
+  /** Overall result for each metric for the entire eval case. */
+  overallEvalMetricResults: any[];
+  /** Result for each metric on a per invocation basis. */
+  evalMetricResultPerInvocation: any[];
   userId: string;
   sessionId: string;
 }
@@ -639,7 +644,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
 
   // Helper function to collect and transform eval results
   async function collectAndTransformEvalResults(
-    evalSetToEvals: Record<string, string[]>,
+    evalCasesByEvalSetId: Record<string, any[]>,
     rootAgent: any,
     evalMetrics: any[],
     sessionService: any,
@@ -651,42 +656,35 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     const runEvalResults: RunEvalResult[] = [];
     const evalCaseResults: EvalCaseResult[] = [];
     
-    for await (const evalResult of runEvals({
-      evalSetToEvals,
+    for await (const evalCaseResult of runEvals(
+      evalCasesByEvalSetId,
       rootAgent,
-      resetFunc: undefined,
+      undefined, // resetFunc
       evalMetrics,
       sessionService,
-      artifactService,
-      printDetailedResults: false
-    })) {
+      artifactService
+    )) {
       runEvalResults.push({
-        evalSetFile: evalResult.evalSetFile,
+        evalSetFile: evalCaseResult.evalSetFile,
         evalSetId,
-        evalId: evalResult.evalId,
-        finalEvalStatus: evalResult.finalEvalStatus === 1 ? 'PASSED' : 
-                         evalResult.finalEvalStatus === 2 ? 'FAILED' : 'NOT_EVALUATED',
-        evalMetricResults: evalResult.evalMetricResults,
-        userId: evalResult.userId || 'test_user_id',
-        sessionId: evalResult.sessionId
+        evalId: evalCaseResult.evalId,
+        finalEvalStatus: evalCaseResult.finalEvalStatus === 1 ? 'PASSED' : 
+                         evalCaseResult.finalEvalStatus === 2 ? 'FAILED' : 'NOT_EVALUATED',
+        evalMetricResults: evalCaseResult.evalMetricResults,
+        overallEvalMetricResults: evalCaseResult.overallEvalMetricResults,
+        evalMetricResultPerInvocation: evalCaseResult.evalMetricResultPerInvocation,
+        userId: evalCaseResult.userId || 'test_user_id',
+        sessionId: evalCaseResult.sessionId
       });
       
       // Get session details for the eval case result
-      const session = sessionService.getSession({
+      evalCaseResult.sessionDetails = sessionService.getSession({
         appName,
-        userId: evalResult.userId || 'test_user_id',
-        sessionId: evalResult.sessionId
+        userId: evalCaseResult.userId || 'test_user_id',
+        sessionId: evalCaseResult.sessionId
       });
       
-      evalCaseResults.push({
-        evalSetFile: evalResult.evalSetFile,
-        evalId: evalResult.evalId,
-        finalEvalStatus: evalResult.finalEvalStatus,
-        evalMetricResults: evalResult.evalMetricResults,
-        sessionId: evalResult.sessionId,
-        sessionDetails: session,
-        userId: evalResult.userId || 'test_user_id'
-      });
+      evalCaseResults.push(evalCaseResult);
     }
     
     return { runEvalResults, evalCaseResults };
@@ -710,17 +708,22 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
       // Get root agent
       const rootAgent = await getRootAgent(appName);
       
-      // Create a mapping from eval set file to all the evals that needed to be run
-      const evalSetToEvals: Record<string, string[]> = {
-        [evalSetFilePath]: requestData.evalIds
-      };
+      // Get the eval set data
+      const evalSet = evalSetsManager.getEvalSet(appName, evalSetId);
       
-      if (!requestData.evalIds || requestData.evalIds.length === 0) {
-        console.log('Eval ids to run list is empty. We will run all evals in the eval set.');
+      let evalCases = evalSet.evalCases;
+      if (requestData.evalIds && requestData.evalIds.length > 0) {
+        evalCases = evalSet.evalCases.filter(e => requestData.evalIds.includes(e.evalId));
+      } else {
+        console.log('Eval ids to run list is empty. We will run all eval cases.');
       }
       
+      const evalCasesByEvalSetId: Record<string, any[]> = {
+        [evalSetId]: evalCases
+      };
+      
       const { runEvalResults, evalCaseResults } = await collectAndTransformEvalResults(
-        evalSetToEvals,
+        evalCasesByEvalSetId,
         rootAgent,
         requestData.evalMetrics,
         sessionService,

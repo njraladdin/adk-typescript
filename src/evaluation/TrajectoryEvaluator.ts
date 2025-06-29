@@ -1,5 +1,8 @@
 import { EvalConstants } from './EvaluationConstants';
 import { EvalEntry } from './EvaluationGenerator';
+import { Evaluator, EvalStatus, EvaluationResult, PerInvocationResult } from './Evaluator';
+import { Invocation } from './EvalCase';
+import { FunctionCall } from '../models/types';
 
 /**
  * Interface for trajectory evaluation result
@@ -40,20 +43,87 @@ interface EvaluationFailure {
 /**
  * Evaluates tool use trajectories for accuracy
  */
-export class TrajectoryEvaluator {
+export class TrajectoryEvaluator extends Evaluator {
+  private threshold: number;
+
+  constructor(threshold: number) {
+    super();
+    this.threshold = threshold;
+  }
+
   /**
-   * Evaluates the mean tool use accuracy of the eval dataset.
-   * 
-   * Tool use accuracy is calculated by comparing the expected and actual tool
-   * use trajectories. An exact match scores a 1, 0 otherwise. The final number
-   * is an average of these individual scores.
-   * 
-   * Value range: [0, 1], where 0 means none of the tool use entries aligned,
-   * and 1 would mean all of them aligned. Higher value is good.
-   * 
-   * @param evalDataset The dataset that will be evaluated
-   * @param printDetailedResults Prints detailed results on the console (default: false)
-   * @returns The mean tool use accuracy of the eval dataset
+   * Returns EvaluationResult after performing evaluations using actual and expected invocations.
+   */
+  evaluateInvocations(
+    actualInvocations: Invocation[],
+    expectedInvocations: Invocation[]
+  ): EvaluationResult {
+    let totalToolUseAccuracy = 0.0;
+    let numInvocations = 0;
+    const perInvocationResults: PerInvocationResult[] = [];
+
+    for (let i = 0; i < Math.min(actualInvocations.length, expectedInvocations.length); i++) {
+      const actual = actualInvocations[i];
+      const expected = expectedInvocations[i];
+      
+      const actualToolUses = actual.intermediateData?.toolUses || [];
+      const expectedToolUses = expected.intermediateData?.toolUses || [];
+      
+      const toolUseAccuracy = this._areToolCallsEqual(actualToolUses, expectedToolUses) ? 1.0 : 0.0;
+      
+      perInvocationResults.push({
+        actualInvocation: actual,
+        expectedInvocation: expected,
+        score: toolUseAccuracy,
+        evalStatus: this._getEvalStatus(toolUseAccuracy),
+      });
+      
+      totalToolUseAccuracy += toolUseAccuracy;
+      numInvocations += 1;
+    }
+
+    if (perInvocationResults.length > 0) {
+      const overallScore = totalToolUseAccuracy / numInvocations;
+      return {
+        overallScore: overallScore,
+        overallEvalStatus: this._getEvalStatus(overallScore),
+        perInvocationResults: perInvocationResults,
+      };
+    }
+
+    return {
+      overallScore: undefined,
+      overallEvalStatus: EvalStatus.NOT_EVALUATED,
+      perInvocationResults: [],
+    };
+  }
+
+  private _areToolCallsEqual(
+    actualToolCalls: FunctionCall[],
+    expectedToolCalls: FunctionCall[]
+  ): boolean {
+    if (actualToolCalls.length !== expectedToolCalls.length) {
+      return false;
+    }
+
+    for (let i = 0; i < actualToolCalls.length; i++) {
+      const actual = actualToolCalls[i];
+      const expected = expectedToolCalls[i];
+      
+      if (actual.name !== expected.name || !this._areObjectsEqual(actual.args, expected.args)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private _getEvalStatus(score: number): EvalStatus {
+    return score >= this.threshold ? EvalStatus.PASSED : EvalStatus.FAILED;
+  }
+
+  /**
+   * @deprecated This method has been deprecated and will be removed soon. Please use evaluateInvocations instead.
    */
   static evaluate(
     evalDataset: EvalEntry[][],
@@ -141,10 +211,7 @@ export class TrajectoryEvaluator {
   }
 
   /**
-   * Check if two tool use lists are equal
-   * @param listA First list of tools
-   * @param listB Second list of tools
-   * @returns True if the lists are equal, false otherwise
+   * @deprecated
    */
   static areToolsEqual(
     listA: Array<any>,
@@ -201,29 +268,19 @@ export class TrajectoryEvaluator {
     const keysA = Object.keys(objA);
     const keysB = Object.keys(objB);
 
-    // Check if both have the same number of properties
+    // Check if they have the same number of properties
     if (keysA.length !== keysB.length) {
       return false;
     }
 
-    // Check if object B has all properties from object A with the same values
+    // Check each property
     for (const key of keysA) {
-      if (!Object.prototype.hasOwnProperty.call(objB, key)) {
+      if (!keysB.includes(key)) {
         return false;
       }
 
-      const valueA = objA[key];
-      const valueB = objB[key];
-
-      // Recursively compare nested objects
-      if (typeof valueA === 'object' && valueA !== null && 
-          typeof valueB === 'object' && valueB !== null) {
-        if (!TrajectoryEvaluator._areObjectsEqual(valueA, valueB)) {
-          return false;
-        }
-      }
-      // Compare primitive values
-      else if (valueA !== valueB) {
+      // Recursively compare property values
+      if (!TrajectoryEvaluator._areObjectsEqual(objA[key], objB[key])) {
         return false;
       }
     }
@@ -232,18 +289,28 @@ export class TrajectoryEvaluator {
   }
 
   /**
+   * Helper method to compare two objects for semantic equality,
+   * ignoring property order differences (instance method version)
+   */
+  private _areObjectsEqual(objA: Record<string, any>, objB: Record<string, any>): boolean {
+    return TrajectoryEvaluator._areObjectsEqual(objA, objB);
+  }
+
+  /**
    * Removes 'mock_tool_output' from each dictionary in the list
-   * @param toolUseList List of tool use entries
-   * @returns Cleaned list without mock_tool_output entries
+   * @param toolUseList List of tool use objects
+   * @returns List with mock_tool_output removed
    */
   private static _removeToolOutputs(
     toolUseList: Array<any>
   ): Array<any> {
-    return toolUseList.map(toolUse => {
-      const newToolUse = { ...toolUse };
-      delete newToolUse[EvalConstants.MOCK_TOOL_OUTPUT];
-      return newToolUse;
-    });
+    const result = [];
+    for (const toolUse of toolUseList) {
+      const newToolUse = { ...toolUse }; // Create a copy to avoid modifying the original
+      delete newToolUse[EvalConstants.MOCK_TOOL_OUTPUT]; // Remove 'tool_output' if it exists
+      result.push(newToolUse);
+    }
+    return result;
   }
 
   /**
@@ -256,11 +323,10 @@ export class TrajectoryEvaluator {
       for (const failure of failures) {
         console.log(`{
   "turn": ${failure.turn},
-  "query": '${failure.query}',
+  "query": "${failure.query}",
   "actual": ${JSON.stringify(failure.actual)},
-  "expected_tool_use": ${JSON.stringify(failure.expected)}
-}
-`);
+  "expected_tool_use": ${JSON.stringify(failure.expected)},
+}`);
       }
     }
   }
@@ -275,37 +341,17 @@ export class TrajectoryEvaluator {
   }
 
   /**
-   * Evaluates a list of agent trajectories (tool use) against expected tool use.
-   * @param evalData Array of evaluation entries
-   * @returns Array of trajectory evaluation results
-   * @deprecated Use evaluate() instead for more comprehensive evaluation
+   * Legacy method for evaluating trajectories
+   * @deprecated Use the new evaluateInvocations method instead
    */
   static evaluateTrajectories(evalData: EvalEntry[]): TrajectoryEvalResult[] {
-    return evalData.map(entry => {
-      const query = entry[EvalConstants.QUERY] ?? '';
-      
-      // Normalize actual tool use to ensure tool_input is always present
-      const actualToolUse = (entry.actual_tool_use ?? []).map(tool => ({
-        [EvalConstants.TOOL_NAME]: tool[EvalConstants.TOOL_NAME],
-        [EvalConstants.TOOL_INPUT]: tool[EvalConstants.TOOL_INPUT] || {}
-      }));
-      
-      // Normalize expected tool use to ensure tool_input is always present
-      const expectedToolUse = (entry[EvalConstants.EXPECTED_TOOL_USE] ?? []).map(tool => ({
-        [EvalConstants.TOOL_NAME]: tool[EvalConstants.TOOL_NAME],
-        [EvalConstants.TOOL_INPUT]: tool[EvalConstants.TOOL_INPUT] || {},
-        ...(tool[EvalConstants.MOCK_TOOL_OUTPUT] !== undefined ? 
-            { [EvalConstants.MOCK_TOOL_OUTPUT]: tool[EvalConstants.MOCK_TOOL_OUTPUT] } : {})
-      }));
-      
-      const toolUseAccuracy = TrajectoryEvaluator.areToolsEqual(actualToolUse, expectedToolUse) ? 1 : 0;
-      
-      return { 
-        query, 
-        actualToolUse, 
-        expectedToolUse, 
-        toolUseAccuracy
-      };
-    });
+    const results: TrajectoryEvalResult[] = [];
+    for (let index = 0; index < evalData.length; index++) {
+      const row = evalData[index];
+      const { newRow } = TrajectoryEvaluator._evaluateRow(row);
+      newRow.turn = index + 1;
+      results.push(newRow);
+    }
+    return results;
   }
 } 
