@@ -97,6 +97,7 @@ describe('CLI Deploy Utils', () => {
         traceToCloud: false,
         withUi: false,
         verbosity: 'info',
+        adkVersion: '0.0.5',
       });
 
       // Verify gcloud was called with the explicit project
@@ -134,6 +135,7 @@ describe('CLI Deploy Utils', () => {
         traceToCloud: false,
         withUi: false,
         verbosity: 'info',
+        adkVersion: '0.0.5',
       });
 
       // Verify gcloud was called with the resolved project
@@ -184,6 +186,7 @@ describe('CLI Deploy Utils', () => {
         withUi: true,
         verbosity: 'info',
         sessionDbUrl: 'sqlite://',
+        adkVersion: '0.0.5',
       });
 
       // Assertions
@@ -228,6 +231,7 @@ describe('CLI Deploy Utils', () => {
         withUi: false,
         verbosity: 'info',
         sessionDbUrl: undefined,
+        adkVersion: '0.0.5',
       });
 
       expect(deletedPaths).toContain(tempDir);
@@ -271,6 +275,7 @@ describe('CLI Deploy Utils', () => {
         traceToCloud: false,
         withUi: false,
         verbosity: 'info',
+        adkVersion: '0.0.5',
       })).rejects.toThrow('Deployment failed');
 
       // Verify cleanup still happened
@@ -308,6 +313,7 @@ describe('CLI Deploy Utils', () => {
         withUi: false,
         verbosity: 'debug',
         sessionDbUrl: 'postgresql://...',
+        adkVersion: '0.0.5',
       });
 
       const dockerfilePath = path.join(tempDir, 'Dockerfile');
@@ -352,6 +358,7 @@ describe('CLI Deploy Utils', () => {
         traceToCloud: false,
         withUi: true,
         verbosity: 'info',
+        adkVersion: '0.0.5',
       });
 
       const dockerfilePath = path.join(tempDir, 'Dockerfile');

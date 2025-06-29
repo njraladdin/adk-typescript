@@ -181,6 +181,7 @@ describe('CLI Tools', () => {
         traceToCloud: false,
         withUi: false,
         verbosity: 'info',
+        adkVersion: '0.0.5',
       });
 
       expect(toCloudRunSpy).toHaveBeenCalled();
@@ -222,6 +223,7 @@ describe('CLI Tools', () => {
         traceToCloud: false,
         withUi: false,
         verbosity: 'info',
+        adkVersion: '0.0.5',
       })).rejects.toThrow('boom');
 
       // Restore originals

@@ -245,8 +245,13 @@ program
     '  - Use \'agentengine://<agent_engine_resource_id>\' to connect to Agent Engine sessions.\n' +
     '  - Use \'sqlite://<path_to_sqlite_file>\' to connect to a SQLite DB.\n' +
     '  - See https://docs.sqlalchemy.org/en/20/core/engines.html#backend-specific-urls for more details on supported DB URLs.')
-  .action((agent: string, options: any) => {
-    toCloudRun({
+  .option(
+    '--adk_version <adkVersion>',
+    'Optional. The ADK version used in Cloud Run deployment. (default: the version in the dev environment)',
+    VERSION
+  )
+  .action(async (agent: string, options: any) => {
+    await toCloudRun({
       agentFolder: agent,
       project: options.project,
       region: options.region,
@@ -258,6 +263,7 @@ program
       withUi: options.with_ui,
       verbosity: options.verbosity,
       sessionDbUrl: options.session_db_url,
+      adkVersion: options.adk_version,
     });
   });
 

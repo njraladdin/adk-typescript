@@ -27,7 +27,7 @@ ENV GOOGLE_CLOUD_LOCATION={gcp_region}
 # Set up environment variables - End
 
 # Install ADK - Start
-RUN pip install google-adk
+RUN pip install google-adk=={adk_version}
 # Install ADK - End
 
 # Copy agent - Start
@@ -71,6 +71,7 @@ export async function toCloudRun({
   withUi,
   verbosity,
   sessionDbUrl,
+  adkVersion,
 }: {
   agentFolder: string;
   project?: string;
@@ -83,6 +84,7 @@ export async function toCloudRun({
   withUi: boolean;
   verbosity: string;
   sessionDbUrl?: string;
+  adkVersion: string;
 }) {
   appName = appName || path.basename(agentFolder);
   console.log(`Start generating Cloud Run source files in ${tempFolder}`);
@@ -112,7 +114,8 @@ export async function toCloudRun({
       .replace(/{command}/g, withUi ? 'web' : 'api_server')
       .replace(/{install_agent_deps}/g, installAgentDeps)
       .replace(/{session_db_option}/g, sessionDbUrl ? `--db_url=${sessionDbUrl}` : '')
-      .replace(/{trace_to_cloud_option}/g, traceToCloud ? '--trace_to_cloud' : '');
+      .replace(/{trace_to_cloud_option}/g, traceToCloud ? '--trace_to_cloud' : '')
+      .replace(/{adk_version}/g, adkVersion);
     const dockerfilePath = path.join(tempFolder, 'Dockerfile');
     fs.mkdirSync(tempFolder, { recursive: true });
     await fs.promises.writeFile(dockerfilePath, dockerfileContent, 'utf-8');
