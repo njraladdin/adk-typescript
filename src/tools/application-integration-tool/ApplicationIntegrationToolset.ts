@@ -218,8 +218,7 @@ export class ApplicationIntegrationToolset extends BaseToolset {
       );
     } else {
       throw new Error(
-        'Either (integration and triggers) or (connection and ' +
-        '(entityOperations or actions)) should be provided.'
+        'Invalid request, Either integration or (connection and (entity_operations or actions)) should be provided.'
       );
     }
 
@@ -239,8 +238,7 @@ export class ApplicationIntegrationToolset extends BaseToolset {
 
     if (!hasIntegration && !hasConnectionAndOperations) {
       throw new Error(
-        'Either (integration and triggers) or (connection and ' +
-        '(entityOperations or actions)) should be provided.'
+        'Invalid request, Either integration or (connection and (entity_operations or actions)) should be provided.'
       );
     }
   }

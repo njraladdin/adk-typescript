@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Event, SessionInterface as Session, SessionsList } from './types';
 import { Content, Part } from './types';
-import { BaseSessionService, ListEventsResponse } from './BaseSessionService';
+import { BaseSessionService } from './BaseSessionService';
 import { State } from './State';
 import { encodeContent, decodeContent } from './sessionUtils';
 
@@ -252,41 +252,6 @@ export class VertexAiSessionService extends BaseSessionService {
       });
     } catch (error) {
       console.error('Error deleting session:', error);
-    }
-  }
-
-  /**
-   * Lists events in a session
-   */
-  async listEvents(options: {
-    appName: string;
-    userId: string;
-    sessionId: string;
-  }): Promise<ListEventsResponse> {
-    const { appName, sessionId } = options;
-    const reasoningEngineId = this.parseReasoningEngineId(appName);
-
-    try {
-      const apiResponse = await this.apiClient.request({
-        httpMethod: 'GET',
-        path: `reasoningEngines/${reasoningEngineId}/sessions/${sessionId}/events`,
-        requestDict: {}
-      });
-
-      console.log('List events response', apiResponse);
-
-      // Handle empty response case
-      if (apiResponse.httpHeaders) {
-        return { events: [] };
-      }
-
-      // Convert API events to Event objects
-      const events = apiResponse.sessionEvents.map((event: any) => this.fromApiEvent(event));
-
-      return { events };
-    } catch (error) {
-      console.error('Error listing events:', error);
-      return { events: [] };
     }
   }
 

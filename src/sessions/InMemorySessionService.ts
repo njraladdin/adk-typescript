@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Event, SessionInterface as Session, SessionsList } from './types';
 import { Content, Part } from './types';
-import { BaseSessionService, ListEventsResponse } from './BaseSessionService';
+import { BaseSessionService } from './BaseSessionService';
 import { State, StatePrefix } from './State';
 
 export class InMemorySessionService extends BaseSessionService {
@@ -220,19 +220,6 @@ export class InMemorySessionService extends BaseSessionService {
     
     // Delete the session
     delete this.sessions[appName][userId][sessionId];
-  }
-
-  listEvents(options: {
-    appName: string;
-    userId: string;
-    sessionId: string;
-  }): ListEventsResponse {
-    const session = this._getSessionImpl(options);
-    if (!session) {
-      return { events: [] };
-    }
-    
-    return { events: session.events };
   }
 
   appendEvent(options: {

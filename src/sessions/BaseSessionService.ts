@@ -10,14 +10,6 @@ export interface GetSessionConfig {
 }
 
 /**
- * Response for listing events in a session
- */
-export interface ListEventsResponse {
-  events: Event[];
-  nextPageToken?: string;
-}
-
-/**
  * Interface for session services with simple method signatures.
  * This interface defines the basic contract for session operations.
  */
@@ -117,20 +109,6 @@ export abstract class BaseSessionService implements SessionService {
     userId: string;
     sessionId: string;
   }): Promise<void> | void;
-
-  /**
-   * Lists events in a session.
-   * 
-   * @param options.appName - The name of the app
-   * @param options.userId - The ID of the user
-   * @param options.sessionId - The ID of the session
-   * @returns A list of events in the session
-   */
-  abstract listEvents(options: {
-    appName: string;
-    userId: string;
-    sessionId: string;
-  }): Promise<ListEventsResponse> | ListEventsResponse;
 
   /**
    * Updates a session's state.

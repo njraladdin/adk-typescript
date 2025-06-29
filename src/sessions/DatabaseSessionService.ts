@@ -17,7 +17,7 @@ import {
 
 import { Event, SessionInterface as Session, SessionsList } from './types';
 import { Content, Part } from './types';
-import { BaseSessionService, ListEventsResponse } from './BaseSessionService';
+import { BaseSessionService } from './BaseSessionService';
 import { State, StatePrefix } from './State';
 import { encodeContent, decodeContent } from './sessionUtils';
 
@@ -687,54 +687,6 @@ export class DatabaseSessionService extends BaseSessionService {
       event.id = storageEvent.id;
     }
     session.events.push(event);
-  }
-
-  /**
-   * Lists events in a session.
-   */
-  async listEvents(options: {
-    appName: string;
-    userId: string;
-    sessionId: string;
-  }): Promise<ListEventsResponse> {
-    await this.ensureConnection();
-    
-    const { appName, userId, sessionId } = options;
-    
-    // Fetch the session
-    const storageSession = await this.sessionRepo.findOneBy({
-      appName,
-      userId,
-      id: sessionId
-    });
-    
-    if (!storageSession) {
-      return { events: [] };
-    }
-    
-    // Fetch events for this session
-    const storageEvents = await this.eventRepo.findBy({
-      appName,
-      userId,
-      sessionId
-    });
-    
-    // Convert storage events to Event objects
-    const events = storageEvents.map(storageEvent => ({
-      id: storageEvent.id,
-      invocationId: storageEvent.invocationId,
-      author: storageEvent.author,
-      content: decodeContent(storageEvent.content),
-      actions: storageEvent.actions,
-      turnComplete: storageEvent.turnComplete,
-      partial: storageEvent.partial,
-      longRunningToolIds: storageEvent.longRunningToolIds,
-      errorCode: storageEvent.errorCode,
-      errorMessage: storageEvent.errorMessage,
-      interrupted: storageEvent.interrupted
-    }));
-    
-    return { events };
   }
 
   /**
