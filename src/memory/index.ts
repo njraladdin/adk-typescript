@@ -7,6 +7,9 @@ export { BaseMemoryService, MemoryResult, SearchMemoryResponse } from './BaseMem
 export { InMemoryMemoryService } from './InMemoryMemoryService';
 export { VertexAiRagMemoryService, VertexAiRagConfig } from './VertexAiRagMemoryService';
 
+// Export the MemoryEntry interface and implementation
+export { MemoryEntry, MemoryEntryImpl } from './MemoryEntry';
+
 /**
  * Base Memory interface that all memory implementations should implement
  */
