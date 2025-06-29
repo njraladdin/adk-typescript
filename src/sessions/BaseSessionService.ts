@@ -77,12 +77,14 @@ export abstract class BaseSessionService implements SessionService {
    * @param options.appName - The name of the app
    * @param options.userId - The ID of the user
    * @param options.sessionId - The ID of the session to get
+   * @param options.config - Optional config for filtering events
    * @returns The requested Session or null if not found
    */
   abstract getSession(options: {
     appName: string;
     userId: string;
     sessionId: string;
+    config?: GetSessionConfig;
   }): Promise<Session | null>;
 
   /**

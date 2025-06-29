@@ -438,10 +438,11 @@ export class DatabaseSessionService extends BaseSessionService {
     appName: string;
     userId: string;
     sessionId: string;
+    config?: import('./BaseSessionService').GetSessionConfig;
   }): Promise<Session | null> {
     await this.ensureConnection();
     
-    const { appName, userId, sessionId } = options;
+    const { appName, userId, sessionId, config } = options;
     
     // Fetch the session
     const storageSession = await this.sessionRepo.findOneBy({
@@ -458,12 +459,25 @@ export class DatabaseSessionService extends BaseSessionService {
     const appState = await this.appStateRepo.findOneBy({ appName });
     const userState = await this.userStateRepo.findOneBy({ appName, userId });
     
-    // Fetch events for this session
-    const storageEvents = await this.eventRepo.findBy({
-      appName,
-      userId,
-      sessionId
-    });
+    // Fetch events for this session (with filtering)
+    let query = this.eventRepo.createQueryBuilder('event')
+      .where('event.appName = :appName', { appName })
+      .andWhere('event.userId = :userId', { userId })
+      .andWhere('event.sessionId = :sessionId', { sessionId });
+    
+    if (config?.afterTimestamp) {
+      // Convert afterTimestamp (seconds) to Date
+      const afterDate = new Date(config.afterTimestamp * 1000);
+      query = query.andWhere('event.timestamp > :afterDate', { afterDate });
+    }
+    
+    query = query.orderBy('event.timestamp', 'ASC');
+    
+    if (config?.numRecentEvents) {
+      query = query.limit(config.numRecentEvents);
+    }
+    
+    const storageEvents = await query.getMany();
     
     // Create the session object with merged state
     const session: Session = {
@@ -491,7 +505,10 @@ export class DatabaseSessionService extends BaseSessionService {
       longRunningToolIds: storageEvent.longRunningToolIds,
       errorCode: storageEvent.errorCode,
       errorMessage: storageEvent.errorMessage,
-      interrupted: storageEvent.interrupted
+      interrupted: storageEvent.interrupted,
+      timestamp: storageEvent.timestamp ? Math.floor(storageEvent.timestamp.getTime() / 1000) : undefined,
+      branch: storageEvent.branch,
+      groundingMetadata: storageEvent.groundingMetadata
     }));
     
     return session;

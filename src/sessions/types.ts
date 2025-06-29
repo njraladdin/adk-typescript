@@ -89,6 +89,7 @@ export interface SessionService {
     appName: string;
     userId: string;
     sessionId: string;
+    config?: import('./BaseSessionService').GetSessionConfig;
   }): Promise<SessionInterface | null>;
   
   listSessions(options: {
