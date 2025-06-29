@@ -18,13 +18,13 @@ class MockLlmAgent {
 /**
  * Helper function to create an invocation context for testing
  */
-function createInvocationContext(
+async function createInvocationContext(
   testName: string,
   agent: any
-): InvocationContext {
+): Promise<InvocationContext> {
   const sessionService = new InMemorySessionService();
   // Use the sessionService to create a session
-  const sessionData = sessionService.createSession({
+  const sessionData = await sessionService.createSession({
     appName: 'test_app',
     userId: 'test_user'
   });
@@ -88,7 +88,7 @@ describe('FunctionTool', () => {
       });
       
       const mockAgent = new MockLlmAgent();
-      const invocationContext = createInvocationContext('test_mandatory_args', mockAgent);
+      const invocationContext = await createInvocationContext('test_mandatory_args', mockAgent);
       const toolContext = new ToolContext(invocationContext, 'test-id');
       const result = await tool.execute({ arg1: 'value1', arg2: 'value2' }, toolContext);
       
@@ -124,7 +124,7 @@ describe('FunctionTool', () => {
       };
       
       const mockAgent = new MockLlmAgent();
-      const invocationContext = createInvocationContext('test_missing_args', mockAgent);
+      const invocationContext = await createInvocationContext('test_missing_args', mockAgent);
       
       // Create a function call event
       const functionCallEvent = new Event({
@@ -193,7 +193,7 @@ describe('FunctionTool', () => {
       };
       
       const mockAgent = new MockLlmAgent();
-      const invocationContext = createInvocationContext('test_multiple_missing_args', mockAgent);
+      const invocationContext = await createInvocationContext('test_multiple_missing_args', mockAgent);
       
       // Create a function call event
       const functionCallEvent = new Event({
@@ -257,7 +257,7 @@ describe('FunctionTool', () => {
       });
       
       const mockAgent = new MockLlmAgent();
-      const invocationContext = createInvocationContext('test_no_required_args', mockAgent);
+      const invocationContext = await createInvocationContext('test_no_required_args', mockAgent);
       const toolContext = new ToolContext(invocationContext, 'test-id');
       const result = await tool.execute({}, toolContext);
       
@@ -288,7 +288,7 @@ describe('FunctionTool', () => {
       });
       
       const mockAgent = new MockLlmAgent();
-      const invocationContext = createInvocationContext('test_empty_required_args', mockAgent);
+      const invocationContext = await createInvocationContext('test_empty_required_args', mockAgent);
       const toolContext = new ToolContext(invocationContext, 'test-id');
       const result = await tool.execute({}, toolContext);
       

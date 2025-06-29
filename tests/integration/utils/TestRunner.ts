@@ -51,7 +51,7 @@ export class TestRunner {
    * @private
    */
   private async _initializeSession(): Promise<void> {
-    const sessionPromise = this.sessionService.createSession({
+    const sessionPromise = await this.sessionService.createSession({
       appName: this.appName,
       userId: this.userId
     });
@@ -73,7 +73,7 @@ export class TestRunner {
     // Make sure previous session is initialized first
     await this.sessionInitialized;
     
-    const sessionPromise = this.sessionService.createSession({
+    const sessionPromise = await this.sessionService.createSession({
       appName: this.appName,
       userId: this.userId,
       sessionId: sessionId
@@ -132,7 +132,7 @@ export class TestRunner {
     // Make sure session is initialized before getting current session
     await this.sessionInitialized;
     
-    const sessionPromise = this.sessionService.getSession({
+    const sessionPromise = await  this.sessionService.getSession({
       appName: this.appName,
       userId: this.userId,
       sessionId: this.currentSessionId

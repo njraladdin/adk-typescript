@@ -221,15 +221,15 @@ describe('CLI Utils', () => {
 
   describe('runInteractively', () => {
     it('should skip blank input, echo once, then exit', async () => {
-      // Mock Runner
-      (global as any).Runner = MockRunner;
-
       const sessionService = new InMemorySessionService();
-      const session = sessionService.createSession({
+      const session = await sessionService.createSession({
         appName: 'dummy',
         userId: 'u',
       });
       const artifactService = new InMemoryArtifactService();
+      // Mock Runner
+      (global as any).Runner = MockRunner;
+
       const rootAgent = new MockAgent('root') as any;
 
       // Mock readline

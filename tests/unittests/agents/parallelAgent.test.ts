@@ -59,11 +59,11 @@ class TestAgent extends BaseAgent {
 /**
  * Helper function to create a parent invocation context for testing
  */
-function createParentInvocationContext(
+async function createParentInvocationContext(
   agent: ParallelAgent
-): InvocationContext {
+): Promise<InvocationContext> {
   const sessionService = new InMemorySessionService();
-  const simpleSession = sessionService.createSession({
+  const simpleSession = await sessionService.createSession({
     appName: 'test_app',
     userId: 'test_user'
   });
@@ -88,7 +88,7 @@ function createParentInvocationContext(
 describe('ParallelAgent', () => {
   test('should return no events when no sub-agents are added', async () => {
     const parallelAgent = new ParallelAgent('test_parallel_agent');
-    const invocationContext = createParentInvocationContext(parallelAgent);
+    const invocationContext = await createParentInvocationContext(parallelAgent);
     
     // Collect all events produced by the parallel agent
     const events: Event[] = [];
@@ -123,7 +123,7 @@ describe('ParallelAgent', () => {
     parallelAgent.addSubAgent(agent2);
     parallelAgent.addSubAgent(agent3);
 
-    const invocationContext = createParentInvocationContext(parallelAgent);
+    const invocationContext = await createParentInvocationContext(parallelAgent);
 
     // Collect all events produced by the parallel agent
     const events: Event[] = [];
@@ -159,7 +159,7 @@ describe('ParallelAgent', () => {
     }
   });
 
-  test('should forward user content to all sub-agents', () => {
+  test('should forward user content to all sub-agents', async () => {
     // Create test agents
     const agent1 = new TestAgent('agent1', {
       role: 'model',
@@ -180,7 +180,7 @@ describe('ParallelAgent', () => {
     const spy1 = jest.spyOn(agent1, 'setUserContent');
     const spy2 = jest.spyOn(agent2, 'setUserContent');
 
-    const invocationContext = createParentInvocationContext(parallelAgent);
+    const invocationContext = await createParentInvocationContext(parallelAgent);
     const userContent: Content = {
       role: 'user',
       parts: [{ text: 'User input' } as Part]

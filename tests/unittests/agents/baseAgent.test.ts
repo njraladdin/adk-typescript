@@ -187,14 +187,14 @@ class TestingAgent extends BaseAgent {
 /**
  * Helper function to create a parent invocation context
  */
-function createParentInvocationContext(
+async function createParentInvocationContext(
   testName: string,
   agent: BaseAgent,
   branch?: string
-): InvocationContext {
+): Promise<InvocationContext> {
   const sessionService = new InMemorySessionService();
   // Use the sessionService to create a session
-  const sessionData = sessionService.createSession({
+  const sessionData = await sessionService.createSession({
     appName: 'test_app',
     userId: 'test_user'
   });
@@ -229,7 +229,7 @@ describe('BaseAgent', () => {
 
   test('should run async and produce events', async () => {
     const agent = new TestingAgent('test_agent');
-    const parentCtx = createParentInvocationContext('test_run_async', agent);
+    const parentCtx = await createParentInvocationContext('test_run_async', agent);
 
     const events: Event[] = [];
     for await (const event of agent.invoke(parentCtx)) {
@@ -245,7 +245,7 @@ describe('BaseAgent', () => {
 
   test('should run async with branch', async () => {
     const agent = new TestingAgent('test_agent');
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_async_with_branch',
       agent,
       'parent_branch'
@@ -266,7 +266,7 @@ describe('BaseAgent', () => {
 
   test('should run live with branch', async () => {
     const agent = new TestingAgent('test_agent');
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_live_with_branch',
       agent,
       'parent_branch'
@@ -292,7 +292,7 @@ describe('BaseAgent', () => {
     const agent = new TestingAgent('test_agent', {
       beforeAgentCallback: beforeAgentCallbackNoop
     });
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_async_before_agent_callback_noop',
       agent
     );
@@ -313,7 +313,7 @@ describe('BaseAgent', () => {
     const agent = new TestingAgent('test_agent', {
       beforeAgentCallback: asyncBeforeAgentCallbackNoop
     });
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_async_before_agent_callback_noop',
       agent
     );
@@ -338,7 +338,7 @@ describe('BaseAgent', () => {
     // Spy on runAsyncImpl to verify it's not called
     const runAsyncSpy = jest.spyOn(agent as any, 'runAsyncImpl');
     
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_async_before_agent_callback_bypass_agent',
       agent
     );
@@ -364,7 +364,7 @@ describe('BaseAgent', () => {
     // Spy on runAsyncImpl to verify it's not called
     const runAsyncSpy = jest.spyOn(agent as any, 'runAsyncImpl');
     
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_async_before_agent_callback_bypass_agent',
       agent
     );
@@ -386,7 +386,7 @@ describe('BaseAgent', () => {
     const agent = new TestingAgent('test_agent', {
       afterAgentCallback: afterAgentCallbackNoop
     });
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await   createParentInvocationContext(
       'test_run_async_after_agent_callback_noop',
       agent
     );
@@ -403,7 +403,7 @@ describe('BaseAgent', () => {
     const agent = new TestingAgent('test_agent', {
       afterAgentCallback: asyncAfterAgentCallbackNoop
     });
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_async_after_agent_callback_noop',
       agent
     );
@@ -421,7 +421,7 @@ describe('BaseAgent', () => {
       afterAgentCallback: afterAgentCallbackAppendAgentReply
     });
     
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_async_after_agent_callback_append_reply',
       agent
     );
@@ -448,7 +448,7 @@ describe('BaseAgent', () => {
       afterAgentCallback: asyncAfterAgentCallbackAppendAgentReply
     });
     
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_async_after_agent_callback_append_reply',
       agent
     );
@@ -472,7 +472,7 @@ describe('BaseAgent', () => {
 
   test('should throw error for incomplete agent', async () => {
     const agent = new IncompleteAgent('incomplete_agent');
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await createParentInvocationContext(
       'test_run_async_incomplete_agent',
       agent
     );
@@ -486,7 +486,7 @@ describe('BaseAgent', () => {
 
   test('should throw error for incomplete agent in live mode', async () => {
     const agent = new IncompleteAgent('incomplete_agent');
-    const parentCtx = createParentInvocationContext(
+    const parentCtx = await   createParentInvocationContext(
       'test_run_live_incomplete_agent',
       agent
     );

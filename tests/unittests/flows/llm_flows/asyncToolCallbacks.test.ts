@@ -41,13 +41,13 @@ class TestAgent implements Partial<LlmAgent> {
 /**
  * Helper function to create an invocation context for testing
  */
-function createInvocationContext(
+async function createInvocationContext(
   testName: string,
   agent: any
-): InvocationContext {
+): Promise<InvocationContext> {
   const sessionService = new InMemorySessionService();
   // Use the sessionService to create a session
-  const sessionData = sessionService.createSession({
+  const sessionData = await sessionService.createSession({
     appName: 'test_app',
     userId: 'test_user'
   });
@@ -90,7 +90,7 @@ async function invokeToolWithCallbacks(
   const agent = new TestAgent('test_agent', beforeCallback, afterCallback);
 
   // Create invocation context
-  const invocationContext = createInvocationContext('test_callbacks', agent);
+  const invocationContext = await createInvocationContext('test_callbacks', agent);
 
   // Create a function call event
   const functionCallEvent = new Event({

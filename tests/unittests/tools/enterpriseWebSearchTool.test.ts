@@ -10,9 +10,9 @@ import { State } from '../../../src/sessions';
 /**
  * Helper function to create a tool context for testing
  */
-function createToolContext(): ToolContext {
+async function createToolContext(): Promise<ToolContext>   {
   const sessionService = new InMemorySessionService();
-  const sessionData = sessionService.createSession({
+  const sessionData = await sessionService.createSession({
     appName: 'test_app',
     userId: 'test_user'
   });
@@ -54,7 +54,7 @@ describe('EnterpriseWebSearchTool', () => {
 
   describe('processLlmRequest', () => {
     test('should add enterprise web search to Gemini 2.x model', async () => {
-      const toolContext = createToolContext();
+      const toolContext = await createToolContext();
       const llmRequest = new LlmRequest();
       llmRequest.model = 'gemini-2.0-flash-thinking-exp';
 
@@ -72,7 +72,7 @@ describe('EnterpriseWebSearchTool', () => {
     });
 
     test('should add enterprise web search to Gemini 1.x model when no other tools', async () => {
-      const toolContext = createToolContext();
+      const toolContext = await createToolContext();
       const llmRequest = new LlmRequest();
       llmRequest.model = 'gemini-1.5-flash';
 
@@ -90,7 +90,7 @@ describe('EnterpriseWebSearchTool', () => {
     });
 
     test('should throw error for Gemini 1.x model with existing tools', async () => {
-      const toolContext = createToolContext();
+      const toolContext = await createToolContext();
       const llmRequest = new LlmRequest();
       llmRequest.model = 'gemini-1.5-flash';
       llmRequest.config = {
@@ -104,7 +104,7 @@ describe('EnterpriseWebSearchTool', () => {
     });
 
     test('should throw error for non-Gemini model', async () => {
-      const toolContext = createToolContext();
+      const toolContext = await createToolContext();
       const llmRequest = new LlmRequest();
       llmRequest.model = 'gpt-4';
 
@@ -115,7 +115,7 @@ describe('EnterpriseWebSearchTool', () => {
     });
 
     test('should throw error for empty model', async () => {
-      const toolContext = createToolContext();
+      const toolContext = await createToolContext();
       const llmRequest = new LlmRequest();
       llmRequest.model = '';
 
@@ -126,7 +126,7 @@ describe('EnterpriseWebSearchTool', () => {
     });
 
     test('should work with existing config and tools array', async () => {
-      const toolContext = createToolContext();
+      const toolContext = await createToolContext();
       const llmRequest = new LlmRequest();
       llmRequest.model = 'gemini-2.0-flash';
       llmRequest.config = {
@@ -147,7 +147,7 @@ describe('EnterpriseWebSearchTool', () => {
 
   describe('execute', () => {
     test('should return error message when executed directly', async () => {
-      const toolContext = createToolContext();
+      const toolContext = await     createToolContext();
       const params = {};
 
       const result = await tool.execute(params, toolContext);
