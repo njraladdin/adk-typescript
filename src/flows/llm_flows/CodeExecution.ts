@@ -18,7 +18,7 @@ import {
   File 
 } from '../../code-executors/CodeExecutionUtils';
 import { CodeExecutorContext } from '../../code-executors/CodeExecutorContext';
-import { GeminiCodeExecutor } from '../../code-executors/GeminiCodeExecutor';
+import { BuiltInCodeExecutor } from '../../code-executors/BuiltInCodeExecutor';
 import { LlmAgent } from '../../agents/LlmAgent';
 import { BaseLlmRequestProcessor, BaseLlmResponseProcessor } from './BaseLlmProcessor';
 
@@ -192,7 +192,7 @@ async function* runPreProcessor(
     return;
   }
 
-  if (codeExecutor instanceof GeminiCodeExecutor) {
+  if (codeExecutor instanceof BuiltInCodeExecutor) {
     codeExecutor.processLlmRequest(llmRequest);
     return;
   }
@@ -306,7 +306,7 @@ async function* runPostProcessor(
     return;
   }
 
-  if (codeExecutor instanceof GeminiCodeExecutor) {
+  if (codeExecutor instanceof BuiltInCodeExecutor) {
     return;
   }
 

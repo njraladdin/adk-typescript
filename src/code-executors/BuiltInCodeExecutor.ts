@@ -20,12 +20,13 @@ import { Tool } from '../models/types';
 import { BaseCodeExecutor } from './BaseCodeExecutor';
 import { CodeExecutionInput, CodeExecutionResult } from './CodeExecutionUtils';
 
-
-
 /**
- * A code executor for Gemini 2.0+ models to execute code.
+ * A code executor that uses the Model's built-in code executor.
+ * 
+ * Currently only supports Gemini 2.0+ models, but will be expanded to
+ * other models.
  */
-export class GeminiCodeExecutor extends BaseCodeExecutor {
+export class BuiltInCodeExecutor extends BaseCodeExecutor {
   /**
    * Executes code and returns the code execution result.
    * 
@@ -37,7 +38,7 @@ export class GeminiCodeExecutor extends BaseCodeExecutor {
     invocationContext: InvocationContext,
     codeExecutionInput: CodeExecutionInput
   ): Promise<CodeExecutionResult> {
-    // Implementation placeholder - the actual execution will be handled by Gemini 2.0+
+    // Implementation placeholder - the actual execution will be handled by the model's built-in executor
     throw new Error('Method not implemented');
   }
 

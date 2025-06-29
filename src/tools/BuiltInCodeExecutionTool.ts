@@ -8,6 +8,8 @@ import { ToolContext } from './ToolContext';
  * 
  * This tool operates internally within the model and does not require or perform
  * local code execution.
+ * 
+ * @deprecated No longer supported. Please use the new BuiltInCodeExecutor instead.
  */
 export class BuiltInCodeExecutionTool extends BaseTool {
   /**
@@ -35,6 +37,10 @@ export class BuiltInCodeExecutionTool extends BaseTool {
     toolContext: ToolContext, 
     llmRequest: any 
   }): Promise<void> {
+    console.warn(
+      'BuiltInCodeExecutionTool is deprecated. Please use the new BuiltInCodeExecutor instead.'
+    );
+    
     // Ensure the model is Gemini 2.x
     const model = llmRequest.model || '';
     

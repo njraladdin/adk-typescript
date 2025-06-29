@@ -1,6 +1,6 @@
 import { BaseCodeExecutor } from './BaseCodeExecutor';
+import { BuiltInCodeExecutor } from './BuiltInCodeExecutor';
 import { CodeExecutorContext } from './CodeExecutorContext';
-import { GeminiCodeExecutor } from './GeminiCodeExecutor';
 import { UnsafeLocalCodeExecutor } from './UnsafeLocalCodeExecutor';
 import { 
   CodeExecutionInput, 
@@ -13,8 +13,8 @@ import { VertexAiCodeExecutor, VertexAiCodeExecutorOptions } from './VertexAiCod
 // Export all components
 export {
   BaseCodeExecutor,
+  BuiltInCodeExecutor,
   CodeExecutorContext,
-  GeminiCodeExecutor,
   UnsafeLocalCodeExecutor,
   VertexAiCodeExecutor,
   CodeExecutionInput,
