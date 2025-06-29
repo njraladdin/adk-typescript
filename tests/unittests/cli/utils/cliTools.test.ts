@@ -246,13 +246,29 @@ describe('CLI Tools', () => {
     });
 
     it('should execute evaluation successfully with stub module', async () => {
+      // Create stub eval sets manager module
+      const stubEvalSetsManagerModule = {
+        EvalCase: class {
+          constructor(public evalId: string) {}
+        },
+        EvalSet: class {
+          constructor(public evalCases: any[]) {}
+        },
+        loadEvalSetFromFile: function(x: any, y: any) {
+          return new this.EvalSet([
+            new this.EvalCase('e1'),
+            new this.EvalCase('e2')
+          ]);
+        },
+      };
+
       // Create a stub eval module for testing
       const stubEvalModule = {
         EvalMetric: class {
           constructor(public metricName: string, public threshold: number) {}
         },
-        EvalResult: class {
-          constructor(public evalSetFile: string, public finalEvalStatus: string) {}
+        EvalCaseResult: class {
+          constructor(public evalSetId: string, public finalEvalStatus: string) {}
         },
         EvalStatus: {
           PASSED: 'PASSED',
@@ -263,13 +279,14 @@ describe('CLI Tools', () => {
         tryGetResetFunc: () => null,
         parseAndGetEvalsToRun: () => ({ 'set1.json': ['e1', 'e2'] }),
         runEvals: async function* () {
-          yield new this.EvalResult('set1.json', 'PASSED');
-          yield new this.EvalResult('set1.json', 'FAILED');
+          yield new this.EvalCaseResult('set1.json', 'PASSED');
+          yield new this.EvalCaseResult('set1.json', 'FAILED');
         },
       };
 
-      // Mock the eval module
+      // Mock the eval module and eval sets manager module
       jest.doMock('../../../../src/cli/cliEval', () => stubEvalModule, { virtual: true });
+      jest.doMock('../../../../src/evaluation/localEvalSetsManager', () => stubEvalSetsManagerModule, { virtual: true });
 
       // Create dummy agent directory
       const agentDir = path.join(tmpDir, 'agent5');
@@ -279,19 +296,19 @@ describe('CLI Tools', () => {
       // Mock envs.loadDotenvForAgent
       jest.spyOn(envs, 'loadDotenvForAgent').mockImplementation(() => {});
 
-             // Test that eval functions can be imported and used
-       const evalModule = require('../../../../src/cli/cliEval');
-       expect(evalModule.EvalStatus.PASSED).toBe('PASSED');
-       expect(evalModule.EvalStatus.FAILED).toBe('FAILED');
+      // Test that eval functions can be imported and used
+      const evalModule = require('../../../../src/cli/cliEval');
+      expect(evalModule.EvalStatus.PASSED).toBe('PASSED');
+      expect(evalModule.EvalStatus.FAILED).toBe('FAILED');
 
-       const results: any[] = [];
-       for await (const result of evalModule.runEvals({})) {
-         results.push(result);
-       }
+      const results: any[] = [];
+      for await (const result of evalModule.runEvals({})) {
+        results.push(result);
+      }
 
-       expect(results).toHaveLength(2);
-       expect(results[0].finalEvalStatus).toBe('PASSED');
-       expect(results[1].finalEvalStatus).toBe('FAILED');
+      expect(results).toHaveLength(2);
+      expect(results[0].finalEvalStatus).toBe('PASSED');
+      expect(results[1].finalEvalStatus).toBe('FAILED');
     });
   });
 
