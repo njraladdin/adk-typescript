@@ -634,12 +634,12 @@ export class LlmAgent extends BaseAgent {
   ): Promise<Record<string, any> | undefined> {
     const callbacks = this.canonicalAfterToolCallbacks;
     if (callbacks.length === 0) return undefined;
-    
+
     let result: Record<string, any> | undefined = response;
     for (const callback of callbacks) {
       const callbackResult = await callback(tool, args, toolContext, result);
       if (callbackResult !== undefined) {
-        return callbackResult;
+        result = callbackResult;
       }
     }
     return result;
