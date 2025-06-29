@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { FunctionTool } from './FunctionTool';
 
+export type AuthTokenGetters = Record<string, () => string>;
+export type BoundParams = Record<string, any | (() => any)>;
+
 /**
  * Interface for a Toolbox client
  */
@@ -9,13 +12,23 @@ export interface ToolboxClient {
    * Load a tool from the Toolbox server
    * @param toolName The name of the tool to load
    */
-  loadTool(toolName: string): Promise<any>;
+  loadTool(
+    toolName: string,
+    auth_token_getters?: AuthTokenGetters,
+    bound_params?: BoundParams,
+  ): Promise<any>;
   
   /**
    * Load a set of tools from the Toolbox server
    * @param toolsetName The name of the toolset to load
    */
-  loadToolset(toolsetName: string): Promise<any[]>;
+  loadToolset(
+    toolsetName: string,
+    auth_token_getters?: AuthTokenGetters,
+    bound_params?: BoundParams,
+  ): Promise<any[]>;
+
+  close?(): Promise<void>;
 }
 
 /**
@@ -40,7 +53,11 @@ export class SimpleToolboxClient implements ToolboxClient {
    * @param toolName The name of the tool to load
    * @returns The loaded tool
    */
-  async loadTool(toolName: string): Promise<any> {
+  async loadTool(
+    toolName: string,
+    auth_token_getters?: AuthTokenGetters,
+    bound_params?: BoundParams,
+  ): Promise<any> {
     const response = await axios.get(`${this.baseUrl}tools/${toolName}`);
     return response.data;
   }
@@ -50,7 +67,11 @@ export class SimpleToolboxClient implements ToolboxClient {
    * @param toolsetName The name of the toolset to load
    * @returns The loaded tools
    */
-  async loadToolset(toolsetName: string): Promise<any[]> {
+  async loadToolset(
+    toolsetName: string,
+    auth_token_getters?: AuthTokenGetters,
+    bound_params?: BoundParams,
+  ): Promise<any[]> {
     const response = await axios.get(`${this.baseUrl}toolsets/${toolsetName}`);
     return response.data;
   }
