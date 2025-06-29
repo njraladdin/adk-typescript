@@ -23,29 +23,8 @@ import { RestApiTool } from '../openapi-tool/openapi-spec-parser/RestApiTool';
 import { OpenApiSpecParser } from '../openapi-tool/openapi-spec-parser/OpenApiSpecParser';
 import { IntegrationClient } from './IntegrationClient';
 import { ConnectionsClient } from './ConnectionsClient';
-
-/**
- * Mock of AuthCredential for the tests
- * This is a simplified implementation for testing
- */
-interface ServiceAccountCredential {
-  clientEmail: string;
-  privateKey: string;
-  privateKeyId: string;
-}
-
-interface ServiceAccount {
-  serviceAccountCredential?: ServiceAccountCredential;
-  useDefaultCredential?: boolean;
-}
-
-/**
- * Mock AuthCredential to avoid importing the real one which may have dependencies
- */
-class AuthCredential {
-  authType: string = 'oauth2';
-  serviceAccount: ServiceAccount = {};
-}
+import { AuthCredential, AuthCredentialTypes } from '../../auth/AuthCredential';
+import { AuthScheme } from '../openapi-tool/auth/AuthTypes';
 
 /**
  * Options for creating an ApplicationIntegrationToolset
@@ -91,6 +70,16 @@ export interface ApplicationIntegrationToolsetOptions {
    */
   serviceAccountJson?: string;
   
+  /**
+   * Auth scheme
+   */
+  authScheme?: AuthScheme;
+
+  /**
+   * Auth credential
+   */
+  authCredential?: AuthCredential;
+
   /**
    * Tool filter
    */
@@ -249,26 +238,33 @@ export class ApplicationIntegrationToolset extends BaseToolset {
    * @returns Auth credential
    */
   private createAuthCredential(serviceAccountJson?: string): AuthCredential {
-    const authCredential = new AuthCredential();
-    
-    if (serviceAccountJson) {
-      // Parse service account JSON
-      const serviceAccount = JSON.parse(serviceAccountJson);
-      authCredential.serviceAccount = {
-        serviceAccountCredential: {
-          clientEmail: serviceAccount.client_email,
-          privateKey: serviceAccount.private_key,
-          privateKeyId: serviceAccount.private_key_id,
-        }
-      };
-    } else {
-      // Use default credentials
-      authCredential.serviceAccount = {
-        useDefaultCredential: true
-      };
-    }
-    
-    return authCredential;
+    const serviceAccountJsonParsed = serviceAccountJson
+      ? JSON.parse(serviceAccountJson)
+      : {};
+
+    return {
+      auth_type: AuthCredentialTypes.SERVICE_ACCOUNT,
+      service_account: {
+        ...(serviceAccountJson && {
+          service_account_credential: {
+            type: serviceAccountJsonParsed.type,
+            project_id: serviceAccountJsonParsed.project_id,
+            private_key_id: serviceAccountJsonParsed.private_key_id,
+            private_key: serviceAccountJsonParsed.private_key,
+            client_email: serviceAccountJsonParsed.client_email,
+            client_id: serviceAccountJsonParsed.client_id,
+            auth_uri: serviceAccountJsonParsed.auth_uri,
+            token_uri: serviceAccountJsonParsed.token_uri,
+            auth_provider_x509_cert_url:
+              serviceAccountJsonParsed.auth_provider_x509_cert_url,
+            client_x509_cert_url: serviceAccountJsonParsed.client_x509_cert_url,
+            universe_domain: serviceAccountJsonParsed.universe_domain,
+          },
+        }),
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        ...(!serviceAccountJson && { use_default_credential: true }),
+      },
+    };
   }
 
   /**
@@ -297,6 +293,21 @@ export class ApplicationIntegrationToolset extends BaseToolset {
     // For connection case - create a single tool
     const operations = new OpenApiSpecParser().parse(specDict);
     
+    const authOverrideEnabled = connectionDetails.authOverrideEnabled ?? false;
+    let connectorAuthScheme: AuthScheme | undefined;
+    let connectorAuthCredential: AuthCredential | undefined;
+
+    if (options.authScheme && options.authCredential && !authOverrideEnabled) {
+      // Case: Auth provided, but override is OFF. Don't use provided auth.
+      console.warn(
+        'Authentication schema and credentials are not used because' +
+        ' authOverrideEnabled is not enabled in the connection.'
+      );
+    } else {
+      connectorAuthScheme = options.authScheme;
+      connectorAuthCredential = options.authCredential;
+    }
+
     for (const openApiOperation of operations) {
       const operation = (openApiOperation.operation as any)['x-operation'];
       let entity: string | undefined;
@@ -324,7 +335,9 @@ export class ApplicationIntegrationToolset extends BaseToolset {
         entity || '',
         operation || '',
         action || '',
-        restApiTool as any
+        restApiTool as any,
+        connectorAuthScheme,
+        connectorAuthCredential,
       );
       
       // Only create one tool for the connection case

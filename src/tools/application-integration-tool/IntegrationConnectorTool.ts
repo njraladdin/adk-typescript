@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+import { AuthCredential } from '../../auth/AuthCredential';
 import { BaseTool, FunctionDeclaration } from '../BaseTool';
 import { ToolContext } from '../ToolContext';
+import { AuthScheme } from '../openapi-tool/auth/AuthTypes';
 import { RestApiTool } from '../openapi-tool/openapi-spec-parser/RestApiTool';
+import { ToolAuthHandler } from '../openapi-tool/openapi-spec-parser/ToolAuthHandler';
 
 /**
  * A tool that wraps a RestApiTool to interact with a specific Application Integration endpoint.
@@ -46,6 +49,7 @@ export class IntegrationConnectorTool extends BaseTool {
     'entity',
     'operation',
     'action',
+    'dynamic_auth_config',
   ];
 
   /** Optional fields that should not be required */
@@ -76,6 +80,9 @@ export class IntegrationConnectorTool extends BaseTool {
   /** The REST API tool that handles the underlying API communication */
   private readonly restApiTool: RestApiTool;
 
+  private readonly authScheme?: AuthScheme;
+  private readonly authCredential?: AuthCredential;
+
   /**
    * Initializes the IntegrationConnectorTool.
    *
@@ -104,7 +111,9 @@ export class IntegrationConnectorTool extends BaseTool {
     entity: string,
     operation: string,
     action: string,
-    restApiTool: RestApiTool
+    restApiTool: RestApiTool,
+    authScheme?: AuthScheme,
+    authCredential?: AuthCredential,
   ) {
     // Gemini restricts the length of function name to be less than 64 characters
     super({
@@ -120,6 +129,8 @@ export class IntegrationConnectorTool extends BaseTool {
     this.operation = operation;
     this.action = action;
     this.restApiTool = restApiTool;
+    this.authScheme = authScheme;
+    this.authCredential = authCredential;
   }
 
   /**
@@ -161,6 +172,18 @@ export class IntegrationConnectorTool extends BaseTool {
     };
   }
 
+  private prepareDynamicEuc(authCredential: AuthCredential): string | undefined {
+    if (
+      authCredential &&
+      authCredential.http &&
+      authCredential.http.credentials &&
+      authCredential.http.credentials.token
+    ) {
+      return authCredential.http.credentials.token;
+    }
+    return undefined;
+  }
+
   /**
    * Executes the tool with the provided arguments.
    * @param args The arguments for the tool
@@ -168,6 +191,33 @@ export class IntegrationConnectorTool extends BaseTool {
    * @returns The result of the tool execution
    */
   public async execute(args: Record<string, any>, context: ToolContext): Promise<any> {
+    const toolAuthHandler = ToolAuthHandler.fromToolContext(
+      context,
+      this.authScheme,
+      this.authCredential,
+    );
+    const authResult = await toolAuthHandler.prepareAuthCredentials();
+
+    if (authResult.state === 'pending') {
+      return {
+        pending: true,
+        message: 'Needs your authorization to access your data.',
+      };
+    }
+
+    if (authResult.authCredential) {
+      const authCredentialToken = this.prepareDynamicEuc(
+        authResult.authCredential,
+      );
+      if (authCredentialToken) {
+        args['dynamic_auth_config'] = {
+          'oauth2_auth_code_flow.access_token': authCredentialToken,
+        };
+      } else {
+        args['dynamic_auth_config'] = {'oauth2_auth_code_flow.access_token': {}};
+      }
+    }
+
     // Add connection and context information to the arguments
     const enrichedArgs = {
       ...args,
