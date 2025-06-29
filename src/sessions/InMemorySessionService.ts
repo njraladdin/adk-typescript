@@ -227,7 +227,7 @@ export class InMemorySessionService extends BaseSessionService {
     userId: string;
     sessionId: string;
   }): ListEventsResponse {
-    const session = this.getSession(options);
+    const session = this._getSessionImpl(options);
     if (!session) {
       return { events: [] };
     }
