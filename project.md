@@ -24,8 +24,9 @@ TODO:
 - publish as npm package and create github release, done 
 - test quickstart doc examples, done  
 - create simple agent that would detect commits on the original python project and create issues on the github repo, done 
+- get project up to date with v0.5.0, done 
 
 
-- get project up to date with v0.5.0
-- update readme to mention this is maintaned by AI agent 
+- get project up to date with v1.0.1
 
+- make it run globally 
