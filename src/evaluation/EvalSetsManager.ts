@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import { EvalCase } from './EvalCase';
+import { EvalSet } from './EvalSet';
+
 /**
  * An interface to manage Eval Sets.
  */
@@ -21,7 +24,7 @@ export abstract class EvalSetsManager {
   /**
    * Returns an EvalSet identified by an app_name and eval_set_id.
    */
-  abstract getEvalSet(appName: string, evalSetId: string): any;
+  abstract getEvalSet(appName: string, evalSetId: string): EvalSet;
 
   /**
    * Creates an empty EvalSet given the app_name and eval_set_id.
@@ -36,5 +39,5 @@ export abstract class EvalSetsManager {
   /**
    * Adds the given EvalCase to an existing EvalSet identified by app_name and eval_set_id.
    */
-  abstract addEvalCase(appName: string, evalSetId: string, evalCase: any): void;
+  abstract addEvalCase(appName: string, evalSetId: string, evalCase: EvalCase): void;
 } 

@@ -16,9 +16,91 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { EvalSetsManager } from './EvalSetsManager';
+import { EvalSet, createEvalSet } from './EvalSet';
+import { EvalCase, Invocation, IntermediateData, SessionInput, createInvocation, createIntermediateData, createSessionInput } from './EvalCase';
+import { Content, Part, FunctionCall } from '../models/types';
 
 const EVAL_SET_FILE_EXTENSION = '.evalset.json';
+
+/**
+ * Converts an invocation from old JSON format to new Pydantic Schema
+ */
+function convertInvocationToPydanticSchema(invocationInJsonFormat: any): Invocation {
+  const query = invocationInJsonFormat.query;
+  const reference = invocationInJsonFormat.reference;
+  const expectedToolUse: FunctionCall[] = [];
+  const expectedIntermediateAgentResponses: [string, Part[]][] = [];
+
+  for (const oldToolUse of invocationInJsonFormat.expected_tool_use || []) {
+    expectedToolUse.push({
+      name: oldToolUse.tool_name,
+      args: oldToolUse.tool_input
+    });
+  }
+
+  for (const oldIntermediateResponse of invocationInJsonFormat.expected_intermediate_agent_responses || []) {
+    expectedIntermediateAgentResponses.push([
+      oldIntermediateResponse.author,
+      [{ text: oldIntermediateResponse.text }]
+    ]);
+  }
+
+  return createInvocation(
+    uuidv4(),
+    {
+      parts: [{ text: query }],
+      role: 'user'
+    } as Content,
+    {
+      finalResponse: {
+        parts: [{ text: reference }],
+        role: 'model'
+      } as Content,
+      intermediateData: createIntermediateData({
+        toolUses: expectedToolUse,
+        intermediateResponses: expectedIntermediateAgentResponses
+      }),
+      creationTimestamp: Date.now() / 1000
+    }
+  );
+}
+
+/**
+ * Converts an eval set from old JSON format to new Pydantic Schema
+ */
+function convertEvalSetToPydanticSchema(evalSetId: string, evalSetInJsonFormat: any[]): EvalSet {
+  const evalCases: EvalCase[] = [];
+  
+  for (const oldEvalCase of evalSetInJsonFormat) {
+    const newInvocations: Invocation[] = [];
+
+    for (const oldInvocation of oldEvalCase.data || []) {
+      newInvocations.push(convertInvocationToPydanticSchema(oldInvocation));
+    }
+
+    const newEvalCase: EvalCase = {
+      evalId: oldEvalCase.name,
+      conversation: newInvocations,
+      sessionInput: createSessionInput(
+        oldEvalCase.initial_session?.app_name || '',
+        oldEvalCase.initial_session?.user_id || '',
+        {
+          state: oldEvalCase.initial_session?.state || {}
+        }
+      ),
+      creationTimestamp: Date.now() / 1000
+    };
+    evalCases.push(newEvalCase);
+  }
+
+  return createEvalSet(evalSetId, {
+    name: evalSetId,
+    evalCases: evalCases,
+    creationTimestamp: Date.now() / 1000
+  });
+}
 
 /**
  * An EvalSets manager that stores eval sets locally on disk.
@@ -34,11 +116,36 @@ export class LocalEvalSetsManager extends EvalSetsManager {
   /**
    * Returns an EvalSet identified by an app_name and eval_set_id.
    */
-  getEvalSet(appName: string, evalSetId: string): any {
+  getEvalSet(appName: string, evalSetId: string): EvalSet {
     // Load the eval set file data
     const evalSetFilePath = this.getEvalSetFilePath(appName, evalSetId);
     const fileContent = fs.readFileSync(evalSetFilePath, 'utf-8');
-    return JSON.parse(fileContent); // Load JSON into a list
+    
+    try {
+      // Try to parse as new format first
+      const parsedContent = JSON.parse(fileContent);
+      
+      // Check if it's already in the new format (has evalSetId property)
+      if (parsedContent.evalSetId) {
+        return parsedContent as EvalSet;
+      }
+      
+      // If it's an array, it's the old format
+      if (Array.isArray(parsedContent)) {
+        return convertEvalSetToPydanticSchema(evalSetId, parsedContent);
+      }
+      
+      // If it has evalCases property, it's the new format
+      if (parsedContent.evalCases) {
+        return parsedContent as EvalSet;
+      }
+      
+      // Fallback to old format conversion
+      return convertEvalSetToPydanticSchema(evalSetId, parsedContent);
+    } catch (error) {
+      console.error('Error parsing eval set file:', error);
+      throw new Error(`Failed to parse eval set file: ${evalSetFilePath}`);
+    }
   }
 
   /**
@@ -55,8 +162,12 @@ export class LocalEvalSetsManager extends EvalSetsManager {
     if (!fs.existsSync(newEvalSetPath)) {
       // Write the JSON string to the file
       console.log("Eval set file doesn't exist, we will create a new one.");
-      const emptyContent = JSON.stringify([], null, 2);
-      fs.writeFileSync(newEvalSetPath, emptyContent);
+      const newEvalSet = createEvalSet(evalSetId, {
+        name: evalSetId,
+        evalCases: [],
+        creationTimestamp: Date.now() / 1000
+      });
+      this.writeEvalSet(newEvalSetPath, newEvalSet);
     }
   }
 
@@ -86,24 +197,22 @@ export class LocalEvalSetsManager extends EvalSetsManager {
   /**
    * Adds the given EvalCase to an existing EvalSet identified by app_name and eval_set_id.
    */
-  addEvalCase(appName: string, evalSetId: string, evalCase: any): void {
-    const evalCaseId = evalCase.name;
+  addEvalCase(appName: string, evalSetId: string, evalCase: EvalCase): void {
+    const evalCaseId = evalCase.evalId;
     this.validateId('Eval Case Id', evalCaseId);
 
-    // Load the eval set file data
-    const evalSetFilePath = this.getEvalSetFilePath(appName, evalSetId);
-    const fileContent = fs.readFileSync(evalSetFilePath, 'utf-8');
-    const evalSetData = JSON.parse(fileContent); // Load JSON into a list
+    const evalSet = this.getEvalSet(appName, evalSetId);
 
-    if (evalSetData.some((x: any) => x.name === evalCaseId)) {
+    if (evalSet.evalCases.some(x => x.evalId === evalCaseId)) {
       throw new Error(
         `Eval id \`${evalCaseId}\` already exists in \`${evalSetId}\` eval set.`
       );
     }
 
-    evalSetData.push(evalCase);
-    // Serialize the test data to JSON and write to the eval set file.
-    fs.writeFileSync(evalSetFilePath, JSON.stringify(evalSetData, null, 2));
+    evalSet.evalCases.push(evalCase);
+
+    const evalSetFilePath = this.getEvalSetFilePath(appName, evalSetId);
+    this.writeEvalSet(evalSetFilePath, evalSet);
   }
 
   private getEvalSetFilePath(appName: string, evalSetId: string): string {
@@ -121,5 +230,9 @@ export class LocalEvalSetsManager extends EvalSetsManager {
         `Invalid ${idName}. ${idName} should have the ${pattern} format`
       );
     }
+  }
+
+  private writeEvalSet(evalSetPath: string, evalSet: EvalSet): void {
+    fs.writeFileSync(evalSetPath, JSON.stringify(evalSet, null, 2));
   }
 } 

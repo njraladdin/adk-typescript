@@ -40,7 +40,7 @@ def get_file_diff(commit_hash, file_path):
         return None
 
 def main():
-    commit_hash = "293f406148486e25ade4ddcf4f5b3c28ecdaf168"
+    commit_hash = "2cb74dd20e9e91c7f98f0fcfdd58261ea43f0907"
     output_file = "test.txt"
 
     try:

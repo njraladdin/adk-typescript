@@ -61,7 +61,7 @@ export interface Invocation {
    * For a multi-agent system, it is also helpful to inspect the route that
    * the agent took to generate final response.
    */
-  intermediateData: IntermediateData;
+  intermediateData?: IntermediateData;
 
   /**
    * Timestamp for the current invocation, primarily intended for debugging purposes.
@@ -108,7 +108,7 @@ export interface EvalCase {
    * It is common for Agents state to be initialized to some initial/default value,
    * for example, your agent may need to know today's date.
    */
-  sessionInput: SessionInput;
+  sessionInput?: SessionInput;
 
   /**
    * The time at which this eval case was created.
@@ -140,7 +140,6 @@ export function createInvocation(
   return {
     invocationId,
     userContent,
-    intermediateData: createIntermediateData(),
     creationTimestamp: Date.now() / 1000, // Convert to seconds to match Python timestamp format
     ...overrides
   };
@@ -167,12 +166,10 @@ export function createSessionInput(
  */
 export function createEvalCase(
   evalId: string,
-  sessionInput: SessionInput,
-  overrides: Partial<Omit<EvalCase, 'evalId' | 'sessionInput'>> = {}
+  overrides: Partial<Omit<EvalCase, 'evalId'>> = {}
 ): EvalCase {
   return {
     evalId,
-    sessionInput,
     conversation: [],
     creationTimestamp: Date.now() / 1000, // Convert to seconds to match Python timestamp format
     ...overrides

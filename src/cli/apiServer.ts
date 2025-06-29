@@ -16,9 +16,11 @@ import { InMemorySessionService } from '../sessions/InMemorySessionService';
 import { Runner } from '../runners';
 import { Content } from '../models/types';
 import { SessionInterface as Session } from '../sessions/types';
-import { createEmptyState, loadDotenvForAgent, convertSessionToEvalFormat } from './utils';
+import { createEmptyState, loadDotenvForAgent } from './utils';
+import { convertSessionToEvalInvocations } from './utils/evals';
 import { v4 as uuidv4 } from 'uuid';
 import { LocalEvalSetsManager } from '../evaluation/LocalEvalSetsManager';
+import { EvalCase } from '../evaluation/EvalCase';
 
 // Fix for the Event type conflict - import directly from events directory
 import { Event as RunnerEvent } from '../events/Event';
@@ -588,25 +590,26 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
         return res.status(404).json({ error: 'Session not found' });
       }
       
-      // Convert the session data to evaluation format
-      const testData = convertSessionToEvalFormat(session);
+      // Convert the session data to eval invocations
+      const invocations = convertSessionToEvalInvocations(session);
       
       // Populate the session with initial session state
       const rootAgent = await getRootAgent(appName);
       const initialSessionState = createEmptyState(rootAgent);
       
-      const evalCase = {
-        name: requestData.evalId,
-        data: testData,
-        initial_session: {
-          state: initialSessionState,
-          app_name: appName,
-          user_id: requestData.userId
-        }
+      const newEvalCase: EvalCase = {
+        evalId: requestData.evalId,
+        conversation: invocations,
+        sessionInput: {
+          appName: appName,
+          userId: requestData.userId,
+          state: initialSessionState
+        },
+        creationTimestamp: Date.now() / 1000
       };
       
       try {
-        evalSetsManager.addEvalCase(appName, evalSetId, evalCase);
+        evalSetsManager.addEvalCase(appName, evalSetId, newEvalCase);
         res.status(201).send();
       } catch (error) {
         if (error instanceof Error) {
@@ -626,7 +629,7 @@ export function createApiServer(options: ApiServerOptions): { app: express.Appli
     
     try {
       const evalSetData = evalSetsManager.getEvalSet(appName, evalSetId);
-      const evalNames = evalSetData.map((x: any) => x.name).sort();
+      const evalNames = evalSetData.evalCases.map(x => x.evalId).sort();
       res.json(evalNames);
     } catch (error) {
       console.error('Error listing evals in eval set:', error);
