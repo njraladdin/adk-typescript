@@ -79,6 +79,21 @@ export class MCPToolset extends BaseToolset {
   }
 
   /**
+   * Checks if a tool should be selected based on the tool filter.
+   */
+  private _isSelected(tool: BaseTool, readonlyContext?: ReadonlyContext): boolean {
+    if (this.toolFilter === undefined) {
+      return true;
+    }
+    if (typeof this.toolFilter === 'function') {
+      return this.toolFilter(tool, readonlyContext);
+    } else if (Array.isArray(this.toolFilter)) {
+      return this.toolFilter.includes(tool.name);
+    }
+    return false;
+  }
+
+  /**
    * Loads all tools from the MCP Server.
    * @param readonlyContext Context used to filter tools available to the agent.
    *   If undefined, all tools in the toolset are returned.
@@ -91,33 +106,17 @@ export class MCPToolset extends BaseToolset {
     }
     
     const toolsResponse = await this.session!.listTools();
-    
-    return toolsResponse.tools
-      .filter(tool => {
-        if (this.toolFilter === undefined) {
-          return true;
-        }
-        
-        const mcpTool = new MCPTool({
-          mcpTool: tool,
-          mcpSession: this.session!,
-          mcpSessionManager: this.sessionManager,
-        });
-        
-        if (typeof this.toolFilter === 'function') {
-          return this.toolFilter(mcpTool, readonlyContext);
-        } else if (Array.isArray(this.toolFilter)) {
-          return this.toolFilter.includes(mcpTool.name);
-        }
-        
-        return true;
-      })
-      .map(tool => 
-        new MCPTool({
-          mcpTool: tool,
-          mcpSession: this.session!,
-          mcpSessionManager: this.sessionManager,
-        })
-      );
+    const tools: BaseTool[] = [];
+    for (const tool of toolsResponse.tools) {
+      const mcpTool = new MCPTool({
+        mcpTool: tool,
+        mcpSession: this.session!,
+        mcpSessionManager: this.sessionManager,
+      });
+      if (this._isSelected(mcpTool, readonlyContext)) {
+        tools.push(mcpTool);
+      }
+    }
+    return tools;
   }
 } 
