@@ -2,7 +2,9 @@ import { Event, SessionInterface as Session } from '../sessions/types';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { BaseMemoryService, SearchMemoryResponse, MemoryResult } from './BaseMemoryService';
+import { BaseMemoryService, SearchMemoryResponse } from './BaseMemoryService';
+import { MemoryEntry } from './MemoryEntry';
+import { formatTimestamp } from './utils';
 import { Content, Part } from '../models/types';
 
 // Import the Vertex AI client library
@@ -174,6 +176,10 @@ export class VertexAiRagMemoryService implements BaseMemoryService {
       // Write to temporary file
       fs.writeFileSync(tempFilePath, outputString, 'utf8');
       
+      if (!this.vertexRagStore.ragResources) {
+        throw new Error('Rag resources must be set.');
+      }
+      
       // Upload to each RAG resource
       for (const ragResource of this.vertexRagStore.ragResources) {
         await mockVertexAiRag.uploadFile({
@@ -207,7 +213,7 @@ export class VertexAiRagMemoryService implements BaseMemoryService {
       vectorDistanceThreshold: this.vertexRagStore.vectorDistanceThreshold
     });
 
-    const memoryResults: MemoryResult[] = [];
+    const memoryResults: MemoryEntry[] = [];
     const sessionEventsMap = new Map<string, Event[][]>();
 
     for (const context of response.contexts.contexts) {
@@ -274,10 +280,16 @@ export class VertexAiRagMemoryService implements BaseMemoryService {
       const mergedEventLists = this._mergeEventLists(eventLists);
       for (const events of mergedEventLists) {
         const sortedEvents = events.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-        memoryResults.push({
-          sessionId,
-          events: sortedEvents
-        });
+        
+        // Convert events to MemoryEntry objects
+        memoryResults.push(...sortedEvents
+          .filter(event => event.content)
+          .map(event => ({
+            author: event.author,
+            content: event.content!,
+            timestamp: event.timestamp ? formatTimestamp(event.timestamp) : undefined
+          }))
+        );
       }
     }
 

@@ -1,34 +1,30 @@
+/**
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { FunctionTool } from './FunctionTool';
 import { ToolContext } from './ToolContext';
-import { MemoryResult as BaseMemoryResult } from '../memory/BaseMemoryService';
+import { MemoryEntry } from '../memory/MemoryEntry';
 import { LlmRequest } from '../models/LlmRequest';
 import { FunctionDeclaration } from './BaseTool';
 
 /**
- * Interface for memory result events
+ * Response from loading memory.
  */
-export interface MemoryEvent {
-  /** Author of the event */
-  author: string;
-  
-  /** Content of the event */
-  content?: {
-    parts?: { text?: string }[];
-  };
-  
-  /** Timestamp of the event */
-  timestamp?: number;
-}
-
-/**
- * Interface for memory search results
- */
-export interface MemoryResult {
-  /** Array of events in this memory */
-  events: MemoryEvent[];
-  
-  /** Other properties */
-  [key: string]: any;
+export interface LoadMemoryResponse {
+  memories: MemoryEntry[];
 }
 
 /**
@@ -36,19 +32,21 @@ export interface MemoryResult {
  * 
  * @param params The function parameters
  * @param toolContext The tool context
- * @returns A list of memory results
+ * @returns A LoadMemoryResponse containing memory entries
  */
 async function loadMemory(
   params: Record<string, any>,
   toolContext: ToolContext
-): Promise<BaseMemoryResult[]> {
+): Promise<LoadMemoryResponse> {
   const query = params.query;
-  const response = await toolContext.searchMemory(query);
-  return response.memories;
+  const searchMemoryResponse = await toolContext.searchMemory(query);
+  return { memories: searchMemoryResponse.memories };
 }
 
 /**
  * A tool that loads the memory for the current user.
+ * 
+ * NOTE: Currently this tool only uses text part from the memory.
  */
 export class LoadMemoryTool extends FunctionTool {
   constructor() {

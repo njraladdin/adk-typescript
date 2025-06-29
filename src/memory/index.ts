@@ -10,6 +10,9 @@ export { VertexAiRagMemoryService, VertexAiRagConfig } from './VertexAiRagMemory
 // Export the MemoryEntry interface and implementation
 export { MemoryEntry, MemoryEntryImpl } from './MemoryEntry';
 
+// Export utility functions
+export { formatTimestamp } from './utils';
+
 /**
  * Base Memory interface that all memory implementations should implement
  */

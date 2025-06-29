@@ -1,75 +1,116 @@
+/**
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { SessionInterface as Session, Event } from '../sessions/types';
-import { BaseMemoryService, MemoryResult, SearchMemoryResponse } from './BaseMemoryService';
+import { BaseMemoryService, SearchMemoryResponse } from './BaseMemoryService';
+import { MemoryEntry } from './MemoryEntry';
+import { formatTimestamp } from './utils';
+
+/**
+ * Creates a user key for storage.
+ */
+function userKey(appName: string, userId: string): string {
+  return `${appName}/${userId}`;
+}
+
+/**
+ * Extracts words from a string and converts them to lowercase.
+ */
+function extractWordsLower(text: string): Set<string> {
+  const words = text.match(/[A-Za-z]+/g) || [];
+  return new Set(words.map(word => word.toLowerCase()));
+}
 
 /**
  * An in-memory memory service for prototyping purpose only.
  * Uses keyword matching instead of semantic search.
  */
 export class InMemoryMemoryService implements BaseMemoryService {
-  // Keys are app_name/user_id/session_id
-  private sessionEvents: Map<string, Event[]> = new Map();
+  // Keys are app_name/user_id, then session_id. Values are session event lists.
+  private sessionEvents: Map<string, Map<string, Event[]>> = new Map();
 
   /**
    * Adds a session to the memory service.
    * @param session The session to add
    */
   async addSessionToMemory(session: Session): Promise<void> {
-    const key = `${session.appName}/${session.userId}/${session.id}`;
+    const userKeyStr = userKey(session.appName, session.userId);
     
-    // Only store events that have content
-    const eventsWithContent = session.events.filter(event => event.content);
-    this.sessionEvents.set(key, eventsWithContent);
+    if (!this.sessionEvents.has(userKeyStr)) {
+      this.sessionEvents.set(userKeyStr, new Map());
+    }
+    
+    const userSessions = this.sessionEvents.get(userKeyStr)!;
+    
+    // Only store events that have content and parts
+    const eventsWithContent = session.events.filter(event => 
+      event.content && event.content.parts
+    );
+    
+    userSessions.set(session.id, eventsWithContent);
   }
 
   /**
    * Searches for sessions that match the query.
-   * Prototyping purpose only.
    * @param appName The name of the application
    * @param userId The id of the user
    * @param query The query to search for
    * @returns A SearchMemoryResponse containing the matching memories
    */
   async searchMemory(appName: string, userId: string, query: string): Promise<SearchMemoryResponse> {
-    const keywords = new Set(query.toLowerCase().split(/\s+/));
+    const userKeyStr = userKey(appName, userId);
+    
+    if (!this.sessionEvents.has(userKeyStr)) {
+      return { memories: [] };
+    }
+    
+    const wordsInQuery = new Set(query.toLowerCase().split(/\s+/));
     const response: SearchMemoryResponse = { memories: [] };
     
-    // Iterate through all session events
-    for (const [key, events] of this.sessionEvents.entries()) {
-      // Check if the key starts with the app_name/user_id prefix
-      if (!key.startsWith(`${appName}/${userId}/`)) {
-        continue;
-      }
-      
-      const matchedEvents: Event[] = [];
-      
-      // Check each event for keyword matches
-      for (const event of events) {
+    const userSessions = this.sessionEvents.get(userKeyStr)!;
+    
+    for (const sessionEvents of userSessions.values()) {
+      for (const event of sessionEvents) {
         if (!event.content || !event.content.parts) {
           continue;
         }
         
-        // Extract text from all parts
-        const texts = event.content.parts
+        const eventText = event.content.parts
           .filter(part => part.text)
-          .map(part => part.text!.toLowerCase());
-        const text = texts.join('\n');
+          .map(part => part.text!)
+          .join(' ');
         
-        // Check if any keyword is in the text
-        for (const keyword of keywords) {
-          if (text.includes(keyword)) {
-            matchedEvents.push(event);
-            break; // Found match for this event, move to next event
-          }
+        const wordsInEvent = extractWordsLower(eventText);
+        
+        if (wordsInEvent.size === 0) {
+          continue;
         }
-      }
-      
-      // If we found matches, add them to the response
-      if (matchedEvents.length > 0) {
-        const sessionId = key.split('/').pop()!;
-        response.memories.push({
-          sessionId,
-          events: matchedEvents
-        });
+        
+        // Check if any query word is in the event words
+        const hasMatch = Array.from(wordsInQuery).some(queryWord => 
+          wordsInEvent.has(queryWord)
+        );
+        
+        if (hasMatch) {
+          response.memories.push({
+            content: event.content,
+            author: event.author,
+            timestamp: event.timestamp ? formatTimestamp(event.timestamp) : undefined
+          });
+        }
       }
     }
     
@@ -106,7 +147,10 @@ export class InMemoryMemoryService implements BaseMemoryService {
    * @param key The memory key
    */
   async delete(appName: string, userId: string, key: string): Promise<void> { 
-    const storeKey = `${appName}/${userId}/${key}`;
-    this.sessionEvents.delete(storeKey);
+    const userKeyStr = userKey(appName, userId);
+    const userSessions = this.sessionEvents.get(userKeyStr);
+    if (userSessions) {
+      userSessions.delete(key);
+    }
   }
 } 
