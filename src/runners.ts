@@ -560,18 +560,24 @@ export class Runner {
  */
 export class InMemoryRunner extends Runner {
   /**
+   * @deprecated Please don't use. The in-memory session service for the runner.
+   */
+  private readonly _inMemorySessionService: InMemorySessionService;
+  /**
    * Initializes the InMemoryRunner.
    *
    * @param agent The root agent to run.
    * @param appName The application name of the runner. Defaults to 'InMemoryRunner'.
    */
   constructor(agent: LlmAgent, appName: string = 'InMemoryRunner') {
+    const inMemorySessionService = new InMemorySessionService();
     super({
       appName: appName,
       agent: agent,
       artifactService: new InMemoryArtifactService(),
-      sessionService: new InMemorySessionService(),
+      sessionService: inMemorySessionService,
       memoryService: new InMemoryMemoryService()
     });
+    this._inMemorySessionService = inMemorySessionService;
   }
 } 
