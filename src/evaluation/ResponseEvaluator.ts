@@ -1,7 +1,8 @@
- 
-
 import { EvalConstants } from './EvaluationConstants';
 import { EvalEntry } from './EvaluationGenerator';
+import { Evaluator, EvalStatus, EvaluationResult, PerInvocationResult } from './Evaluator';
+import { Invocation, IntermediateData } from './EvalCase';
+import { Content, FunctionCall } from '../models/types';
 
 /**
  * Interface for evaluation result
@@ -63,9 +64,122 @@ export interface EvaluationCriteria {
 /**
  * Runs response evaluation for agents
  */
-export class ResponseEvaluator {
+export class ResponseEvaluator extends Evaluator {
+  private threshold: number;
+  private metricName: string;
+
+  constructor(threshold: number, metricName: string) {
+    super();
+    if (metricName === 'response_evaluation_score') {
+      this.metricName = MetricPromptTemplateExamples.Pointwise.COHERENCE;
+    } else if (metricName === 'response_match_score') {
+      this.metricName = 'rouge_1';
+    } else {
+      throw new Error(`\`${metricName}\` is not supported.`);
+    }
+    this.threshold = threshold;
+  }
+
+  /**
+   * Returns EvaluationResult after performing evaluations using actual and expected invocations.
+   */
+  evaluateInvocations(
+    actualInvocations: Invocation[],
+    expectedInvocations: Invocation[]
+  ): EvaluationResult {
+    let totalScore = 0.0;
+    let numInvocations = 0;
+    const perInvocationResults: PerInvocationResult[] = [];
+
+    for (let i = 0; i < Math.min(actualInvocations.length, expectedInvocations.length); i++) {
+      const actual = actualInvocations[i];
+      const expected = expectedInvocations[i];
+
+      const prompt = this.getText(expected.userContent);
+      const reference = this.getText(expected.finalResponse);
+      const response = this.getText(actual.finalResponse);
+      const actualToolUse = this.getToolUseTrajectory(actual.intermediateData);
+      const referenceTrajectory = this.getToolUseTrajectory(expected.intermediateData);
+
+      const evalCase = {
+        prompt,
+        reference,
+        response,
+        actual_tool_use: actualToolUse,
+        reference_trajectory: referenceTrajectory,
+      };
+
+      // Use synchronous version for the new implementation
+      const evalCaseResult = ResponseEvaluator._performEvalSync(
+        [evalCase],
+        [this.metricName]
+      );
+      const score = this.getScore(evalCaseResult);
+
+      perInvocationResults.push({
+        actualInvocation: actual,
+        expectedInvocation: expected,
+        score,
+        evalStatus: this.getEvalStatus(score),
+      });
+
+      totalScore += score;
+      numInvocations += 1;
+    }
+
+    if (perInvocationResults.length > 0) {
+      const overallScore = totalScore / numInvocations;
+      return {
+        overallScore,
+        overallEvalStatus: this.getEvalStatus(overallScore),
+        perInvocationResults,
+      };
+    }
+
+    return {
+      overallScore: undefined,
+      overallEvalStatus: EvalStatus.NOT_EVALUATED,
+      perInvocationResults: [],
+    };
+  }
+
+  private getText(content?: Content): string {
+    if (content && content.parts) {
+      return content.parts
+        .filter(p => p.text)
+        .map(p => p.text)
+        .join('\n');
+    }
+    return '';
+  }
+
+  private getToolUseTrajectory(intermediateData?: IntermediateData): Array<{ tool_name: string; tool_input: Record<string, any> }> {
+    const toolUseTrajectory: Array<{ tool_name: string; tool_input: Record<string, any> }> = [];
+    if (!intermediateData) {
+      return toolUseTrajectory;
+    }
+
+    for (const functionCall of intermediateData.toolUses) {
+      toolUseTrajectory.push({
+        tool_name: functionCall.name,
+        tool_input: functionCall.args || {},
+      });
+    }
+
+    return toolUseTrajectory;
+  }
+
+  private getScore(evalResult: EvaluationTaskResult): number {
+    return evalResult.summary_metrics[`${this.metricName}/mean`] || 0;
+  }
+
+  private getEvalStatus(score: number): EvalStatus {
+    return score >= this.threshold ? EvalStatus.PASSED : EvalStatus.FAILED;
+  }
+
   /**
    * Evaluates a list of agent responses against references.
+   * @deprecated This method has been deprecated and will be removed soon. Please use evaluateInvocations instead.
    * @param evalData Array of evaluation entries
    * @returns Array of evaluation results
    */
@@ -118,6 +232,7 @@ export class ResponseEvaluator {
 
   /**
    * Returns the value of requested evaluation metrics.
+   * @deprecated This method has been deprecated and will be removed soon. Please use evaluateInvocations instead.
    * @param rawEvalDataset The dataset that will be evaluated
    * @param evaluationCriteria The evaluation criteria to use
    * @param printDetailedResults Whether to print detailed results
@@ -193,15 +308,15 @@ export class ResponseEvaluator {
   }
 
   /**
-   * Performs evaluation on the dataset using specified metrics
+   * Performs evaluation on the dataset using specified metrics (synchronous version)
    * @param dataset The evaluation dataset
    * @param metrics The metrics to evaluate
    * @returns Evaluation results
    */
-  private static async _performEval(
+  private static _performEvalSync(
     dataset: EvalDatasetEntry[],
     metrics: string[]
-  ): Promise<EvaluationTaskResult> {
+  ): EvaluationTaskResult {
     // This is a simplified mock implementation
     // In a real implementation, this would call an external service
     // like Vertex AI Evaluation
@@ -259,6 +374,19 @@ export class ResponseEvaluator {
       summary_metrics: summaryMetrics,
       metrics_table: metricsTable
     };
+  }
+
+  /**
+   * Performs evaluation on the dataset using specified metrics
+   * @param dataset The evaluation dataset
+   * @param metrics The metrics to evaluate
+   * @returns Evaluation results
+   */
+  private static async _performEval(
+    dataset: EvalDatasetEntry[],
+    metrics: string[]
+  ): Promise<EvaluationTaskResult> {
+    return ResponseEvaluator._performEvalSync(dataset, metrics);
   }
 
   /**

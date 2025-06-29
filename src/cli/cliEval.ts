@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { EvaluationGenerator } from '../evaluation/EvaluationGenerator';
 import { ResponseEvaluator } from '../evaluation/ResponseEvaluator';
 import { TrajectoryEvaluator } from '../evaluation/TrajectoryEvaluator';
-import { EvaluationResult, PerInvocationResult } from '../evaluation/Evaluator';
+import { EvaluationResult, PerInvocationResult, Evaluator } from '../evaluation/Evaluator';
 import { EvalStatus } from '../evaluation/Evaluator';
 
 // Re-export EvalStatus for external use
@@ -208,33 +208,30 @@ export async function* runEvals(
         const overallEvalMetricResults: EvalMetricResult[] = [];
 
         for (const evalMetric of evalMetrics) {
-          if (evalMetric.metricName === TOOL_TRAJECTORY_SCORE_KEY) {
-            const trajectoryEvaluator = new TrajectoryEvaluator(evalMetric.threshold);
-            const evaluationResult = trajectoryEvaluator.evaluateInvocations(
-              inferenceResult,
-              evalCase.conversation
-            );
-            
-            overallEvalMetricResults.push({
-              metricName: evalMetric.metricName,
-              threshold: evalMetric.threshold,
-              score: evaluationResult.overallScore,
-              evalStatus: evaluationResult.overallEvalStatus,
-            });
+          const metricEvaluator = getEvaluator(evalMetric);
 
-            for (let index = 0; index < evaluationResult.perInvocationResults.length; index++) {
-              const perInvocationResult = evaluationResult.perInvocationResults[index];
-              if (index < evalMetricResultPerInvocation.length) {
-                evalMetricResultPerInvocation[index].evalMetricResults.push({
-                  metricName: evalMetric.metricName,
-                  threshold: evalMetric.threshold,
-                  score: perInvocationResult.score,
-                  evalStatus: perInvocationResult.evalStatus,
-                });
-              }
+          const evaluationResult = metricEvaluator.evaluateInvocations(
+            inferenceResult,
+            evalCase.conversation
+          );
+
+          overallEvalMetricResults.push({
+            metricName: evalMetric.metricName,
+            threshold: evalMetric.threshold,
+            score: evaluationResult.overallScore,
+            evalStatus: evaluationResult.overallEvalStatus,
+          });
+
+          for (let index = 0; index < evaluationResult.perInvocationResults.length; index++) {
+            const perInvocationResult = evaluationResult.perInvocationResults[index];
+            if (index < evalMetricResultPerInvocation.length) {
+              evalMetricResultPerInvocation[index].evalMetricResults.push({
+                metricName: evalMetric.metricName,
+                threshold: evalMetric.threshold,
+                score: perInvocationResult.score,
+                evalStatus: perInvocationResult.evalStatus,
+              });
             }
-          } else {
-            console.warn(`${evalMetric.metricName} is not supported.`);
           }
         }
 
@@ -274,7 +271,9 @@ export async function* runEvals(
         }
 
       } catch (e: any) {
-        console.error(`Error: ${e}`);
+        // Catching the general exception, so that we don't block other eval
+        // cases.
+        console.error(`Eval failed for \`${evalSetId}:${evalName}\``);
       }
     }
   }
@@ -288,4 +287,17 @@ function getEvalMetricResult(evalMetric: EvalMetric, score: number): EvalMetricR
     score, 
     evalStatus 
   };
+}
+
+function getEvaluator(evalMetric: EvalMetric): Evaluator {
+  if (evalMetric.metricName === TOOL_TRAJECTORY_SCORE_KEY) {
+    return new TrajectoryEvaluator(evalMetric.threshold);
+  } else if (
+    evalMetric.metricName === RESPONSE_MATCH_SCORE_KEY ||
+    evalMetric.metricName === RESPONSE_EVALUATION_SCORE_KEY
+  ) {
+    return new ResponseEvaluator(evalMetric.threshold, evalMetric.metricName);
+  }
+
+  throw new Error(`Unsupported eval metric: ${evalMetric.metricName}`);
 } 
