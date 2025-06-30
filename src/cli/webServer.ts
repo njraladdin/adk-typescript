@@ -422,29 +422,29 @@ export function createWebServer(params: {
   app.post('/run', async (req: Request, res: Response) => {
     try {
       const runRequest = req.body as {
-        app_name: string;
-        user_id: string;
-        session_id: string;
-        new_message: Content;
+        appName: string;
+        userId: string;
+        sessionId: string;
+        newMessage: Content;
       };
       
-      console.log(`Regular run request for app: ${runRequest.app_name}, user: ${runRequest.user_id}, session: ${runRequest.session_id}`);
+      console.log(`Regular run request for app: ${runRequest.appName}, user: ${runRequest.userId}, session: ${runRequest.sessionId}`);
       
       // Verify the session exists - direct lookup without fallbacks
       const session = await sessionService.getSession({
-        appName: runRequest.app_name,
-        userId: runRequest.user_id,
-        sessionId: runRequest.session_id
+        appName: runRequest.appName,
+        userId: runRequest.userId,
+        sessionId: runRequest.sessionId
       });
       
       if (!session) {
         return res.status(404).json({ error: 'Session not found' });
       }
       
-      // Try to load the agent - first from app_name subdirectory, then directly
+      // Try to load the agent - first from appName subdirectory, then directly
       let rootAgent: BaseAgent;
       try {
-        const agentModulePath = path.join(agentDir, runRequest.app_name);
+        const agentModulePath = path.join(agentDir, runRequest.appName);
         rootAgent = loadAgent(agentModulePath);
       } catch (error) {
         // Try loading directly from agentDir
@@ -458,7 +458,7 @@ export function createWebServer(params: {
       
       // Create a runner
       const runner = new Runner({
-        appName: runRequest.app_name, // Use app_name directly from request
+        appName: runRequest.appName, // Use appName directly from request
         agent: rootAgent,
         sessionService,
         artifactService
@@ -467,9 +467,9 @@ export function createWebServer(params: {
       // Collect all events
       const events = [];
       for await (const event of runner.runAsync({
-        userId: runRequest.user_id,
-        sessionId: runRequest.session_id,
-        newMessage: runRequest.new_message
+        userId: runRequest.userId,
+        sessionId: runRequest.sessionId,
+        newMessage: runRequest.newMessage
       })) {
         events.push(event);
       }
@@ -486,20 +486,20 @@ export function createWebServer(params: {
   app.post('/run_sse', async (req: Request, res: Response) => {
     try {
       const runRequest = req.body as {
-        app_name: string;
-        user_id: string;
-        session_id: string;
-        new_message: Content;
+        appName: string;
+        userId: string;
+        sessionId: string;
+        newMessage: Content;
         streaming?: boolean;
       };
       
-      console.log(`SSE run request for app: ${runRequest.app_name}, user: ${runRequest.user_id}, session: ${runRequest.session_id}`);
+      console.log(`SSE run request for app: ${runRequest.appName}, user: ${runRequest.userId}, session: ${runRequest.sessionId}`);
       
       // Verify the session exists - direct lookup without fallbacks
       const session = await sessionService.getSession({
-        appName: runRequest.app_name,
-        userId: runRequest.user_id,
-        sessionId: runRequest.session_id
+        appName: runRequest.appName,
+        userId: runRequest.userId,
+        sessionId: runRequest.sessionId
       });
       
       if (!session) {
@@ -517,10 +517,10 @@ export function createWebServer(params: {
         res.write(`data: ${JSON.stringify(data)}\n\n`);
       };
       
-      // Try to load the agent - first from app_name subdirectory, then directly
+      // Try to load the agent - first from appName subdirectory, then directly
       let rootAgent: BaseAgent;
       try {
-        const agentModulePath = path.join(agentDir, runRequest.app_name);
+        const agentModulePath = path.join(agentDir, runRequest.appName);
         rootAgent = loadAgent(agentModulePath);
       } catch (error) {
         // Try loading directly from agentDir
@@ -535,7 +535,7 @@ export function createWebServer(params: {
       
       // Create a runner
       const runner = new Runner({
-        appName: runRequest.app_name, // Use app_name directly from request
+        appName: runRequest.appName, // Use appName directly from request
         agent: rootAgent,
         sessionService,
         artifactService
@@ -544,9 +544,9 @@ export function createWebServer(params: {
       // Run and stream events
       try {
         for await (const event of runner.runAsync({
-          userId: runRequest.user_id,
-          sessionId: runRequest.session_id,
-          newMessage: runRequest.new_message
+          userId: runRequest.userId,
+          sessionId: runRequest.sessionId,
+          newMessage: runRequest.newMessage
         })) {
           sendEvent(event);
         }
@@ -768,19 +768,19 @@ export function createWebServer(params: {
     
     // Handle run_live WebSocket events (similar to Python's /run_live endpoint)
     socket.on('run_live', async (data: { 
-      app_name: string, 
-      user_id: string, 
-      session_id: string, 
+      appName: string, 
+      userId: string, 
+      sessionId: string, 
       modalities?: string[] 
     }) => {
       try {
-        const { app_name, user_id, session_id } = data;
+        const { appName, userId, sessionId } = data;
         
         // Verify the session exists
         const session = await sessionService.getSession({
-          appName: app_name,
-          userId: user_id,
-          sessionId: session_id
+          appName: appName,
+          userId: userId,
+          sessionId: sessionId
         });
         
         if (!session) {
@@ -791,7 +791,7 @@ export function createWebServer(params: {
         // Try to load the agent
         let rootAgent: BaseAgent;
         try {
-          const agentModulePath = path.join(agentDir, app_name);
+          const agentModulePath = path.join(agentDir, appName);
           rootAgent = loadAgent(agentModulePath);
         } catch (error) {
           // Try loading directly from agentDir
@@ -805,7 +805,7 @@ export function createWebServer(params: {
         
         // Create a runner
         const runner = new Runner({
-          appName: app_name, // Use app_name directly from request
+          appName: appName, // Use appName directly from request
           agent: rootAgent,
           sessionService,
           artifactService
@@ -831,8 +831,8 @@ export function createWebServer(params: {
             
             // Run the agent
             for await (const event of runner.runAsync({
-              userId: user_id,
-              sessionId: session_id,
+              userId: userId,
+              sessionId: sessionId,
               newMessage: content
             })) {
               // Send event to client
