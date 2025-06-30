@@ -1,5 +1,3 @@
-
-
 import { FunctionTool } from './FunctionTool';
 import { ToolContext } from './ToolContext';
 
@@ -25,7 +23,7 @@ export function transferToAgent(
 ): Promise<string> {
   const agentName = params.agentName;
   
-  // Set the transfer_to_agent action on the context
+  // Set the transfer_to_agent action on the context if available
   if (context.get) {
     const actions = (context.get('actions') || {}) as ToolActions;
     actions.transferToAgent = agentName;

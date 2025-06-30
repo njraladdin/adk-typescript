@@ -1,5 +1,6 @@
 import { BaseTool, BaseToolOptions, FunctionDeclaration } from './BaseTool';
 import { ToolContext } from './ToolContext';
+import { buildFunctionDeclaration } from './automaticFunctionDeclaration';
 
 /**
  * Function to be executed by the FunctionTool
@@ -7,7 +8,7 @@ import { ToolContext } from './ToolContext';
 export type ToolFunction = (
   params: Record<string, any>,
   context: ToolContext
-) => Promise<any>;
+) => Promise<any> | any;
 
 /**
  * Options for creating a FunctionTool
@@ -40,12 +41,56 @@ export class FunctionTool extends BaseTool {
   
   /**
    * Create a new function tool
-   * @param options Options for the function tool
+   * @param options Options for the function tool, or just a function
    */
-  constructor(options: FunctionToolOptions) {
-    super(options);
-    this.fn = options.fn;
-    this.functionDeclaration = options.functionDeclaration;
+  constructor(options: FunctionToolOptions | ToolFunction) {
+    if (typeof options === 'function') {
+      // Direct function case - similar to Python version
+      const func = options as ToolFunction;
+      const funcName = func.name || 'anonymous_function';
+      
+      // Extract documentation from function comments
+      let description = '';
+      const funcStr = func.toString();
+      const docMatch = funcStr.match(/\/\*\*([\s\S]*?)\*\//);
+      if (docMatch) {
+        // Extract the description from JSDoc comment
+        description = docMatch[1]
+          .split('\n')
+          .map(line => line.replace(/^\s*\*\s?/, '').trim())
+          .filter(line => line && !line.startsWith('@'))
+          .join(' ')
+          .trim();
+      }
+      
+      super({ name: funcName, description: description || `Function ${funcName}` });
+      this.fn = func;
+      
+      // Generate function declaration automatically
+      try {
+        this.functionDeclaration = buildFunctionDeclaration(func, {
+          ignoreParams: ['context', 'tool_context', 'toolContext', 'input_stream'], // Ignore context parameters
+          variant: 'DEFAULT'
+        });
+      } catch (error) {
+        // If automatic generation fails, create a basic declaration
+        console.warn(`Failed to generate function declaration for ${funcName}: ${error}`);
+        this.functionDeclaration = {
+          name: funcName,
+          description: description || `Function ${funcName}`,
+          parameters: {
+            type: 'object',
+            properties: {},
+            required: []
+          }
+        };
+      }
+    } else {
+      // Options-based case - existing behavior
+      super(options);
+      this.fn = options.fn;
+      this.functionDeclaration = options.functionDeclaration;
+    }
   }
   
   /**

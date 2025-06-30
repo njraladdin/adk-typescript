@@ -44,7 +44,7 @@ type InstructionProvider = (
 ) => string | Promise<string>;
 type ToolUnion =
   | BaseTool
-  | (((...args: any[]) => any) & FunctionToolOptions)
+  | ((...args: any[]) => any)
   | BaseToolset;
 type ExamplesUnion = Example[] | BaseExampleProvider;
 
@@ -167,7 +167,7 @@ async function convertToolUnionToTools(
     return [toolUnion];
   }
   if (typeof toolUnion === 'function') {
-    return [new FunctionTool(toolUnion as any)];
+    return [new FunctionTool(toolUnion)];
   }
   if (toolUnion instanceof BaseToolset) {
     return await toolUnion.getTools(ctx);

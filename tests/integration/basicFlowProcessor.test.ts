@@ -169,7 +169,7 @@ describe('Basic LLM Flow Request Processor Integration Tests', () => {
         // Create a tool function for testing
         async function testToolFunction(
           params: Record<string, any>,
-          context?: ToolContext
+          context: ToolContext
         ): Promise<{ result: string }> {
           const param1 = params.param1 as string;
           return { result: `Processed: ${param1}` };
