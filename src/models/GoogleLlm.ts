@@ -1,5 +1,3 @@
- 
-
 import { BaseLlm } from './BaseLlm';
 import { BaseLlmConnection } from './BaseLlmConnection';
 import { GeminiLlmConnection } from './GeminiLlmConnection';
@@ -279,17 +277,8 @@ class GenAIClient {
       });
       
       // Log configuration for debugging
-      console.log(`Model configuration: ${JSON.stringify({
-        temperature: config.temperature,
-        topP: config.topP,
-        topK: config.topK,
-        maxOutputTokens: config.maxOutputTokens,
-        systemInstruction: systemInstructionText ? 'Set' : 'Not set'
-      }, null, 2)}`);
-      
       // Convert content format
       const convertedContents = contents.map(convertContent);
-      console.log(`Sending ${convertedContents.length} content items to the model`);
       
       try {
         // Generate content
@@ -374,18 +363,10 @@ class GenAIClient {
         tools: convertTools(config.tools),
       });
       
-      // Log configuration for streaming
-      console.log(`Streaming model configuration: ${JSON.stringify({
-        temperature: config.temperature,
-        topP: config.topP,
-        topK: config.topK,
-        maxOutputTokens: config.maxOutputTokens,
-        systemInstruction: systemInstructionText ? 'Set' : 'Not set'
-      }, null, 2)}`);
+
       
       // Convert content format
       const convertedContents = contents.map(convertContent);
-      console.log(`Streaming ${convertedContents.length} content items to the model`);
       
       // Generate streaming content
       const responseStream = await genModel.generateContentStream({
@@ -566,10 +547,10 @@ export class Gemini extends BaseLlm {
       }
     }
     
-    console.info(
-      `Sending out request, model: ${llmRequest.model || this.model}, backend: ${this._apiBackend}, stream: ${stream}`
-    );
-    console.info(this._buildRequestLog(llmRequest));
+    // console.info(
+    //   `Sending out request, model: ${llmRequest.model || this.model}, backend: ${this._apiBackend}, stream: ${stream}`
+    // );
+    // console.info(this._buildRequestLog(llmRequest));
 
     if (stream) {
       const responses = this.apiClient.generateContentStream(
@@ -583,7 +564,7 @@ export class Gemini extends BaseLlm {
 
       // For streaming, mark text content as partial and accumulate text
       for await (const resp of responses) {
-        console.info(this._buildResponseLog(resp));
+        // console.info(this._buildResponseLog(resp));
         response = resp;
         const llmResponse = LlmResponse.create(resp);
 
@@ -634,7 +615,7 @@ export class Gemini extends BaseLlm {
         llmRequest.contents,
         llmRequest.config
       );
-      console.info(this._buildResponseLog(response));
+      // console.info(this._buildResponseLog(response));
       yield LlmResponse.create(response);
     }
   }

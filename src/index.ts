@@ -29,7 +29,7 @@ export const VERSION = '0.1.1';
 import * as agentsModule from './agents';
 import * as toolsModule from './tools';
 import * as modelsModule from './models';
-import * as flowsModule from './flows/llm_flows';
+import * as flowsModule from './flows';
 import * as runnersModule from './runners';
 import * as sessionsModule from './sessions';
 import * as memoryModule from './memory';
@@ -39,9 +39,7 @@ import * as utilsModule from './utils';
 export const agents = agentsModule;
 export const tools = toolsModule;
 export const models = modelsModule;
-export const flows = {
-  llm_flows: flowsModule
-};
+export const flows = flowsModule;
 export const runners = runnersModule;
 export const sessions = sessionsModule;
 export const memory = memoryModule;

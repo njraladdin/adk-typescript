@@ -1,5 +1,3 @@
- 
-
 import { BaseLlm } from './BaseLlm';
 import { LlmRequest } from './LlmRequest';
 import { LlmResponse } from './LlmResponse';
@@ -637,7 +635,7 @@ export class LiteLlm extends BaseLlm {
     stream: boolean = false
   ): AsyncGenerator<LlmResponse, void, unknown> {
     // Log the request details, matching Python's behavior
-    console.log(buildRequestLog(llmRequest));
+    // console.log(buildRequestLog(llmRequest));
 
     const [messages, tools] = getCompletionInputs(llmRequest);
 

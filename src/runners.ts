@@ -191,11 +191,8 @@ export class Runner {
     
     // Find the appropriate agent to run
     const agentToRun = this._findAgentToRun(session as any, this.agent);
-    console.log(`Running agent dodo ${agentToRun.name}`);
-    console.log(invocationContext)
-    console.log(agentToRun)
-    console.log(agentToRun.runAsync)
-        // Run the agent asynchronously
+    
+    // Run the agent asynchronously
     yield* agentToRun.runAsync(invocationContext);
   }
 

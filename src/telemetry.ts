@@ -30,10 +30,10 @@ class Tracer {
 
   startAsCurrentSpan(name: string): { end: () => void } {
     // In a real implementation, this would create and activate a new span
-    console.log(`Starting span: ${name} for service: ${this.serviceName}`);
+    // console.log(`Starting span: ${name} for service: ${this.serviceName}`);
     return {
       end: () => {
-        console.log(`Ending span: ${name}`);
+        // console.log(`Ending span: ${name}`);
       }
     };
   }
@@ -47,7 +47,7 @@ function getCurrentSpan(): Span {
   // In a real implementation, this would return the current active span
   return {
     setAttribute: (key: string, value: string) => {
-      console.log(`Setting attribute ${key} = ${value}`);
+      // console.log(`Setting attribute ${key} = ${value}`);
     }
   };
 }

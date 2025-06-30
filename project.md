@@ -27,7 +27,7 @@ TODO:
 - get project up to date with v0.5.0, done 
 
 
-- v1.0.0: get project up to date with v1.0.0, make agnet interface more similar, add most sample agnets 
+- v1.0.0: get project up to date with v1.0.0, make agent interface more similar, add all sample agnets and run them, fix web ui 
 
 
 

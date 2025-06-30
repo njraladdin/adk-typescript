@@ -114,7 +114,7 @@ class ContentLlmRequestProcessor implements BaseLlmRequestProcessor {
     const ctx = new ReadonlyContext(invocationContext);
     const tools = await agent.canonicalTools(ctx);
     llmRequest.appendTools(tools);
-    console.debug('Added tools to request:', tools.map(t => t.name));
+    // console.debug('Added tools to request:', tools.map(t => t.name));
     
     // Return early - no events to yield
     return;
