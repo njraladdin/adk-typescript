@@ -78,7 +78,7 @@ const getCurrentTimeTool = new FunctionTool({
 // --- Agent Definition ---
 
 // Use LlmRegistry to get a model instance
-const agentLlm = LlmRegistry.newLlm("gemini-1.5-flash"); // Or another compatible model
+const agentLlm = LlmRegistry.newLlm("gemini-2.0-flash"); // Or another compatible model
 
 // Export the root agent for ADK tools to find
 export const rootAgent = new Agent({

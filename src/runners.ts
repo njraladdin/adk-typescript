@@ -193,7 +193,33 @@ export class Runner {
     const agentToRun = this._findAgentToRun(session as any, this.agent);
     
     // Run the agent asynchronously
-    yield* agentToRun.runAsync(invocationContext);
+    console.log(`\n=== Runner.runAsync - Starting agent execution ===`);
+    console.log(`Agent to run: ${agentToRun.name}`);
+    console.log(`Session has ${session.events.length} events before execution`);
+    
+    let eventCount = 0;
+    for await (const event of agentToRun.runAsync(invocationContext)) {
+      eventCount++;
+      console.log(`Runner - Event ${eventCount}: author=${event.author}, isFinalResponse=${event.isFinalResponse()}, functionCalls=${event.getFunctionCalls().length}, functionResponses=${event.getFunctionResponses().length}, partial=${event.partial}`);
+      
+      // PYTHON BEHAVIOR: Save ALL non-partial events to session immediately
+      // This matches: if not event.partial: await self.session_service.append_event(session=session, event=event)
+      if (!event.partial) {
+        try {
+          await this.sessionService.appendEvent({
+            session: session as any,
+            event: event as any
+          });
+          console.log(`Runner - Saved non-partial event to session: ${event.id}`);
+        } catch (error) {
+          console.error('Runner - Error saving event to session:', error);
+        }
+      }
+      
+      yield event;
+    }
+    
+    console.log(`=== Runner.runAsync - Agent execution completed with ${eventCount} events ===`);
   }
 
   /**

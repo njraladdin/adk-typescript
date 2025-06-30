@@ -383,18 +383,37 @@ export abstract class BaseLlmFlow {
   async *runAsync(
     invocationContext: InvocationContext
   ): AsyncGenerator<Event, void, unknown> {
+    let stepCount = 0;
     while (true) {
+      stepCount++;
+      console.log(`\n=== BaseLlmFlow.runAsync - Step ${stepCount} ===`);
+      
       let lastEvent: Event | undefined;
       
       for await (const event of this._runOneStepAsync(invocationContext)) {
         lastEvent = event;
+        console.log(`Step ${stepCount} - Event: author=${event.author}, partial=${event.partial}, functionCalls=${event.getFunctionCalls().length}, functionResponses=${event.getFunctionResponses().length}`);
+        if (event.content?.parts && event.content.parts.length > 0) {
+          const textParts = event.content.parts.filter(p => p.text).map(p => p.text?.substring(0, 100) + '...');
+          console.log(`Step ${stepCount} - Event text: ${textParts.join(', ')}`);
+        }
         yield event;
       }
       
+      console.log(`Step ${stepCount} - lastEvent exists: ${!!lastEvent}`);
+      if (lastEvent) {
+        console.log(`Step ${stepCount} - lastEvent.isFinalResponse(): ${lastEvent.isFinalResponse()}`);
+        console.log(`Step ${stepCount} - lastEvent details: author=${lastEvent.author}, functionCalls=${lastEvent.getFunctionCalls().length}, functionResponses=${lastEvent.getFunctionResponses().length}, partial=${lastEvent.partial}`);
+      }
+      
       if (!lastEvent || lastEvent.isFinalResponse()) {
+        console.log(`Step ${stepCount} - Breaking loop: lastEvent=${!!lastEvent}, isFinalResponse=${lastEvent?.isFinalResponse()}`);
         break;
       }
+      
+      console.log(`Step ${stepCount} - Continuing loop - not a final response`);
     }
+    console.log(`\n=== BaseLlmFlow.runAsync - Completed after ${stepCount} steps ===`);
   }
 
   /**
@@ -413,6 +432,28 @@ export abstract class BaseLlmFlow {
     yield* this._preprocessAsync(invocationContext, llmRequest);
     if (invocationContext.endInvocation) {
       return;
+    }
+
+    // Log the LLM request contents to see if function responses are included
+    console.log(`\n--- _runOneStepAsync - LLM Request Contents ---`);
+    console.log(`Contents in request: ${llmRequest.contents?.length || 0}`);
+    if (llmRequest.contents && llmRequest.contents.length > 0) {
+      llmRequest.contents.forEach((content, i) => {
+        console.log(`Content ${i}: role=${content.role}, parts=${content.parts?.length || 0}`);
+        if (content.parts) {
+          content.parts.forEach((part, j) => {
+            if (part.text) {
+              console.log(`  Part ${j}: text=${part.text.substring(0, 150)}...`);
+            }
+            if (part.functionCall) {
+              console.log(`  Part ${j}: functionCall=${part.functionCall.name}(${JSON.stringify(part.functionCall.args)})`);
+            }
+            if (part.functionResponse) {
+              console.log(`  Part ${j}: functionResponse=${part.functionResponse.name} -> ${JSON.stringify(part.functionResponse.response).substring(0, 150)}...`);
+            }
+          });
+        }
+      });
     }
 
     // Create model response event after preprocessing, like in Python
@@ -640,6 +681,14 @@ export abstract class BaseLlmFlow {
     llmRequest: LlmRequest
   ): AsyncGenerator<Event, void, unknown> {
     try {
+      console.log(`\n--- _postprocessHandleFunctionCallsAsync ---`);
+      console.log(`Function calls in event: ${functionCallEvent.getFunctionCalls().length}`);
+      const functionCalls = functionCallEvent.getFunctionCalls();
+      for (let i = 0; i < functionCalls.length; i++) {
+        const call = functionCalls[i];
+        console.log(`Function call ${i}: name=${call.name}, args=${JSON.stringify(call.args)}`);
+      }
+      
       // Handle function calls asynchronously
       // Get tools dictionary if available
       const toolsDict = 'getToolsDict' in llmRequest ? llmRequest.getToolsDict() : {};
@@ -651,20 +700,31 @@ export abstract class BaseLlmFlow {
       );
       
       if (functionResponseEvent) {
+        console.log(`Function response event created: author=${functionResponseEvent.author}`);
+        const functionResponses = functionResponseEvent.getFunctionResponses();
+        console.log(`Function responses in event: ${functionResponses.length}`);
+        for (let i = 0; i < functionResponses.length; i++) {
+          const response = functionResponses[i];
+          console.log(`Function response ${i}: name=${response.name}, response=${JSON.stringify(response.response).substring(0, 200)}...`);
+        }
+        
         // Check for auth event
         const authEvent = functions.generateAuthEvent(
           invocationContext, 
           functionResponseEvent
         );
         if (authEvent) {
+          console.log(`Auth event generated: ${authEvent.id}`);
           yield authEvent;
         }
         
+        console.log(`Yielding function response event: ${functionResponseEvent.id}`);
         yield functionResponseEvent;
         
         // Check for transfer_to_agent
         const transferToAgent = functionResponseEvent.actions?.transferToAgent;
         if (transferToAgent && typeof invocationContext.agent.runAsync === 'function') {
+          console.log(`Transferring to agent: ${transferToAgent}`);
           const agentToRun = this._getAgentToRun(invocationContext, transferToAgent);
           if (typeof agentToRun.runAsync === 'function') {
             yield* agentToRun.runAsync(invocationContext);
@@ -674,7 +734,10 @@ export abstract class BaseLlmFlow {
         
         // If not transferring to an agent, continue the flow with another step
         // This matches Python implementation of recursively continuing the flow
+        console.log(`*** RECURSIVELY CALLING _runOneStepAsync - This might cause the loop! ***`);
         yield* this._runOneStepAsync(invocationContext);
+      } else {
+        console.log(`No function response event created`);
       }
     } catch (error) {
       console.error('Error handling function calls:', error);
