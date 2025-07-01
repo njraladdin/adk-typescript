@@ -155,12 +155,14 @@ describe('FunctionTool', () => {
       // Check that the response contains an error about missing arguments
       expect(responseEvent).not.toBeUndefined();
       
-      const functionResponse = responseEvent?.content?.parts?.[0]?.functionResponse;
+      const functionResponseWrapper = responseEvent?.content?.parts?.[0]?.functionResponse;
+      expect(functionResponseWrapper).not.toBeUndefined();
+
+      const functionResponse = (functionResponseWrapper as any).response;
       expect(functionResponse).not.toBeUndefined();
-      // Use type assertion to tell TypeScript that we know what we're doing
-      expect(functionResponse as any).toHaveProperty('error');
-      expect((functionResponse as any).error).toContain('mandatory input parameters are not present');
-      expect((functionResponse as any).error).toContain('arg2');
+      expect(functionResponse).toHaveProperty('error');
+      expect(functionResponse.error).toContain('mandatory input parameters are not present');
+      expect(functionResponse.error).toContain('arg2');
     });
     
     test('should detect multiple missing mandatory arguments', async () => {
@@ -224,13 +226,15 @@ describe('FunctionTool', () => {
       // Check that the response contains an error about missing arguments
       expect(responseEvent).not.toBeUndefined();
       
-      const functionResponse = responseEvent?.content?.parts?.[0]?.functionResponse;
+      const functionResponseWrapper = responseEvent?.content?.parts?.[0]?.functionResponse;
+      expect(functionResponseWrapper).not.toBeUndefined();
+
+      const functionResponse = (functionResponseWrapper as any).response;
       expect(functionResponse).not.toBeUndefined();
-      // Use type assertion to tell TypeScript that we know what we're doing
-      expect(functionResponse as any).toHaveProperty('error');
-      expect((functionResponse as any).error).toContain('mandatory input parameters are not present');
-      expect((functionResponse as any).error).toContain('arg1');
-      expect((functionResponse as any).error).toContain('arg3');
+      expect(functionResponse).toHaveProperty('error');
+      expect(functionResponse.error).toContain('mandatory input parameters are not present');
+      expect(functionResponse.error).toContain('arg1');
+      expect(functionResponse.error).toContain('arg3');
     });
     
     test('should not fail when tool has no required parameters', async () => {
