@@ -1,5 +1,3 @@
-
-
 import { SequentialAgent } from '../../../src/agents/SequentialAgent';
 import { BaseAgent } from '../../../src/agents/BaseAgent';
 import { InvocationContext } from '../../../src/agents/InvocationContext';
@@ -105,6 +103,55 @@ describe('SequentialAgent', () => {
     
     // Should have no events since there are no sub-agents
     expect(events.length).toBe(0);
+  });
+
+  test('should run sub-agents sequentially using constructor subAgents parameter', async () => {
+    // Create three test agents with different responses
+    const agent1 = new TestAgent('agent1', {
+      role: 'model',
+      parts: [{ text: 'Response from agent1' } as Part]
+    });
+    
+    const agent2 = new TestAgent('agent2', {
+      role: 'model',
+      parts: [{ text: 'Response from agent2' } as Part]
+    });
+    
+    const agent3 = new TestAgent('agent3', {
+      role: 'model',
+      parts: [{ text: 'Response from agent3' } as Part]
+    });
+
+    // Use the new constructor interface with subAgents parameter (Python-style)
+    const sequentialAgent = new SequentialAgent('test_sequential_agent', {
+      subAgents: [agent1, agent2, agent3]
+    });
+
+    const invocationContext = createParentInvocationContext(sequentialAgent);
+
+    // Collect all events produced by the sequential agent
+    const events: Event[] = [];
+    for await (const event of sequentialAgent.invoke(invocationContext)) {
+      events.push(event);
+    }
+
+    // Should have one event from each sub-agent
+    expect(events.length).toBe(3);
+    
+    // Events should be in the correct order
+    expect(events[0].author).toBe('agent1');
+    expect(events[0].content?.parts?.[0]?.text).toBe('Response from agent1');
+    
+    expect(events[1].author).toBe('agent2');
+    expect(events[1].content?.parts?.[0]?.text).toBe('Response from agent2');
+    
+    expect(events[2].author).toBe('agent3');
+    expect(events[2].content?.parts?.[0]?.text).toBe('Response from agent3');
+    
+    // All agents should have been invoked
+    expect(agent1.wasInvoked()).toBe(true);
+    expect(agent2.wasInvoked()).toBe(true);
+    expect(agent3.wasInvoked()).toBe(true);
   });
 
   test('should run sub-agents sequentially', async () => {
