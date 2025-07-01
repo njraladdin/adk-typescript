@@ -44,6 +44,8 @@ interface GenerateContentConfig {
   stopSequences?: string[];
   systemInstruction?: string;
   tools?: any[];
+  responseSchema?: any;
+  responseMimeType?: string;
 }
 
 interface LiveConnectConfig {
@@ -271,6 +273,8 @@ class GenAIClient {
           maxOutputTokens: config.maxOutputTokens,
           candidateCount: config.candidateCount,
           stopSequences: config.stopSequences,
+          responseSchema: config.responseSchema,
+          responseMimeType: config.responseMimeType,
         },
         systemInstruction: systemInstructionText,
         tools: convertTools(config.tools),
@@ -358,6 +362,8 @@ class GenAIClient {
           maxOutputTokens: config.maxOutputTokens,
           candidateCount: config.candidateCount,
           stopSequences: config.stopSequences,
+          responseSchema: config.responseSchema,
+          responseMimeType: config.responseMimeType,
         },
         systemInstruction: systemInstructionText,
         tools: convertTools(config.tools),

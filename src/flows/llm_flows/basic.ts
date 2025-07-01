@@ -51,7 +51,11 @@ class ContentLlmRequestProcessor implements BaseLlmRequestProcessor {
     
     // Set output schema if defined on the agent
     if (agent.outputSchema) {
+      console.log('Agent has outputSchema:', agent.outputSchema);
       llmRequest.setOutputSchema(agent.outputSchema);
+      console.log('After setOutputSchema, llmRequest.config.responseSchema:', llmRequest.config.responseSchema);
+    } else {
+      console.log('Agent has no outputSchema');
     }
     
     // Handle response modalities and audio transcription if supported

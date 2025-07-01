@@ -30,4 +30,5 @@ TODO:
 - v1.0.0: get project up to date with v1.0.0, make agent interface more similar, add all sample agnets and run them, fix web ui 
 
 
+- fix output schema not being used 
 

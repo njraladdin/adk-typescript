@@ -1,7 +1,94 @@
- 
-
 import { Content, GenerateContentConfig, LiveConnectConfig, Tool, FunctionDeclaration } from './types';
 import { BaseTool } from '../tools/BaseTool';
+
+/**
+ * Converts a TypeScript class to a JSON Schema object
+ * @param classConstructor The class constructor to convert
+ * @returns A JSON Schema object
+ */
+function convertClassToJsonSchema(classConstructor: any): any {
+  console.log('convertClassToJsonSchema called with:', typeof classConstructor, classConstructor?.name);
+  
+  // For TypeScript classes, we need to extract the schema from the constructor
+  if (typeof classConstructor === 'function') {
+    // Try to create an instance to inspect properties
+    try {
+      // Get property names from the constructor or prototype
+      const propertyNames: string[] = [];
+      const properties: Record<string, any> = {};
+      
+      // If the class has a static schema property, use it
+      if (classConstructor.schema) {
+        console.log('Using static schema property:', classConstructor.schema);
+        return classConstructor.schema;
+      }
+      
+      // Try to inspect the constructor parameters
+      const constructorStr = classConstructor.toString();
+      console.log('Constructor string:', constructorStr.substring(0, 200) + '...');
+      const paramMatch = constructorStr.match(/constructor\s*\(\s*([^)]*)\s*\)/);
+      
+      if (paramMatch && paramMatch[1]) {
+        // Look for destructured parameter object pattern
+        const paramStr = paramMatch[1].trim();
+        console.log('Constructor param string:', paramStr);
+        const destructureMatch = paramStr.match(/\{\s*([^}]+)\s*\}/);
+        
+        if (destructureMatch) {
+          // Extract property names from destructured parameter
+          const propsStr = destructureMatch[1];
+          console.log('Destructured props string:', propsStr);
+          const propNames = propsStr.split(',').map((p: string) => p.trim().split(':')[0].trim());
+          console.log('Extracted property names:', propNames);
+          
+          // Create schema properties (assuming all are strings for simplicity)
+          for (const propName of propNames) {
+            if (propName) {
+              properties[propName] = { type: 'string' };
+              propertyNames.push(propName);
+            }
+          }
+        }
+      }
+      
+      // Fallback: try to create an instance and inspect it
+      if (Object.keys(properties).length === 0) {
+        console.log('Fallback: trying to create instance...');
+        try {
+          // Try with empty object
+          const instance = new classConstructor({});
+          console.log('Instance created:', instance);
+          for (const key of Object.keys(instance)) {
+            properties[key] = { type: 'string' };
+            propertyNames.push(key);
+          }
+        } catch (e) {
+          // If that fails, try with constructor reflection
+          console.warn('Could not auto-generate schema for class. Please provide an explicit schema object.');
+        }
+      }
+      
+      const schema = {
+        type: 'object',
+        properties: properties,
+        required: propertyNames
+      };
+      
+      console.log('Generated schema:', JSON.stringify(schema, null, 2));
+      return schema;
+    } catch (error) {
+      console.warn('Failed to convert class to schema:', error);
+      return { type: 'object' };
+    }
+  } else if (typeof classConstructor === 'object' && classConstructor !== null) {
+    // Already a schema object, return as-is
+    console.log('Using provided schema object:', classConstructor);
+    return classConstructor;
+  }
+  
+  console.log('Returning default schema');
+  return { type: 'object' };
+}
 
 /**
  * LLM request class that allows passing in tools, output schema and system
@@ -154,11 +241,15 @@ export class LlmRequest {
 
   /**
    * Sets the output schema for the request.
-   * @param baseModel The schema class to set the output schema to.
+   * @param baseModel The schema class or JSON schema object to set the output schema to.
    */
   setOutputSchema(baseModel: any): void {
-    this.config.responseSchema = baseModel;
+    console.log('setOutputSchema called with:', baseModel);
+    const schema = convertClassToJsonSchema(baseModel);
+    console.log('Setting responseSchema to:', JSON.stringify(schema, null, 2));
+    this.config.responseSchema = schema;
     this.config.responseMimeType = 'application/json';
+    console.log('Final config.responseSchema:', this.config.responseSchema);
   }
 
   /**
@@ -253,8 +344,10 @@ export class LlmRequest {
       
       // Add response schema if present
       if (this.config.responseSchema) {
+        console.log('Adding responseSchema to request:', this.config.responseSchema);
         result.generationConfig.responseSchema = this.config.responseSchema;
         result.generationConfig.responseMimeType = this.config.responseMimeType || 'application/json';
+        console.log('Final generationConfig with schema:', result.generationConfig);
       }
       
       // Add thinking config if present

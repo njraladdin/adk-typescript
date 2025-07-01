@@ -449,6 +449,11 @@ export class InMemorySessionService extends BaseSessionService {
       return new Date(obj.getTime()) as unknown as T;
     }
     
+    // Handle State objects
+    if (obj instanceof State) {
+      return new State(obj.getAll()) as unknown as T;
+    }
+    
     // Handle custom objects
     const result = {} as T;
     for (const key in obj) {
