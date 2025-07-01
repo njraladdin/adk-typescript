@@ -73,7 +73,7 @@ describe('BaseAgent Callback Chaining', () => {
       const context = createInvocationContext(agent);
       const events: Event[] = [];
       
-      for await (const event of agent.invoke(context)) {
+      for await (const event of agent.runAsync(context)) {
         events.push(event);
       }
 
@@ -94,7 +94,7 @@ describe('BaseAgent Callback Chaining', () => {
       const context = createInvocationContext(agent);
       const events: Event[] = [];
       
-      for await (const event of agent.invoke(context)) {
+      for await (const event of agent.runAsync(context)) {
         events.push(event);
       }
 
@@ -116,7 +116,7 @@ describe('BaseAgent Callback Chaining', () => {
       const context = createInvocationContext(agent);
       const events: Event[] = [];
       
-      for await (const event of agent.invoke(context)) {
+      for await (const event of agent.runAsync(context)) {
         events.push(event);
       }
 
@@ -145,7 +145,7 @@ describe('BaseAgent Callback Chaining', () => {
       const context = createInvocationContext(agent);
       const events: Event[] = [];
       
-      for await (const event of agent.invoke(context)) {
+      for await (const event of agent.runAsync(context)) {
         events.push(event);
       }
 
@@ -166,7 +166,7 @@ describe('BaseAgent Callback Chaining', () => {
       const context = createInvocationContext(agent);
       const events: Event[] = [];
       
-      for await (const event of agent.invoke(context)) {
+      for await (const event of agent.runAsync(context)) {
         events.push(event);
       }
 
@@ -193,7 +193,7 @@ describe('BaseAgent Callback Chaining', () => {
       const context = createInvocationContext(agent);
       const events: Event[] = [];
       
-      for await (const event of agent.invoke(context)) {
+      for await (const event of agent.runAsync(context)) {
         events.push(event);
       }
 
@@ -216,7 +216,7 @@ describe('BaseAgent Callback Chaining', () => {
       const context = createInvocationContext(agent);
       const events: Event[] = [];
       
-      for await (const event of agent.invoke(context)) {
+      for await (const event of agent.runAsync(context)) {
         events.push(event);
       }
 

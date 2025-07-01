@@ -232,7 +232,7 @@ describe('BaseAgent', () => {
     const parentCtx = await createParentInvocationContext('test_run_async', agent);
 
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -252,7 +252,7 @@ describe('BaseAgent', () => {
     );
 
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -276,7 +276,7 @@ describe('BaseAgent', () => {
     parentCtx.live = true;
 
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -301,7 +301,7 @@ describe('BaseAgent', () => {
     const spy = jest.spyOn(agent as any, 'runAsyncImpl');
     
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -322,7 +322,7 @@ describe('BaseAgent', () => {
     const spy = jest.spyOn(agent as any, 'runAsyncImpl');
     
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -344,7 +344,7 @@ describe('BaseAgent', () => {
     );
     
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -370,7 +370,7 @@ describe('BaseAgent', () => {
     );
     
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -392,7 +392,7 @@ describe('BaseAgent', () => {
     );
 
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -409,7 +409,7 @@ describe('BaseAgent', () => {
     );
 
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -427,7 +427,7 @@ describe('BaseAgent', () => {
     );
 
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -454,7 +454,7 @@ describe('BaseAgent', () => {
     );
 
     const events: Event[] = [];
-    for await (const event of agent.invoke(parentCtx)) {
+    for await (const event of agent.runAsync(parentCtx)) {
       events.push(event);
     }
 
@@ -478,7 +478,7 @@ describe('BaseAgent', () => {
     );
 
     await expect(async () => {
-      for await (const _ of agent.invoke(parentCtx)) {
+      for await (const _ of agent.runAsync(parentCtx)) {
         // Collect events
       }
     }).rejects.toThrow();
@@ -493,7 +493,7 @@ describe('BaseAgent', () => {
     parentCtx.live = true;
     
     await expect(async () => {
-      for await (const _ of agent.invoke(parentCtx)) {
+      for await (const _ of agent.runAsync(parentCtx)) {
         // Collect events
       }
     }).rejects.toThrow();

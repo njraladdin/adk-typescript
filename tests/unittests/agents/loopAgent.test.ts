@@ -1,5 +1,3 @@
-
-
 import { LoopAgent, LoopAgentOptions } from '../../../src/agents/LoopAgent';
 import { LlmAgent, LlmAgentOptions } from '../../../src/agents/LlmAgent';
 import { BaseAgent } from '../../../src/agents/BaseAgent';
@@ -29,7 +27,8 @@ interface TestSession {
  */
 function createInvocationContext(agent: BaseAgent): InvocationContext {
   const sessionService = new InMemorySessionService();
-  const baseSession = sessionService.createSession({
+  // Use synchronous session creation to avoid dealing with Promise<Session>
+  const baseSession = sessionService.createSessionSync({
     appName: 'test_app',
     userId: 'test_user'
   });
@@ -106,7 +105,7 @@ describe('LoopAgent', () => {
     const invocationContext = createInvocationContext(loopAgent);
     
     const events: Event[] = [];
-    for await (const event of loopAgent.invoke(invocationContext)) {
+    for await (const event of loopAgent.runAsync(invocationContext)) {
       events.push(event);
     }
     
@@ -214,7 +213,7 @@ describe('LoopAgent', () => {
     const invocationContext = createInvocationContext(loopAgent);
     
     const events: Event[] = [];
-    for await (const event of loopAgent.invoke(invocationContext)) {
+    for await (const event of loopAgent.runAsync(invocationContext)) {
       events.push(event);
     }
     

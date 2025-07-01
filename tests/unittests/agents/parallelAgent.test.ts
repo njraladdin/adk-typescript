@@ -92,7 +92,7 @@ describe('ParallelAgent', () => {
     
     // Collect all events produced by the parallel agent
     const events: Event[] = [];
-    for await (const event of parallelAgent.invoke(invocationContext)) {
+    for await (const event of parallelAgent.runAsync(invocationContext)) {
       events.push(event);
     }
     
@@ -127,7 +127,7 @@ describe('ParallelAgent', () => {
 
     // Collect all events produced by the parallel agent
     const events: Event[] = [];
-    for await (const event of parallelAgent.invoke(invocationContext)) {
+    for await (const event of parallelAgent.runAsync(invocationContext)) {
       events.push(event);
     }
 

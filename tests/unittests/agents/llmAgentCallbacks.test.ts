@@ -198,7 +198,7 @@ class TestInMemoryRunner {
 
     // Run the agent
     const events: Event[] = [];
-    for await (const event of this.agent.invoke(invocationContext)) {
+    for await (const event of this.agent.runAsync(invocationContext)) {
       events.push(event);
     }
 

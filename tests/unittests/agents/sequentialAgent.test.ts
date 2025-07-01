@@ -91,13 +91,16 @@ function createParentInvocationContext(
 describe('SequentialAgent', () => {
   test('should run with no sub-agents and produce no events', async () => {
     // Create a sequential agent with no sub-agents
-    const sequentialAgent = new SequentialAgent('test_sequential_agent');
+    const sequentialAgent = new SequentialAgent({
+      name: 'test_sequential_agent',
+      subAgents: []
+    });
     
     const invocationContext = createParentInvocationContext(sequentialAgent);
     
     // Collect all events
     const events: Event[] = [];
-    for await (const event of sequentialAgent.invoke(invocationContext)) {
+    for await (const event of sequentialAgent.runAsync(invocationContext)) {
       events.push(event);
     }
     
@@ -123,7 +126,8 @@ describe('SequentialAgent', () => {
     });
 
     // Use the new constructor interface with subAgents parameter (Python-style)
-    const sequentialAgent = new SequentialAgent('test_sequential_agent', {
+    const sequentialAgent = new SequentialAgent({
+      name: 'test_sequential_agent',
       subAgents: [agent1, agent2, agent3]
     });
 
@@ -131,7 +135,7 @@ describe('SequentialAgent', () => {
 
     // Collect all events produced by the sequential agent
     const events: Event[] = [];
-    for await (const event of sequentialAgent.invoke(invocationContext)) {
+    for await (const event of sequentialAgent.runAsync(invocationContext)) {
       events.push(event);
     }
 
@@ -172,7 +176,10 @@ describe('SequentialAgent', () => {
     });
 
     // Add sub-agents individually to test addSubAgent method
-    const sequentialAgent = new SequentialAgent('test_sequential_agent');
+    const sequentialAgent = new SequentialAgent({
+      name: 'test_sequential_agent',
+      subAgents: []
+    });
     sequentialAgent.addSubAgent(agent1);
     sequentialAgent.addSubAgent(agent2);
     sequentialAgent.addSubAgent(agent3);
@@ -181,7 +188,7 @@ describe('SequentialAgent', () => {
 
     // Collect all events produced by the sequential agent
     const events: Event[] = [];
-    for await (const event of sequentialAgent.invoke(invocationContext)) {
+    for await (const event of sequentialAgent.runAsync(invocationContext)) {
       events.push(event);
     }
 
@@ -217,7 +224,10 @@ describe('SequentialAgent', () => {
     });
 
     // Create a sequential agent and add the sub-agents
-    const sequentialAgent = new SequentialAgent('test_sequential_agent');
+    const sequentialAgent = new SequentialAgent({
+      name: 'test_sequential_agent',
+      subAgents: []
+    });
     sequentialAgent.addSubAgent(agent1);
     sequentialAgent.addSubAgent(agent2);
 
@@ -232,7 +242,7 @@ describe('SequentialAgent', () => {
     
     // Invoke the sequential agent
     const events: Event[] = [];
-    for await (const event of sequentialAgent.invoke(invocationContext)) {
+    for await (const event of sequentialAgent.runAsync(invocationContext)) {
       events.push(event);
     }
     
