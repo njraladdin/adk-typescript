@@ -30,6 +30,7 @@ export * from './VertexAISearchTool';
 export * from './ToolboxTool';
 export * from './ToolboxToolset';
 export * from './LangchainTool';
+export * from './LoadArtifactsTool';
 
 // Export MCP tools
 export * from './mcp-tool';
