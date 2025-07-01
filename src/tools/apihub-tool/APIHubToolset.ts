@@ -41,6 +41,15 @@ export class APIHubToolset extends BaseToolset {
   public toolFilter?: ToolPredicate | string[];
 
   /**
+   * If an error occurs during the eager `_prepareToolset()` execution that
+   * happens in the constructor, we store it here so that the first awaited
+   * call to `getTools()` can surface it in a predictable, awaited way instead
+   * of causing an unhandled promise rejection at construction time (which will
+   * crash Node ≥ 20).
+   */
+  private _initializationError?: unknown;
+
+  /**
    * Initializes the APIHubToolset with the given parameters.
    * 
    * Examples:
@@ -107,7 +116,11 @@ export class APIHubToolset extends BaseToolset {
     this.toolFilter = params.toolFilter;
 
     if (!this._lazyLoadSpec) {
-      this._prepareToolset();
+      // Fire-and-forget, but capture any synchronous error so that the caller
+      // can handle it later via an awaited `getTools()` call.
+      this._prepareToolset().catch(err => {
+        this._initializationError = err;
+      });
     }
   }
 
@@ -119,9 +132,22 @@ export class APIHubToolset extends BaseToolset {
    * @returns A list of all available RestApiTool objects.
    */
   async getTools(readonlyContext?: ReadonlyContext): Promise<RestApiTool[]> {
-    if (!this._openApiToolset) {
-      await this._prepareToolset();
+    // If an earlier eager initialization produced an error, surface it now so
+    // that callers can `await` and `catch` it.
+    if (this._initializationError) {
+      throw this._initializationError;
     }
+
+    if (!this._openApiToolset) {
+      try {
+        await this._prepareToolset();
+      } catch (err) {
+        // Store the error so subsequent calls behave consistently.
+        this._initializationError = err;
+        throw err;
+      }
+    }
+
     if (!this._openApiToolset) {
       return [];
     }
@@ -141,9 +167,9 @@ export class APIHubToolset extends BaseToolset {
       return;
     }
 
-    this.name = this.name || toSnakeCase(
-      (specDict.info?.title as string) || 'unnamed'
-    );
+    // Ensure name and description are set correctly, even if the spec lacks them.
+    const title = (specDict.info?.title as string) || 'unnamed';
+    this.name = this.name || toSnakeCase(title);
     this.description = this.description || specDict.info?.description || '';
     
     this._openApiToolset = new OpenAPIToolset({

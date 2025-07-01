@@ -88,7 +88,7 @@ describe('APIHubToolset', () => {
   });
 
   describe('spec handling', () => {
-    it('should handle spec with no title', () => {
+    it('should handle spec with no title', async () => {
       const spec = `
 openapi: 3.0.0
 info:
@@ -115,10 +115,11 @@ paths:
         apihubClient: apihubClient
       });
 
+      await toolset.getTools();
       expect(toolset.name).toBe('unnamed');
     });
 
-    it('should handle empty description in spec', () => {
+    it('should handle empty description in spec', async () => {
       const spec = `
 openapi: 3.0.0
 info:
@@ -146,6 +147,7 @@ paths:
         apihubClient: apihubClient
       });
 
+      await toolset.getTools();
       expect(toolset.name).toBe('empty_description_api');
       expect(toolset.description).toBe('');
     });
