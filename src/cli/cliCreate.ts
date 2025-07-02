@@ -5,7 +5,6 @@ import { promisify } from 'util';
 import { VERSION } from '../index';
 
 const AGENT_TS_TEMPLATE = `import { LlmAgent as Agent } from 'adk-typescript/agents';
-import { LlmRegistry } from 'adk-typescript/models';
 import { FunctionTool, ToolContext } from 'adk-typescript/tools';
 
 // --- Tool Functions ---
@@ -83,13 +82,10 @@ const getCurrentTimeTool = new FunctionTool({
 
 // --- Agent Definition ---
 
-// Use LlmRegistry to get a model instance
-const agentLlm = LlmRegistry.newLlm("{model_name}"); // Or another compatible model
-
 // Export the root agent for ADK tools to find
 export const rootAgent = new Agent({
   name: "{agent_name}", // Unique agent name
-  model: agentLlm,       // LLM instance
+  model: "{model_name}",
   description: "Provides current weather and time information for cities.",
   instruction: "You are a helpful assistant. Use the 'getWeather' tool for weather queries " +
                "and the 'getCurrentTime' tool for time queries. Provide clear answers based on tool results. " +
@@ -269,7 +265,6 @@ async function generateFiles(
   const agentCode = AGENT_TS_TEMPLATE
     .replace(/{model_name}/g, opts.model || 'gemini-2.0-flash')
     .replace(/{agent_name}/g, opts.agentName)
-    .replace(/"{agent_name}"/g, `"${opts.agentName}"`)
     .replace(/'{agent_name}'/g, `'${opts.agentName}'`);
   
   await fs.promises.writeFile(agentFilePath, agentCode, 'utf-8');

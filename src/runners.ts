@@ -503,6 +503,14 @@ export class Runner {
       runConfig: runConfig,
       llm: llm
     });
+    console.log( {memoryService: this.memoryService,
+      invocationId: invocationId,
+      agent: this.agent,
+      session: session,
+      userContent: newMessage,
+      liveRequestQueue: liveRequestQueue,
+      runConfig: runConfig,
+      llm: llm})
 
     if (runConfig.supportCfc && this.agent instanceof LlmAgent) {
       // Get the agent's model name using canonicalModel
