@@ -184,12 +184,12 @@ async function promptForGoogleApiKey(rl: readline.Interface, googleApiKey?: stri
 
 async function promptForModel(rl: readline.Interface): Promise<string> {
   // Ask once and handle response
-  const modelChoice = await askQuestion(rl, `Choose a model for the root agent:\n1. gemini-1.5-flash (recommended)\n2. gemini-2.0-flash\n3. Other models (fill later)\nChoose model`, '1');
+  const modelChoice = await askQuestion(rl, `Choose a model for the root agent:\n1. gemini-2.0-flash (recommended)\n2. gemini-2.5-pro\n3. Other models (fill later)\nChoose model`, '1');
   
   if (modelChoice === '1') {
-    return 'gemini-1.5-flash';
-  } else if (modelChoice === '2') {
     return 'gemini-2.0-flash';
+  } else if (modelChoice === '2') {
+    return 'gemini-2.5-pro';
   } else if (modelChoice === '3') {
     console.log(OTHER_MODEL_MSG);
     return '<FILL_IN_MODEL>';
@@ -267,7 +267,7 @@ async function generateFiles(
   
   // Ensure both curly and non-curly braces templates are replaced for agent name
   const agentCode = AGENT_TS_TEMPLATE
-    .replace(/{model_name}/g, opts.model || 'gemini-1.5-flash')
+    .replace(/{model_name}/g, opts.model || 'gemini-2.0-flash')
     .replace(/{agent_name}/g, opts.agentName)
     .replace(/"{agent_name}"/g, `"${opts.agentName}"`)
     .replace(/'{agent_name}'/g, `'${opts.agentName}'`);
