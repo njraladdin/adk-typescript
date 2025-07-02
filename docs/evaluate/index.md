@@ -215,17 +215,17 @@ Here is an example of a `test_config.json` file specifying custom evaluation cri
 
 As a developer, you can evaluate your agents using the ADK in the following ways:
 
-1. **Web-based UI (`npx adk-ts web`):** Evaluate agents interactively through a web-based interface.  
+1. **Web-based UI (`npx adk web`):** Evaluate agents interactively through a web-based interface.  
 2. **Programmatically:** Integrate evaluation into your testing pipeline using testing frameworks like Jest or Mocha.  
-3. **Command Line Interface (`npx adk-ts eval`):** Run evaluations on an existing evaluation set file directly from the command line.
+3. **Command Line Interface (`npx adk eval`):** Run evaluations on an existing evaluation set file directly from the command line.
 
-### 1. `npx adk-ts web` - Run Evaluations via the Web UI
+### 1. `npx adk web` - Run Evaluations via the Web UI
 
 The web UI provides an interactive way to evaluate agents and generate evaluation datasets.
 
 Steps to run evaluation via the web ui:
 
-1. Start the web server by running: `npx adk-ts web samples_for_testing`  
+1. Start the web server by running: `npx adk web samples_for_testing`  
 2. In the web interface:  
     * Select an agent (e.g., `hello_world`).  
     * Interact with the agent to create a session that you want to save as a test case.  
@@ -289,14 +289,14 @@ test('Trip planner with initial state', async () => {
 });
 ```
 
-### 3. `npx adk-ts eval` - Run Evaluations via the CLI
+### 3. `npx adk eval` - Run Evaluations via the CLI
 
 You can also run evaluation of an eval set file through the command line interface (CLI). This runs the same evaluation that runs on the UI, but it helps with automation, i.e. you can add this command as a part of your regular build generation and verification process.
 
 Here is the command:
 
 ```shell
-npx adk-ts eval \
+npx adk eval \
     <AGENT_MODULE_FILE_PATH> \
     <EVAL_SET_FILE_PATH> \
     [--config_file_path=<PATH_TO_TEST_JSON_CONFIG_FILE>] \
@@ -306,7 +306,7 @@ npx adk-ts eval \
 For example:
 
 ```shell
-npx adk-ts eval \
+npx adk eval \
     samples_for_testing/hello_world \
     samples_for_testing/hello_world/hello_world_eval_set_001.evalset.json
 ```

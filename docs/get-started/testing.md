@@ -1,6 +1,6 @@
 # Testing your Agents (ADK TypeScript)
 
-Before you deploy your agent, you should test it to ensure that it is working as intended. The easiest way to test your agent in your development environment is to use the `adk-ts api_server` command. This command will launch a local Express.js server, where you can run cURL commands or send API requests to test your agent.
+Before you deploy your agent, you should test it to ensure that it is working as intended. The easiest way to test your agent in your development environment is to use the `adk api_server` command. This command will launch a local Express.js server, where you can run cURL commands or send API requests to test your agent.
 
 ## Local testing
 
@@ -39,10 +39,10 @@ Navigate to your project's root or the appropriate directory and launch the loca
 
 ```bash
 # If run from the parent_folder containing 'my_sample_agent':
-adk-ts api_server --agent_dir my_sample_agent
+npx adk api_server --agent_dir my_sample_agent
 
 # Or, if run from inside the 'my_sample_agent' directory:
-adk-ts api_server --agent_dir .
+npx adk api_server --agent_dir .
 ```
 
 The output should appear similar to:
@@ -242,5 +242,5 @@ These mechanisms allow integration with third-party observability tools. While s
 Now that you've verified the local operation of your agent, you're ready to move on to deploying your agent! Here are some ways you can deploy your ADK TypeScript agent:
 
 *   Deploy to **[Agent Engine on Vertex AI](https://cloud.google.com/vertex-ai/docs/agent-engine/docs/overview)** (if compatible): Check the official Agent Engine documentation for compatibility with custom ADK TypeScript agents.
-*   Deploy to **[Cloud Run](../deploy/cloud-run.md)**: Use the `adk-ts deploy cloud_run` command (see `src/cli/cliDeploy.ts`) to containerize and deploy your agent as a serverless application on Google Cloud, giving you full control over scaling and management.
+*   Deploy to **[Cloud Run](../deploy/cloud-run.md)**: Use the `adk deploy cloud_run` command (see `src/cli/cliDeploy.ts`) to containerize and deploy your agent as a serverless application on Google Cloud, giving you full control over scaling and management.
 

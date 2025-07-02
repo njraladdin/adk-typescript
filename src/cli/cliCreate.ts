@@ -95,7 +95,7 @@ export const rootAgent = new Agent({
 `;
 
 const PACKAGE_JSON_TEMPLATE = `{
-  "name": "adk-ts-project",
+  "name": "adk-typescript-project",
   "version": "1.0.0",
   "description": "Project with agents created with ADK TypeScript",
   "scripts": {

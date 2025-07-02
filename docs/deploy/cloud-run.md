@@ -3,7 +3,7 @@
 [Cloud Run](https://cloud.google.com/run)
 is a fully managed platform that enables you to run your code directly on top of Google's scalable infrastructure.
 
-To deploy your agent, you can use either the `adk-ts deploy cloud_run` command (recommended), or with `gcloud run deploy` command through Cloud Run.
+To deploy your agent, you can use either the `adk deploy cloud_run` command (recommended), or with `gcloud run deploy` command through Cloud Run.
 
 ## Agent sample
 
@@ -28,11 +28,11 @@ export GOOGLE_CLOUD_LOCATION=us-central1 # Or your preferred location
 
 ## Deployment commands
 
-=== "adk-ts CLI"
+=== "adk CLI"
 
-    ###  adk-ts CLI
+    ###  adk CLI
 
-    The `adk-ts deploy cloud_run` command deploys your agent code to Google Cloud Run.
+    The `adk deploy cloud_run` command deploys your agent code to Google Cloud Run.
 
     Ensure you have authenticated with Google Cloud (`gcloud auth login` and `gcloud config set project <your-project-id>`).
 
@@ -62,7 +62,7 @@ export GOOGLE_CLOUD_LOCATION=us-central1 # Or your preferred location
     ##### Minimal command
 
     ```bash
-    npx adk-ts deploy cloud_run \
+    npx adk deploy cloud_run \
     --project=$GOOGLE_CLOUD_PROJECT \
     --region=$GOOGLE_CLOUD_LOCATION \
     $AGENT_PATH
@@ -71,7 +71,7 @@ export GOOGLE_CLOUD_LOCATION=us-central1 # Or your preferred location
     ##### Full command with optional flags
 
     ```bash
-    npx adk-ts deploy cloud_run \
+    npx adk deploy cloud_run \
     --project=$GOOGLE_CLOUD_PROJECT \
     --region=$GOOGLE_CLOUD_LOCATION \
     --service_name=$SERVICE_NAME \
@@ -108,7 +108,7 @@ export GOOGLE_CLOUD_LOCATION=us-central1 # Or your preferred location
 
     ### gcloud CLI
 
-    Alternatively, you can deploy using the standard `gcloud run deploy` command with a `Dockerfile`. This method requires more manual setup compared to the `adk-ts` command but offers flexibility, particularly if you want to embed your agent within a custom [Express](https://expressjs.com/) application.
+    Alternatively, you can deploy using the standard `gcloud run deploy` command with a `Dockerfile`. This method requires more manual setup compared to the `adk` command but offers flexibility, particularly if you want to embed your agent within a custom [Express](https://expressjs.com/) application.
 
     Ensure you have authenticated with Google Cloud (`gcloud auth login` and `gcloud config set project <your-project-id>`).
 
@@ -296,7 +296,7 @@ Once your agent is deployed to Cloud Run, you can interact with it via the deplo
 
     If you deployed your agent with the UI enabled:
 
-    *   **adk-ts CLI:** You included the `--with_ui` flag during deployment.
+    *   **adk CLI:** You included the `--with_ui` flag during deployment.
     *   **gcloud CLI:** You set `SERVE_WEB_INTERFACE = true` in your `server.ts`.
 
     You can test your agent by simply navigating to the Cloud Run service URL provided after deployment in your web browser.
@@ -334,7 +334,7 @@ Once your agent is deployed to Cloud Run, you can interact with it via the deplo
 
     #### Get an identity token (if needed)
 
-    If your service requires authentication (i.e., you didn't use `--allow-unauthenticated` with `gcloud` or answered 'N' to the prompt with `adk-ts`), obtain an identity token.
+    If your service requires authentication (i.e., you didn't use `--allow-unauthenticated` with `gcloud` or answered 'N' to the prompt with `adk`), obtain an identity token.
 
     ```bash
     export TOKEN=$(gcloud auth print-identity-token)
