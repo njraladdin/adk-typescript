@@ -95,13 +95,11 @@ export const rootAgent = new Agent({
 `;
 
 const PACKAGE_JSON_TEMPLATE = `{
-  "name": "{agent_name}",
+  "name": "adk-ts-project",
   "version": "1.0.0",
-  "description": "Agent created with ADK TypeScript",
-  "main": "dist/agent.js",
+  "description": "Project with agents created with ADK TypeScript",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/agent.js"
+    "build": "tsc"
   },
   "dependencies": {
     "adk-typescript": "^${VERSION}",
@@ -109,7 +107,8 @@ const PACKAGE_JSON_TEMPLATE = `{
   },
   "devDependencies": {
     "ts-node": "^10.9.1",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "@types/node": "^20.0.0"
   }
 }
 `;
@@ -136,13 +135,22 @@ const TSCONFIG_JSON_TEMPLATE = `{
 const GOOGLE_API_MSG = `\nDon't have API Key? Create one in AI Studio: https://aistudio.google.com/apikey\n`;
 const GOOGLE_CLOUD_SETUP_MSG = `\nYou need an existing Google Cloud account and project, check out this link for details:\nhttps://google.github.io/adk-docs/get-started/quickstart/#gemini---google-cloud-vertex-ai\n`;
 const OTHER_MODEL_MSG = `\nPlease see below guide to configure other models:\nhttps://google.github.io/adk-docs/agents/models\n`;
-const SUCCESS_MSG = `\nAgent created in {agent_folder}:\n- .env\n- package.json\n- tsconfig.json\n- agent.ts\n- README.md\n
-Next steps:
-1. cd {agent_folder}
-2. npm install              # Install dependencies
-3. npx adk run .         # Run your agent in terminal (use '.' when inside the agent directory)
-4. npx adk web .         # OR try the dev UI in browser
+const SUCCESS_MSG = `\nAgent project created successfully!
 
+Project structure:
+├── .env                    # Environment variables
+├── package.json            # Shared dependencies  
+├── tsconfig.json          # TypeScript configuration
+├── {agent_name}/          # Your agent folder
+│   └── agent.ts           # Agent definition
+
+Next steps:
+1. npm install              # Install dependencies
+2. npm run build            # Build the project
+3. npx adk run {agent_name}  # Run your agent in terminal
+4. npx adk web {agent_name}  # OR try the dev UI in browser
+
+To add more agents: create new folders with agent.ts files!
 `;
 
 function askQuestion(rl: readline.Interface, question: string, defaultValue?: string): Promise<string> {
@@ -230,47 +238,86 @@ function sanitizeAgentName(name: string): string {
 }
 
 async function generateFiles(
-  agentFolder: string,
+  agentName: string,
   opts: {
     googleApiKey?: string;
     googleCloudProject?: string;
     googleCloudRegion?: string;
     model?: string;
-    agentName: string;
   }
 ) {
+  const currentDir = process.cwd();
+  const agentFolder = path.join(currentDir, agentName);
+
+  const rootPackageJsonPath = path.join(currentDir, 'package.json');
+  const rootTsconfigJsonPath = path.join(currentDir, 'tsconfig.json');
+  const isFirstRun = !fs.existsSync(rootPackageJsonPath);
+
+  // --- Create Agent-Specific Files ---
   await fs.promises.mkdir(agentFolder, { recursive: true });
-  
-  const dotenvFilePath = path.join(agentFolder, '.env');
-  const packageJsonFilePath = path.join(agentFolder, 'package.json');
-  const tsconfigFilePath = path.join(agentFolder, 'tsconfig.json');
+
   const agentFilePath = path.join(agentFolder, 'agent.ts');
-  const readmeFilePath = path.join(agentFolder, 'README.md');
-  
-  const lines: string[] = [];
-  if (opts.googleApiKey) {
-    lines.push('GOOGLE_GENAI_USE_VERTEXAI=0');
-  } else if (opts.googleCloudProject && opts.googleCloudRegion) {
-    lines.push('GOOGLE_GENAI_USE_VERTEXAI=1');
-  }
-  if (opts.googleApiKey) lines.push(`GOOGLE_API_KEY=${opts.googleApiKey}`);
-  if (opts.googleCloudProject) lines.push(`GOOGLE_CLOUD_PROJECT=${opts.googleCloudProject}`);
-  if (opts.googleCloudRegion) lines.push(`GOOGLE_CLOUD_LOCATION=${opts.googleCloudRegion}`);
-  
-  await fs.promises.writeFile(dotenvFilePath, lines.join('\n'), 'utf-8');
-  await fs.promises.writeFile(packageJsonFilePath, PACKAGE_JSON_TEMPLATE.replace(/{agent_name}/g, opts.agentName), 'utf-8');
-  await fs.promises.writeFile(tsconfigFilePath, TSCONFIG_JSON_TEMPLATE, 'utf-8');
-  
-  // Ensure both curly and non-curly braces templates are replaced for agent name
   const agentCode = AGENT_TS_TEMPLATE
     .replace(/{model_name}/g, opts.model || 'gemini-2.0-flash')
-    .replace(/{agent_name}/g, opts.agentName)
-    .replace(/'{agent_name}'/g, `'${opts.agentName}'`);
-  
+    .replace(/{agent_name}/g, agentName);
   await fs.promises.writeFile(agentFilePath, agentCode, 'utf-8');
-  
-  const successMessage = SUCCESS_MSG.replace(/{agent_folder}/g, agentFolder);
-  console.log(successMessage);
+
+  // Create agent-specific .env file
+  const dotenvFilePath = path.join(agentFolder, '.env');
+  const envLines: string[] = [];
+  if (opts.googleApiKey) {
+    envLines.push('GOOGLE_GENAI_USE_VERTEXAI=0');
+    envLines.push(`GOOGLE_API_KEY=${opts.googleApiKey}`);
+  } else if (opts.googleCloudProject && opts.googleCloudRegion) {
+    envLines.push('GOOGLE_GENAI_USE_VERTEXAI=1');
+    envLines.push(`GOOGLE_CLOUD_PROJECT=${opts.googleCloudProject}`);
+    envLines.push(`GOOGLE_CLOUD_LOCATION=${opts.googleCloudRegion}`);
+  }
+  await fs.promises.writeFile(dotenvFilePath, envLines.join('\n'), 'utf-8');
+
+  // --- Create Root-Level Project Files (if they don't exist) ---
+  if (isFirstRun) {
+    await fs.promises.writeFile(rootPackageJsonPath, PACKAGE_JSON_TEMPLATE, 'utf-8');
+    await fs.promises.writeFile(rootTsconfigJsonPath, TSCONFIG_JSON_TEMPLATE, 'utf-8');
+  }
+
+  // --- Log Success Message ---
+  if (isFirstRun) {
+    console.log(`
+ADK project initialized and agent '${agentName}' created.
+
+Project structure:
+- package.json
+- tsconfig.json
+- ${agentName}/
+  - agent.ts
+  - .env
+
+Next steps:
+1. Install dependencies:
+   npm install
+
+2. Build the project:
+   npm run build
+
+3. Run your agent:
+   npx adk run ${agentName}`);
+  } else {
+    console.log(`
+New agent '${agentName}' created in existing project.
+
+Directory created:
+- ${agentName}/
+  - agent.ts
+  - .env
+
+Next steps:
+1. Build the project (if you made changes):
+   npm run build
+
+2. Run your new agent:
+   npx adk run ${agentName}`);
+  }
 }
 
 export async function runCmd({
@@ -303,7 +350,6 @@ export async function runCmd({
     googleCloudProject: backend.googleCloudProject,
     googleCloudRegion: backend.googleCloudRegion,
     model,
-    agentName: sanitizedAgentName,
   });
   rl.close();
 } 

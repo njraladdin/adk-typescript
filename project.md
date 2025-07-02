@@ -12,8 +12,7 @@ TODO:
 - add README, done 
 - update all docs, done 
 - host docs on github pages, done 
-- fix file names to typescript conventions, done 
-- fix docd : get-started, done 
+- fix file names to typescript conventions, done git
 - fix docs : tutorials, done 
 - fix linting, done 
 - make unit tests pass, done 
@@ -28,5 +27,5 @@ TODO:
 - fix output schema not being used, done 
 - v1.0.0: get project up to date with v1.0.0, make agent interface more similar, add all sample agnets and run them, fix web ui, done 
 
-- global install: remove global install 'npm -g' and each agent having it's own node_modules 
+- global install: remove global install 'npm -g' and each agent having it's own node_modules, done 
 

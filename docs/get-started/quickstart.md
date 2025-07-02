@@ -2,15 +2,9 @@
 
 This quickstart guides you through installing the Agent Development Kit (ADK) for TypeScript, setting up a basic agent with multiple tools, and running it locally either in the terminal or in the interactive, browser-based dev UI.
 
-This quickstart assumes a local development environment (VS Code, WebStorm, etc.) with Node.js (v18+ recommended), npm/yarn, and terminal access. This method runs the application entirely on your machine and is recommended for development and testing.
+This quickstart assumes a local development environment (VS Code, WebStorm, etc.) with Node.js (v18+ recommended), npm, and terminal access. This method runs the application entirely on your machine and is recommended for development and testing.
 
-## 1. Set up Environment & Install ADK TypeScript {#venv-install-typescript}
-
-**Environment Setup:**
-
-*   Ensure you have Node.js (v18+) and npm (or yarn) installed.
-
-**Create Project:**
+## 1. Create your Project Directory
 
 Navigate to the directory where you want to create your project and create a new folder:
 
@@ -18,49 +12,38 @@ Navigate to the directory where you want to create your project and create a new
 # Create and navigate to a new project directory
 mkdir my-adk-project
 cd my-adk-project
-
-# Initialize npm project (creates package.json)
-npm init -y
-
-# Install ADK TypeScript and all dependencies
-npm install adk-typescript dotenv typescript @types/node @types/dotenv
 ```
 
-> **Note:** Use the prefix `npx adk` when running ADK commands. This ensures you're using the version installed in your project.
+> **Note:** Use the prefix `npx adk` when running ADK commands. This ensures you're using the latest version of the CLI without needing a global installation.
 
-## 2. Create Agent Project {#create-agent-project-typescript}
+## 2. Create Your First Agent Project
 
-### Project structure
+The easiest way to get started is by using the `adk create` command. This will generate a new agent and set up all the necessary project files if they don't already exist.
 
-You will need to create the following project structure:
+```bash
+# From your project root (e.g., my-adk-project/)
+npx adk create multi_tool_agent
+```
+
+Follow the prompts to select a model and provide your API keys. This single command creates a clean, multi-agent-ready project.
+
+### Project Structure
+
+The `adk create` command generates a project structure that is efficient and scalable, allowing multiple agents to share a single set of dependencies.
 
 ```console
 my-adk-project/               # Your parent project folder
 ├── multi_tool_agent/         # Your agent's code folder
-│   └── agent.ts              # Agent definition lives here
-├── .env                      # API keys and configuration
-├── package.json              # Node.js project manifest
-├── tsconfig.json             # TypeScript configuration
+│   ├── agent.ts              # Agent definition lives here
+│   └── .env                  # API keys for this agent
+├── package.json              # SHARED Node.js project manifest
+├── tsconfig.json             # SHARED TypeScript configuration
 └── dist/                     # (Created after build) Compiled JavaScript output
 ```
 
-Create the agent folder inside your project:
+### Generated TypeScript Configuration (`tsconfig.json`)
 
-```bash
-# Make sure you are in the my-adk-project directory
-mkdir multi_tool_agent
-```
-
-### TypeScript Configuration
-
-Create the `tsconfig.json` file in your project root (`my-adk-project/`):
-
-```bash
-# Create TypeScript configuration file (using your preferred text editor)
-touch tsconfig.json
-```
-
-Copy and paste the following content into your `tsconfig.json` file:
+The `adk create` command generates a `tsconfig.json` file in your project root with recommended settings. You do not need to create this file yourself.
 
 ```json
 {
@@ -68,7 +51,7 @@ Copy and paste the following content into your `tsconfig.json` file:
     "target": "ES2020",
     "module": "Node16",      // Required for proper module resolution
     "outDir": "./dist",
-    "rootDir": "./",         // Assumes agent.ts is directly in multi_tool_agent
+    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -77,30 +60,14 @@ Copy and paste the following content into your `tsconfig.json` file:
     "resolveJsonModule": true,
     "declaration": true      // Optional: generates .d.ts files
   },
-  "include": ["multi_tool_agent/**/*.ts"], // Include files in your agent folder
+  "include": ["**/*.ts"], // Includes all .ts files in the project
   "exclude": ["node_modules", "dist"]
 }
 ```
 
-Add a build script to your `package.json`:
+### Generated Agent Code (`agent.ts`)
 
-```bash
-# Update package.json with build scripts using npm pkg commands
-npm pkg set main="dist/multi_tool_agent/agent.js"
-npm pkg set scripts.build="tsc"
-npm pkg set scripts.start="node dist/multi_tool_agent/agent.js"
-```
-
-### `agent.ts`
-
-Create an `agent.ts` file inside the `multi_tool_agent/` folder:
-
-```bash
-# Create agent.ts file (using your preferred text editor)
-touch multi_tool_agent/agent.ts
-```
-
-Copy and paste the following code into `multi_tool_agent/agent.ts`:
+The command also creates a feature-rich `agent.ts` file inside your agent's folder (e.g., `multi_tool_agent/`). It includes two sample tools (`getWeather` and `getCurrentTime`) to give you a strong starting point.
 
 ```typescript
 import { LlmAgent as Agent } from 'adk-typescript/agents';
@@ -195,31 +162,18 @@ export const rootAgent = new Agent({
                "If asked for weather AND time, use both tools.",
   tools: [getWeatherTool, getCurrentTimeTool], // List of available tools
 });
-
-// Optional: Default export if needed by other parts of your application
-// export default { rootAgent };
 ```
-
-### `.env`
-
-Create a `.env` file in your project root (`my-adk-project/`):
-
-```bash
-touch .env
-```
-
-Add your API key and platform configuration to this file. More instructions are in the next section.
-
-![ADK Components Flow](../assets/quickstart-flow-tool.png)
 
 ## 3. Set up the model {#set-up-the-model-typescript}
 
-Your agent needs credentials to securely call the LLM service.
+Your agent needs credentials to securely call the LLM service. The `npx adk create` command prompted you for these and saved them to a `.env` file located inside your agent's folder (e.g., `multi_tool_agent/.env`).
+
+You can edit this file at any time.
 
 === "Gemini - Google AI Studio"
 
     1.  Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
-    2.  Open the **`.env`** file in your project root and add the following content:
+    2.  This content will be in your `multi_tool_agent/.env` file:
 
         ```env
         # Use Google AI backend (value 0 or false)
@@ -228,8 +182,6 @@ Your agent needs credentials to securely call the LLM service.
         GOOGLE_API_KEY=PASTE_YOUR_ACTUAL_API_KEY_HERE
         ```
 
-    3.  Edit the `.env` file to replace `PASTE_YOUR_ACTUAL_API_KEY_HERE` with your actual API key.
-
 === "Gemini - Google Cloud Vertex AI"
 
     1.  You need an existing [Google Cloud](https://cloud.google.com/?e=48754805&hl=en) account and project.
@@ -237,30 +189,43 @@ Your agent needs credentials to securely call the LLM service.
         *   Set up the [gcloud CLI](https://cloud.google.com/vertex-ai/generative-ai/docs/start/quickstarts/quickstart-multimodal#setup-local).
         *   Authenticate to Google Cloud for Application Default Credentials (ADC): `gcloud auth application-default login`.
         *   [Enable the Vertex AI API](https://console.cloud.google.com/flows/enableapi?apiid=aiplatform.googleapis.com).
-    2.  Open the **`.env`** file in your project root and add the following content:
+    2.  This content will be in your `multi_tool_agent/.env` file:
 
         ```env title=".env"
         # Use Vertex AI backend (value 1 or true)
         GOOGLE_GENAI_USE_VERTEXAI=1
         # Your Project ID
-        GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID
+        YOUR_PROJECT_ID
         # Your Project Location (e.g., us-central1)
         GOOGLE_CLOUD_LOCATION=us-central1
         # GOOGLE_API_KEY is NOT needed when using Vertex AI with ADC
         ```
 
-    3.  Edit the `.env` file to replace `YOUR_PROJECT_ID` with your actual Google Cloud project ID and update the location if needed.
+## 4. Install, Compile, and Run Your Agent
 
-## 4. Compile and Run Your Agent {#run-your-agent-typescript}
+### Step 1: Install Dependencies
 
-First, **build** your TypeScript code:
+Now that your project files are created, run `npm install` to download the required packages from your `package.json`. You only need to do this once.
+
+```bash
+# Make sure you are in your project root (my-adk-project/)
+npm install
+```
+
+### Step 2: Build Your Agent
+
+Compile your TypeScript code into JavaScript using the pre-configured `build` script.
 
 ```bash
 # Make sure you are in your project root (my-adk-project/)
 npm run build
 ```
 
-Now you can interact with your agent using the ADK TypeScript CLI with npx:
+Run this command whenever you make changes to your `.ts` files.
+
+### Step 3: Run Your Agent
+
+You can now interact with your agent using the ADK's CLI tools.
 
 === "Dev UI (npx adk web)"
 
@@ -271,29 +236,9 @@ Now you can interact with your agent using the ADK TypeScript CLI with npx:
     npx adk web multi_tool_agent
     ```
 
-    **Step 1:** Open the URL provided (usually `http://localhost:3000`) directly in your browser.
-
-    **Step 2.** In the top-left corner of the UI, select your agent: "multi_tool_agent".
-
-    !!!note "Troubleshooting"
-
-        If you do not see "multi_tool_agent" in the dropdown menu, ensure you ran `npx adk web` from the **correct directory** (`my-adk-project/` in this example) where your agent folder is located.
-
-    **Step 3.** Chat with your agent using the textbox:
+    Open the URL provided (usually `http://localhost:3000`) in your browser and start chatting.
 
     ![ADK Web Dev UI Chat](../assets/adk-web-dev-ui-chat.png)
-
-    **Step 4.** Inspect individual function calls, responses, and model interactions by clicking on the interaction steps:
-
-    ![ADK Web Dev UI Function Call](../assets/adk-web-dev-ui-function-call.png)
-
-    **Step 5.** (Optional) Try voice interaction if the UI supports it and your model/setup allows:
-
-    !!!note "Model support for voice/video streaming"
-
-        Using voice/video streaming requires Gemini models that support the necessary APIs (see [Streaming Quickstart](./quickstart-streaming.md) and model documentation). You would also need to adjust the agent configuration and potentially the UI.
-
-    ![ADK Web Dev UI Audio](../assets/adk-web-dev-ui-audio.png)
 
 === "Terminal (npx adk run)"
 
@@ -306,23 +251,7 @@ Now you can interact with your agent using the ADK TypeScript CLI with npx:
 
     ![ADK Run Terminal](../assets/adk-run.png)
 
-    Type your prompts and press Enter. To exit, use Cmd/Ctrl+C.
-
-=== "API Server (npx adk api_server)"
-
-    `npx adk api_server` starts a local Express.js server, allowing you to test API requests before deployment:
-
-    ```bash
-    # If multi_tool_agent is the only agent in the current dir
-    npx adk api_server --agent_dir .
-
-    # Or specify the agent folder directly
-    npx adk api_server --agent_dir multi_tool_agent
-    ```
-
-    ![ADK API Server](../assets/adk-api-server.png)
-
-    To learn how to use `npx adk api_server` for testing, refer to the [documentation on testing](./testing.md).
+    Type your prompts and press Enter. To exit, use Cmd/Ctrl+C or type "exit".
 
 ### 📝 Example prompts to try
 
@@ -340,6 +269,6 @@ You've successfully created and interacted with your first agent using ADK TypeS
 
 ## 🛣️ Next steps
 
+*   **Add another agent**: Run `npx adk create another_agent` to add a second agent to your project. Notice how it won't create a new `package.json`.
 *   **Go to the tutorial**: Learn how to build a multi-agent system, add memory, session state, and safety guardrails: [tutorial](./tutorial.md).
-*   **Delve into advanced configuration:** Explore the [setup](./installation.md) section for deeper dives into project structure and configuration.
-*   **Understand Core Concepts:** Learn about [ADK TypeScript Concepts](../agents/index.md) (Link needs update for TS).
+*   **Understand Core Concepts:** Learn about [ADK TypeScript Concepts](../agents/index.md).
