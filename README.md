@@ -24,55 +24,53 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 
 ---
 
-## ✨ Key Features (TypeScript Port)
+## ✨ Key Features
 
-*(Based on the current codebase)*
+- **Rich Tool Ecosystem**: Utilize pre-built tools, custom functions,
+  OpenAPI specs, or integrate existing tools to give agents diverse
+  capabilities, all for tight integration with the Google ecosystem.
 
--   **Rich Tool Ecosystem**: Utilize pre-built tools (`googleSearch`, `codeExecutionTool`), wrap custom functions easily (`FunctionTool`), integrate external APIs (`RestApiTool`, `APIHubToolset`, `MCPToolset`), or even use other agents as tools (`AgentTool`). Supports long-running operations (`LongRunningFunctionTool`).
--   **Code-First Development**: Define agent logic (`LlmAgent`), tools (`BaseTool`), flows (`AutoFlow`), and orchestration directly in TypeScript for flexibility, testability, and versioning within the Node.js ecosystem.
--   **Modular Multi-Agent Systems**: Design scalable applications by composing multiple specialized agents into flexible hierarchies using the `subAgents` property. `AutoFlow` enables automatic delegation.
--   **Integrated Developer Tooling**: Develop and iterate locally with ease using the included CLI (`adk-ts`) and Developer UI (`adk-ts web`) for running agents, inspecting execution (`Event` stream), debugging, and visualizing agent graphs (`adk-ts graph`).
--   **Native Streaming Support**: Build real-time, interactive experiences with native support for bidirectional streaming (text, potentially audio/video) using `Runner.runLive` and `LiveRequestQueue`.
--   **Built-in Agent Evaluation**: Assess agent performance systematically with the `evaluation` module (`AgentEvaluator`). Create multi-turn evaluation datasets (`.test.json` files) and run evaluations locally via the CLI (`adk-ts eval`).
--   **Broad LLM Support**: Optimized for Google's Gemini models (via `LlmRegistry` and `Gemini`), with flexibility to integrate various LLMs through the `LiteLlm` wrapper or by implementing the `BaseLlm` interface.
--   **Artifact Management**: Enable agents to handle files and binary data using `BaseArtifactService` implementations (`InMemoryArtifactService`, `GcsArtifactService`) and `ToolContext` methods.
--   **Extensibility and Interoperability**: ADK TypeScript promotes an open ecosystem, allowing easy integration with tools from frameworks like LangChain (`LangchainTool`) and CrewAI (`CrewaiTool`).
--   **State and Memory Management**: Handles short-term conversational memory (`State` within a `Session`) managed by `SessionService` (`InMemorySessionService`, `DatabaseSessionService`). Provides integration points for longer-term `Memory` (`BaseMemoryService`).
+- **Code-First Development**: Define agent logic, tools, and orchestration
+  directly in TypeScript for ultimate flexibility, testability, and versioning.
+
+- **Modular Multi-Agent Systems**: Design scalable applications by composing
+  multiple specialized agents into flexible hierarchies.
+
+- **Deploy Anywhere**: Easily containerize and deploy agents on Cloud Run or
+  scale with other cloud platforms.
 
 ## 🚀 Installation
 
-### Using the CLI Globally (Recommended)
-
-For most users, installing the ADK TypeScript CLI globally is the recommended approach. This allows you to create and manage agents from anywhere on your system:
+Install ADK TypeScript locally in your project:
 
 ```bash
-npm install -g adk-typescript
+# Navigate to your project directory
+mkdir my-adk-project
+cd my-adk-project
+
+# Initialize npm project (creates package.json)
+npm init -y
+
+# Install ADK TypeScript and all dependencies
+npm install adk-typescript dotenv typescript @types/node @types/dotenv
 # or
-# yarn global add adk-typescript
+# yarn add adk-typescript dotenv typescript @types/node @types/dotenv
 ```
 
-After global installation, you can use commands like `adk-ts create my-new-agent` to create new agent projects. When you create an agent with the CLI, the necessary dependencies (including the ADK library itself) are automatically added to the agent project's `package.json`.
+After installation, use the ADK CLI commands with `npx`:
 
-> **Note:** This differs from the Python ADK installation pattern because TypeScript/Node.js has a clearer separation between global CLI tools and local project dependencies. The global installation here is only for the CLI tool that helps you create and manage agents.
+```bash
+# Create a new agent
+npx adk-ts create my-new-agent
 
-### Installing as a Library (For Advanced Use Cases)
+# Run your agent
+npx adk-ts run my-new-agent
+```
 
-If you're building a custom agent without using the CLI or integrating ADK into an existing application, you can install it as a library:
-
-1.  **Navigate to your project directory.**
-2.  **Initialize npm (if not already done):** `npm init -y`
-3.  **Install locally:**
-    ```bash
-    npm install adk-typescript
-    # or
-    # yarn add adk-typescript
-    ```
-4.  **Install supporting packages:**
-    ```bash
-    npm install dotenv @types/dotenv typescript @types/node --save-dev
-    # or
-    # yarn add dotenv @types/dotenv typescript @types/node --dev
-    ```
+This approach ensures that:
+- All dependencies are tracked in your package.json
+- Anyone cloning your project can install everything with a single command
+- Your project will work consistently across development and production environments
 
 See the [Installation Guide](./installation.md) for more details on setting up your environment.
 
@@ -84,17 +82,17 @@ Explore the full documentation for detailed guides. *Please note that the offici
 *   Refer to the `*.md` files within *this* repository (like `quickstart.md`, `tutorial.md`) for TypeScript-specific guidance based on this port.
 
 
-## ⚙️ Using the CLI (`adk-ts`)
+## ⚙️ Using the CLI (`npx adk-ts`)
 
-The ADK TypeScript CLI provides commands to manage and run your agents. *(Ensure you have built the project (`npm run build`) or installed it globally)*.
+The ADK TypeScript CLI provides commands to manage and run your agents:
 
 **1. Create a New Agent Project:**
 
 Generates a starter agent template with necessary files (`agent.ts`, `package.json`, `tsconfig.json`, `.env`).
 
 ```bash
-adk-ts create <your-agent-name>
-# Example: adk-ts create my_weather_agent
+npx adk-ts create <your-agent-name>
+# Example: npx adk-ts create my_weather_agent
 ```
 Follow the interactive prompts to configure the model and backend.
 
@@ -104,12 +102,12 @@ Starts a command-line chat interface to interact with your agent.
 
 ```bash
 # Navigate to the parent directory of your agent folder
-adk-ts run <your_agent_folder_name>
-# Example: adk-ts run my_weather_agent
+npx adk-ts run <your_agent_folder_name>
+# Example: npx adk-ts run my_weather_agent
 
 # Or navigate into the agent folder and run:
 cd my_weather_agent
-adk-ts run .
+npx adk-ts run .
 ```
 
 **3. Run the Development Web UI:**
@@ -118,12 +116,12 @@ Starts a local web server with a chat UI for testing and inspecting agent behavi
 
 ```bash
 # Navigate to the parent directory of your agent folder(s)
-adk-ts web <your_agent_folder_name>
-# Example: adk-ts web my_weather_agent
+npx adk-ts web <your_agent_folder_name>
+# Example: npx adk-ts web my_weather_agent
 
 # Or run from inside the agent folder:
 cd my_weather_agent
-adk-ts web .
+npx adk-ts web .
 ```
 Access the UI in your browser (usually `http://localhost:3000`).
 
@@ -133,9 +131,9 @@ Starts a local Express.js server exposing REST endpoints to interact with your a
 
 ```bash
 # Navigate to the parent directory of your agent folder(s)
-adk-ts api_server --agent_dir <your_agent_folder_name_or_parent_dir>
-# Example (serving one agent): adk-ts api_server --agent_dir my_weather_agent
-# Example (serving all agents in current dir): adk-ts api_server --agent_dir .
+npx adk-ts api_server --agent_dir <your_agent_folder_name_or_parent_dir>
+# Example (serving one agent): npx adk-ts api_server --agent_dir my_weather_agent
+# Example (serving all agents in current dir): npx adk-ts api_server --agent_dir .
 ```
 
 **5. Evaluate an Agent:**
@@ -143,9 +141,9 @@ adk-ts api_server --agent_dir <your_agent_folder_name_or_parent_dir>
 Runs evaluations based on predefined datasets (`.test.json` files).
 
 ```bash
-adk-ts eval <path_to_agent_folder> <path_to_eval_set.test.json>
+npx adk-ts eval <path_to_agent_folder> <path_to_eval_set.test.json>
 # Example:
-# adk-ts eval ./my_weather_agent ./my_weather_agent/eval_data.test.json
+# npx adk-ts eval ./my_weather_agent ./my_weather_agent/eval_data.test.json
 ```
 
 **6. Generate Agent Graph:**
@@ -153,8 +151,8 @@ adk-ts eval <path_to_agent_folder> <path_to_eval_set.test.json>
 Creates a visual representation of your agent and its tools/sub-agents (requires Graphviz installed).
 
 ```bash
-adk-ts graph <path_to_agent_folder> --output graph.png
-# Example: adk-ts graph ./my_weather_agent --output weather_agent_graph.png
+npx adk-ts graph <path_to_agent_folder> --output graph.png
+# Example: npx adk-ts graph ./my_weather_agent --output weather_agent_graph.png
 ```
 
 **7. Deploy to Cloud Run:**
@@ -162,7 +160,7 @@ adk-ts graph <path_to_agent_folder> --output graph.png
 Packages and deploys your agent to Google Cloud Run. 
 
 ```bash
-adk-ts deploy cloud_run <path_to_agent_folder> --project <your-gcp-project> --region <gcp-region> --service_name <your-service-name>
+npx adk-ts deploy cloud_run <path_to_agent_folder> --project <your-gcp-project> --region <gcp-region> --service_name <your-service-name>
 ```
 
 ## 🤝 Contributing

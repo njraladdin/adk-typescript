@@ -22,11 +22,11 @@ cd my-adk-project
 # Initialize npm project (creates package.json)
 npm init -y
 
-# Install ADK TypeScript and other required dependencies
-npm install adk-typescript dotenv @types/dotenv
+# Install ADK TypeScript and all dependencies
+npm install adk-typescript dotenv typescript @types/node @types/dotenv
 ```
 
-> **Note:** The command-line tool uses the prefix `npx adk-ts` when running commands locally.
+> **Note:** Use the prefix `npx adk-ts` when running ADK commands. This ensures you're using the version installed in your project.
 
 ## 2. Create Agent Project {#create-agent-project-typescript}
 

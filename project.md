@@ -25,10 +25,8 @@ TODO:
 - test quickstart doc examples, done  
 - create simple agent that would detect commits on the original python project and create issues on the github repo, done 
 - get project up to date with v0.5.0, done 
+- fix output schema not being used, done 
+- v1.0.0: get project up to date with v1.0.0, make agent interface more similar, add all sample agnets and run them, fix web ui, done 
 
-
-- v1.0.0: get project up to date with v1.0.0, make agent interface more similar, add all sample agnets and run them, fix web ui 
-
-
-- fix output schema not being used 
+- global install: remove global install 'npm -g' and each agent having it's own node_modules 
 
