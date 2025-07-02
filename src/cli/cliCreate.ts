@@ -251,7 +251,9 @@ async function generateFiles(
 
   const rootPackageJsonPath = path.join(currentDir, 'package.json');
   const rootTsconfigJsonPath = path.join(currentDir, 'tsconfig.json');
-  const isFirstRun = !fs.existsSync(rootPackageJsonPath);
+  
+  const hasPackageJson = fs.existsSync(rootPackageJsonPath);
+  const hasTsconfigJson = fs.existsSync(rootTsconfigJsonPath);
 
   // --- Create Agent-Specific Files ---
   await fs.promises.mkdir(agentFolder, { recursive: true });
@@ -276,13 +278,31 @@ async function generateFiles(
   await fs.promises.writeFile(dotenvFilePath, envLines.join('\n'), 'utf-8');
 
   // --- Create Root-Level Project Files (if they don't exist) ---
-  if (isFirstRun) {
+  if (!hasPackageJson) {
     await fs.promises.writeFile(rootPackageJsonPath, PACKAGE_JSON_TEMPLATE, 'utf-8');
+  }
+
+  if (hasTsconfigJson) {
+    console.warn(`
+[ADK] Warning: An existing tsconfig.json was found.
+The ADK requires specific compiler options to function correctly.
+Please ensure your tsconfig.json includes the following settings:
+
+  "compilerOptions": {
+    "module": "Node16",
+    "moduleResolution": "node16",
+    "outDir": "./dist",
+    ...
+  },
+  "include": ["**/*.ts"]
+
+`);
+  } else {
     await fs.promises.writeFile(rootTsconfigJsonPath, TSCONFIG_JSON_TEMPLATE, 'utf-8');
   }
 
   // --- Log Success Message ---
-  if (isFirstRun) {
+  if (!hasPackageJson) {
     console.log(`
 ADK project initialized and agent '${agentName}' created.
 
