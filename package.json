@@ -19,7 +19,7 @@
     }
   },
   "bin": {
-    "adk-ts": "./dist/cli/index.js"
+    "adk": "./dist/cli/index.js"
   },
   "files": [
     "dist/**/*",

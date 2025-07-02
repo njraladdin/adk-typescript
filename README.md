@@ -39,6 +39,12 @@ Agent Development Kit (ADK) for TypeScript is a flexible and modular framework f
 - **Deploy Anywhere**: Easily containerize and deploy agents on Cloud Run or
   scale with other cloud platforms.
 
+- **Integrated Developer Tooling**: Develop and iterate locally with ease using the included CLI (`npx adk`) and Developer UI (`npx adk web`) for running agents, inspecting execution (`Event` stream), debugging, and visualizing agent graphs (`npx adk graph`).
+
+- **Native Streaming Support**: Build real-time, interactive experiences with native support for bidirectional streaming (text, potentially audio/video) using `Runner.runLive` and `LiveRequestQueue`.
+
+- **Built-in Agent Evaluation**: Assess agent performance systematically with the `evaluation` module (`AgentEvaluator`). Create multi-turn evaluation datasets (`.test.json` files) and run evaluations locally via the CLI (`npx adk eval`).
+
 ## 🚀 Installation
 
 Install ADK TypeScript locally in your project:
@@ -61,10 +67,10 @@ After installation, use the ADK CLI commands with `npx`:
 
 ```bash
 # Create a new agent
-npx adk-ts create my-new-agent
+npx adk create my-new-agent
 
 # Run your agent
-npx adk-ts run my-new-agent
+npx adk run my-new-agent
 ```
 
 This approach ensures that:
@@ -82,7 +88,7 @@ Explore the full documentation for detailed guides. *Please note that the offici
 *   Refer to the `*.md` files within *this* repository (like `quickstart.md`, `tutorial.md`) for TypeScript-specific guidance based on this port.
 
 
-## ⚙️ Using the CLI (`npx adk-ts`)
+## ⚙️ Using the CLI (`npx adk`)
 
 The ADK TypeScript CLI provides commands to manage and run your agents:
 
@@ -91,8 +97,8 @@ The ADK TypeScript CLI provides commands to manage and run your agents:
 Generates a starter agent template with necessary files (`agent.ts`, `package.json`, `tsconfig.json`, `.env`).
 
 ```bash
-npx adk-ts create <your-agent-name>
-# Example: npx adk-ts create my_weather_agent
+npx adk create <your-agent-name>
+# Example: npx adk create my_weather_agent
 ```
 Follow the interactive prompts to configure the model and backend.
 
@@ -102,12 +108,12 @@ Starts a command-line chat interface to interact with your agent.
 
 ```bash
 # Navigate to the parent directory of your agent folder
-npx adk-ts run <your_agent_folder_name>
-# Example: npx adk-ts run my_weather_agent
+npx adk run <your_agent_folder_name>
+# Example: npx adk run my_weather_agent
 
 # Or navigate into the agent folder and run:
 cd my_weather_agent
-npx adk-ts run .
+npx adk run .
 ```
 
 **3. Run the Development Web UI:**
@@ -116,12 +122,12 @@ Starts a local web server with a chat UI for testing and inspecting agent behavi
 
 ```bash
 # Navigate to the parent directory of your agent folder(s)
-npx adk-ts web <your_agent_folder_name>
-# Example: npx adk-ts web my_weather_agent
+npx adk web <your_agent_folder_name>
+# Example: npx adk web my_weather_agent
 
 # Or run from inside the agent folder:
 cd my_weather_agent
-npx adk-ts web .
+npx adk web .
 ```
 Access the UI in your browser (usually `http://localhost:3000`).
 
@@ -131,9 +137,9 @@ Starts a local Express.js server exposing REST endpoints to interact with your a
 
 ```bash
 # Navigate to the parent directory of your agent folder(s)
-npx adk-ts api_server --agent_dir <your_agent_folder_name_or_parent_dir>
-# Example (serving one agent): npx adk-ts api_server --agent_dir my_weather_agent
-# Example (serving all agents in current dir): npx adk-ts api_server --agent_dir .
+npx adk api_server --agent_dir <your_agent_folder_name_or_parent_dir>
+# Example (serving one agent): npx adk api_server --agent_dir my_weather_agent
+# Example (serving all agents in current dir): npx adk api_server --agent_dir .
 ```
 
 **5. Evaluate an Agent:**
@@ -141,9 +147,9 @@ npx adk-ts api_server --agent_dir <your_agent_folder_name_or_parent_dir>
 Runs evaluations based on predefined datasets (`.test.json` files).
 
 ```bash
-npx adk-ts eval <path_to_agent_folder> <path_to_eval_set.test.json>
+npx adk eval <path_to_agent_folder> <path_to_eval_set.test.json>
 # Example:
-# npx adk-ts eval ./my_weather_agent ./my_weather_agent/eval_data.test.json
+# npx adk eval ./my_weather_agent ./my_weather_agent/eval_data.test.json
 ```
 
 **6. Generate Agent Graph:**
@@ -151,8 +157,8 @@ npx adk-ts eval <path_to_agent_folder> <path_to_eval_set.test.json>
 Creates a visual representation of your agent and its tools/sub-agents (requires Graphviz installed).
 
 ```bash
-npx adk-ts graph <path_to_agent_folder> --output graph.png
-# Example: npx adk-ts graph ./my_weather_agent --output weather_agent_graph.png
+npx adk graph <path_to_agent_folder> --output graph.png
+# Example: npx adk graph ./my_weather_agent --output weather_agent_graph.png
 ```
 
 **7. Deploy to Cloud Run:**
@@ -160,7 +166,7 @@ npx adk-ts graph <path_to_agent_folder> --output graph.png
 Packages and deploys your agent to Google Cloud Run. 
 
 ```bash
-npx adk-ts deploy cloud_run <path_to_agent_folder> --project <your-gcp-project> --region <gcp-region> --service_name <your-service-name>
+npx adk deploy cloud_run <path_to_agent_folder> --project <your-gcp-project> --region <gcp-region> --service_name <your-service-name>
 ```
 
 ## 🤝 Contributing

@@ -140,8 +140,8 @@ const SUCCESS_MSG = `\nAgent created in {agent_folder}:\n- .env\n- package.json\
 Next steps:
 1. cd {agent_folder}
 2. npm install              # Install dependencies
-3. npx adk-ts run .         # Run your agent in terminal (use '.' when inside the agent directory)
-4. npx adk-ts web .         # OR try the dev UI in browser
+3. npx adk run .         # Run your agent in terminal (use '.' when inside the agent directory)
+4. npx adk web .         # OR try the dev UI in browser
 
 `;
 

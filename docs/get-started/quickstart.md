@@ -26,7 +26,7 @@ npm init -y
 npm install adk-typescript dotenv typescript @types/node @types/dotenv
 ```
 
-> **Note:** Use the prefix `npx adk-ts` when running ADK commands. This ensures you're using the version installed in your project.
+> **Note:** Use the prefix `npx adk` when running ADK commands. This ensures you're using the version installed in your project.
 
 ## 2. Create Agent Project {#create-agent-project-typescript}
 
@@ -262,13 +262,13 @@ npm run build
 
 Now you can interact with your agent using the ADK TypeScript CLI with npx:
 
-=== "Dev UI (npx adk-ts web)"
+=== "Dev UI (npx adk web)"
 
     Run the following command to launch the **dev UI**:
 
     ```bash
     # Run from the project root (my-adk-project/)
-    npx adk-ts web multi_tool_agent
+    npx adk web multi_tool_agent
     ```
 
     **Step 1:** Open the URL provided (usually `http://localhost:3000`) directly in your browser.
@@ -277,7 +277,7 @@ Now you can interact with your agent using the ADK TypeScript CLI with npx:
 
     !!!note "Troubleshooting"
 
-        If you do not see "multi_tool_agent" in the dropdown menu, ensure you ran `npx adk-ts web` from the **correct directory** (`my-adk-project/` in this example) where your agent folder is located.
+        If you do not see "multi_tool_agent" in the dropdown menu, ensure you ran `npx adk web` from the **correct directory** (`my-adk-project/` in this example) where your agent folder is located.
 
     **Step 3.** Chat with your agent using the textbox:
 
@@ -295,34 +295,34 @@ Now you can interact with your agent using the ADK TypeScript CLI with npx:
 
     ![ADK Web Dev UI Audio](../assets/adk-web-dev-ui-audio.png)
 
-=== "Terminal (npx adk-ts run)"
+=== "Terminal (npx adk run)"
 
     Run the following command to chat with your agent directly in the terminal:
 
     ```bash
     # Run from the project root (my-adk-project/)
-    npx adk-ts run multi_tool_agent
+    npx adk run multi_tool_agent
     ```
 
     ![ADK Run Terminal](../assets/adk-run.png)
 
     Type your prompts and press Enter. To exit, use Cmd/Ctrl+C.
 
-=== "API Server (npx adk-ts api_server)"
+=== "API Server (npx adk api_server)"
 
-    `npx adk-ts api_server` starts a local Express.js server, allowing you to test API requests before deployment:
+    `npx adk api_server` starts a local Express.js server, allowing you to test API requests before deployment:
 
     ```bash
     # If multi_tool_agent is the only agent in the current dir
-    npx adk-ts api_server --agent_dir .
+    npx adk api_server --agent_dir .
 
     # Or specify the agent folder directly
-    npx adk-ts api_server --agent_dir multi_tool_agent
+    npx adk api_server --agent_dir multi_tool_agent
     ```
 
     ![ADK API Server](../assets/adk-api-server.png)
 
-    To learn how to use `npx adk-ts api_server` for testing, refer to the [documentation on testing](./testing.md).
+    To learn how to use `npx adk api_server` for testing, refer to the [documentation on testing](./testing.md).
 
 ### 📝 Example prompts to try
 

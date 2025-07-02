@@ -16,7 +16,7 @@ import { HelpfulCommand } from './HelpfulCommand';
 const program = new Command();
 
 program
-  .name('adk-ts')
+  .name('adk')
   .description('Agent Development Kit CLI tools (TypeScript port)')
   .version(VERSION);
 
