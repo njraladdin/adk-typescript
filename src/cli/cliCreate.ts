@@ -284,7 +284,7 @@ async function generateFiles(
 
   if (hasTsconfigJson) {
     console.warn(`
-[ADK] Warning: An existing tsconfig.json was found.
+[ADK] WARNING: An existing tsconfig.json was found.
 The ADK requires specific compiler options to function correctly.
 Please ensure your tsconfig.json includes the following settings:
 
@@ -294,9 +294,7 @@ Please ensure your tsconfig.json includes the following settings:
     "outDir": "./dist",
     ...
   },
-  "include": ["**/*.ts"]
-
-`);
+  "include": ["**/*.ts"]`);
   } else {
     await fs.promises.writeFile(rootTsconfigJsonPath, TSCONFIG_JSON_TEMPLATE, 'utf-8');
   }
