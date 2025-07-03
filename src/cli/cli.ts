@@ -211,20 +211,27 @@ export async function runCli({
   
   // Check if we're in the agent directory or parent directory
   const currentDir = process.cwd();
-  const tentativeSrcPath = path.resolve(currentDir, agentFolderName, 'src');
-  const directSrcPath = path.resolve(currentDir, 'src');
-  
-  // In TypeScript we use agent.ts directly instead of index.ts
-  // This better matches the Python ADK where agent.py is the main file
-  if (fs.existsSync(path.resolve(tentativeSrcPath, 'agent.ts'))) {
-    // If we're in the parent directory and agent folder has src/agent.ts
-    agentModulePath = path.resolve(tentativeSrcPath, 'agent.ts');
-  } else if (fs.existsSync(path.resolve(directSrcPath, 'agent.ts'))) {
-    // If we're already in the agent directory and src/agent.ts exists
-    agentModulePath = path.resolve(directSrcPath, 'agent.ts');
+
+  // Standard locations for agent.ts
+  const agentPathInCurrentDir = path.resolve(currentDir, agentFolderName, 'agent.ts');
+  const agentPathWithSrcInCurrentDir = path.resolve(currentDir, agentFolderName, 'src', 'agent.ts');
+  const agentPathInParentDir = path.resolve(agentParentDir, agentFolderName, 'agent.ts');
+  const agentPathWithSrcInParentDir = path.resolve(agentParentDir, agentFolderName, 'src', 'agent.ts');
+
+  if (fs.existsSync(agentPathInCurrentDir)) {
+    agentModulePath = agentPathInCurrentDir;
+  } else if (fs.existsSync(agentPathWithSrcInCurrentDir)) {
+    agentModulePath = agentPathWithSrcInCurrentDir;
+  } else if (fs.existsSync(agentPathInParentDir)) {
+    agentModulePath = agentPathInParentDir;
+  } else if (fs.existsSync(agentPathWithSrcInParentDir)) {
+    agentModulePath = agentPathWithSrcInParentDir;
   } else {
-    // Fall back to directly looking for agent.ts in the specified path
-    agentModulePath = path.resolve(process.cwd(), agentParentDir, agentFolderName, 'agent.ts');
+    // If not found, throw a clear error.
+    throw new Error(
+      `Could not find agent file for '${agentFolderName}'.\n` +
+      `Looked for agent in current directory ('${currentDir}') and parent directory ('${agentParentDir}').`
+    );
   }
   
   console.log(`Loading agent from: ${agentModulePath}`);

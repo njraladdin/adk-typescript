@@ -29,6 +29,7 @@
   ],
   "scripts": {
     "build": "tsc && npm run copy-browser",
+    "build:watch": "tsc --watch",
     "copy-browser": "copyfiles -u 2 \"src/cli/browser/**/*\" dist/cli",
     "test": "jest",
     "lint": "eslint src --ext .ts",

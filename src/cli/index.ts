@@ -51,7 +51,18 @@ program
       .option('--session_id <sessionId>', 'Optional. The session ID to save the session to on exit when --save_session is set to true. User will be prompted to enter a session ID if not set.')
       .option('--replay <replayFile>', 'Path to a JSON file with initial state and user queries. Creates a new session with this state and runs the queries without interactive mode.')
       .option('--resume <resumeFile>', 'Path to a previously saved session file. Replays the session and continues in interactive mode.')
-      .action((agent: string, options: any) => {
+      .action(async (agentFolderName, options) => {
+        // When running via `npm run`, process.cwd() is the project root.
+        // INIT_CWD is an env var set by npm that holds the original CWD.
+        const agentParentDir = options.parentDir || process.env.INIT_CWD || process.cwd();
+        
+        // Warn if graphviz is not installed
+        try {
+          require('graphviz');
+        } catch (error) {
+          console.warn('Graphviz is not installed. The "graph" command will not work.');
+        }
+        
         try {
           // Validate that replay and resume are not both specified
           if (options.replay && options.resume) {
@@ -68,10 +79,10 @@ program
           
           // Resolve the agent path more carefully
           const cwd = process.cwd();
-          const agentPath = path.resolve(cwd, agent);
+          const agentPath = path.resolve(cwd, agentFolderName);
           
           // If agent is "." (current directory), use current directory name as agent name
-          if (agent === '.') {
+          if (agentFolderName === '.') {
             const agentParentDir = path.dirname(cwd);
             const agentFolderName = path.basename(cwd);
             

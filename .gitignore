@@ -17,6 +17,7 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+.cursorignore
 
 # IDE and editor files
 .idea/
