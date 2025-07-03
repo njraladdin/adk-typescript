@@ -111,6 +111,14 @@ export abstract class BaseAgent {
     if (options.parentAgent) {
       this.setParentAgent(options.parentAgent);
     }
+    
+    // Set agent callbacks if provided
+    if ('beforeAgentCallback' in options && options.beforeAgentCallback) {
+      this.beforeAgentCallback = options.beforeAgentCallback;
+    }
+    if ('afterAgentCallback' in options && options.afterAgentCallback) {
+      this.afterAgentCallback = options.afterAgentCallback;
+    }
   }
   
   /**
