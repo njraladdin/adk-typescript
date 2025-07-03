@@ -1,10 +1,12 @@
 # Changelog
 
+## 1.0.2 
+- Fixed issue with ts-node dependency by including it as a runtime dependency
+
 ## [1.0.1]
 * Simplified install and structure: no global `npm -g` needed; all agents share one node_modules folder.
 * Replaced `adk-ts` CLI command with a simpler `adk`, now run with `npx adk`.
 * Fixed all TypeScript callback examples and documentation.
-
 
 ## [1.0.0]
 * Port matches version 1.0.0 of the original Python package Google's Agent Development Kit (ADK)

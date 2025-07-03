@@ -14,6 +14,9 @@ import { SessionInterface as Session } from '../sessions/types';
 import { State } from '../sessions/State';
 import * as envs from './utils/envs';
 
+// Import ts-node programmatically to register TypeScript support
+import { register } from 'ts-node';
+
 interface InputFile {
   state: Record<string, any>;
   queries: string[];
@@ -230,10 +233,17 @@ export async function runCli({
     // Load environment variables for the agent
     envs.loadDotenvForAgent(agentFolderName, agentParentDir);
     
-    // Use ts-node to load the TypeScript module
     try {
-      // First try using ts-node/register to load the module
-      require('ts-node/register');
+      // Register TypeScript compiler
+      register({
+        transpileOnly: true,
+        compilerOptions: {
+          module: 'CommonJS',
+          target: 'ES2018',
+        },
+      });
+      
+      // Load the agent module
       const agentModule = require(agentModulePath);
       
       // Get the rootAgent from the module
