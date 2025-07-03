@@ -1,13 +1,3 @@
-/**
- * TypeScript port of the After Agent Callback example from the Python ADK library
- * 
- * This example demonstrates how to use the after_agent_callback to modify or override
- * an agent's output based on conditions stored in the session state.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
 
 import {
   LlmAgent,

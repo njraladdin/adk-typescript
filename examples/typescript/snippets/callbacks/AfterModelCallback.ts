@@ -1,13 +1,3 @@
-/**
- * TypeScript port of the After Model Callback example from the Python ADK library
- * 
- * This example demonstrates how to use an after_model_callback to modify
- * the response from a model after it's received but before it's returned to the user.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
 
 import {
   LlmAgent,
