@@ -9,16 +9,18 @@
  * The structure and patterns shown here match how you would use the library in a real project.
  */
 
-import { 
-  LlmAgent, 
+import {
+  LlmAgent,
   CallbackContext,
+} from 'adk-typescript/agents';
+import {
   LlmRequest,
   LlmResponse,
-  Runner,
   Content,
-  InMemorySessionService,
-  LlmRegistry
-} from 'adk-typescript';
+  LlmRegistry,
+} from 'adk-typescript/models';
+import { runners } from 'adk-typescript';
+import { InMemorySessionService } from 'adk-typescript/sessions';
 
 // Define the model
 const GEMINI_2_FLASH = "gemini-2.0-flash";
@@ -33,7 +35,7 @@ const logger = {
 function simpleBeforeModelModifier(
   callbackContext: CallbackContext, 
   llmRequest: LlmRequest
-): LlmResponse | null {
+): LlmResponse | undefined {
   /**
    * Inspects/modifies the LLM request or skips the call.
    */
@@ -53,18 +55,11 @@ function simpleBeforeModelModifier(
   // --- Modification Example ---
   // Add a prefix to the system instruction
   if (llmRequest.config.systemInstruction) {
-    const originalInstruction = llmRequest.config.systemInstruction;
+    const originalInstruction = llmRequest.config.systemInstruction as string;
     const prefix = "[Modified by Callback] ";
     
-    // Ensure systemInstruction is Content with parts array
-    if (!originalInstruction.parts || originalInstruction.parts.length === 0) {
-      originalInstruction.parts = [{ text: "" }];
-    }
-    
-    // Modify the text of the first part
-    const modifiedText = prefix + (originalInstruction.parts[0].text || "");
-    originalInstruction.parts[0].text = modifiedText;
-    llmRequest.config.systemInstruction = originalInstruction;
+    const modifiedText = prefix + originalInstruction;
+    llmRequest.config.systemInstruction = modifiedText;
     console.log(`[Callback] Modified system instruction to: '${modifiedText}'`);
   }
 
@@ -73,16 +68,16 @@ function simpleBeforeModelModifier(
   if (lastUserMessage.toUpperCase().includes("BLOCK")) {
     console.log("[Callback] 'BLOCK' keyword found. Skipping LLM call.");
     // Return an LlmResponse to skip the actual LLM call
-    return {
+    return new LlmResponse({
       content: {
         role: "model",
         parts: [{ text: "LLM call was blocked by before_model_callback." }]
       }
-    };
+    });
   } else {
     console.log("[Callback] Proceeding with LLM call.");
-    // Return null to allow the (modified) request to go to the LLM
-    return null;
+    // Return undefined to allow the (modified) request to go to the LLM
+    return undefined;
   }
 }
 
@@ -90,7 +85,8 @@ function simpleBeforeModelModifier(
 const model = LlmRegistry.newLlm(GEMINI_2_FLASH);
 
 // Create LlmAgent and Assign Callback
-const myLlmAgent = new LlmAgent("ModelCallbackAgent", {
+const myLlmAgent = new LlmAgent({
+  name: "ModelCallbackAgent",
   model: model,
   instruction: "You are a helpful assistant.", // Base instruction
   description: "An LLM agent demonstrating before_model_callback",
@@ -104,20 +100,20 @@ const SESSION_ID = "session_001";
 
 // Create Session and Runner
 const sessionService = new InMemorySessionService();
-const session = sessionService.createSession({
+sessionService.createSession({
   appName: APP_NAME, 
   userId: USER_ID, 
   sessionId: SESSION_ID
 });
 
-const runner = new Runner({
+const runner = new runners.Runner({
   agent: myLlmAgent, 
   appName: APP_NAME, 
   sessionService: sessionService
 });
 
 // Agent Interaction function
-function callAgent(query: string): void {
+async function callAgent(query: string): Promise<void> {
   // Create content for the request
   const content: Content = {
     role: 'user',
@@ -125,24 +121,24 @@ function callAgent(query: string): void {
   };
 
   // Run the agent and collect results
-  (async () => {
-    try {
-      const events = runner.run({
-        userId: USER_ID, 
-        sessionId: SESSION_ID, 
-        newMessage: content
-      });
+  try {
+    const events = runner.run({
+      userId: USER_ID, 
+      sessionId: SESSION_ID, 
+      newMessage: content
+    });
 
-      for await (const event of events) {
-        if (event.isFinalResponse && event.content && event.content.parts && event.content.parts[0].text) {
-          const finalResponse = event.content.parts[0].text;
-          console.log("Agent Response: ", finalResponse);
-        }
+    for await (const event of events) {
+      if (event.isFinalResponse() && event.content && event.content.parts && event.content.parts[0].text) {
+        const finalResponse = event.content.parts[0].text;
+        console.log("Agent Response: ", finalResponse);
+      } else if (event.errorCode) {
+        console.log(`Error Event: [${event.errorCode}] ${event.errorMessage}`);
       }
-    } catch (error) {
-      console.error("Error running agent:", error);
     }
-  })();
+  } catch (error) {
+    console.error("Error running agent:", error);
+  }
 }
 
 // Execute with a sample query
@@ -156,6 +152,6 @@ setTimeout(() => {
 
 // Export for external use
 export const agent = myLlmAgent;
-export function runBeforeModelCallbackDemo(query: string): void {
-  callAgent(query);
+export async function runBeforeModelCallbackDemo(query: string): Promise<void> {
+  await callAgent(query);
 } 

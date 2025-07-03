@@ -27,8 +27,8 @@ Callbacks are a cornerstone feature of ADK, providing a powerful mechanism to ho
 **How are they added?** You register callbacks by passing your defined TypeScript functions as arguments to the agent's constructor when you create an instance of `LlmAgent`.
 
 ```ts
-import { LlmAgent, CallbackContext } from '@google/adk';
-import { LlmResponse, LlmRequest } from '@google/adk/models';
+import { LlmAgent, CallbackContext } from 'adk-typescript/agents';
+import { LlmResponse, LlmRequest, LlmRegistry } from 'adk-typescript/models';
 
 // --- Define your callback function ---
 function myBeforeModelLogic(
@@ -41,7 +41,8 @@ function myBeforeModelLogic(
 }
 
 // --- Register it during Agent creation ---
-const myAgent = new LlmAgent("MyCallbackAgent", {
+const myAgent = new LlmAgent({
+    name: "MyCallbackAgent",
     model: "gemini-2.0-flash", // Or your desired model
     instruction: "Be helpful.",
     // Other agent parameters...
@@ -78,10 +79,10 @@ When the ADK framework encounters a point where a callback can run (e.g., just b
 This example demonstrates the common pattern for a guardrail using `beforeModelCallback`.
 
 ```ts
-import { LlmAgent, CallbackContext, Runner } from 'adk-typescript';
-import { LlmResponse, LlmRequest } from 'adk-typescript';
-import { Content, Part } from 'adk-typescript';
-import { InMemorySessionService } from 'adk-typescript';
+import { LlmAgent, CallbackContext } from 'adk-typescript/agents';
+import { LlmResponse, LlmRequest, Content, LlmRegistry } from 'adk-typescript/models';
+import { runners } from 'adk-typescript';
+import { InMemorySessionService } from 'adk-typescript/sessions';
 
 const GEMINI_2_FLASH = "gemini-2.0-flash";
 
@@ -106,23 +107,13 @@ function simpleBeforeModelModifier(
 
     // --- Modification Example ---
     // Add a prefix to the system instruction
-    const originalInstruction = llmRequest.config.systemInstruction || { role: "system", parts: [] };
-    const prefix = "[Modified by Callback] ";
-    
-    // Ensure systemInstruction is Content and parts list exists
-    if (!originalInstruction.parts) {
-        originalInstruction.parts = [];
+    if (llmRequest.config.systemInstruction) {
+        const originalInstruction = llmRequest.config.systemInstruction as string;
+        const prefix = "[Modified by Callback] ";
+        const modifiedText = prefix + originalInstruction;
+        llmRequest.config.systemInstruction = modifiedText;
+        console.log(`[Callback] Modified system instruction to: '${modifiedText}'`);
     }
-    
-    if (originalInstruction.parts.length === 0) {
-        originalInstruction.parts.push({ text: "" }); // Add an empty part if none exist
-    }
-
-    // Modify the text of the first part
-    const modifiedText = prefix + (originalInstruction.parts[0].text || "");
-    originalInstruction.parts[0].text = modifiedText;
-    llmRequest.config.systemInstruction = originalInstruction;
-    console.log(`[Callback] Modified system instruction to: '${modifiedText}'`);
 
     // --- Skip Example ---
     // Check if the last user message contains "BLOCK"
@@ -143,11 +134,12 @@ function simpleBeforeModelModifier(
 }
 
 // Create LlmAgent and Assign Callback
-const myLlmAgent = new LlmAgent("ModelCallbackAgent", {
+const myLlmAgent = new LlmAgent({
+    name: "ModelCallbackAgent",
     model: GEMINI_2_FLASH,
     instruction: "You are a helpful assistant.", // Base instruction
     description: "An LLM agent demonstrating beforeModelCallback",
-    beforeModelCallback: simpleBeforeModelModifier // Assign the function here
+    beforeModelCallback: simpleBeforeModelModifier // Pass the function here
 });
 
 const APP_NAME = "guardrail_app";
@@ -156,12 +148,12 @@ const SESSION_ID = "session_001";
 
 // Session and Runner
 const sessionService = new InMemorySessionService();
-const session = sessionService.createSession({
+sessionService.createSession({
     appName: APP_NAME, 
     userId: USER_ID, 
     sessionId: SESSION_ID
 });
-const runner = new Runner({
+const runner = new runners.Runner({
     agent: myLlmAgent, 
     appName: APP_NAME, 
     sessionService: sessionService
@@ -169,7 +161,7 @@ const runner = new Runner({
 
 // Agent Interaction
 async function callAgent(query: string) {
-    const content = {
+    const content: Content = {
         role: 'user', 
         parts: [{ text: query }]
     };
@@ -179,9 +171,11 @@ async function callAgent(query: string) {
         sessionId: SESSION_ID,
         newMessage: content
     })) {
-        if (event.isFinalResponse()) {
-            const finalResponse = event.content?.parts?.[0]?.text;
+        if (event.isFinalResponse() && event.content?.parts?.[0]?.text) {
+            const finalResponse = event.content.parts[0].text;
             console.log("Agent Response: ", finalResponse);
+        } else if (event.errorCode) {
+            console.log(`Error Event: [${event.errorCode}] ${event.errorMessage}`);
         }
     }
 }

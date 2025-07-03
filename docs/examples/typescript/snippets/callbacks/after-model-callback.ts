@@ -9,15 +9,18 @@
  * The structure and patterns shown here match how you would use the library in a real project.
  */
 
-import { 
-  LlmAgent, 
+import {
+  LlmAgent,
   CallbackContext,
+} from 'adk-typescript/agents';
+import {
   LlmResponse,
-  Runner,
   Content,
-  InMemorySessionService,
-  LlmRegistry
-} from 'adk-typescript';
+  LlmRegistry,
+} from 'adk-typescript/models';
+import { runners } from 'adk-typescript';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+
 
 // Define the model
 const GEMINI_2_FLASH = "gemini-2.0-flash";
@@ -32,7 +35,7 @@ const logger = {
 function simpleAfterModelModifier(
   callbackContext: CallbackContext, 
   llmResponse: LlmResponse
-): LlmResponse | null {
+): LlmResponse | undefined {
   /**
    * Inspects/modifies the LLM response after it's received.
    */
@@ -49,17 +52,17 @@ function simpleAfterModelModifier(
       console.log(`[Callback] Inspected original response text: '${originalText.substring(0, 100)}...'`); // Log snippet
     } else if (firstPart.functionCall) {
       console.log(`[Callback] Inspected response: Contains function call '${firstPart.functionCall.name}'. No text modification.`);
-      return null; // Don't modify tool calls in this example
+      return undefined; // Don't modify tool calls in this example
     } else {
       console.log("[Callback] Inspected response: No text content found.");
-      return null;
+      return undefined;
     }
   } else if (llmResponse.errorMessage) {
     console.log(`[Callback] Inspected response: Contains error '${llmResponse.errorMessage}'. No modification.`);
-    return null;
+    return undefined;
   } else {
     console.log("[Callback] Inspected response: Empty LlmResponse.");
-    return null; // Nothing to modify
+    return undefined; // Nothing to modify
   }
 
   // --- Modification Example ---
@@ -82,21 +85,21 @@ function simpleAfterModelModifier(
 
     // Create a new LlmResponse with the modified content
     // Clone the structure to avoid modifying original if other callbacks exist
-    const newResponse: LlmResponse = {
+    const newResponse = new LlmResponse({
       content: {
         role: "model",
         parts: [{ text: modifiedText }]
       },
       // Copy other relevant fields if necessary
       groundingMetadata: llmResponse.groundingMetadata
-    };
+    });
     
     console.log(`[Callback] Returning modified response.`);
     return newResponse; // Return the modified response
   } else {
     console.log(`[Callback] '${searchTerm}' not found. Passing original response through.`);
-    // Return null to use the original llm_response
-    return null;
+    // Return undefined to use the original llm_response
+    return undefined;
   }
 }
 
@@ -104,7 +107,8 @@ function simpleAfterModelModifier(
 const model = LlmRegistry.newLlm(GEMINI_2_FLASH);
 
 // Create LlmAgent and Assign Callback
-const myLlmAgent = new LlmAgent("AfterModelCallbackAgent", {
+const myLlmAgent = new LlmAgent({
+  name: "AfterModelCallbackAgent",
   model: model,
   instruction: "You are a helpful assistant.",
   description: "An LLM agent demonstrating after_model_callback",
@@ -118,20 +122,20 @@ const SESSION_ID = "session_001";
 
 // Create Session and Runner
 const sessionService = new InMemorySessionService();
-const session = sessionService.createSession({
+sessionService.createSession({
   appName: APP_NAME, 
   userId: USER_ID, 
   sessionId: SESSION_ID
 });
 
-const runner = new Runner({
+const runner = new runners.Runner({
   agent: myLlmAgent, 
   appName: APP_NAME, 
   sessionService: sessionService
 });
 
 // Agent Interaction function
-function callAgent(query: string): void {
+async function callAgent(query: string): Promise<void> {
   // Create content for the request
   const content: Content = {
     role: 'user',
@@ -139,24 +143,24 @@ function callAgent(query: string): void {
   };
 
   // Run the agent and collect results
-  (async () => {
-    try {
-      const events = runner.run({
-        userId: USER_ID, 
-        sessionId: SESSION_ID, 
-        newMessage: content
-      });
+  try {
+    const events = runner.run({
+      userId: USER_ID, 
+      sessionId: SESSION_ID, 
+      newMessage: content
+    });
 
-      for await (const event of events) {
-        if (event.isFinalResponse && event.content && event.content.parts && event.content.parts[0].text) {
-          const finalResponse = event.content.parts[0].text;
-          console.log("Agent Response: ", finalResponse);
-        }
+    for await (const event of events) {
+      if (event.isFinalResponse() && event.content && event.content.parts && event.content.parts[0].text) {
+        const finalResponse = event.content.parts[0].text;
+        console.log("Agent Response: ", finalResponse);
+      } else if (event.errorCode) {
+        console.log(`Error Event: [${event.errorCode}] ${event.errorMessage}`);
       }
-    } catch (error) {
-      console.error("Error running agent:", error);
     }
-  })();
+  } catch (error) {
+    console.error("Error running agent:", error);
+  }
 }
 
 // Regular query (may not contain the word 'joke')
@@ -170,6 +174,6 @@ setTimeout(() => {
 
 // Export for external use
 export const agent = myLlmAgent;
-export function runAfterModelCallbackDemo(query: string): void {
-  callAgent(query);
+export async function runAfterModelCallbackDemo(query: string): Promise<void> {
+  await callAgent(query);
 } 

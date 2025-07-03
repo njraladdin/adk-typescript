@@ -9,13 +9,15 @@
  * The structure and patterns shown here match how you would use the library in a real project.
  */
 
-import { 
-  LlmAgent, 
-  InMemoryRunner,
-  Content,
+import {
+  LlmAgent,
   CallbackContext,
-  LlmRegistry
-} from 'adk-typescript';
+} from 'adk-typescript/agents';
+import {
+  Content,
+  LlmRegistry,
+} from 'adk-typescript/models';
+import { runners } from 'adk-typescript';
 
 // Define the model - Use the specific model name requested
 const GEMINI_2_FLASH = "gemini-2.0-flash";
@@ -60,7 +62,8 @@ function modifyOutputAfterAgent(callbackContext: CallbackContext): Content | nul
 // Create model instance (using LlmRegistry)
 const model = LlmRegistry.newLlm(GEMINI_2_FLASH);
 
-const llmAgentWithAfterCallback = new LlmAgent("MySimpleAgentWithAfter", {
+const llmAgentWithAfterCallback = new LlmAgent({
+  name: "MySimpleAgentWithAfter",
   model: model,
   instruction: "You are a simple agent. Just say 'Processing complete!'",
   description: "An LLM agent demonstrating after_agent_callback for output modification",
@@ -75,10 +78,7 @@ async function main(): Promise<void> {
   const sessionIdModify = "session_modify_output";
 
   // Use InMemoryRunner - it includes InMemorySessionService
-  const runner = new InMemoryRunner({
-    agent: llmAgentWithAfterCallback, 
-    appName: appName
-  });
+  const runner = new runners.InMemoryRunner(llmAgentWithAfterCallback, appName);
   
   // Get the bundled session service
   const sessionService = runner.sessionService;
@@ -117,10 +117,10 @@ async function main(): Promise<void> {
 
     for await (const event of events1) {
       // Print final output (either from LLM or callback override)
-      if (event.isFinalResponse && event.content && event.content.parts) {
-        console.log(`Final Output: [${event.author}] ${event.content.parts[0].text.trim()}`);
-      } else if (event.isError) {
-        console.log(`Error Event: ${JSON.stringify(event.errorDetails)}`);
+      if (event.isFinalResponse() && event.content && event.content.parts) {
+        console.log(`Final Output: [${event.author}] ${event.content.parts[0].text?.trim()}`);
+      } else if (event.errorCode) {
+        console.log(`Error Event: [${event.errorCode}] ${event.errorMessage}`);
       }
     }
 
@@ -140,10 +140,10 @@ async function main(): Promise<void> {
 
     for await (const event of events2) {
       // Print final output (either from LLM or callback override)
-      if (event.isFinalResponse && event.content && event.content.parts) {
-        console.log(`Final Output: [${event.author}] ${event.content.parts[0].text.trim()}`);
-      } else if (event.isError) {
-        console.log(`Error Event: ${JSON.stringify(event.errorDetails)}`);
+      if (event.isFinalResponse() && event.content && event.content.parts) {
+        console.log(`Final Output: [${event.author}] ${event.content.parts[0].text?.trim()}`);
+      } else if (event.errorCode) {
+        console.log(`Error Event: [${event.errorCode}] ${event.errorMessage}`);
       }
     }
   } catch (error) {

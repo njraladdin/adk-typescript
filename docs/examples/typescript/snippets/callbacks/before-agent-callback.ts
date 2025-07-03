@@ -11,11 +11,13 @@
 
 import { 
   LlmAgent, 
-  CallbackContext,
+  CallbackContext
+} from 'adk-typescript/agents';
+import {
   Content,
-  InMemoryRunner,
   LlmRegistry
-} from 'adk-typescript';
+} from 'adk-typescript/models';
+import { runners } from 'adk-typescript';
 
 // Define the model
 const GEMINI_2_FLASH = "gemini-2.0-flash";
@@ -59,7 +61,8 @@ function checkIfAgentShouldRun(callbackContext: CallbackContext): Content | null
 // Create model instance (using LlmRegistry)
 const model = LlmRegistry.newLlm(GEMINI_2_FLASH);
 
-const llmAgentWithBeforeCallback = new LlmAgent("MyControlledAgent", {
+const llmAgentWithBeforeCallback = new LlmAgent({
+  name: "MyControlledAgent",
   model: model,
   instruction: "You are a concise assistant.",
   description: "An LLM agent demonstrating stateful before_agent_callback",
@@ -74,10 +77,7 @@ async function main(): Promise<void> {
   const sessionIdSkip = "session_will_skip";
 
   // Use InMemoryRunner - it includes InMemorySessionService
-  const runner = new InMemoryRunner({
-    agent: llmAgentWithBeforeCallback, 
-    appName: appName
-  });
+  const runner = new runners.InMemoryRunner(llmAgentWithBeforeCallback, appName);
   
   // Get the bundled session service
   const sessionService = runner.sessionService;
@@ -115,10 +115,10 @@ async function main(): Promise<void> {
 
     for await (const event of events1) {
       // Print final output (either from LLM or callback override)
-      if (event.isFinalResponse && event.content && event.content.parts) {
+      if (event.isFinalResponse() && event.content && event.content.parts) {
         console.log(`Final Output: [${event.author}] ${event.content.parts[0].text?.trim()}`);
-      } else if (event.isError) {
-        console.log(`Error Event: ${JSON.stringify(event.errorDetails)}`);
+      } else if (event.errorCode) {
+        console.log(`Error Event: [${event.errorCode}] ${event.errorMessage}`);
       }
     }
 
@@ -138,10 +138,10 @@ async function main(): Promise<void> {
 
     for await (const event of events2) {
       // Print final output (either from LLM or callback override)
-      if (event.isFinalResponse && event.content && event.content.parts) {
+      if (event.isFinalResponse() && event.content && event.content.parts) {
         console.log(`Final Output: [${event.author}] ${event.content.parts[0].text?.trim()}`);
-      } else if (event.isError) {
-        console.log(`Error Event: ${JSON.stringify(event.errorDetails)}`);
+      } else if (event.errorCode) {
+        console.log(`Error Event: [${event.errorCode}] ${event.errorMessage}`);
       }
     }
   } catch (error) {
