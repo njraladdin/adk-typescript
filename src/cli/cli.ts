@@ -238,8 +238,9 @@ export async function runCli({
       register({
         transpileOnly: true,
         compilerOptions: {
-          module: 'CommonJS',
-          target: 'ES2018',
+          module: 'Node16',
+          moduleResolution: 'Node16',
+          target: 'ES2020',
         },
       });
       
