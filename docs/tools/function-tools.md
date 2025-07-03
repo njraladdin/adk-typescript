@@ -37,7 +37,7 @@ The JSDoc comments of your function serve as the tool's description and are sent
     <u>Note</u>: You need to install the Yahoo Finance library before using this tool: `npm install yahoo-finance2`
 
     ```typescript
-    --8<-- "docs/examples/typescript/snippets/tools/function-tools/func-tool.ts"
+    --8<-- "docs/examples/typescript/snippets/tools/function-tools/FuncTool.ts"
     ```
 
     The return value from this tool will be wrapped into an object if it's not already one:
@@ -116,7 +116,7 @@ The JavaScript object your generator function returns is considered the final re
 ??? "Example: File Processing Simulation"
 
     ```typescript
-    --8<-- "docs/examples/typescript/snippets/tools/function-tools/file-processor.ts"
+    --8<-- "docs/examples/typescript/snippets/tools/function-tools/FileProcessor.ts"
     ```
 
 #### Key aspects of this example
@@ -160,7 +160,7 @@ The `AgentTool` class provides the following attributes for customizing its beha
 ??? "Example"
 
     ```typescript
-    --8<-- "docs/examples/typescript/snippets/tools/function-tools/summarizer.ts"
+    --8<-- "docs/examples/typescript/snippets/tools/function-tools/Summarizer.ts"
     ```
 
 ### How it works

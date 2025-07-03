@@ -651,17 +651,17 @@ return {
     === "Tools and Agent"
 
          ```typescript title="tools_and_agent.ts"
-         --8<-- "docs/examples/typescript/snippets/tools/auth/tools-and-agent.ts"
+         --8<-- "docs/examples/typescript/snippets/tools/auth/ToolsAndAgent.ts"
          ```
     === "Agent CLI"
 
          ```typescript title="agent_cli.ts"
-         --8<-- "docs/examples/typescript/snippets/tools/auth/agent-cli.ts"
+         --8<-- "docs/examples/typescript/snippets/tools/auth/AgentCli.ts"
          ```
     === "Helper"
 
          ```typescript title="helpers.ts"
-         --8<-- "docs/examples/typescript/snippets/tools/auth/helpers.ts"
+         --8<-- "docs/examples/typescript/snippets/tools/auth/Helpers.ts"
          ```
     === "Spec"
 

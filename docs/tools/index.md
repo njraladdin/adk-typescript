@@ -70,7 +70,7 @@ Furthermore, ADK supports the sequential use of tools, where the output of one t
 The following example showcases how an agent can use tools by **referencing their function names in its instructions**. It also demonstrates how to guide the agent to **handle different return values from tools**, such as success or error messages, and how to orchestrate the **sequential use of multiple tools** to accomplish a task.
 
 ```typescript
---8<-- "docs/examples/typescript/snippets/tools/overview/weather-sentiment.ts"
+--8<-- "docs/examples/typescript/snippets/tools/overview/WeatherSentiment.ts"
 ```
 
 ## Tool Context
@@ -110,7 +110,7 @@ The `tool_context.state` attribute provides direct read and write access to the 
     * `temp:*`: Temporary, not persisted across invocations (useful for passing data within a single run call but generally less useful inside a tool context which operates between LLM calls).
 
 ```typescript
---8<-- "docs/examples/typescript/snippets/tools/overview/user-preference.ts"
+--8<-- "docs/examples/typescript/snippets/tools/overview/UserPreference.ts"
 ```
 
 ### **Controlling Agent Flow**
@@ -126,7 +126,7 @@ The `tool_context.actions` attribute holds an **EventActions** object. Modifying
 #### Example
 
 ```typescript
---8<-- "docs/examples/typescript/snippets/tools/overview/customer-support-agent.ts"
+--8<-- "docs/examples/typescript/snippets/tools/overview/CustomerSupportAgent.ts"
 ```
 
 ##### Explanation
@@ -167,7 +167,7 @@ These methods provide convenient ways for your tool to interact with persistent 
 #### Example
 
 ```typescript
---8<-- "docs/examples/typescript/snippets/tools/overview/doc-analysis.ts"
+--8<-- "docs/examples/typescript/snippets/tools/overview/DocAnalysis.ts"
 ```
 
 By leveraging the **ToolContext**, developers can create more sophisticated and context-aware custom tools that seamlessly integrate with ADK's architecture and enhance the overall capabilities of their agents.
