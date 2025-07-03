@@ -47,12 +47,6 @@ const APP_NAME = "guardrail_app";
 const USER_ID = "user_1";
 const SESSION_ID = "session_001";
 
-// Configure logging (simplified version for TypeScript)
-const logger = {
-  info: (message: string, ...args: any[]) => console.info(message, ...args),
-  error: (message: string, ...args: any[]) => console.error(message, ...args)
-};
-
 // Session and Runner
 const sessionService = new InMemorySessionService();
 sessionService.createSession({

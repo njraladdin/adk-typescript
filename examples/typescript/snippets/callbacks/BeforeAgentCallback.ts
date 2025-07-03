@@ -22,11 +22,6 @@ import { runners } from 'adk-typescript';
 // Define the model
 const GEMINI_2_FLASH = "gemini-2.0-flash";
 
-// Configure logging (simplified version for TypeScript)
-const logger = {
-  info: (message: string, ...args: any[]) => console.info(message, ...args),
-  error: (message: string, ...args: any[]) => console.error(message, ...args)
-};
 
 // --- 1. Define the Callback Function ---
 function checkIfAgentShouldRun(callbackContext: CallbackContext): Content | null {

@@ -25,12 +25,6 @@ import { InMemorySessionService } from 'adk-typescript/sessions';
 // Define the model
 const GEMINI_2_FLASH = "gemini-2.0-flash";
 
-// Configure logging (simplified version for TypeScript)
-const logger = {
-  info: (message: string, ...args: any[]) => console.info(message, ...args),
-  error: (message: string, ...args: any[]) => console.error(message, ...args)
-};
-
 // --- Define the Callback Function ---
 function simpleBeforeModelModifier(
   callbackContext: CallbackContext, 
