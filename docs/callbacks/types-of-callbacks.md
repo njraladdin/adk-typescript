@@ -15,7 +15,7 @@ These callbacks are available on *any* agent that inherits from `BaseAgent` (inc
 ??? "Code"
 
     ```ts
-    --8<-- "examples/typescript/snippets/callbacks/BeforeAgentCallback.ts"
+    --8<-- "docs/examples/typescript/snippets/callbacks/BeforeAgentCallback.ts"
     ```
 
 **Note on the `before_agent_callback` Example:**
@@ -39,7 +39,7 @@ These callbacks are available on *any* agent that inherits from `BaseAgent` (inc
 ??? "Code"
 
     ```ts
-    --8<-- "examples/typescript/snippets/callbacks/AfterAgentCallback.ts"
+    --8<-- "docs/examples/typescript/snippets/callbacks/AfterAgentCallback.ts"
     ```
 
 **Note on the `afterAgentCallback` Example:**
@@ -69,7 +69,7 @@ If the callback returns `None`, the LLM continues its normal workflow. If the ca
 ??? "Code"
 
     ```ts
-    --8<-- "examples/typescript/snippets/callbacks/BeforeModelCallback.ts"
+    --8<-- "docs/examples/typescript/snippets/callbacks/BeforeModelCallback.ts"
     ```
 
 ### After Model Callback
@@ -87,7 +87,7 @@ If the callback returns `None`, the LLM continues its normal workflow. If the ca
 ??? "Code"
 
     ```ts
-    --8<-- "examples/typescript/snippets/callbacks/AfterModelCallback.ts"
+    --8<-- "docs/examples/typescript/snippets/callbacks/AfterModelCallback.ts"
     ```
 
 ## Tool Execution Callbacks
@@ -108,7 +108,7 @@ These callbacks are also specific to `LlmAgent` and trigger around the execution
 ??? "Code"
 
     ```ts
-    --8<-- "examples/typescript/snippets/callbacks/BeforeToolCallback.ts"
+    --8<-- "docs/examples/typescript/snippets/callbacks/BeforeToolCallback.ts"
     ```
 
 ### After Tool Callback
@@ -125,5 +125,5 @@ These callbacks are also specific to `LlmAgent` and trigger around the execution
 ??? "Code"
 
     ```ts
-    --8<-- "examples/typescript/snippets/callbacks/AfterToolCallback.ts"
+    --8<-- "docs/examples/typescript/snippets/callbacks/AfterToolCallback.ts"
     ```
