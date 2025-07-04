@@ -1,6 +1,8 @@
 # Changelog
 
 ## [current_version] 
+
+## [1.0.2] 
 * Fixed issue with ts-node dependency by including it as a runtime dependency
 * Fix Before & After agent callbacks not implemented correctly
 * Added missing functionality for automatic state delta tracking in callbacks.
