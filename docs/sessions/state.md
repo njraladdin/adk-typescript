@@ -110,9 +110,75 @@ The method-based approach is more explicit and provides additional functionality
 
 State should **always** be updated as part of adding an `Event` to the session history using `sessionService.appendEvent()`. This ensures changes are tracked, persistence works correctly, and updates are thread-safe.
 
-**The Standard Way: `EventActions.stateDelta` for State Updates**
+**1. The Easy Way: `outputKey` (for Agent Text Responses)**
 
-For updating state, you should construct the `stateDelta` within `EventActions` when creating an event:
+This is the simplest method for saving an agent's final text response directly into the state. When defining your `LlmAgent`, specify the `outputKey`:
+
+```typescript
+import { LlmAgent } from 'adk-typescript/agents';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { Runner } from 'adk-typescript/runners';
+import { Content, Part } from 'adk-typescript/models';
+
+// Define agent with outputKey
+const greetingAgent = new LlmAgent({
+  name: "Greeter",
+  model: "gemini-2.0-flash", // Use a valid model
+  instruction: "Generate a short, friendly greeting.",
+  outputKey: "last_greeting" // Save response to state['last_greeting']
+});
+
+// --- Setup Runner and Session ---
+const appName = "state_app";
+const userId = "user1";
+const sessionId = "session1";
+const sessionService = new InMemorySessionService();
+const runner = new Runner({
+  agent: greetingAgent,
+  appName: appName,
+  sessionService: sessionService
+});
+
+const session = await sessionService.createSession({
+  appName: appName,
+  userId: userId,
+  sessionId: sessionId
+});
+console.log(`Initial state: ${JSON.stringify(session.state.getAll())}`);
+
+// --- Run the Agent ---
+// Runner handles calling appendEvent, which uses the outputKey
+// to automatically create the stateDelta.
+const userMessage = new Content({
+  role: 'user',
+  parts: [new Part({ text: "Hello" })]
+});
+
+for await (const event of runner.run({
+  userId: userId,
+  sessionId: sessionId,
+  newMessage: userMessage
+})) {
+  if (event.isFinalResponse()) {
+    console.log("Agent responded."); // Response text is also in event.content
+  }
+}
+
+// --- Check Updated State ---
+const updatedSession = await sessionService.getSession({
+  appName: appName,
+  userId: userId,
+  sessionId: sessionId
+});
+console.log(`State after agent run: ${JSON.stringify(updatedSession?.state.getAll())}`);
+// Expected output might include: {'last_greeting': 'Hello there! How can I help you today?'}
+```
+
+Behind the scenes, the `Runner` uses the `outputKey` to create the necessary `EventActions` with a `stateDelta` and calls `appendEvent`.
+
+**2. The Standard Way: `EventActions.stateDelta` (for Complex Updates)**
+
+For more complex scenarios (updating multiple keys, non-string values, specific scopes like `user:` or `app:`, or updates not tied directly to the agent's final text), you manually construct the `stateDelta` within `EventActions`.
 
 ```typescript
 import { Event, EventActions } from 'adk-typescript/events';
@@ -121,18 +187,18 @@ import { StatePrefix } from 'adk-typescript/sessions';
 
 // --- Setup ---
 const sessionService = new InMemorySessionService();
-const appName = 'state_app_manual';
-const userId = 'user2';
-const sessionId = 'session2';
+const appName = "state_app_manual";
+const userId = "user2";
+const sessionId = "session2";
 
 // Create a session with initial state
-const session = sessionService.createSession({
+const session = await sessionService.createSession({
   appName,
   userId,
   sessionId,
   state: { 'user:login_count': 0, 'task_status': 'idle' }
 });
-console.log(`Initial state: ${JSON.stringify(session.state)}`);
+console.log(`Initial state: ${JSON.stringify(session.state.getAll())}`);
 
 // --- Define State Changes ---
 const currentTime = Date.now() / 1000; // Convert to seconds for timestamp consistency
@@ -158,7 +224,7 @@ const systemEvent = new Event({
 });
 
 // --- Append the Event (This updates the state) ---
-sessionService.appendEvent({ session, event: systemEvent });
+await sessionService.appendEvent({ session, event: systemEvent });
 console.log('`appendEvent` called with explicit state delta.');
 
 // --- Check Updated State ---
@@ -167,9 +233,42 @@ const updatedSession = await sessionService.getSession({
   userId,
   sessionId
 });
-console.log(`State after event: ${JSON.stringify(updatedSession?.state)}`);
+console.log(`State after event: ${JSON.stringify(updatedSession?.state.getAll())}`);
 // Expected: {'user:login_count': 1, 'task_status': 'active', 'user:last_login_ts': <timestamp>}
 // Note: 'temp:validation_needed' is NOT present in persistent storage.
+```
+
+**3. Via `CallbackContext` or `ToolContext` (Recommended for Callbacks and Tools)**
+
+Modifying state within agent callbacks (e.g., `beforeModelCallback`, `afterModelCallback`) or tool functions is best done using the `state` attribute of the `CallbackContext` or `ToolContext` provided to your function.
+
+*   `callbackContext.state.set('my_key', my_value)`
+*   `toolContext.state.set('my_key', my_value)`
+
+These context objects are specifically designed to manage state changes within their respective execution scopes. When you modify `context.state`, the ADK framework ensures that these changes are automatically captured and correctly routed into the `EventActions.stateDelta` for the event being generated by the callback or tool. This delta is then processed by the `SessionService` when the event is appended, ensuring proper persistence and tracking.
+
+This method abstracts away the manual creation of `EventActions` and `stateDelta` for most common state update scenarios within callbacks and tools, making your code cleaner and less error-prone.
+
+For more comprehensive details on context objects, refer to the [Context documentation](../context/index.md).
+
+```typescript
+// In an agent callback or tool function
+import { CallbackContext } from 'adk-typescript/agents'; // or ToolContext from 'adk-typescript/tools'
+
+function myCallbackOrToolFunction(
+  context: CallbackContext, // Or ToolContext
+  // ... other parameters ...
+): void {
+  // Update existing state
+  const count = context.state.get("user_action_count", 0);
+  context.state.set("user_action_count", count + 1);
+
+  // Add new state
+  context.state.set("temp:last_operation_status", "success");
+
+  // State changes are automatically part of the event's stateDelta
+  // ... rest of callback/tool logic ...
+}
 ```
 
 **What `appendEvent` Does:**
@@ -182,16 +281,18 @@ console.log(`State after event: ${JSON.stringify(updatedSession?.state)}`);
 
 ### ⚠️ A Warning About Direct State Modification
 
-While the `State` class allows direct property access and modification (e.g., `session.state['key'] = value` or `session.state.set('key', value)`), this approach has significant limitations for persisting changes after retrieving a session.
+Avoid directly modifying the `session.state` object on a `Session` object that was obtained directly from the `SessionService` (e.g., via `sessionService.getSession()` or `sessionService.createSession()`) *outside* of the managed lifecycle of an agent invocation (i.e., not through a `CallbackContext` or `ToolContext`). For example, code like `retrievedSession = await sessionService.getSession(...); retrievedSession.state.set('key', value)` is problematic.
 
-**Why this approach should be used carefully:**
+State modifications *within* callbacks or tools using `CallbackContext.state` or `ToolContext.state` are the correct way to ensure changes are tracked, as these context objects handle the necessary integration with the event system.
 
-1. **Bypasses Event History:** The change isn't recorded as an `Event`, losing auditability.  
-2. **Potential Persistence Issues:** Changes made directly to `session.state` may not be saved by persistent implementations of `SessionService` unless explicitly persisted. Many implementations rely on `appendEvent` to trigger saving.  
-3. **Potential Thread-Safety Issues:** Can lead to race conditions and lost updates in multi-user scenarios.  
+**Why direct modification (outside of contexts) is strongly discouraged:**
+
+1. **Bypasses Event History:** The change isn't recorded as an `Event`, losing auditability.
+2. **Breaks Persistence:** Changes made this way **will likely NOT be saved** by `DatabaseSessionService` or `VertexAiSessionService`. They rely on `appendEvent` to trigger saving.
+3. **Not Thread-Safe:** Can lead to race conditions and lost updates.
 4. **Ignores Timestamps/Logic:** Doesn't update `lastUpdateTime` or trigger related event logic.
 
-**Recommendation:** For persistent, traceable state changes, use `EventActions.stateDelta` within the `appendEvent` flow. Direct access through the `State` methods is convenient for temporary, in-memory changes or reading values, but should be used with awareness of these limitations.
+**Recommendation:** Stick to updating state via `outputKey`, `EventActions.stateDelta` (when manually creating events), or by modifying the `state` property of `CallbackContext` or `ToolContext` objects when within their respective scopes. These methods ensure reliable, trackable, and persistent state management. Use direct access to `session.state` (from a `SessionService`-retrieved session) only for *reading* state.
 
 ### Best Practices for State Design Recap
 
@@ -199,8 +300,7 @@ While the `State` class allows direct property access and modification (e.g., `s
 * **Serialization:** Use basic, serializable types.  
 * **Descriptive Keys & Prefixes:** Use clear names and appropriate prefixes (`user:`, `app:`, `temp:`, or none).  
 * **Shallow Structures:** Avoid deep nesting where possible.  
-* **Standard Update Flow:** Prefer `appendEvent` for persistent changes.
-* **Consistency:** Choose either direct property access or method-based access and use it consistently.
+* **Standard Update Flow:** Rely on `appendEvent`.
 
 ### Access Constants for Prefixes
 
