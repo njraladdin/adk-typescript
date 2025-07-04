@@ -77,7 +77,7 @@ You wrap a TypeScript *async generator* function (a function using `async functi
 Define your generator function and wrap it using the `LongRunningFunctionTool` class:
 
 ```typescript
-import { LongRunningFunctionTool } from 'adk-typescript';
+import { LongRunningFunctionTool } from 'adk-typescript/tools';
 
 // Define your generator function (see example below)
 async function* myLongTaskGenerator(...args: any[]): AsyncGenerator<any, any, unknown> {
