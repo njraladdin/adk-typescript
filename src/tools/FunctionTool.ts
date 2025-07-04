@@ -52,6 +52,7 @@ export class FunctionTool extends BaseTool {
       // Extract documentation from function comments
       let description = '';
       const funcStr = func.toString();
+      console.log(`Function string: ${funcStr}`);
       const docMatch = funcStr.match(/\/\*\*([\s\S]*?)\*\//);
       if (docMatch) {
         // Extract the description from JSDoc comment
@@ -91,6 +92,8 @@ export class FunctionTool extends BaseTool {
       this.fn = options.fn;
       this.functionDeclaration = options.functionDeclaration;
     }
+    console.log('this.functionDeclaration', this.functionDeclaration);
+    console.log('this.functionDeclaration?.parameters', this.functionDeclaration?.parameters);
   }
   
   /**
@@ -145,6 +148,8 @@ export class FunctionTool extends BaseTool {
     params: Record<string, any>,
     context: ToolContext
   ): Promise<any> {
-    return await this.fn(params, context);
+    const args = Object.values(params);
+    const fn = this.fn as (...args: any[]) => any;
+    return await fn(...args, context);
   }
 } 

@@ -1,6 +1,7 @@
 # Changelog
 
 ## [current_version] 
+* Fixed an issue in `FunctionTool` where parameters from the LLM were not passed correctly to the wrapped function
 * Updated state documentation to match Python version, adding missing sections for `outputKey`, `CallbackContext`/`ToolContext` state management, and TypeScript examples
 * Corrected session & memory docs code snippets 
 * Fixed tools-related example code snippets for the documentation.
