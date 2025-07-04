@@ -5,7 +5,7 @@ import { promisify } from 'util';
 import { VERSION } from '../index';
 
 const AGENT_TS_TEMPLATE = `import { LlmAgent as Agent } from 'adk-typescript/agents';
-import { FunctionTool, ToolContext } from 'adk-typescript/tools';
+import {  ToolContext } from 'adk-typescript/tools';
 
 // --- Tool Functions ---
 
@@ -41,44 +41,13 @@ async function getCurrentTime(
   params: Record<string, any>, 
   context?: ToolContext
 ): Promise<{ currentTime: string; timezone: string; }> {
-    console.log(\`--- Tool: getCurrentTime called ---\`);
-    const now = new Date();
-    return {
-        currentTime: now.toLocaleTimeString(),
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-    };
+  console.log(\`--- Tool: getCurrentTime called ---\`);
+  const now = new Date();
+  return {
+    currentTime: now.toLocaleTimeString(),
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  };
 }
-
-// --- Tool Wrappers ---
-
-const getWeatherTool = new FunctionTool({
-  name: "getWeather",
-  description: "Returns current weather information for a specified city",
-  fn: getWeather,
-  functionDeclaration: {
-    name: "getWeather",
-    description: "Returns current weather information for a specified city",
-    parameters: {
-      type: 'object',
-      properties: {
-        city: { type: 'string', description: 'The name of the city (e.g., "New York")'}
-      },
-      required: ['city']
-    }
-  }
-});
-
-const getCurrentTimeTool = new FunctionTool({
-    name: "getCurrentTime",
-    description: "Gets the current local time and timezone.",
-    fn: getCurrentTime,
-    functionDeclaration: {
-        name: "getCurrentTime",
-        description: "Gets the current local time and timezone.",
-        parameters: { type: 'object', properties: {} } // No parameters
-    }
-});
-
 
 // --- Agent Definition ---
 
@@ -90,7 +59,7 @@ export const rootAgent = new Agent({
   instruction: "You are a helpful assistant. Use the 'getWeather' tool for weather queries " +
                "and the 'getCurrentTime' tool for time queries. Provide clear answers based on tool results. " +
                "If asked for weather AND time, use both tools.",
-  tools: [getWeatherTool, getCurrentTimeTool], // List of available tools
+  tools: [getWeather, getCurrentTime], // List of available tools (functions)
 });
 `;
 
