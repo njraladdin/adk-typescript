@@ -45,32 +45,17 @@ export class FunctionTool extends BaseTool {
    */
   constructor(options: FunctionToolOptions | ToolFunction) {
     if (typeof options === 'function') {
-      // Direct function case - similar to Python version
+      // Direct function case
       const func = options as ToolFunction;
       const funcName = func.name || 'anonymous_function';
       
-      // Extract documentation from function comments
-      let description = '';
-      const funcStr = func.toString();
-      console.log(`Function string: ${funcStr}`);
-      const docMatch = funcStr.match(/\/\*\*([\s\S]*?)\*\//);
-      if (docMatch) {
-        // Extract the description from JSDoc comment
-        description = docMatch[1]
-          .split('\n')
-          .map(line => line.replace(/^\s*\*\s?/, '').trim())
-          .filter(line => line && !line.startsWith('@'))
-          .join(' ')
-          .trim();
-      }
-      
-      super({ name: funcName, description: description || `Function ${funcName}` });
+      super({ name: funcName, description: `Function ${funcName}` });
       this.fn = func;
       
       // Generate function declaration automatically
       try {
         this.functionDeclaration = buildFunctionDeclaration(func, {
-          ignoreParams: ['context', 'tool_context', 'toolContext', 'input_stream'], // Ignore context parameters
+          ignoreParams: ['context', 'tool_context', 'toolContext', 'input_stream'],
           variant: 'DEFAULT'
         });
       } catch (error) {
@@ -78,7 +63,7 @@ export class FunctionTool extends BaseTool {
         console.warn(`Failed to generate function declaration for ${funcName}: ${error}`);
         this.functionDeclaration = {
           name: funcName,
-          description: description || `Function ${funcName}`,
+          description: `Function ${funcName}`,
           parameters: {
             type: 'object',
             properties: {},
@@ -87,13 +72,11 @@ export class FunctionTool extends BaseTool {
         };
       }
     } else {
-      // Options-based case - existing behavior
+      // Options-based case
       super(options);
       this.fn = options.fn;
       this.functionDeclaration = options.functionDeclaration;
     }
-    console.log('this.functionDeclaration', this.functionDeclaration);
-    console.log('this.functionDeclaration?.parameters', this.functionDeclaration?.parameters);
   }
   
   /**

@@ -376,7 +376,7 @@ describe('Automatic Function Declaration', () => {
 
     const mockResult: ExtendedFunctionDeclaration = {
       name: 'returnsNumber',
-      description: 'Function description',
+      description: 'Function returnsNumber',
       parameters: {
         type: 'object',
         properties: {},
@@ -397,31 +397,6 @@ describe('Automatic Function Declaration', () => {
     expect(functionDecl.response?.type).toBe('number');
   });
 
-  test('should extract description from JSDoc', () => {
-    /**
-     * This is a test function with JSDoc
-     * that spans multiple lines
-     */
-    function docFunction(): void {
-      // Empty
-    }
-
-    const mockResult: ExtendedFunctionDeclaration = {
-      name: 'docFunction',
-      description: 'This is a test function with JSDoc that spans multiple lines',
-      parameters: {
-        type: 'object',
-        properties: {},
-        required: []
-      }
-    };
-
-    buildFunctionDeclarationMock.mockReturnValue(mockResult);
-
-    const functionDecl = automaticFunctionDeclaration.buildFunctionDeclaration(docFunction);
-    expect(functionDecl.description).toBe('This is a test function with JSDoc that spans multiple lines');
-  });
-
   test('should handle nullable union types with undefined', () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function unionFunction(param: string | undefined): void {
@@ -430,7 +405,7 @@ describe('Automatic Function Declaration', () => {
 
     const mockResult: ExtendedFunctionDeclaration = {
       name: 'unionFunction',
-      description: 'Function description',
+      description: 'Function unionFunction',
       parameters: {
         type: 'object',
         properties: {

@@ -1,6 +1,7 @@
 # Changelog
 
 ## [current_version] 
+* Removed JSDoc-based function description extraction, since JSDoc is not available at runtime for functions in TypeScript (unlike Python).
 * Fixed an issue in `FunctionTool` where parameters from the LLM were not passed correctly to the wrapped function
 * Updated state documentation to match Python version, adding missing sections for `outputKey`, `CallbackContext`/`ToolContext` state management, and TypeScript examples
 * Corrected session & memory docs code snippets 
