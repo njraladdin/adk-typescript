@@ -115,9 +115,9 @@ State should **always** be updated as part of adding an `Event` to the session h
 For updating state, you should construct the `stateDelta` within `EventActions` when creating an event:
 
 ```typescript
-import { Event, EventActions } from './events/Event';
-import { InMemorySessionService } from './sessions/InMemorySessionService';
-import { StatePrefix } from './sessions/State';
+import { Event, EventActions } from 'adk-typescript/events';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { StatePrefix } from 'adk-typescript/sessions';
 
 // --- Setup ---
 const sessionService = new InMemorySessionService();
@@ -162,7 +162,7 @@ sessionService.appendEvent({ session, event: systemEvent });
 console.log('`appendEvent` called with explicit state delta.');
 
 // --- Check Updated State ---
-const updatedSession = sessionService.getSession({
+const updatedSession = await sessionService.getSession({
   appName,
   userId,
   sessionId
@@ -207,7 +207,7 @@ While the `State` class allows direct property access and modification (e.g., `s
 TypeScript provides constants for the standard prefixes in the `StatePrefix` class:
 
 ```typescript
-import { StatePrefix } from './sessions/State';
+import { StatePrefix } from 'adk-typescript/sessions';
 
 // Use constants for prefixes
 const appSettings = `${StatePrefix.APP_PREFIX}feature_flags`;

@@ -27,7 +27,7 @@ ADK provides different ways to implement this long-term knowledge store:
     * **Best for:** Prototyping, simple testing, scenarios where only basic keyword recall is needed and persistence isn't required.
 
     ```typescript
-    import { InMemoryMemoryService } from './memory/InMemoryMemoryService';
+    import { InMemoryMemoryService } from 'adk-typescript/memory';
     const memoryService = new InMemoryMemoryService();
     ```
 
@@ -39,7 +39,7 @@ ADK provides different ways to implement this long-term knowledge store:
     * **Best for:** Production applications needing scalable, persistent, and semantically relevant knowledge retrieval, especially when deployed on Google Cloud.
 
     ```typescript
-    import { VertexAiRagMemoryService } from './memory/VertexAiRagMemoryService';
+    import { VertexAiRagMemoryService } from 'adk-typescript/memory';
 
     // Configure the RAG memory service
     const memoryService = new VertexAiRagMemoryService({
@@ -77,13 +77,13 @@ The typical workflow involves these steps:
 This example demonstrates the basic flow using the `InMemory` services for simplicity.
 
 ```typescript
-import { InMemorySessionService } from './sessions/inMemorySessionService';
-import { InMemoryMemoryService } from './memory/InMemoryMemoryService';
-import { Session } from './sessions/interfaces';
-import { Content, Part } from './sessions/types';
-import { loadMemoryTool } from './tools/LoadMemoryTool';
-import { Runner } from './runners/runner';
-import { LlmAgent } from './agents/LlmAgent';
+import { InMemorySessionService, SessionInterface } from 'adk-typescript/sessions';
+import { InMemoryMemoryService } from 'adk-typescript/memory';
+import { Session } from 'adk-typescript/sessions';
+import { Content, Part } from 'adk-typescript/sessions';
+import { loadMemoryTool } from 'adk-typescript/tools';
+import { runners } from 'adk-typescript';
+import { LlmAgent } from 'adk-typescript/agents';
 
 // --- Constants ---
 const APP_NAME = "memory_example_app";
@@ -110,7 +110,7 @@ const memoryRecallAgent = new LlmAgent({
 });
 
 // --- Create a runner ---
-const runner = new Runner({
+const runner = new runners.Runner({
   agent: infoCaptureAgent, // Start with info capture agent
   appName: APP_NAME,
   sessionService: sessionService,
@@ -142,7 +142,7 @@ async function runScenario() {
   for await (const event of runner.run({
     userId: USER_ID,
     sessionId: SESSION1_ID,
-    message: userMessage1
+    newMessage: userMessage1
   })) {
     if (event.turnComplete && event.content && event.content.parts && event.content.parts.length > 0) {
       finalResponseText1 = event.content.parts[0].text || "";
@@ -151,7 +151,7 @@ async function runScenario() {
   console.log(`Agent 1 Response: ${finalResponseText1}`);
 
   // Get the completed session
-  const completedSession1 = sessionService.getSession({
+  const completedSession1 = await sessionService.getSession({
     appName: APP_NAME,
     userId: USER_ID,
     sessionId: SESSION1_ID
@@ -160,7 +160,7 @@ async function runScenario() {
   // Add session to memory
   console.log("\n--- Adding Session 1 to Memory ---");
   if (completedSession1) {
-    await memoryService.addSessionToMemory(completedSession1);
+    await memoryService.addSessionToMemory(completedSession1 as SessionInterface);
     console.log("Session added to memory.");
   }
 
@@ -191,13 +191,13 @@ async function runScenario() {
   for await (const event of runner.run({
     userId: USER_ID,
     sessionId: SESSION2_ID,
-    message: userMessage2
+      newMessage: userMessage2
   })) {
     // Log the event type
     console.log(`  Event: ${event.author} - ${
       event.content && event.content.parts && event.content.parts[0].text ? 'Text' : 
-      event.actions?.functionCalls ? 'FuncCall' : 
-      event.actions?.functionResponses ? 'FuncResp' : 'Other'
+      event.getFunctionCalls().length > 0 ? 'FuncCall' : 
+      event.getFunctionResponses().length > 0 ? 'FuncResp' : 'Other'
     }`);
     
     // If this is the final response, capture it

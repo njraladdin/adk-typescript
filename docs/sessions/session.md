@@ -17,12 +17,12 @@ When a user starts interacting with your agent, the `SessionService` creates a `
 ### Example: Examining Session Properties
 
 ```typescript
-import { InMemorySessionService } from './sessions/inMemorySessionService';
-import { Session } from './sessions/interfaces';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { Session } from 'adk-typescript/sessions';
 
 // Create a simple session to examine its properties
 const tempService = new InMemorySessionService();
-const exampleSession: Session = tempService.createSession({
+const exampleSession: Session = await tempService.createSession({
     appName: "my_app",
     userId: "example_user",
     state: {"initial_key": "initial_value"} // State can be initialized
@@ -42,6 +42,7 @@ tempService.deleteSession({
     userId: exampleSession.userId,
     sessionId: exampleSession.id
 });
+
 ```
 
 *(**Note:** The state shown above is only the initial state. State updates happen via events, as discussed in the State section.)*
@@ -70,7 +71,7 @@ ADK provides different `SessionService` implementations, allowing you to choose 
     * **Best for:** Quick tests, local development, examples, and scenarios where long-term persistence isn't required.
 
     ```typescript
-    import { InMemorySessionService } from './sessions/inMemorySessionService';
+    import { InMemorySessionService } from 'adk-typescript/sessions';
     const sessionService = new InMemorySessionService();
     ```
 
@@ -82,7 +83,7 @@ ADK provides different `SessionService` implementations, allowing you to choose 
     * **Best for:** Applications needing reliable, persistent storage that you manage yourself.
 
     ```typescript
-    import { DatabaseSessionService } from './sessions/databaseSessionService';
+    import { DatabaseSessionService } from 'adk-typescript/sessions';
     
     // Example using a local SQLite file:
     const dbUrl = "sqlite:///./my_agent_data.db";
@@ -97,7 +98,7 @@ ADK provides different `SessionService` implementations, allowing you to choose 
     * **Best for:** Scalable production applications deployed on Google Cloud, especially when integrating with other Vertex AI features.
 
     ```typescript
-    import { VertexAiSessionService } from './sessions/vertexAiSessionService';
+    import { VertexAiSessionService } from 'adk-typescript/sessions';
 
     const PROJECT_ID = "your-gcp-project-id";
     const LOCATION = "us-central1";
