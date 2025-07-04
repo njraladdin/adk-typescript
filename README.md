@@ -17,9 +17,9 @@
     </h3>
 </html>
 
-**⚠️ Work in Progress Notice:** This project is a **TypeScript port** of the original [Google ADK Python library](https://github.com/google/adk-python). It aims to provide similar functionality within the Node.js/TypeScript ecosystem but is currently under active development and should be considered **experimental (alpha)**. Features, APIs, and stability may differ from the Python version, and some components might be incomplete or subject to change.
+**⚠️ Unofficial Port & Experimental Status:** This is an unofficial TypeScript port of the [Google ADK Python library](https://github.com/google/adk-python). It's currently in an experimental (alpha) stage, so some features and APIs may be unstable or contain bugs.
 
-Agent Development Kit (ADK) for TypeScript is a flexible and modular framework for developing and deploying AI agents. While optimized for Gemini and the Google ecosystem, ADK is model-agnostic, deployment-agnostic, and is built for compatibility with other frameworks. ADK was designed to make agent development feel more like software development, to make it easier for developers to create, deploy, and orchestrate agentic architectures that range from simple tasks to complex workflows.
+**Agent Development Kit (ADK)** for TypeScript is a flexible and modular framework for developing and deploying AI agents. While optimized for Gemini and the Google ecosystem, ADK is model-agnostic, deployment-agnostic, and is built for compatibility with other frameworks. ADK was designed to make agent development feel more like software development, to make it easier for developers to create, deploy, and orchestrate agentic architectures that range from simple tasks to complex workflows.
 
 
 ---
@@ -82,10 +82,9 @@ See the [Installation Guide](./installation.md) for more details on setting up y
 
 ## 📚 Documentation
 
-Explore the full documentation for detailed guides. *Please note that the official documentation currently focuses on the Python version, but many core concepts are similar.*
+Our TypeScript-specific documentation is available at **[https://njraladdin.github.io/adk-typescript/](https://njraladdin.github.io/adk-typescript/)**.
 
-*   **[Official ADK Documentation](https://google.github.io/adk-docs)** (Primarily Python)
-*   Refer to the `*.md` files within *this* repository (like `quickstart.md`, `tutorial.md`) for TypeScript-specific guidance based on this port.
+*Please be aware that the documentation is a work in progress and may not be perfectly accurate yet. For conceptual information, you may still refer to the [official Python ADK documentation](https://google.github.io/adk-docs), but be aware of implementation differences.*
 
 
 ## ⚙️ Using the CLI (`npx adk`)
