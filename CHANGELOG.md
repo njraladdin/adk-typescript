@@ -2,7 +2,8 @@
 
 ## [current_version] 
 * Fixed issue with ts-node dependency by including it as a runtime dependency
-* Fix Before & After agent callbacks not implemented correctly 
+* Fix Before & After agent callbacks not implemented correctly
+* Added missing functionality for automatic state delta tracking in callbacks.
 
 ## [1.0.1]
 * Simplified install and structure: no global `npm -g` needed; all agents share one node_modules folder.

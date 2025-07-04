@@ -9,33 +9,39 @@ import { State } from '../sessions/State';
  * Provides mutable access to the agent's state and context.
  */
 export class CallbackContext extends ReadonlyContext {
-  private eventActions: EventActions;
-  private mutableState: State;
+  // TODO: make this public for Agent Development Kit, but private for users.
+  public _eventActions: EventActions;
+  private _state: State;
 
   constructor(
     invocationContext: InvocationContext,
     eventActions?: EventActions
   ) {
     super(invocationContext);
-    this.eventActions = eventActions || new EventActions();
+    this._eventActions = eventActions || new EventActions();
     
-    // Merge the session state and event actions delta into a new State instance
-    const baseState = invocationContext.session.state.getAll ? invocationContext.session.state.getAll() : {};
-    const delta = this.eventActions.stateDelta || {};
-    this.mutableState = new State({
-      ...baseState,
-      ...delta
-    });
+    // Create a delta-aware state using the session state as base and eventActions.stateDelta as delta
+    this._state = new State(
+      invocationContext.session.state.getAll ? invocationContext.session.state.getAll() : {},
+      this._eventActions.stateDelta
+    );
+    
+    // Override the state's set method to automatically update eventActions.stateDelta
+    const originalSet = this._state.set.bind(this._state);
+    this._state.set = (key: string, value: any) => {
+      originalSet(key, value);
+      this._eventActions.stateDelta[key] = value;
+    };
   }
 
   /**
    * The delta-aware state of the current session.
    * 
    * For any state change, you can mutate this object directly,
-   * e.g. `ctx.state['foo'] = 'bar'`
+   * e.g. `ctx.state.set('foo', 'bar')`
    */
   override get state(): State {
-    return this.mutableState;
+    return this._state;
   }
 
   /**
@@ -79,7 +85,7 @@ export class CallbackContext extends ReadonlyContext {
       artifact
     });
     
-    this.eventActions.artifactDelta[filename] = version;
+    this._eventActions.artifactDelta[filename] = version;
     return version;
   }
 } 

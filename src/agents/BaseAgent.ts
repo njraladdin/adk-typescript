@@ -355,10 +355,21 @@ export abstract class BaseAgent {
           author: this.name,
           branch: invocationContext.branch,
           content: beforeAgentCallbackContent,
+          actions: callbackContext._eventActions,
         });
         invocationContext.endInvocation = true;
         return retEvent;
       }
+    }
+
+    // Even if no content was returned, create an event if there are state changes
+    if (callbackContext.state.hasDelta()) {
+      retEvent = new Event({
+        invocationId: invocationContext.invocationId,
+        author: this.name,
+        branch: invocationContext.branch,
+        actions: callbackContext._eventActions,
+      });
     }
 
     return retEvent;
@@ -388,9 +399,20 @@ export abstract class BaseAgent {
           author: this.name,
           branch: invocationContext.branch,
           content: afterAgentCallbackContent,
+          actions: callbackContext._eventActions,
         });
         return retEvent;
       }
+    }
+
+    // Even if no content was returned, create an event if there are state changes
+    if (callbackContext.state.hasDelta()) {
+      retEvent = new Event({
+        invocationId: invocationContext.invocationId,
+        author: this.name,
+        branch: invocationContext.branch,
+        actions: callbackContext._eventActions,
+      });
     }
 
     return retEvent;

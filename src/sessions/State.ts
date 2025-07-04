@@ -8,42 +8,54 @@ export class StatePrefix {
 }
 
 /**
- * A class for managing session state.
- * This is a dictionary-like object with methods similar to the Python version.
+ * A state dict that maintains the current value and the pending-commit delta.
+ * This matches the Python implementation for faithful porting.
  */
 export class State {
-  // Add index signature to allow property access
-  [key: string]: any;
+  private _value: Record<string, any>;
+  private _delta: Record<string, any>;
   
   /**
    * Creates a new state.
    * 
-   * @param initialState Initial state values
+   * @param value The current value of the state dict
+   * @param delta The delta change to the current value that hasn't been committed
    */
-  constructor(initialState: Record<string, any> = {}) {
-    // Copy all properties from initialState to this object
-    Object.assign(this, initialState);
+  constructor(value: Record<string, any> = {}, delta: Record<string, any> = {}) {
+    this._value = { ...value };
+    this._delta = { ...delta };
   }
   
   /**
    * Gets a value from the state.
-   * Similar to Python's dictionary get method.
+   * Returns the delta value if present, otherwise the base value.
    * 
    * @param key The key of the value
-   * @returns The value, or undefined if not found
+   * @param defaultValue The default value if key is not found
+   * @returns The value, or defaultValue if not found
    */
-  get(key: string): any {
-    return this[key];
+  get(key: string, defaultValue?: any): any {
+    if (key in this._delta) {
+      return this._delta[key];
+    }
+    if (key in this._value) {
+      return this._value[key];
+    }
+    return defaultValue;
   }
   
   /**
    * Sets a value in the state.
+   * This updates both the value and adds to the delta.
    * 
    * @param key The key of the value
    * @param value The value to set
    */
   set(key: string, value: any): void {
-    this[key] = value;
+    // TODO: make new change only store in delta, so that this._value is only
+    //   updated at the storage commit time.
+    this._value[key] = value;
+    this._delta[key] = value;
   }
   
   /**
@@ -53,7 +65,7 @@ export class State {
    * @returns True if the state has a value for the key, false otherwise
    */
   has(key: string): boolean {
-    return key in this;
+    return key in this._value || key in this._delta;
   }
   
   /**
@@ -63,36 +75,64 @@ export class State {
    * @returns True if the value was deleted, false otherwise
    */
   delete(key: string): boolean {
-    if (key in this) {
-      delete this[key];
-      return true;
+    let deleted = false;
+    if (key in this._value) {
+      delete this._value[key];
+      deleted = true;
     }
-    return false;
+    if (key in this._delta) {
+      delete this._delta[key];
+      deleted = true;
+    }
+    return deleted;
   }
   
   /**
-   * Gets all the state as a record.
+   * Whether the state has pending delta.
    * 
-   * @returns The state as a record
+   * @returns True if there are pending changes, false otherwise
+   */
+  hasDelta(): boolean {
+    return Object.keys(this._delta).length > 0;
+  }
+  
+  /**
+   * Gets the current delta.
+   * 
+   * @returns The delta changes
+   */
+  getDelta(): Record<string, any> {
+    return { ...this._delta };
+  }
+  
+  /**
+   * Updates the state with the given delta.
+   * 
+   * @param delta The delta to apply
+   */
+  update(delta: Record<string, any>): void {
+    Object.assign(this._value, delta);
+    Object.assign(this._delta, delta);
+  }
+  
+  /**
+   * Gets all the state as a record (value + delta merged).
+   * 
+   * @returns The complete state as a record
    */
   getAll(): Record<string, any> {
-    const result: Record<string, any> = {};
-    for (const key in this) {
-      if (typeof this[key] !== 'function' && Object.prototype.hasOwnProperty.call(this, key)) {
-        result[key] = this[key];
-      }
-    }
+    const result = { ...this._value };
+    Object.assign(result, this._delta);
     return result;
   }
   
   /**
-   * Update state with new key-value pairs.
-   * Similar to Python's dictionary update method.
+   * Returns the state dict (alias for getAll for Python compatibility).
    * 
-   * @param data The data to update
+   * @returns The complete state as a record
    */
-  update(data: Record<string, any>): void {
-    Object.assign(this, data);
+  toDict(): Record<string, any> {
+    return this.getAll();
   }
   
   /**
@@ -101,4 +141,7 @@ export class State {
   toJSON(): Record<string, any> {
     return this.getAll();
   }
+  
+  // Add index signature for backward compatibility
+  [key: string]: any;
 } 

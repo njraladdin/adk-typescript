@@ -155,6 +155,16 @@ function beforeAgentCb1(callbackContext: CallbackContext): Content | undefined {
 
 function beforeAgentCb2(callbackContext: CallbackContext): Content | undefined {
   console.log('@before_agent_cb2');
+  
+  // Test state changes - this should be tracked in the event actions
+  callbackContext.state.set('testKey', 'testValue');
+  callbackContext.state.set('callbackRun', 'beforeAgentCb2');
+  
+  // Debug: check if delta is being tracked
+  console.log('State has delta:', callbackContext.state.hasDelta());
+  console.log('State delta:', callbackContext.state.getDelta());
+  console.log('EventActions stateDelta:', callbackContext._eventActions.stateDelta);
+  
   return undefined;
 }
 

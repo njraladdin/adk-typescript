@@ -105,12 +105,12 @@ class NlPlanningResponseProcessor implements BaseLlmResponseProcessor {
 
     // Check if the state has changed and create an event if needed
     // The Python has_delta() is equivalent to checking if the state delta is not empty
-    if (Object.keys(callbackContext['eventActions'].stateDelta).length > 0) {
+    if (callbackContext.state.hasDelta()) {
       const stateUpdateEvent = new Event({
         invocationId: invocationContext.invocationId,
         author: invocationContext.agent.name,
         branch: invocationContext.branch,
-        actions: callbackContext['eventActions']
+        actions: callbackContext._eventActions
       });
       yield stateUpdateEvent;
     }
