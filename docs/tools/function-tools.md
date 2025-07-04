@@ -146,7 +146,7 @@ It's important to distinguish an Agent-as-a-Tool from a Sub-Agent.
 To use an agent as a tool, wrap the agent with the AgentTool class.
 
 ```typescript
-import { AgentTool } from 'adk-typescript';
+import { AgentTool } from 'adk-typescript/tools';
 
 tools: [new AgentTool({ agent: agentB })]
 ```
