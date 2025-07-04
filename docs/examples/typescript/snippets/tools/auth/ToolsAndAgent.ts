@@ -1,25 +1,12 @@
-/**
- * TypeScript port of the tools_and_agent.py example from the Python ADK library
- * 
- * This example demonstrates how to configure OpenID Connect authentication for
- * OpenAPI tools in ADK TypeScript.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
+
 
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { 
-  OpenIdConnectWithConfig,
-  AuthCredential,
-  AuthCredentialTypes,
-  OAuth2Auth,
-  OpenAPIToolset,
-  LlmAgent
-} from 'adk-typescript';
+import { OpenIdConnectWithConfig } from 'adk-typescript/auth';
+import { AuthCredential, AuthCredentialTypes, OAuth2Auth } from 'adk-typescript/auth';
+import { OpenAPIToolset } from 'adk-typescript/tools';
+import { LlmAgent } from 'adk-typescript/agents';
 
 // --- Authentication Configuration ---
 // This section configures how the agent will handle authentication using OpenID Connect (OIDC),
@@ -78,10 +65,11 @@ const userinfoToolset = new OpenAPIToolset({
 
 // --- Agent Configuration ---
 // Configure and create the main LLM Agent.
-const rootAgent = new LlmAgent("enterprise_assistant", {
+const rootAgent = new LlmAgent({
+  name: "enterprise_assistant",
   model: 'gemini-2.0-flash',
   instruction: 'Help user integrate with multiple enterprise systems, including retrieving user information which may require authentication.',
-  tools: userinfoToolset.getTools()
+  tools: await userinfoToolset.getTools()
 });
 
 // --- Ready for Use ---

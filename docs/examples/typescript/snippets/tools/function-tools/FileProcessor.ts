@@ -1,21 +1,8 @@
-/**
- * TypeScript port of the Long Running Function Tool example from the Python ADK library
- * 
- * This example demonstrates how to use a LongRunningFunctionTool to process files
- * with progress updates during execution.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
-
-import { 
-  Agent, 
-  Runner,
-  Content,
-  InMemorySessionService,
-  LongRunningFunctionTool
-} from 'adk-typescript';
+import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { runners } from 'adk-typescript';
+import { Content } from 'adk-typescript/types';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { LongRunningFunctionTool, ToolContext } from 'adk-typescript/tools';
 
 // Constants for the app
 const APP_NAME = "file_processor";
@@ -29,13 +16,17 @@ const logger = {
 };
 
 // 1. Define the generator function
-async function* processLargeFile(filePath: string): AsyncGenerator<Record<string, string>, Record<string, string>, void> {
+async function* processLargeFile(
+  params: Record<string, any>, 
+  context: ToolContext
+): AsyncGenerator<Record<string, string>, Record<string, string>, void> {
   /**
    * Simulates processing a large file, yielding progress updates.
    * 
-   * @param filePath Path to the file being processed.
+   * @param params.filePath Path to the file being processed.
    * @returns A final status dictionary.
    */
+  const filePath = params.filePath as string;
   const totalSteps = 5;
 
   // This object will be sent in the first FunctionResponse
@@ -59,10 +50,29 @@ async function* processLargeFile(filePath: string): AsyncGenerator<Record<string
 }
 
 // 2. Wrap the function with LongRunningFunctionTool
-const longRunningTool = new LongRunningFunctionTool(processLargeFile);
+const longRunningTool = new LongRunningFunctionTool({
+  name: 'process_large_file',
+  description: 'Processes a large file and provides progress updates.',
+  fn: processLargeFile,
+  functionDeclaration: {
+    name: 'process_large_file',
+    description: 'Processes a large file and provides progress updates.',
+    parameters: {
+      type: 'object',
+      properties: {
+        filePath: {
+          type: 'string',
+          description: 'The path to the file to process.',
+        },
+      },
+      required: ['filePath'],
+    },
+  },
+});
 
 // 3. Use the tool in an Agent
-const fileProcessorAgent = new Agent("file_processor_agent", {
+const fileProcessorAgent = new Agent({
+  name: "file_processor_agent",
   // Use a model compatible with function calling
   model: "gemini-2.0-flash",
   instruction: `You are an agent that processes large files. When the user provides a file path, use the 'process_large_file' tool. Keep the user informed about the progress based on the tool's updates (which arrive as function responses). Only provide the final result when the tool indicates completion in its final function response.`,
@@ -77,7 +87,7 @@ const session = sessionService.createSession({
   sessionId: SESSION_ID
 });
 
-const runner = new Runner({
+const runner = new runners.Runner({
   agent: fileProcessorAgent, 
   appName: APP_NAME, 
   sessionService: sessionService
@@ -101,7 +111,7 @@ function callAgent(query: string): void {
       });
 
       for await (const event of events) {
-        if (event.isFinalResponse && event.content && event.content.parts && event.content.parts[0].text) {
+        if (event.isFinalResponse() && event.content && event.content.parts && event.content.parts[0].text) {
           const finalResponse = event.content.parts[0].text;
           console.log("Agent Response: ", finalResponse);
         }

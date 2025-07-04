@@ -1,23 +1,9 @@
-/**
- * TypeScript port of the agent_cli.py example from the Python ADK library
- * 
- * This example demonstrates how to create a command-line interface for an
- * authenticated agent, handling OAuth flows in the console.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
-
 import dotenv from 'dotenv';
-import { 
-  Runner, 
-  InMemorySessionService,
-  InMemoryArtifactService,
-  Content,
-  FunctionResponse,
-  Part
-} from 'adk-typescript';
+import { runners } from 'adk-typescript';
+import { Content, Part } from 'adk-typescript/types';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { InMemoryArtifactService } from 'adk-typescript/artifacts';
+import { AuthConfig } from 'adk-typescript/auth';
 
 import { 
   isPendingAuthEvent, 
@@ -26,10 +12,19 @@ import {
   getUserInput 
 } from './helpers';
 
-import { agent } from './tools-and-agent';
+import { agent } from './ToolsAndAgent';
 
 // Load environment variables from .env file
 dotenv.config();
+
+/**
+ * Interface for Function Response in ADK
+ */
+interface FunctionResponse {
+  id: string;
+  name: string;
+  response: any;
+}
 
 /**
  * Main asynchronous function orchestrating the agent interaction and authentication flow.
@@ -59,7 +54,7 @@ async function asyncMain(): Promise<void> {
   };
 
   // Initialize the ADK Runner
-  const runner = new Runner({
+  const runner = new runners.Runner({
     appName: 'my_app',
     agent: agent,
     artifactService: artifactsService,
@@ -71,9 +66,14 @@ async function asyncMain(): Promise<void> {
   
   // Variables to store details if an authentication request occurs.
   let authRequestEventId: string | null = null;
-  let authConfig = null;
+  let authConfig: AuthConfig | null = null;
 
   try {
+    const session = await sessionService.createSession({
+      state: {},  // Optional state dictionary for session-specific data
+      appName: 'my_app', // Application identifier
+      userId: 'user' // User identifier
+    });
     const events = runner.run({
       sessionId: session.id,
       userId: 'user',
@@ -115,7 +115,7 @@ async function asyncMain(): Promise<void> {
     // and append the redirect_uri.
     // NOTE: A robust implementation would use urlencode and potentially add state, scope, etc.
     const authRequestUri = (
-      authConfig.exchangedAuthCredential.oauth2.authUri +
+      authConfig.exchangedAuthCredential?.oauth2?.auth_uri +
       `&redirect_uri=${redirectUri}` // Simple concatenation; ensure correct query param format
     );
 
@@ -133,8 +133,10 @@ async function asyncMain(): Promise<void> {
     // Update the AuthConfig object with the information gathered from the user.
     // The ADK framework needs the full response URI (containing the code)
     // and the original redirect URI to complete the OAuth token exchange process internally.
-    authConfig.exchangedAuthCredential.oauth2.authResponseUri = authResponseUri;
-    authConfig.exchangedAuthCredential.oauth2.redirectUri = redirectUri;
+    if (authConfig.exchangedAuthCredential?.oauth2) {
+      authConfig.exchangedAuthCredential.oauth2.auth_response_uri = authResponseUri;
+      authConfig.exchangedAuthCredential.oauth2.redirect_uri = redirectUri;
+    }
 
     // Construct a FunctionResponse Content object to send back to the agent/runner.
     // This response explicitly targets the 'adk_request_credential' function call
@@ -149,7 +151,7 @@ async function asyncMain(): Promise<void> {
             // The special name of the function call we are responding to.
             name: 'adk_request_credential',
             // The payload containing all necessary authentication details.
-            response: authConfig.toJSON()
+            response: authConfig
           } as FunctionResponse
         } as Part
       ]

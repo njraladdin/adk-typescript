@@ -1,22 +1,9 @@
-/**
- * TypeScript port of the customer_support_agent.py example from the Python ADK library
- * 
- * This example demonstrates how to transfer control between agents using the
- * ToolContext's actions.transfer_to_agent mechanism.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
 
-import { 
-  Agent, 
-  Runner,
-  Content, 
-  InMemorySessionService,
-  FunctionTool,
-  ToolContext
-} from 'adk-typescript';
+import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { runners } from 'adk-typescript';
+import { Content } from 'adk-typescript/types';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { ToolContext } from 'adk-typescript/tools';
 
 // Constants for the app
 const APP_NAME = "customer_support_agent";
@@ -46,18 +33,18 @@ function checkAndTransfer(query: string, toolContext: ToolContext): string {
   }
 }
 
-// Create the escalation tool
-const escalationTool = new FunctionTool(checkAndTransfer);
 
 // Create the main agent
-const mainAgent = new Agent("main_agent", {
+const mainAgent = new Agent({
+  name: "main_agent",
   model: "gemini-2.0-flash",
   instruction: "You are the first point of contact for customer support of an analytics tool. Answer general queries. If the user indicates urgency, use the 'check_and_transfer' tool.",
-  tools: [escalationTool]
+  tools: [checkAndTransfer]
 });
 
 // Create the support agent
-const supportAgent = new Agent("support_agent", {
+const supportAgent = new Agent({
+  name: "support_agent",
   model: "gemini-2.0-flash",
   instruction: "You are the dedicated support agent. Mentioned you are a support handler and please help the user with their urgent issue."
 });
@@ -73,7 +60,7 @@ const session = sessionService.createSession({
   sessionId: SESSION_ID
 });
 
-const runner = new Runner({
+const runner = new runners.Runner({
   agent: mainAgent, 
   appName: APP_NAME, 
   sessionService: sessionService
@@ -97,7 +84,7 @@ function callAgent(query: string): void {
       });
 
       for await (const event of events) {
-        if (event.isFinalResponse && event.content && event.content.parts && event.content.parts[0].text) {
+        if (event.isFinalResponse() && event.content && event.content.parts && event.content.parts[0].text) {
           const finalResponse = event.content.parts[0].text;
           console.log("Agent Response: ", finalResponse);
         }

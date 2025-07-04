@@ -1,20 +1,8 @@
-/**
- * TypeScript port of the Google Search example from the Python ADK library
- * 
- * This example demonstrates how to use the built-in googleSearch tool in ADK TypeScript.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
-
-import { 
-  Agent, 
-  Runner,
-  Content, 
-  InMemorySessionService,
-  googleSearch
-} from 'adk-typescript';
+import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { runners } from 'adk-typescript';
+import { Content } from 'adk-typescript/types';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { googleSearch } from 'adk-typescript/tools';
 
 // Constants for the app
 const APP_NAME = "google_search_agent";
@@ -28,7 +16,8 @@ const logger = {
 };
 
 // Create the agent with Google Search tool
-const rootAgent = new Agent("basic_search_agent", {
+const rootAgent = new Agent({
+  name: "basic_search_agent",
   model: "gemini-2.0-flash",
   description: "Agent to answer questions using Google Search.",
   instruction: "I can answer your questions by searching the internet. Just ask me anything!",
@@ -44,7 +33,7 @@ const session = sessionService.createSession({
   sessionId: SESSION_ID
 });
 
-const runner = new Runner({
+const runner = new runners.Runner({
   agent: rootAgent, 
   appName: APP_NAME, 
   sessionService: sessionService
@@ -72,7 +61,7 @@ function callAgent(query: string): void {
       });
 
       for await (const event of events) {
-        if (event.isFinalResponse && event.content && event.content.parts && event.content.parts[0].text) {
+        if (event.isFinalResponse() && event.content && event.content.parts && event.content.parts[0].text) {
           const finalResponse = event.content.parts[0].text;
           console.log("Agent Response: ", finalResponse);
         }

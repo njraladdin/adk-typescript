@@ -1,21 +1,9 @@
-/**
- * TypeScript port of the weather_sentiment.py example from the Python ADK library
- * 
- * This example demonstrates how to use function tools for weather reports and
- * sentiment analysis in ADK TypeScript.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
 
-import { 
-  Agent, 
-  Runner,
-  Content, 
-  InMemorySessionService,
-  FunctionTool
-} from 'adk-typescript';
+
+import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { runners } from 'adk-typescript';
+import { Content } from 'adk-typescript/types';
+import { InMemorySessionService } from 'adk-typescript/sessions';
 
 // Constants for the app
 const APP_NAME = "weather_sentiment_agent";
@@ -55,8 +43,6 @@ function getWeatherReport(city: string): Record<string, string | Record<string, 
   }
 }
 
-// Create weather function tool
-const weatherTool = new FunctionTool(getWeatherReport);
 
 // Tool 2: Analyze Sentiment
 function analyzeSentiment(text: string): Record<string, string | number> {
@@ -75,11 +61,10 @@ function analyzeSentiment(text: string): Record<string, string | number> {
   }
 }
 
-// Create sentiment function tool
-const sentimentTool = new FunctionTool(analyzeSentiment);
 
 // Create the agent with both tools
-const weatherSentimentAgent = new Agent("weather_sentiment_agent", {
+const weatherSentimentAgent = new Agent({
+  name: "weather_sentiment_agent",
   model: MODEL_ID,
   instruction: `You are a helpful assistant that provides weather information and analyzes the sentiment of user feedback.
 **If the user asks about the weather in a specific city, use the 'get_weather_report' tool to retrieve the weather details.**
@@ -87,7 +72,7 @@ const weatherSentimentAgent = new Agent("weather_sentiment_agent", {
 **If the 'get_weather_report' tool returns an 'error' status, inform the user that the weather information for the specified city is not available and ask if they have another city in mind.**
 **After providing a weather report, if the user gives feedback on the weather (e.g., 'That's good' or 'I don't like rain'), use the 'analyze_sentiment' tool to understand their sentiment.** Then, briefly acknowledge their sentiment.
 You can handle these tasks sequentially if needed.`,
-  tools: [weatherTool, sentimentTool]
+  tools: [getWeatherReport, analyzeSentiment]
 });
 
 // Create Session and Runner
@@ -98,7 +83,7 @@ const session = sessionService.createSession({
   sessionId: SESSION_ID
 });
 
-const runner = new Runner({
+const runner = new runners.Runner({
   agent: weatherSentimentAgent, 
   appName: APP_NAME, 
   sessionService: sessionService
@@ -122,7 +107,7 @@ function callAgent(query: string): void {
       });
 
       for await (const event of events) {
-        if (event.isFinalResponse && event.content && event.content.parts && event.content.parts[0].text) {
+        if (event.isFinalResponse() && event.content && event.content.parts && event.content.parts[0].text) {
           const finalResponse = event.content.parts[0].text;
           console.log("Agent Response: ", finalResponse);
         }

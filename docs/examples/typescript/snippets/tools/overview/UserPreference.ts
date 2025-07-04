@@ -9,7 +9,7 @@
  * The structure and patterns shown here match how you would use the library in a real project.
  */
 
-import { ToolContext, FunctionTool } from 'adk-typescript';
+import { ToolContext, FunctionTool } from 'adk-typescript/tools';
 
 /**
  * Updates a user-specific preference in the session state.
@@ -43,11 +43,9 @@ function updateUserPreference(
   };
 }
 
-// Create the function tool
-const prefTool = new FunctionTool(updateUserPreference);
 
 // Export for use in an Agent
-export const userPreferenceTool = prefTool;
+export const userPreferenceTool = updateUserPreference;
 
 /**
  * Usage example in an Agent:

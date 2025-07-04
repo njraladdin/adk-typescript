@@ -1,16 +1,3 @@
-/**
- * TypeScript example demonstrating the Enterprise Web Search tool in ADK TypeScript.
- * 
- * This example shows how to use the built-in EnterpriseWebSearchTool for enterprise-compliant
- * web grounding with Gemini models.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * The actual imports and usage may vary depending on your project setup.
- */
-
-// Example of how to import and use EnterpriseWebSearchTool
-// import { LlmAgent } from 'adk-typescript/agents';
-// import { EnterpriseWebSearchTool } from 'adk-typescript/tools';
 
 /**
  * Example 1: Basic Enterprise Web Search Agent

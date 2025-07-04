@@ -1,32 +1,29 @@
-/**
- * TypeScript port of the doc_analysis.py example from the Python ADK library
- * 
- * This example demonstrates how to use ToolContext with artifacts and memory services
- * to analyze documents and save the results.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
 
-import { ToolContext, FunctionTool, Part } from 'adk-typescript';
+
+import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { runners } from 'adk-typescript';
+import { Content, Part } from 'adk-typescript/types';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { ToolContext } from 'adk-typescript/tools';
+import { FunctionTool } from 'adk-typescript/tools';
 
 /**
  * Analyzes a document using context from memory.
  * 
- * @param documentName The name of the document to analyze
- * @param analysisQuery The query to guide the analysis
+ * @param params Object containing documentName and analysisQuery
  * @param toolContext The context for the tool execution with access to artifacts and memory
  * @returns A status object with analysis results information
  */
-function processDocument(
-  documentName: string, 
-  analysisQuery: string, 
+async function processDocument(
+  params: Record<string, any>,
   toolContext: ToolContext
-): Record<string, string | number> {
+): Promise<Record<string, string | number>> {
+  const documentName = params.documentName as string;
+  const analysisQuery = params.analysisQuery as string;
+  
   // 1. Load the artifact
   console.log(`Tool: Attempting to load artifact: ${documentName}`);
-  const documentPart = toolContext.loadArtifact(documentName);
+  const documentPart = await toolContext.loadArtifact(documentName);
 
   if (!documentPart) {
     return { 
@@ -41,13 +38,15 @@ function processDocument(
 
   // 2. Search memory for related context
   console.log(`Tool: Searching memory for context related to: '${analysisQuery}'`);
-  const memoryResponse = toolContext.searchMemory(`Context for analyzing document about ${analysisQuery}`);
+  const memoryResponse = await toolContext.searchMemory(`Context for analyzing document about ${analysisQuery}`);
   
   // Simplified extraction from memory response
   const memoryContext = memoryResponse.memories
-    .filter(m => m.events && m.events.length > 0 && m.events[0].content)
-    .map(m => m.events[0].content.parts[0].text)
-    .join("\n");
+    ? memoryResponse.memories
+        .filter(m => m.content && m.content.parts && m.content.parts.length > 0)
+        .map(m => m.content.parts[0].text || "")
+        .join("\n")
+    : "";
     
   console.log(`Tool: Found memory context: ${memoryContext.substring(0, 100)}...`);
 
@@ -56,9 +55,9 @@ function processDocument(
   console.log("Tool: Performed analysis.");
 
   // 4. Save the analysis result as a new artifact
-  const analysisPart = Part.fromText(analysisResult);
+  const analysisPart: Part = { text: analysisResult };
   const newArtifactName = `analysis_${documentName}`;
-  const version = toolContext.saveArtifact(newArtifactName, analysisPart);
+  const version = await toolContext.saveArtifact(newArtifactName, analysisPart);
   console.log(`Tool: Saved analysis result as '${newArtifactName}' version ${version}.`);
 
   return { 
@@ -78,7 +77,7 @@ export const documentAnalysisTool = docAnalysisTool;
  * Usage example in an Agent:
  * 
  * ```typescript
- * import { Agent } from 'adk-typescript';
+ * import { Agent } from 'adk-typescript/agents';
  * import { documentAnalysisTool } from './doc-analysis';
  * 
  * const myAgent = new Agent("analysis_agent", {

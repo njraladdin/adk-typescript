@@ -1,15 +1,5 @@
-/**
- * TypeScript port of the helpers.py example from the Python ADK library
- * 
- * This file provides helper functions for handling OAuth authentication flows
- * and processing ADK events related to authentication.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
-
-import { AuthConfig, Event } from 'adk-typescript';
+import { AuthConfig } from 'adk-typescript/auth';
+import { Event } from 'adk-typescript/events';
 import * as readline from 'readline';
 
 // --- Helper Functions ---
@@ -101,8 +91,8 @@ export function getFunctionCallAuthConfig(event: Event): AuthConfig {
     event.content.parts[0].functionCall.args &&
     event.content.parts[0].functionCall.args.authConfig
   ) {
-    // Reconstruct the AuthConfig object using the object provided in the arguments
-    return new AuthConfig(event.content.parts[0].functionCall.args.authConfig);
+    // Return the AuthConfig object directly from the arguments
+    return event.content.parts[0].functionCall.args.authConfig as AuthConfig;
   }
   
   throw new Error(`Cannot get auth config from event ${JSON.stringify(event)}`);

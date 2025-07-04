@@ -1,6 +1,7 @@
 # Changelog
 
 ## [current_version] 
+* Fixed tools-related example code snippets for the documentation.
 
 ## [1.0.2] 
 * Fixed issue with ts-node dependency by including it as a runtime dependency

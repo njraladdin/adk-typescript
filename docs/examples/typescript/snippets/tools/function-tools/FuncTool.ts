@@ -1,22 +1,8 @@
-/**
- * TypeScript port of the Function Tool example from the Python ADK library
- * 
- * This example demonstrates how to use a function as a tool for an agent.
- * Note: The original example used yfinance which is a Python package for stock data.
- * In this TypeScript port, we'll simulate the stock data function instead.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
-
-import { 
-  Agent, 
-  Runner,
-  Content,
-  InMemorySessionService,
-  FunctionTool
-} from 'adk-typescript';
+import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { runners } from 'adk-typescript';
+import { Content } from 'adk-typescript/types';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { FunctionTool } from 'adk-typescript/tools';
 
 // Constants for the app
 const APP_NAME = "stock_app";
@@ -67,7 +53,8 @@ function getStockPrice(symbol: string): number | null {
 }
 
 // Create the agent with the function tool
-const stockPriceAgent = new Agent("stock_agent", {
+const stockPriceAgent = new Agent({
+  name: "stock_agent",
   model: "gemini-2.0-flash",
   instruction: `You are an agent who retrieves stock prices. If a ticker symbol is provided, fetch the current price. If only a company name is given, first perform a Google search to find the correct ticker symbol before retrieving the stock price. If the provided ticker symbol is invalid or data cannot be retrieved, inform the user that the stock price could not be found.`,
   description: `This agent specializes in retrieving real-time stock prices. Given a stock ticker symbol (e.g., AAPL, GOOG, MSFT) or the stock name, use the tools and reliable data sources to provide the most up-to-date price.`,
@@ -82,7 +69,7 @@ const session = sessionService.createSession({
   sessionId: SESSION_ID
 });
 
-const runner = new Runner({
+const runner = new runners.Runner({
   agent: stockPriceAgent, 
   appName: APP_NAME, 
   sessionService: sessionService
@@ -106,7 +93,7 @@ function callAgent(query: string): void {
       });
 
       for await (const event of events) {
-        if (event.isFinalResponse && event.content && event.content.parts && event.content.parts[0].text) {
+        if (event.isFinalResponse() && event.content && event.content.parts && event.content.parts[0].text) {
           const finalResponse = event.content.parts[0].text;
           console.log("Agent Response: ", finalResponse);
         }

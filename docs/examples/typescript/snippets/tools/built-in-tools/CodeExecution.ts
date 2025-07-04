@@ -1,21 +1,8 @@
-/**
- * TypeScript port of the Code Execution example from the Python ADK library
- * 
- * This example demonstrates how to use the built-in code execution tool
- * in ADK TypeScript, allowing agents to write and execute Python code.
- * 
- * NOTE: This is a template file that demonstrates how to use the ADK TypeScript library.
- * You'll see TypeScript errors in your IDE until you install the actual 'adk-typescript' package.
- * The structure and patterns shown here match how you would use the library in a real project.
- */
-
-import { 
-  LlmAgent, 
-  Runner,
-  Content, 
-  InMemorySessionService,
-  builtInCodeExecution
-} from 'adk-typescript';
+import { runners } from 'adk-typescript';
+import { Content } from 'adk-typescript/types';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { builtInCodeExecution } from 'adk-typescript/tools';
+import { LlmAgent as Agent } from 'adk-typescript/agents';
 
 // Constants for the app
 const AGENT_NAME = "calculator_agent";
@@ -31,7 +18,8 @@ const logger = {
 };
 
 // Agent Definition
-const codeAgent = new LlmAgent(AGENT_NAME, {
+const codeAgent = new Agent({
+  name: AGENT_NAME,
   model: GEMINI_MODEL,
   tools: [builtInCodeExecution],
   instruction: `You are a calculator agent.
@@ -49,7 +37,7 @@ const session = sessionService.createSession({
   sessionId: SESSION_ID
 });
 
-const runner = new Runner({
+const runner = new runners.Runner({
   agent: codeAgent, 
   appName: APP_NAME, 
   sessionService: sessionService
@@ -80,9 +68,10 @@ async function callAgentAsync(query: string): Promise<void> {
       let hasSpecificPart = false;
       if (event.content && event.content.parts) {
         for (const part of event.content.parts) { // Iterate through all parts
-          if (part.executableCode) {
-            // Access the actual code string via .code
-            console.log(`  Debug: Agent generated code:\n\`\`\`python\n${part.executableCode.code}\n\`\`\``);
+          if (part.functionCall && part.functionCall.name === "code_execution") {
+            // Access the actual code via the function call args
+            const code = part.functionCall.args.code || "";
+            console.log(`  Debug: Agent generated code:\n\`\`\`python\n${code}\n\`\`\``);
             hasSpecificPart = true;
           } else if (part.codeExecutionResult) {
             // Access outcome and output correctly
@@ -99,7 +88,7 @@ async function callAgentAsync(query: string): Promise<void> {
 
       // --- Check for final response AFTER specific parts ---
       // Only consider it final if it doesn't have the specific code parts we just handled
-      if (!hasSpecificPart && event.isFinalResponse) {
+      if (!hasSpecificPart && event.isFinalResponse()) {
         if (event.content && event.content.parts && event.content.parts[0].text) {
           finalResponseText = event.content.parts[0].text.trim();
           console.log(`==> Final Agent Response: ${finalResponseText}`);

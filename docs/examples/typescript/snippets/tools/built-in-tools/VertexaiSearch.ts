@@ -9,13 +9,11 @@
  * The structure and patterns shown here match how you would use the library in a real project.
  */
 
-import { 
-  LlmAgent, 
-  Runner,
-  Content, 
-  InMemorySessionService,
-  VertexAiSearchTool
-} from 'adk-typescript';
+import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { runners } from 'adk-typescript';
+import { Content } from 'adk-typescript/types';
+import { InMemorySessionService } from 'adk-typescript/sessions';
+import { VertexAISearchTool } from 'adk-typescript/tools';
 
 // Replace with your actual Vertex AI Search Datastore ID
 // Format: projects/<PROJECT_ID>/locations/<LOCATION>/collections/default_collection/dataStores/<DATASTORE_ID>
@@ -37,12 +35,13 @@ const logger = {
 
 // Tool Instantiation
 // You MUST provide your datastore ID here.
-const vertexSearchTool = new VertexAiSearchTool({
+const vertexSearchTool = new VertexAISearchTool({
   dataStoreId: YOUR_DATASTORE_ID
 });
 
 // Agent Definition
-const docQaAgent = new LlmAgent(AGENT_NAME_VSEARCH, {
+const docQaAgent = new Agent({
+  name: AGENT_NAME_VSEARCH,
   model: GEMINI_2_FLASH, // Requires Gemini model
   tools: [vertexSearchTool],
   instruction: `You are a helpful assistant that answers questions based on information found in the document store: ${YOUR_DATASTORE_ID}.
@@ -54,7 +53,7 @@ const docQaAgent = new LlmAgent(AGENT_NAME_VSEARCH, {
 
 // Session and Runner Setup
 const sessionServiceVsearch = new InMemorySessionService();
-const runnerVsearch = new Runner({
+const runnerVsearch = new runners.Runner({
   agent: docQaAgent, 
   appName: APP_NAME_VSEARCH, 
   sessionService: sessionServiceVsearch
@@ -93,13 +92,13 @@ async function callVsearchAgentAsync(query: string): Promise<void> {
 
     for await (const event of events) {
       // Like Google Search, results are often embedded in the model's response.
-      if (event.isFinalResponse && event.content && event.content.parts && event.content.parts[0].text) {
+      if (event.isFinalResponse() && event.content && event.content.parts && event.content.parts[0].text) {
         finalResponseText = event.content.parts[0].text.trim();
         console.log(`Agent Response: ${finalResponseText}`);
         
         // You can inspect event.groundingMetadata for source citations
         if (event.groundingMetadata) {
-          console.log(`  (Grounding metadata found with ${event.groundingMetadata.groundingAttributions.length} attributions)`);
+          console.log(`  (Grounding metadata found: ${JSON.stringify(event.groundingMetadata).substring(0, 100)}...)`);
         }
       }
     }
