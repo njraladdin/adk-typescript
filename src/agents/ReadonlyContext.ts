@@ -1,5 +1,6 @@
 import { InvocationContext } from './InvocationContext';
 import { Content } from '../models/types';
+import { State } from '../sessions/State';
 
 /**
  * Readonly context for agent invocations.
@@ -36,7 +37,16 @@ export class ReadonlyContext {
   /**
    * The state of the current session. READONLY field.
    */
-  get state(): Readonly<Record<string, any>> {
-    return Object.freeze({ ...this.invocationContext.session.state });
+  get state(): Readonly<State> {
+    // Create a read-only wrapper around the state
+    const sessionState = this.invocationContext.session.state;
+    return new Proxy(sessionState, {
+      set() {
+        throw new Error('Cannot modify state through ReadonlyContext');
+      },
+      deleteProperty() {
+        throw new Error('Cannot delete state properties through ReadonlyContext');
+      }
+    }) as Readonly<State>;
   }
 } 
