@@ -28,4 +28,3 @@ TODO:
 - v1.0.0: get project up to date with v1.0.0, make agent interface more similar, add all sample agnets and run them, fix web ui, done 
 - global install: remove global install 'npm -g' and each agent having it's own node_modules, done 
 
-- remvoe trinyg ot extract jsdoc, it's not psosible in typescript. udpate hte docs accordingly. if the user needs to provide description, he needs to use a FunctionTool instance 
