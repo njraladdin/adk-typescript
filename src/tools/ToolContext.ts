@@ -25,11 +25,6 @@ export class ToolContext extends CallbackContext {
   functionCallId?: string;
 
   /**
-   * The event actions for this tool call 
-   */
-  private toolEventActions: EventActions;
-
-  /**
    * Additional properties for dynamic access
    */
   [key: string]: any;
@@ -47,15 +42,15 @@ export class ToolContext extends CallbackContext {
     eventActions?: EventActions
   ) {
     super(invocationContext, eventActions);
+
     this.functionCallId = functionCallId;
-    this.toolEventActions = eventActions || new EventActions();
   }
 
   /**
    * Get the event actions for this tool call
    */
   get actions(): EventActions {
-    return this.toolEventActions;
+    return (this as unknown as CallbackContext)._eventActions;
   }
 
   /**
@@ -71,7 +66,7 @@ export class ToolContext extends CallbackContext {
     
     const authHandler = new AuthHandler(authConfig);
     const authRequest = authHandler.generateAuthRequest();
-    this.toolEventActions.requestedAuthConfigs.set(this.functionCallId, authRequest);
+    (this as unknown as CallbackContext)._eventActions.requestedAuthConfigs.set(this.functionCallId, authRequest);
   }
 
   /**

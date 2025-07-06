@@ -35,9 +35,11 @@ export class State {
    * @returns The value, or defaultValue if not found
    */
   get(key: string, defaultValue?: any): any {
+    // Always check delta first - it contains the most recent changes
     if (key in this._delta) {
       return this._delta[key];
     }
+    // Fall back to base value if not in delta
     if (key in this._value) {
       return this._value[key];
     }
@@ -46,15 +48,13 @@ export class State {
   
   /**
    * Sets a value in the state.
-   * This updates both the value and adds to the delta.
+   * This only updates the delta until changes are committed.
    * 
    * @param key The key of the value
    * @param value The value to set
    */
   set(key: string, value: any): void {
-    // TODO: make new change only store in delta, so that this._value is only
-    //   updated at the storage commit time.
-    this._value[key] = value;
+    // Only store in delta - _value will be updated when changes are committed
     this._delta[key] = value;
   }
   
@@ -65,7 +65,7 @@ export class State {
    * @returns True if the state has a value for the key, false otherwise
    */
   has(key: string): boolean {
-    return key in this._value || key in this._delta;
+    return key in this._delta || key in this._value;
   }
   
   /**
@@ -107,12 +107,15 @@ export class State {
   
   /**
    * Updates the state with the given delta.
+   * This commits the changes to the base value.
    * 
    * @param delta The delta to apply
    */
   update(delta: Record<string, any>): void {
+    // Update base value with committed changes
     Object.assign(this._value, delta);
-    Object.assign(this._delta, delta);
+    // Clear the delta since changes are now committed
+    this._delta = {};
   }
   
   /**
@@ -122,6 +125,7 @@ export class State {
    */
   getAll(): Record<string, any> {
     const result = { ...this._value };
+    // Delta overrides base values
     Object.assign(result, this._delta);
     return result;
   }
