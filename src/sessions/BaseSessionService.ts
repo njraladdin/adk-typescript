@@ -145,25 +145,15 @@ export abstract class BaseSessionService implements SessionService {
   }): Promise<Event> {
     const { session, event } = options;
     
-    console.log(`[BaseSessionService.appendEvent] Event: ${event.id}, author: ${event.author}, partial: ${event.partial}`);
     
     if (event.partial) {
-      console.log(`[BaseSessionService.appendEvent] Skipping partial event: ${event.id}`);
       return event;
     }
 
-    console.log(`[BaseSessionService.appendEvent] Processing non-partial event: ${event.id}`);
-    console.log(`[BaseSessionService.appendEvent] Event has actions: ${!!event.actions}`);
-    console.log(`[BaseSessionService.appendEvent] Event has stateDelta: ${!!(event.actions && event.actions.stateDelta)}`);
-    if (event.actions && event.actions.stateDelta) {
-      console.log(`[BaseSessionService.appendEvent] StateDelta keys:`, Object.keys(event.actions.stateDelta));
-      console.log(`[BaseSessionService.appendEvent] StateDelta:`, event.actions.stateDelta);
-    }
 
     this._updateSessionStateFromEvent(session, event);
     session.events.push(event);
     
-    console.log(`[BaseSessionService.appendEvent] Session state after update - test_value:`, session.state.get('test_value'));
     
     return event;
   }
@@ -175,42 +165,31 @@ export abstract class BaseSessionService implements SessionService {
    * @param event - The event to update from
    */
   private _updateSessionStateFromEvent(session: Session, event: Event): void {
-    console.log(`[BaseSessionService._updateSessionStateFromEvent] Starting state update for event: ${event.id}`);
     
     if (!event.actions || !event.actions.stateDelta) {
-      console.log(`[BaseSessionService._updateSessionStateFromEvent] No actions or stateDelta to process`);
       return;
     }
     
-    console.log(`[BaseSessionService._updateSessionStateFromEvent] Processing stateDelta:`, event.actions.stateDelta);
     
     const statesToUpdate: Record<string, any> = {};
     
     for (const [key, value] of Object.entries(event.actions.stateDelta)) {
       if (key.startsWith(StatePrefix.TEMP_PREFIX)) {
-        console.log(`[BaseSessionService._updateSessionStateFromEvent] Skipping temp key: ${key}`);
         continue;
       }
-      console.log(`[BaseSessionService._updateSessionStateFromEvent] Adding to update: ${key} = ${value}`);
       statesToUpdate[key] = value;
     }
     
-    console.log(`[BaseSessionService._updateSessionStateFromEvent] Final statesToUpdate:`, statesToUpdate);
-    console.log(`[BaseSessionService._updateSessionStateFromEvent] Session state before update - test_value:`, session.state.get('test_value'));
     
     // Use the update method if available (similar to Python's dict.update())
     if (session.state.update) {
-      console.log(`[BaseSessionService._updateSessionStateFromEvent] Using session.state.update()`);
       session.state.update(statesToUpdate);
     } else {
-      console.log(`[BaseSessionService._updateSessionStateFromEvent] Using session.state.set() fallback`);
       // Fallback to using set method
       for (const [key, value] of Object.entries(statesToUpdate)) {
-        console.log(`[BaseSessionService._updateSessionStateFromEvent] Setting: ${key} = ${value}`);
         session.state.set(key, value);
       }
     }
     
-    console.log(`[BaseSessionService._updateSessionStateFromEvent] Session state after update - test_value:`, session.state.get('test_value'));
   }
 } 
