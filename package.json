@@ -1,6 +1,6 @@
 {
   "name": "adk-typescript",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "TypeScript port of Google's Agent Development Kit (ADK)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
