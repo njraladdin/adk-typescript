@@ -494,10 +494,11 @@ export abstract class BaseLlmFlow {
   ): AsyncGenerator<Event, void, unknown> {
     const agent = invocationContext.agent;
     
-    // Log starting state
+    console.log(`[BaseLlmFlow._preprocessAsync] Starting preprocessing for agent: ${agent.name}`);
     
     // Make sure the agent is an LlmAgent
     if (!(agent instanceof LlmAgent)) {
+      console.log(`[BaseLlmFlow._preprocessAsync] Agent is not LlmAgent, skipping`);
       return;
     }
     
@@ -510,8 +511,14 @@ export abstract class BaseLlmFlow {
     }
     
     // Run processors for tools
+    console.log(`[BaseLlmFlow._preprocessAsync] Creating ReadonlyContext for canonicalTools`);
+    console.log(`[BaseLlmFlow._preprocessAsync] Session state before ReadonlyContext - test_value:`, invocationContext.session.state.get('test_value'));
+    
     const ctx = new ReadonlyContext(invocationContext);
+    console.log(`[BaseLlmFlow._preprocessAsync] ReadonlyContext created - test_value:`, ctx.state.get('test_value'));
+    
     const tools = await agent.canonicalTools(ctx);
+    console.log(`[BaseLlmFlow._preprocessAsync] Got ${tools.length} canonical tools`);
     
     for (const tool of tools) {
       // Create a new ToolContext directly with the invocation context
@@ -526,6 +533,7 @@ export abstract class BaseLlmFlow {
       });
     }
     
+    console.log(`[BaseLlmFlow._preprocessAsync] Preprocessing completed`);
   }
 
   /**
@@ -543,21 +551,29 @@ export abstract class BaseLlmFlow {
     llmResponse: LlmResponse,
     modelResponseEvent: Event
   ): AsyncGenerator<Event, void, unknown> {
+    console.log(`\n--- _postprocessAsync ---`);
+    console.log(`LLM response has content: ${!!llmResponse.content}`);
+    console.log(`LLM response has errorCode: ${!!llmResponse.errorCode}`);
+    console.log(`LLM response interrupted: ${llmResponse.interrupted}`);
+    
     // Process the response with response processors
     yield* this._postprocessRunProcessorsAsync(invocationContext, llmResponse);
 
     if (invocationContext.endInvocation) {
+      console.log(`_postprocessAsync: endInvocation is true, returning`);
       return;
     }
     
     // Skip the model response event if there is no content and no error code
     // This is needed for the code executor to trigger another loop
     if (!llmResponse.content && !llmResponse.errorCode && !llmResponse.interrupted) {
+      console.log(`_postprocessAsync: Skipping model response event - no content, no error, not interrupted`);
       return;
     }
 
     // Generate the finalized model response event
     const finalEvent = this._finalizeModelResponseEvent(llmRequest, llmResponse, modelResponseEvent);
+    console.log(`_postprocessAsync: Generated final event with ${finalEvent.getFunctionCalls().length} function calls`);
     
     // Update the mutable event id to avoid conflict
     modelResponseEvent.id = Event.newId();
@@ -567,11 +583,14 @@ export abstract class BaseLlmFlow {
     
     // Handle any function calls in the response
     if (finalEvent && finalEvent.getFunctionCalls().length > 0) {
+      console.log(`_postprocessAsync: Processing ${finalEvent.getFunctionCalls().length} function calls`);
       yield* this._postprocessHandleFunctionCallsAsync(
         invocationContext,
         finalEvent,
         llmRequest
       );
+    } else {
+      console.log(`_postprocessAsync: No function calls to process`);
     }
   }
 
@@ -732,10 +751,9 @@ export abstract class BaseLlmFlow {
           }
         }
         
-        // If not transferring to an agent, continue the flow with another step
-        // This matches Python implementation of recursively continuing the flow
-        console.log(`*** RECURSIVELY CALLING _runOneStepAsync - This might cause the loop! ***`);
-        yield* this._runOneStepAsync(invocationContext);
+        // DO NOT recursively call _runOneStepAsync here!
+        // The main loop in runAsync will handle the continuation naturally
+        console.log(`Function call handling complete - returning to main loop`);
       } else {
         console.log(`No function response event created`);
       }

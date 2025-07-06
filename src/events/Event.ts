@@ -1,5 +1,3 @@
- 
-
 import { LlmResponse } from '../models/LlmResponse';
 import { EventActions } from './EventActions';
 import { FunctionCall, FunctionResponse } from '../models/types';
@@ -94,15 +92,35 @@ export class Event extends LlmResponse {
    * Returns whether the event is the final response of the agent.
    */
   isFinalResponse(): boolean {
-    if (this.actions.skipSummarization || this.longRunningToolIds) {
+    const skipSummarization = this.actions.skipSummarization;
+    const hasLongRunningToolIds = this.longRunningToolIds && this.longRunningToolIds.size > 0;
+    const functionCallsLength = this.getFunctionCalls().length;
+    const functionResponsesLength = this.getFunctionResponses().length;
+    const isPartial = this.partial;
+    const hasTrailingCodeExecution = this.hasTrailingCodeExecutionResult();
+    
+    console.log(`[Event.isFinalResponse] Event ${this.id}:`);
+    console.log(`  skipSummarization: ${skipSummarization}`);
+    console.log(`  hasLongRunningToolIds: ${hasLongRunningToolIds}`);
+    console.log(`  functionCallsLength: ${functionCallsLength}`);
+    console.log(`  functionResponsesLength: ${functionResponsesLength}`);
+    console.log(`  isPartial: ${isPartial}`);
+    console.log(`  hasTrailingCodeExecution: ${hasTrailingCodeExecution}`);
+    
+    if (skipSummarization || hasLongRunningToolIds) {
+      console.log(`  -> returning true (skipSummarization or longRunningToolIds)`);
       return true;
     }
-    return (
-      this.getFunctionCalls().length === 0 &&
-      this.getFunctionResponses().length === 0 &&
-      !this.partial &&
-      !this.hasTrailingCodeExecutionResult()
+    
+    const result = (
+      functionCallsLength === 0 &&
+      functionResponsesLength === 0 &&
+      !isPartial &&
+      !hasTrailingCodeExecution
     );
+    
+    console.log(`  -> returning ${result}`);
+    return result;
   }
 
   /**

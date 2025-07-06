@@ -49,9 +49,19 @@ class InstructionsLlmRequestProcessor implements BaseLlmRequestProcessor {
 
     // Append agent instructions if set.
     if (agent.instruction) {
+      console.log(`[InstructionsLlmRequestProcessor] About to call canonicalInstruction for agent: ${agent.name}`);
+      console.log(`[InstructionsLlmRequestProcessor] Session state before creating ReadonlyContext - test_value:`, invocationContext.session.state.get('test_value'));
+      
+      const readonlyContext = new ReadonlyContext(invocationContext);
+      console.log(`[InstructionsLlmRequestProcessor] ReadonlyContext created - test_value:`, readonlyContext.state.get('test_value'));
+      
       const [rawSi, bypassStateInjection] = await agent.canonicalInstruction(
-        new ReadonlyContext(invocationContext)
+        readonlyContext
       );
+      
+      console.log(`[InstructionsLlmRequestProcessor] canonicalInstruction returned, rawSi length: ${rawSi.length}`);
+      console.log(`[InstructionsLlmRequestProcessor] Instruction content preview: ${rawSi.substring(0, 200)}...`);
+      
       let si = rawSi;
       if (!bypassStateInjection) {
         si = await populateValues(rawSi, invocationContext);

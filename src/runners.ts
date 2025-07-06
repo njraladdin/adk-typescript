@@ -202,8 +202,9 @@ export class Runner {
       eventCount++;
       console.log(`Runner - Event ${eventCount}: author=${event.author}, isFinalResponse=${event.isFinalResponse()}, functionCalls=${event.getFunctionCalls().length}, functionResponses=${event.getFunctionResponses().length}, partial=${event.partial}`);
       
-      // PYTHON BEHAVIOR: Save ALL non-partial events to session immediately
+      // PYTHON BEHAVIOR: Save ALL non-partial events to session immediately BEFORE yielding
       // This matches: if not event.partial: await self.session_service.append_event(session=session, event=event)
+      // This ensures session state is updated before the next agent iteration
       if (!event.partial) {
         try {
           await this.sessionService.appendEvent({

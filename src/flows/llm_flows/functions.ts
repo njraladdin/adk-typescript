@@ -90,15 +90,27 @@ export function getLongRunningFunctionCalls(
 ): Set<string> {
   const longRunningToolIds = new Set<string>();
   
+  console.log(`[getLongRunningFunctionCalls] Processing ${functionCalls.length} function calls`);
+  console.log(`[getLongRunningFunctionCalls] toolsDict keys:`, Object.keys(toolsDict));
+  
   for (const functionCall of functionCalls) {
-    if (
-      functionCall.name in toolsDict &&
-      toolsDict[functionCall.name].isLongRunning
-    ) {
-      longRunningToolIds.add(functionCall.id);
+    console.log(`[getLongRunningFunctionCalls] Checking function call: ${functionCall.name}`);
+    console.log(`[getLongRunningFunctionCalls] Function call in toolsDict: ${functionCall.name in toolsDict}`);
+    
+    if (functionCall.name in toolsDict) {
+      const tool = toolsDict[functionCall.name];
+      console.log(`[getLongRunningFunctionCalls] Tool isLongRunning: ${tool.isLongRunning}`);
+      
+      if (tool.isLongRunning) {
+        console.log(`[getLongRunningFunctionCalls] Adding ${functionCall.id} to long running tools`);
+        longRunningToolIds.add(functionCall.id);
+      }
+    } else {
+      console.log(`[getLongRunningFunctionCalls] Tool ${functionCall.name} not found in toolsDict`);
     }
   }
   
+  console.log(`[getLongRunningFunctionCalls] Returning ${longRunningToolIds.size} long running tool IDs:`, Array.from(longRunningToolIds));
   return longRunningToolIds;
 }
 
