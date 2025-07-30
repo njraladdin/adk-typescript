@@ -237,17 +237,19 @@ class GenAIClient {
   private genAI: typeof GoogleGenAI;
   
   constructor(private httpOptions: { headers: Record<string, string>, api_version?: string }) {
-    console.log('doin it');
-    // Initialize Google GenAI with API key from environment
-    this.genAI = new GoogleGenAI({
-    vertexai: true,
-    project: 'mlb-netinfra-prod-ce0d',
-    location: 'us-central1',
-	apiVersion: 'v1'
-}/*process.env.GOOGLE_API_KEY || ''*/);
-    
     // Check if this is a Vertex AI environment
-    this.vertexai = !!process.env.VERTEX_AI || !!process.env.GOOGLE_CLOUD_PROJECT;
+    this.vertexai = !!process.env.VERTEX_AI || !!process.env.GOOGLE_GENAI_USE_VERTEXAI || !!process.env.GOOGLE_CLOUD_PROJECT;
+
+    // Initialize Google GenAI with API key from environment
+    this.genAI = new GoogleGenAI(this.vertexai ? {
+    vertexai: true,
+    project: process.env.GOOGLE_CLOUD_PROJECT,
+    location: process.env.GOOGLE_CLOUD_LOCATION,
+	  apiVersion: 'v1'
+  }:
+  {
+    vertexai:false
+  }/*process.env.GOOGLE_API_KEY || ''*/);    
   }
 
   // Models API
