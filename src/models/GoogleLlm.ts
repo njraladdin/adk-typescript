@@ -4,7 +4,9 @@ import { GeminiLlmConnection } from './GeminiLlmConnection';
 import { LlmRequest } from './LlmRequest';
 import { LlmResponse } from './LlmResponse';
 import { Blob, Content, FunctionDeclaration, Part } from './types';
-import { GoogleGenerativeAI, GenerativeModel, Tool as GoogleTool } from '@google/generative-ai';
+//import { GoogleGenAI/*, Tool as GoogleTool*/ } from '@google/genai';
+const { GoogleGenAI, Tool } = require('@google/genai');
+const GoogleTool = Tool;
 
 // Simulated interfaces for GenAI SDK types in TypeScript
 interface GenerateContentResponse {
@@ -103,7 +105,7 @@ function convertContent(content: Content): { role: string, parts: any[] } {
 /**
  * Helper function to convert our tools format to Google GenAI tools format
  */
-function convertTools(tools: any[] | undefined): GoogleTool[] {
+function convertTools(tools: any[] | undefined): typeof GoogleTool[] {
   if (!tools || tools.length === 0) {
     return [];
   }
@@ -232,14 +234,26 @@ function convertResponse(response: any): GenerateContentResponse {
 // GenAI Client for Gemini
 class GenAIClient {
   vertexai: boolean = false;
-  private genAI: GoogleGenerativeAI;
+  private genAI: typeof GoogleGenAI;
   
   constructor(private httpOptions: { headers: Record<string, string>, api_version?: string }) {
-    // Initialize Google GenAI with API key from environment
-    this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
-    
     // Check if this is a Vertex AI environment
-    this.vertexai = !!process.env.VERTEX_AI || !!process.env.GOOGLE_CLOUD_PROJECT;
+    this.vertexai = !!process.env.VERTEX_AI || !!process.env.GOOGLE_GENAI_USE_VERTEXAI || !!process.env.GOOGLE_CLOUD_PROJECT;
+
+    // Initialize Google GenAI with API key from environment
+    this.genAI = new GoogleGenAI(this.vertexai ? {
+    vertexai: true,
+    
+    /* these params are apparently optional */
+    project: process.env?.GOOGLE_CLOUD_PROJECT,
+    location: process.env?.GOOGLE_CLOUD_LOCATION,
+	  apiVersion: 'v1'     
+  }:
+  {
+    vertexai:false,
+    apiKey:process.env?.GOOGLE_API_KEY
+  });
+    
   }
 
   // Models API
@@ -260,25 +274,9 @@ class GenAIClient {
       // Filter out any system messages from contents
       // as they're not supported by the JavaScript SDK
       contents = contents.filter(content => content.role !== 'system');
-      
-    
-      
+            
       // Create model instance with systemInstruction as a configuration parameter
-      const genModel = this.genAI.getGenerativeModel({
-        model: model,
-        generationConfig: {
-          temperature: config.temperature,
-          topP: config.topP,
-          topK: config.topK,
-          maxOutputTokens: config.maxOutputTokens,
-          candidateCount: config.candidateCount,
-          stopSequences: config.stopSequences,
-          responseSchema: config.responseSchema,
-          responseMimeType: config.responseMimeType,
-        },
-        systemInstruction: systemInstructionText,
-        tools: convertTools(config.tools),
-      });
+      const genModel = this.genAI.models;
       
       // Log configuration for debugging
       // Convert content format
@@ -287,7 +285,20 @@ class GenAIClient {
       try {
         // Generate content
         const response = await genModel.generateContent({
-          contents: convertedContents
+          model: model,
+          contents: convertedContents,
+          config: {
+            temperature: config.temperature,
+            topP: config.topP,
+            topK: config.topK,
+            maxOutputTokens: config.maxOutputTokens,
+            candidateCount: config.candidateCount,
+            stopSequences: config.stopSequences,
+            responseSchema: config.responseSchema,
+            responseMimeType: config.responseMimeType,
+            systemInstruction: systemInstructionText,
+            tools: convertTools(config.tools),
+          },
         });
         
         // Convert response back to our expected format
@@ -353,9 +364,16 @@ class GenAIClient {
       }
       
       // Create model instance with systemInstruction as a configuration parameter
-      const genModel = this.genAI.getGenerativeModel({
+      const genModel = this.genAI.models;      
+      
+      // Convert content format
+      const convertedContents = contents.map(convertContent);
+      
+      // Generate streaming content
+      const responseStream = await genModel.generateContentStream({
         model: model,
-        generationConfig: {
+        contents: convertedContents,                
+        config: {
           temperature: config.temperature,
           topP: config.topP,
           topK: config.topK,
@@ -364,19 +382,9 @@ class GenAIClient {
           stopSequences: config.stopSequences,
           responseSchema: config.responseSchema,
           responseMimeType: config.responseMimeType,
+          systemInstruction: systemInstructionText,
+          tools: convertTools(config.tools),
         },
-        systemInstruction: systemInstructionText,
-        tools: convertTools(config.tools),
-      });
-      
-
-      
-      // Convert content format
-      const convertedContents = contents.map(convertContent);
-      
-      // Generate streaming content
-      const responseStream = await genModel.generateContentStream({
-        contents: convertedContents
       });
       
       // Process and yield each chunk
@@ -428,22 +436,22 @@ class GenAIClient {
       }
       
       // Create model instance with appropriate configuration
-      const genModel = this.genAI.getGenerativeModel({
-        model: model,
-        systemInstruction: systemInstructionText,
-        tools: convertTools(config.tools),
-      });
+      const genModel = this.genAI.chats;
       
       // Start chat session - don't pass system instruction in history
-      const chat = genModel.startChat({
+      const chat = genModel.create({
+        model: model,
         history: [],  // Don't include system instructions in history
-        tools: convertTools(config.tools),
+        config: {
+          systemInstruction: systemInstructionText,
+          tools: convertTools(config.tools),
+        }
       });
       
       // Create an AsyncSession wrapper around the chat
       const session: AsyncSession = {
         async send(input: any): Promise<void> {
-          await chat.sendMessage(input);
+          await chat.sendMessage({message:input});
         },
         
         async *receive(): AsyncGenerator<any, void, unknown> {
@@ -451,7 +459,7 @@ class GenAIClient {
           // This is a placeholder as the Google GenAI JS SDK doesn't 
           // have a direct equivalent to the Python SDK's receive() method
           // Instead of getLastResponse, we'll use sendMessage to get a response
-          const response = await chat.sendMessage("continue");
+          const response = await chat.sendMessage({message:"continue"});
           yield convertResponse(response);
         },
         
