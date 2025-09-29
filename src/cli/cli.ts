@@ -206,28 +206,28 @@ export async function runCli({
     userId,
   });
 
-  // Resolve the agent path more carefully
-  let agentModulePath: string;
-  
-  // Check if we're in the agent directory or parent directory
+  // Resolve the agent path efficiently with early exit
   const currentDir = process.cwd();
+  
+  // Define search paths in order of preference (most common first)
+  const searchPaths = [
+    path.resolve(currentDir, agentFolderName, 'agent.ts'),
+    path.resolve(currentDir, agentFolderName, 'src', 'agent.ts'),
+    path.resolve(agentParentDir, agentFolderName, 'agent.ts'),
+    path.resolve(agentParentDir, agentFolderName, 'src', 'agent.ts'),
+  ];
 
-  // Standard locations for agent.ts
-  const agentPathInCurrentDir = path.resolve(currentDir, agentFolderName, 'agent.ts');
-  const agentPathWithSrcInCurrentDir = path.resolve(currentDir, agentFolderName, 'src', 'agent.ts');
-  const agentPathInParentDir = path.resolve(agentParentDir, agentFolderName, 'agent.ts');
-  const agentPathWithSrcInParentDir = path.resolve(agentParentDir, agentFolderName, 'src', 'agent.ts');
+  let agentModulePath: string | null = null;
+  
+  // Find the first existing path (early exit optimization)
+  for (const searchPath of searchPaths) {
+    if (fs.existsSync(searchPath)) {
+      agentModulePath = searchPath;
+      break;
+    }
+  }
 
-  if (fs.existsSync(agentPathInCurrentDir)) {
-    agentModulePath = agentPathInCurrentDir;
-  } else if (fs.existsSync(agentPathWithSrcInCurrentDir)) {
-    agentModulePath = agentPathWithSrcInCurrentDir;
-  } else if (fs.existsSync(agentPathInParentDir)) {
-    agentModulePath = agentPathInParentDir;
-  } else if (fs.existsSync(agentPathWithSrcInParentDir)) {
-    agentModulePath = agentPathWithSrcInParentDir;
-  } else {
-    // If not found, throw a clear error.
+  if (!agentModulePath) {
     throw new Error(
       `Could not find agent file for '${agentFolderName}'.\n` +
       `Looked for agent in current directory ('${currentDir}') and parent directory ('${agentParentDir}').`
@@ -241,13 +241,16 @@ export async function runCli({
     envs.loadDotenvForAgent(agentFolderName, agentParentDir);
     
     try {
-      // Register TypeScript compiler
+      // Register TypeScript compiler with optimized settings
       register({
         transpileOnly: true,
         compilerOptions: {
           module: 'Node16',
           moduleResolution: 'Node16',
           target: 'ES2020',
+          skipLibCheck: true,
+          allowSyntheticDefaultImports: true,
+          esModuleInterop: true,
         },
       });
       
@@ -363,4 +366,4 @@ export async function runCli({
     console.error('Error running CLI:', error);
     process.exit(1);
   }
-} 
+}

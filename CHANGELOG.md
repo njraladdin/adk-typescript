@@ -1,5 +1,8 @@
 # Changelog
 
+
+## [current_version] 
+
 ## [1.0.3] 
 * Removed JSDoc-based function description extraction, since JSDoc is not available at runtime for functions in TypeScript (unlike Python).
 * Fixed an issue in `FunctionTool` where parameters from the LLM were not passed correctly to the wrapped function

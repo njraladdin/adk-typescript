@@ -70,12 +70,7 @@ program
             process.exit(1);
           }
           
-          // Register ts-node to handle TypeScript files
-          try {
-            require('ts-node/register');
-          } catch (error) {
-            console.warn('Failed to register ts-node. If you have TypeScript files, this might cause issues.');
-          }
+
           
           // Resolve the agent path more carefully
           const cwd = process.cwd();
@@ -361,4 +356,4 @@ program
     }
   });
 
-program.parse(process.argv); 
+program.parse(process.argv);
