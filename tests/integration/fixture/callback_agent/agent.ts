@@ -6,14 +6,6 @@ import { LlmRequest, LlmResponse } from '../../../../src/models';
 import { BaseLlmFlow } from '../../../../src/flows/llm_flows';
 import { Event } from '../../../../src/events/Event';
 
-// Type extensions for model-related callbacks
-declare module '../../../../src/agents/LlmAgent' {
-  interface LlmAgent {
-    beforeModelCallback?: (context: CallbackContext, request: LlmRequest) => LlmResponse | undefined;
-    afterModelCallback?: (context: CallbackContext, response: LlmResponse) => LlmResponse | undefined;
-  }
-}
-
 // Mock LlmFlow for testing callbacks
 class MockLlmFlow extends BaseLlmFlow {
   async *runAsync(
@@ -204,4 +196,4 @@ export const afterModelCallbackAgent = new LlmAgent({
   instruction: 'Say hello'
 });
 // Add the callback directly to the agent
-(afterModelCallbackAgent as any).afterModelCallback = afterModelCall; 
+(afterModelCallbackAgent as any).afterModelCallback = afterModelCall;

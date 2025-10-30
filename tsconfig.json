@@ -13,6 +13,7 @@
     "moduleResolution": "node16",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "isolatedModules": true,
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "baseUrl": ".",
     "paths": {
@@ -23,4 +24,4 @@
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.test.ts"]
-} 
+}

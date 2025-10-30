@@ -64,12 +64,15 @@ function mergeState(
   userState: Record<string, any>,
   sessionState: Record<string, any>
 ): State {
+  // Create state with session state as the base
   const mergedState = new State(sessionState);
   
+  // Add app state with prefix
   for (const [key, value] of Object.entries(appState)) {
     mergedState.set(StatePrefix.APP_PREFIX + key, value);
   }
   
+  // Add user state with prefix
   for (const [key, value] of Object.entries(userState)) {
     mergedState.set(StatePrefix.USER_PREFIX + key, value);
   }
@@ -130,8 +133,8 @@ class StorageEvent {
   @Column({ nullable: true, length: DEFAULT_MAX_VARCHAR_LENGTH })
   branch?: string;
 
-  @CreateDateColumn()
-  timestamp!: Date;
+  @Column({ nullable: true, type: 'datetime' })
+  timestamp?: Date;
 
   @Column({ type: 'simple-json', nullable: true })
   content?: Record<string, any>;
@@ -350,6 +353,20 @@ export class DatabaseSessionService extends BaseSessionService {
   }
 
   /**
+   * Clears all data from the database.
+   * This method is useful for testing to ensure clean state between tests.
+   */
+  async clearDatabase(): Promise<void> {
+    await this.ensureConnection();
+    
+    // Clear all tables in the correct order (respecting foreign key constraints)
+    await this.eventRepo.clear();
+    await this.sessionRepo.clear();
+    await this.userStateRepo.clear();
+    await this.appStateRepo.clear();
+  }
+
+  /**
    * Ensures the database connection is established
    */
   private async ensureConnection(): Promise<void> {
@@ -494,22 +511,34 @@ export class DatabaseSessionService extends BaseSessionService {
     };
     
     // Convert storage events to Event objects
-    session.events = storageEvents.map(storageEvent => ({
-      id: storageEvent.id,
-      invocationId: storageEvent.invocationId,
-      author: storageEvent.author,
-      content: decodeContent(storageEvent.content),
-      actions: storageEvent.actions,
-      turnComplete: storageEvent.turnComplete,
-      partial: storageEvent.partial,
-      longRunningToolIds: storageEvent.longRunningToolIds,
-      errorCode: storageEvent.errorCode,
-      errorMessage: storageEvent.errorMessage,
-      interrupted: storageEvent.interrupted,
-      timestamp: storageEvent.timestamp ? Math.floor(storageEvent.timestamp.getTime() / 1000) : undefined,
-      branch: storageEvent.branch,
-      groundingMetadata: storageEvent.groundingMetadata
-    }));
+    session.events = storageEvents.map(storageEvent => {
+      const event: any = {
+        id: storageEvent.id,
+        invocationId: storageEvent.invocationId,
+        author: storageEvent.author,
+        content: decodeContent(storageEvent.content),
+        actions: storageEvent.actions,
+        turnComplete: storageEvent.turnComplete,
+        partial: storageEvent.partial,
+        longRunningToolIds: storageEvent.longRunningToolIds,
+        errorCode: storageEvent.errorCode,
+        errorMessage: storageEvent.errorMessage,
+        interrupted: storageEvent.interrupted
+      };
+      
+      // Only include optional fields if they have values
+      if (storageEvent.timestamp) {
+        event.timestamp = Math.floor(storageEvent.timestamp.getTime() / 1000);
+      }
+      if (storageEvent.branch) {
+        event.branch = storageEvent.branch;
+      }
+      if (storageEvent.groundingMetadata) {
+        event.groundingMetadata = storageEvent.groundingMetadata;
+      }
+      
+      return event;
+    });
     
     return session;
   }
@@ -662,10 +691,19 @@ export class DatabaseSessionService extends BaseSessionService {
       }
       
       // Update the in-memory session state
+      // Get current session state values (without prefixes)
+      const allCurrentState = session.state.getAll();
+      const currentSessionState: Record<string, any> = {};
+      for (const [key, value] of Object.entries(allCurrentState)) {
+        if (!key.startsWith(StatePrefix.APP_PREFIX) && !key.startsWith(StatePrefix.USER_PREFIX)) {
+          currentSessionState[key] = value;
+        }
+      }
+      
       session.state = mergeState(
         appState.state,
         userState.state,
-        { ...session.state, ...sessionStateDelta }
+        { ...currentSessionState, ...sessionStateDelta }
       );
     }
     
@@ -685,6 +723,17 @@ export class DatabaseSessionService extends BaseSessionService {
     storageEvent.errorCode = event.errorCode;
     storageEvent.errorMessage = event.errorMessage;
     storageEvent.interrupted = event.interrupted;
+    
+    // Only set optional fields if they exist in the original event
+    if (event.branch) {
+      storageEvent.branch = event.branch;
+    }
+    if (event.groundingMetadata) {
+      storageEvent.groundingMetadata = event.groundingMetadata;
+    }
+    if (event.timestamp) {
+      storageEvent.timestamp = new Date(event.timestamp * 1000);
+    }
     
     await this.eventRepo.save(storageEvent);
     
@@ -806,4 +855,4 @@ export class DatabaseSessionService extends BaseSessionService {
     
     return session;
   }
-} 
+}

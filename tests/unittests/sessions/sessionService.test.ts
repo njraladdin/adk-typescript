@@ -48,6 +48,23 @@ describe.each([
   // Add timeout to all tests in this suite
   jest.setTimeout(30000);
   
+  // Clean up resources before each test to ensure isolation
+  beforeEach(async () => {
+    console.log(`beforeEach: serviceType = ${serviceType}`);
+    // For database tests, we need to clear the database
+    if (serviceType === SessionServiceType.DATABASE) {
+      try {
+        console.log('beforeEach: Clearing database...');
+        // Get or create the service instance and clear the database
+        const dbService = getSessionService(serviceType) as DatabaseSessionService;
+        await dbService.clearDatabase();
+        console.log('beforeEach: Database cleared successfully');
+      } catch (error) {
+        console.warn('Failed to clear database in beforeEach:', error);
+      }
+    }
+  });
+  
   // Clean up resources after all tests
   afterAll(async () => {
     // For database tests, we need to manually close connections
@@ -55,7 +72,9 @@ describe.each([
       try {
         // Close the specific service instance connection
         const dbService = serviceInstances[serviceType] as DatabaseSessionService;
-        await dbService.closeConnection();
+        if (dbService) {
+          await dbService.closeConnection();
+        }
         
         // Also close any other connections that might be open
         await DatabaseSessionService.closeAllConnections();
@@ -431,4 +450,4 @@ describe.each([
 
     expect(savedSession).toEqual(session);
   });
-}); 
+});

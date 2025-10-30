@@ -16,14 +16,11 @@ const geminiFlashModel = LlmRegistry.newLlm('gemini-2.0-flash');
 /**
  * First agent with basic configuration
  */
-  export const agent1 = new Agent({
-    name: 'agent_1',
+export const agent1 = new Agent({
+  name: 'agent_1',
   description: 'The first agent in the team.',
   instruction: 'Just say 1',
-  model: geminiFlashModel,
-  generateContentConfig: {
-    temperature: 0.1
-  }
+  model: geminiFlashModel
 });
 
 /**
@@ -34,13 +31,10 @@ export const agent2 = new Agent({
   description: 'The second agent in the team.',
   instruction: 'Just say 2',
   model: geminiFlashModel,
-  generateContentConfig: {
-    temperature: 0.2,
-    safetySettings: [{
-      category: 'HARM_CATEGORY_HATE_SPEECH',
-      threshold: 'BLOCK_ONLY_HIGH'
-    }]
-  }
+  safetySettings: [{
+    category: 'HARM_CATEGORY_HATE_SPEECH',
+    threshold: 'BLOCK_ONLY_HIGH'
+  }]
 });
 
 /**
@@ -51,13 +45,10 @@ export const agent3 = new Agent({
   description: 'The third agent in the team.',
   instruction: 'Just say 3',
   model: geminiFlashModel,
-  generateContentConfig: {
-    temperature: 0.5,
-    safetySettings: [{
-      category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-      threshold: 'BLOCK_NONE'
-    }]
-  }
+  safetySettings: [{
+    category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+    threshold: 'BLOCK_NONE'
+  }]
 });
 
 /**
@@ -66,10 +57,7 @@ export const agent3 = new Agent({
 export const agentWithInstructionInConfig = new Agent({
   name: 'agent',
   model: geminiFlashModel,
-  generateContentConfig: {
-    temperature: 0.5,
-    systemInstruction: 'Count 1'
-  }
+  instruction: 'Count 1'
 });
 
 /**
@@ -85,24 +73,21 @@ function simpleFunction(): void {
 export const agentWithToolsInConfig = new Agent({
   name: 'agent',
   model: geminiFlashModel,
-  generateContentConfig: {
-    temperature: 0.5,
-    tools: [
-      new FunctionTool({
+  tools: [
+    new FunctionTool({
+      name: 'simpleFunction',
+      description: 'A simple function for tool demonstration',
+      fn: async () => simpleFunction(),
+      functionDeclaration: {
         name: 'simpleFunction',
         description: 'A simple function for tool demonstration',
-        fn: async () => simpleFunction(),
-        functionDeclaration: {
-          name: 'simpleFunction',
-          description: 'A simple function for tool demonstration',
-          parameters: {
-            type: 'object',
-            properties: {}
-          }
+        parameters: {
+          type: 'object',
+          properties: {}
         }
-      })
-    ]
-  }
+      }
+    })
+  ]
 });
 
 /**
@@ -111,8 +96,5 @@ export const agentWithToolsInConfig = new Agent({
 export const agentWithResponseSchemaInConfig = new Agent({
   name: 'agent',
   model: geminiFlashModel,
-  generateContentConfig: {
-    temperature: 0.5,
-    responseSchema: { key: 'value' }
-  }
-}); 
+  outputSchema: { type: 'object', properties: {} } as const
+});

@@ -45,7 +45,8 @@ describe('ConnectionsClient', () => {
       expect(details).toEqual({
         serviceName: 'default-service',
         host: 'default.host',
-        name: 'default-connection'
+        name: 'default-connection',
+        authOverrideEnabled: false
       });
     });
   });
@@ -258,4 +259,4 @@ describe('ConnectionsClient', () => {
       });
     });
   });
-}); 
+});
