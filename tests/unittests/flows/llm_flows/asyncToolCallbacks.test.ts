@@ -23,6 +23,21 @@ class TestAgent implements Partial<LlmAgent> {
     this.afterToolCallback = afterToolCallback;
   }
 
+  // Add the canonical callback getters that handleFunctionCallsAsync expects
+  get canonicalBeforeToolCallbacks(): any[] {
+    if (!this.beforeToolCallback) return [];
+    return Array.isArray(this.beforeToolCallback)
+      ? this.beforeToolCallback
+      : [this.beforeToolCallback];
+  }
+
+  get canonicalAfterToolCallbacks(): any[] {
+    if (!this.afterToolCallback) return [];
+    return Array.isArray(this.afterToolCallback)
+      ? this.afterToolCallback
+      : [this.afterToolCallback];
+  }
+
   async generate() {
     return new Event({
       author: this.name, // Add required author property
@@ -144,7 +159,8 @@ describe('Async Tool Callbacks', () => {
     expect(responseEvent).not.toBeUndefined();
     const functionResponse = responseEvent?.content?.parts?.[0]?.functionResponse;
     expect(functionResponse).not.toBeUndefined();
-    expect(functionResponse as any).toEqual(expect.objectContaining(mockResponse));
+    // The actual response is nested under the 'response' property
+    expect(functionResponse?.response as any).toEqual(expect.objectContaining(mockResponse));
   });
   
   test('async after_tool_callback should be awaited and used', async () => {
@@ -167,7 +183,8 @@ describe('Async Tool Callbacks', () => {
     expect(responseEvent).not.toBeUndefined();
     const functionResponse = responseEvent?.content?.parts?.[0]?.functionResponse;
     expect(functionResponse).not.toBeUndefined();
-    expect(functionResponse as any).toEqual(expect.objectContaining(mockResponse));
+    // The actual response is nested under the 'response' property
+    expect(functionResponse?.response as any).toEqual(expect.objectContaining(mockResponse));
   });
   
   test('after_tool_callback returning undefined should not change tool response', async () => {
@@ -190,6 +207,7 @@ describe('Async Tool Callbacks', () => {
     expect(responseEvent).not.toBeUndefined();
     const functionResponse = responseEvent?.content?.parts?.[0]?.functionResponse;
     expect(functionResponse).not.toBeUndefined();
-    expect(functionResponse as any).toEqual(expect.objectContaining(initialResponse));
+    // The actual response is nested under the 'response' property
+    expect(functionResponse?.response as any).toEqual(expect.objectContaining(initialResponse));
   });
-}); 
+});
