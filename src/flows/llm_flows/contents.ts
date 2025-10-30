@@ -351,27 +351,53 @@ export function getContents(
   events: Event[],
   agentName: string = ''
 ): Content[] {
+  console.log('[DEBUG] getContents called with', events.length, 'events');
+  
   let filteredEvents: Event[] = [];
   
   // Parse the events, leaving the contents and the function calls and
   // responses from the current agent.
   for (const event of events) {
-    if (!event.content || !event.content.role || !event.content.parts || event.content.parts[0].text == '') {
+    console.log('[DEBUG] Processing event:', {
+      id: event.id,
+      author: event.author,
+      role: event.content?.role,
+      hasFunctionCalls: event.getFunctionCalls().length > 0,
+      hasFunctionResponses: event.getFunctionResponses().length > 0
+    });
+    
+    if (!event.content || !event.content.role || !event.content.parts) {
       // Skip events without content, or generated neither by user nor by model.
       // E.g. events purely for mutating session states.
+      console.log('[DEBUG] Skipping event - no content/role/parts');
+      continue;
+    }
+    
+    // Check if the event has valid content parts
+    const hasValidParts = event.content.parts.some(part => 
+      (part.text !== undefined && part.text !== null && part.text !== '') ||
+      (part.functionCall && part.functionCall.name) ||
+      (part.functionResponse && part.functionResponse.name)
+    );
+    
+    if (!hasValidParts) {
+      // Skip events without valid content parts
       continue;
     }
     
     if (!isEventBelongsToBranch(currentBranch, event)) {
       // Skip events not belong to current branch.
+      console.log('[DEBUG] Skipping event - wrong branch');
       continue;
     }
     
     if (isAuthEvent(event)) {
       // skip auth event
+      console.log('[DEBUG] Skipping event - auth event');
       continue;
     }
     
+    console.log('[DEBUG] Event passed filtering, adding to filteredEvents');
     filteredEvents.push(
       isOtherAgentReply(agentName, event)
         ? convertForeignEvent(event)
@@ -533,4 +559,4 @@ function isAuthEvent(event: Event): boolean {
   }
   
   return false;
-} 
+}

@@ -48,16 +48,17 @@ export class FunctionTool extends BaseTool {
       // Direct function case
       const func = options as ToolFunction;
       const funcName = func.name || 'anonymous_function';
-      
+
       super({ name: funcName, description: `Function ${funcName}` });
       this.fn = func;
-      
-      // Generate function declaration automatically
+
+      // Generate function declaration automatically (only once, during construction)
       try {
         this.functionDeclaration = buildFunctionDeclaration(func, {
           ignoreParams: ['context', 'tool_context', 'toolContext', 'input_stream'],
           variant: 'DEFAULT'
         });
+
       } catch (error) {
         // If automatic generation fails, create a basic declaration
         console.warn(`Failed to generate function declaration for ${funcName}: ${error}`);
@@ -131,8 +132,23 @@ export class FunctionTool extends BaseTool {
     params: Record<string, any>,
     context: ToolContext
   ): Promise<any> {
-    const args = Object.values(params);
-    const fn = this.fn as (...args: any[]) => any;
-    return await fn(...args, context);
+    // Get the function's parameter names from the declaration
+    const declaration = this._getDeclaration();
+    const paramNames = declaration?.parameters?.required || [];
+
+    // If there are specific named parameters (not just 'params'),
+    // pass them as individual arguments
+    if (paramNames.length > 0 && !paramNames.includes('params')) {
+      // Extract values in the order defined by the function declaration
+      const args = paramNames.map((name: string) => params[name]);
+      // Add context as the last argument
+      // Cast fn to a function that accepts rest parameters
+      const fn = this.fn as (...args: any[]) => any;
+      return await fn(...args, context);
+    } else {
+      // Legacy behavior: pass params object directly as first argument, then context
+      // This matches the signature: (params: Record<string, any>, context: ToolContext)
+      return await this.fn(params, context);
+    }
   }
 } 

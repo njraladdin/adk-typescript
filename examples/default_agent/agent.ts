@@ -1,21 +1,20 @@
 import { LlmAgent as Agent } from 'adk-typescript/agents';
 import { LlmRegistry } from 'adk-typescript/models';
-import { FunctionTool, ToolContext } from 'adk-typescript/tools';
+import { ToolContext } from 'adk-typescript/tools';
 import { runAgent } from 'adk-typescript';
 
 // --- Tool Functions ---
 
 /**
  * Returns current weather information for a specified city
- * @param params Object containing city name
+ * @param city Name of the city to get weather for
  * @param context Optional ToolContext
  * @returns Promise resolving to weather information or error
  */
 async function getWeather(
-  params: Record<string, any>,
-  context?: ToolContext
+  city: string,
+  context: ToolContext
 ): Promise<{ status: string; report?: string; error_message?: string }> {
-  const city = params.city;
   console.log(`--- Tool: getWeather called for city: ${city} ---`);
   const cityNormalized = city.toLowerCase().trim();
   const mockWeatherDb: Record<string, { status: string; report: string }> = {
@@ -29,13 +28,11 @@ async function getWeather(
 
 /**
  * Gets the current local time and timezone.
- * @param params Empty object (no parameters needed)
  * @param context Optional ToolContext
  * @returns Promise resolving to time information
  */
 async function getCurrentTime(
-  params: Record<string, any>, 
-  context?: ToolContext
+  context: ToolContext
 ): Promise<{ currentTime: string; timezone: string; }> {
     console.log(`--- Tool: getCurrentTime called ---`);
     const now = new Date();
@@ -45,43 +42,13 @@ async function getCurrentTime(
     };
 }
 
-// --- Tool Wrappers ---
-
-const getWeatherTool = new FunctionTool({
-  name: "getWeather",
-  description: "Returns current weather information for a specified city",
-  fn: getWeather,
-  functionDeclaration: {
-    name: "getWeather",
-    description: "Returns current weather information for a specified city",
-    parameters: {
-      type: 'object',
-      properties: {
-        city: { type: 'string', description: 'The name of the city (e.g., "New York")'}
-      },
-      required: ['city']
-    }
-  }
-});
-
-const getCurrentTimeTool = new FunctionTool({
-    name: "getCurrentTime",
-    description: "Gets the current local time and timezone.",
-    fn: getCurrentTime,
-    functionDeclaration: {
-        name: "getCurrentTime",
-        description: "Gets the current local time and timezone.",
-        parameters: { type: 'object', properties: {} } // No parameters
-    }
-});
-
-
 // --- Agent Definition ---
 
 // Use LlmRegistry to get a model instance
 const agentLlm = LlmRegistry.newLlm("gemini-2.0-flash"); // Or another compatible model
 
 // Export the root agent for ADK tools to find
+// Now we can pass functions directly to the tools array!
 export const rootAgent = new Agent({
   name: "default_agent", // Unique agent name
   model: agentLlm,       // LLM instance
@@ -89,7 +56,7 @@ export const rootAgent = new Agent({
   instruction: "You are a helpful assistant. Use the 'getWeather' tool for weather queries " +
                "and the 'getCurrentTime' tool for time queries. Provide clear answers based on tool results. " +
                "If asked for weather AND time, use both tools.",
-  tools: [getWeatherTool, getCurrentTimeTool], // List of available tools
+  tools: [getWeather, getCurrentTime], // Functions can now be passed directly!
 });
 
 // Run agent directly when this file is executed

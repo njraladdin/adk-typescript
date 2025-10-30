@@ -651,6 +651,13 @@ export abstract class BaseLlmFlow {
       );
 
       if (functionResponseEvent) {
+        console.log('[DEBUG] Function response event generated:', {
+          id: functionResponseEvent.id,
+          author: functionResponseEvent.author,
+          content: functionResponseEvent.content,
+          functionResponses: functionResponseEvent.getFunctionResponses()
+        });
+        
         // Check for auth event
         const authEvent = functions.generateAuthEvent(
           invocationContext,
@@ -660,6 +667,7 @@ export abstract class BaseLlmFlow {
           yield authEvent;
         }
 
+        console.log('[DEBUG] Yielding function response event');
         yield functionResponseEvent;
 
         // Check for transfer_to_agent
@@ -915,6 +923,7 @@ export abstract class BaseLlmFlow {
     if (finalEvent.content) {
       const functionCalls = finalEvent.getFunctionCalls();
       if (functionCalls.length > 0) {
+        console.log('[BaseLlmFlow] Function calls detected:', JSON.stringify(functionCalls, null, 2));
         functions.populateClientFunctionCallId(finalEvent);
         
         // Get tools dictionary if available
@@ -955,4 +964,4 @@ export abstract class BaseLlmFlow {
     
     throw new Error('LLM not found in invocation context or agent');
   }
-} 
+}

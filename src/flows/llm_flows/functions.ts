@@ -371,20 +371,20 @@ export async function handleFunctionCallsAsync(
   if (!agent) {
     return undefined;
   }
-  
+
   const functionCalls = functionCallEvent.getFunctionCalls();
   if (!functionCalls || functionCalls.length === 0) {
     return undefined;
   }
-  
+
   const functionResponseEvents: Event[] = [];
-  
+
   for (const functionCall of functionCalls) {
     // Skip if not in filter list when a filter is provided
     if (filters && functionCall.id && !filters.has(functionCall.id)) {
       continue;
     }
-    
+
     try {
       const { tool, toolContext } = _getToolAndContext(
         invocationContext,
@@ -392,9 +392,10 @@ export async function handleFunctionCallsAsync(
         functionCall,
         toolsDict
       );
-      
+
       // Function args
       const functionArgs = functionCall.args || {};
+      console.log(`[handleFunctionCallsAsync] Function: ${functionCall.name}, Args:`, JSON.stringify(functionArgs, null, 2));
       let functionResponse: Record<string, any> | undefined = undefined;
       
       // Check for missing mandatory arguments

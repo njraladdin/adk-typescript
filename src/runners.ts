@@ -194,10 +194,19 @@ export class Runner {
 
     // Run the agent asynchronously
     for await (const event of agentToRun.runAsync(invocationContext)) {
+      console.log('[DEBUG] Runner received event:', {
+        id: event.id,
+        author: event.author,
+        partial: event.partial,
+        hasFunctionCalls: event.getFunctionCalls().length > 0,
+        hasFunctionResponses: event.getFunctionResponses().length > 0
+      });
+      
       // PYTHON BEHAVIOR: Save ALL non-partial events to session immediately BEFORE yielding
       // This matches: if not event.partial: await self.session_service.append_event(session=session, event=event)
       // This ensures session state is updated before the next agent iteration
       if (!event.partial) {
+        console.log('[DEBUG] Runner appending event to session');
         try {
           await this.sessionService.appendEvent({
             session: session as any,
@@ -206,6 +215,8 @@ export class Runner {
         } catch (error) {
           console.error('Runner - Error saving event to session:', error);
         }
+      } else {
+        console.log('[DEBUG] Runner skipping partial event');
       }
 
       yield event;
@@ -600,4 +611,4 @@ export class InMemoryRunner extends Runner {
     });
     this._inMemorySessionService = inMemorySessionService;
   }
-} 
+}

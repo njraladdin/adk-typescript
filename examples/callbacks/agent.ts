@@ -1,88 +1,53 @@
-import { LlmAgent } from '../../src/agents/LlmAgent';
-import { ToolContext } from '../../src/tools/ToolContext';
-import { CallbackContext } from '../../src/agents/CallbackContext';
-import { LlmRequest } from '../../src/models/LlmRequest';
-import { LlmResponse } from '../../src/models/LlmResponse';
-import { BaseTool } from '../../src/tools/BaseTool';
-import { Content, Part } from '../../src/models/types';
-import { runAgent } from '../../src/cli/runAgent';
+import { LlmAgent } from 'adk-typescript/agents';
+import { ToolContext } from 'adk-typescript/tools';
+import { CallbackContext } from 'adk-typescript/agents';
+import { LlmRequest, LlmResponse } from 'adk-typescript/models';
+import { BaseTool } from 'adk-typescript/tools';
+import { Content, Part } from 'adk-typescript/models';
+import { runAgent } from 'adk-typescript';
 
 // --- Tool Functions ---
 
 /**
  * Roll a die and return the rolled result.
- * 
- * @param params Object containing sides parameter
+ *
+ * @param sides The integer number of sides the die has
  * @param toolContext The tool context
  * @returns The result of rolling the die
  */
 function rollDie(
-  params: { sides?: number } | number,
+  sides: number,
   toolContext: ToolContext
 ): number {
-  // Handle both object and direct number inputs
-  let sides: number;
-  if (typeof params === 'number') {
-    sides = params;
-  } else if (params.sides !== undefined) {
-    sides = params.sides;
-  } else {
-    // Fallback: try to extract from params if LLM passes incorrectly
-    const value = Object.values(params)[0];
-    if (typeof value === 'number') {
-      sides = value;
-    } else {
-      throw new Error('Invalid input: expected number of sides');
-    }
-  }
-  
   const result = Math.floor(Math.random() * sides) + 1;
-  
+
   if (!toolContext.state.get('rolls')) {
     toolContext.state.set('rolls', []);
   }
-  
+
   const rolls = toolContext.state.get('rolls') as number[];
   toolContext.state.set('rolls', [...rolls, result]);
-  
+
   return result;
 }
 
 /**
  * Check if a given list of numbers are prime.
- * 
- * @param params Object containing nums parameter (can be array or single number)
+ *
+ * @param nums The list of numbers to check
  * @param toolContext The tool context
  * @returns A string indicating which numbers are prime
  */
 async function checkPrime(
-  params: { nums: number[] | number },
+  nums: number[],
   toolContext: ToolContext
 ): Promise<string> {
-  // Handle both array and single number inputs
-  let nums: number[];
-  if (Array.isArray(params.nums)) {
-    nums = params.nums;
-  } else if (typeof params.nums === 'number') {
-    nums = [params.nums];
-  } else {
-    // Fallback: try to extract from params directly if LLM passes incorrectly
-    const value = Object.values(params)[0];
-    if (typeof value === 'number') {
-      nums = [value];
-    } else if (Array.isArray(value)) {
-      nums = value;
-    } else {
-      throw new Error('Invalid input: expected array of numbers or single number');
-    }
-  }
-  
   const primes = new Set<number>();
-  
+
   for (const number of nums) {
     const num = parseInt(number.toString());
     if (num <= 1) continue;
-    
+
     let isPrime = true;
     for (let i = 2; i <= Math.sqrt(num); i++) {
       if (num % i === 0) {
@@ -90,13 +55,13 @@ async function checkPrime(
         break;
       }
     }
-    
+
     if (isPrime) {
       primes.add(num);
     }
   }
-  
-  return primes.size === 0 
+
+  return primes.size === 0
     ? 'No prime numbers found.'
     : `${Array.from(primes).join(', ')} are prime numbers.`;
 }
@@ -242,13 +207,13 @@ export const rootAgent = new LlmAgent({
     You can roll dice of different sizes.
     You can use multiple tools in parallel by calling functions in parallel(in one request and in one round).
     It is ok to discuss previous dice roles, and comment on the dice rolls.
-    When you are asked to roll a die, you must call the roll_die tool with the number of sides. Be sure to pass in an integer. Do not pass in a string.
+    When you are asked to roll a die, you must call the rollDie tool with the number of sides. Be sure to pass in an integer. Do not pass in a string.
     You should never roll a die on your own.
-    When checking prime numbers, call the check_prime tool with a list of integers. Be sure to pass in a list of integers. You should never pass in a string.
+    When checking prime numbers, call the checkPrime tool with a list of integers. Be sure to pass in a list of integers. You should never pass in a string.
     You should not check prime numbers before calling the tool.
     When you are asked to roll a die and check prime numbers, you should always make the following two function calls:
-    1. You should first call the roll_die tool to get a roll. Wait for the function response before calling the check_prime tool.
-    2. After you get the function response from roll_die tool, you should call the check_prime tool with the roll_die result.
+    1. You should first call the rollDie tool to get a roll. Wait for the function response before calling the checkPrime tool.
+    2. After you get the function response from rollDie tool, you should call the checkPrime tool with the rollDie result.
       2.1 If user asks you to check primes based on previous rolls, make sure you include the previous rolls in the list.
     3. When you respond, you must include the roll_die result from step 1.
     You should always perform the previous 3 steps when asking for a roll and checking prime numbers.

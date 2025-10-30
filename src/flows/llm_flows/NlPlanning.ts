@@ -32,25 +32,35 @@ class NlPlanningRequestProcessor implements BaseLlmRequestProcessor {
     invocationContext: InvocationContext,
     llmRequest: LlmRequest
   ): AsyncGenerator<Event, void, unknown> {
+    console.log('[NlPlanning] Request processor running...');
     const planner = getPlanner(invocationContext);
     if (!planner) {
+      console.log('[NlPlanning] No planner found, skipping');
       return;
     }
 
+    console.log('[NlPlanning] Using planner:', planner.constructor.name);
+
     if (planner instanceof BuiltInPlanner) {
+      console.log('[NlPlanning] Applying BuiltInPlanner thinking config');
       planner.applyThinkingConfig(llmRequest);
-    }
+    } else if (planner instanceof PlanReActPlanner) {
+      console.log('[NlPlanning] Using PlanReActPlanner');
+      const planningInstruction = planner.buildPlanningInstruction(
+        new ReadonlyContext(invocationContext),
+        llmRequest
+      );
 
-    const planningInstruction = planner.buildPlanningInstruction(
-      new ReadonlyContext(invocationContext),
-      llmRequest
-    );
-    
-    if (planningInstruction) {
-      llmRequest.appendInstructions([planningInstruction]);
-    }
+      if (planningInstruction) {
+        console.log('[NlPlanning] Appending planning instruction:', planningInstruction.substring(0, 100) + '...');
+        llmRequest.appendInstructions([planningInstruction]);
+      } else {
+        console.log('[NlPlanning] No planning instruction to append');
+      }
 
-    removeThoughtFromRequest(llmRequest);
+      console.log('[NlPlanning] Removing thought from request (PlanReActPlanner only)');
+      removeThoughtFromRequest(llmRequest);
+    }
 
     // Maintain async generator behavior by returning early
     return;
@@ -79,18 +89,30 @@ class NlPlanningResponseProcessor implements BaseLlmResponseProcessor {
     invocationContext: InvocationContext,
     llmResponse: LlmResponse
   ): AsyncGenerator<Event, void, unknown> {
+    console.log('[NlPlanning] Response processor running...');
+
     if (
       !llmResponse ||
       !llmResponse.content ||
       !llmResponse.content.parts
     ) {
+      console.log('[NlPlanning] No response content or parts, skipping');
       return;
     }
 
     const planner = getPlanner(invocationContext);
     if (!planner) {
+      console.log('[NlPlanning] No planner found, skipping');
       return;
     }
+
+    // Skip processing for BuiltInPlanner (matching Python behavior)
+    if (planner instanceof BuiltInPlanner) {
+      console.log('[NlPlanning] BuiltInPlanner detected, skipping response processing');
+      return;
+    }
+
+    console.log('[NlPlanning] Processing response with planner:', planner.constructor.name);
 
     // Postprocess the LLM response
     const callbackContext = new CallbackContext(invocationContext);
@@ -98,14 +120,18 @@ class NlPlanningResponseProcessor implements BaseLlmResponseProcessor {
       callbackContext,
       llmResponse.content.parts
     );
-    
+
     if (processedParts) {
+      console.log('[NlPlanning] Response parts were processed, replacing with', processedParts.length, 'parts');
       llmResponse.content.parts = processedParts;
+    } else {
+      console.log('[NlPlanning] No processing done, keeping original response parts');
     }
 
     // Check if the state has changed and create an event if needed
     // The Python has_delta() is equivalent to checking if the state delta is not empty
     if (callbackContext.state.hasDelta()) {
+      console.log('[NlPlanning] State has changed, yielding state update event');
       const stateUpdateEvent = new Event({
         invocationId: invocationContext.invocationId,
         author: invocationContext.agent.name,
@@ -113,6 +139,8 @@ class NlPlanningResponseProcessor implements BaseLlmResponseProcessor {
         actions: callbackContext._eventActions
       });
       yield stateUpdateEvent;
+    } else {
+      console.log('[NlPlanning] No state changes detected');
     }
   }
 }
@@ -150,21 +178,39 @@ function getPlanner(
 
 /**
  * Removes thought from the request.
- * 
+ *
  * @param llmRequest The LLM request
  */
 function removeThoughtFromRequest(llmRequest: LlmRequest): void {
+  console.log('[NlPlanning] removeThoughtFromRequest - Before removal');
   if (!llmRequest.contents) {
+    console.log('[NlPlanning] No contents in request');
     return;
   }
 
-  for (const content of llmRequest.contents) {
+  console.log('[NlPlanning] Processing', llmRequest.contents.length, 'content items');
+
+  for (let i = 0; i < llmRequest.contents.length; i++) {
+    const content = llmRequest.contents[i];
     if (!content.parts) {
+      console.log(`[NlPlanning] Content ${i}: No parts`);
       continue;
     }
-    
-    for (const part of content.parts) {
-      part.thought = undefined;
+
+    console.log(`[NlPlanning] Content ${i}: Processing ${content.parts.length} parts`);
+
+    for (let j = 0; j < content.parts.length; j++) {
+      const part = content.parts[j];
+      const partKeys = Object.keys(part);
+      console.log(`[NlPlanning] Content ${i}, Part ${j}: Keys before:`, partKeys);
+
+      if (part.thought !== undefined) {
+        console.log(`[NlPlanning] Content ${i}, Part ${j}: Deleting thought property`);
+        delete part.thought;
+        console.log(`[NlPlanning] Content ${i}, Part ${j}: Keys after:`, Object.keys(part));
+      }
     }
   }
+
+  console.log('[NlPlanning] removeThoughtFromRequest - After removal');
 } 

@@ -1,6 +1,5 @@
-import { LlmAgent } from '../../src/agents/LlmAgent';
-import { SequentialAgent } from '../../src/agents/SequentialAgent';
-import { runAgent } from '../../src/cli/runAgent';
+import { LlmAgent, SequentialAgent } from 'adk-typescript/agents';
+import { runAgent } from 'adk-typescript';
 
 const subAgent1 = new LlmAgent({
   name: 'sub_agent_1',

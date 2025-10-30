@@ -3,7 +3,7 @@ import { BaseLlmConnection } from './BaseLlmConnection';
 import { GeminiLlmConnection } from './GeminiLlmConnection';
 import { LlmRequest } from './LlmRequest';
 import { LlmResponse } from './LlmResponse';
-import { Blob, Content, FunctionDeclaration, Part } from './types';
+import { Blob, Content, FunctionDeclaration, Part, GenerateContentConfig, ThinkingConfig } from './types';
 //import { GoogleGenAI/*, Tool as GoogleTool*/ } from '@google/genai';
 const { GoogleGenAI, Tool } = require('@google/genai');
 const GoogleTool = Tool;
@@ -37,19 +37,6 @@ interface HttpOptions {
   api_version?: string;
 }
 
-interface GenerateContentConfig {
-  temperature?: number;
-  topP?: number;
-  topK?: number;
-  maxOutputTokens?: number;
-  candidateCount?: number;
-  stopSequences?: string[];
-  systemInstruction?: string;
-  tools?: any[];
-  responseSchema?: any;
-  responseMimeType?: string;
-}
-
 interface LiveConnectConfig {
   voiceInput?: boolean;
   systemInstruction?: Content;
@@ -69,36 +56,50 @@ interface AsyncSession {
 function convertContent(content: Content): { role: string, parts: any[] } {
   // Convert role from model to assistant if needed
   const role = content.role === 'model' ? 'assistant' : content.role;
-  
-  // Convert parts
-  const parts = content.parts.map(part => {
-    if (part.text) {
-      return { text: part.text };
-    } else if (part.inlineData) {
-      return {
-        inline_data: {
-          mime_type: part.inlineData.mimeType,
-          data: part.inlineData.data
+
+  // Convert parts and filter out invalid ones
+  const parts = content.parts
+    .map(part => {
+      if (part.text !== undefined) {
+        return { text: part.text };
+      } else if (part.inlineData) {
+        return {
+          inline_data: {
+            mime_type: part.inlineData.mimeType,
+            data: part.inlineData.data
+          }
+        };
+      } else if (part.functionCall) {
+        // Validate function call has required fields
+        if (!part.functionCall.name) {
+          console.warn('[GoogleLlm] convertContent: Skipping function call with missing name:', part.functionCall);
+          return null;
         }
-      };
-    } else if (part.functionCall) {
-      return {
-        function_call: {
-          name: part.functionCall.name,
-          args: part.functionCall.args
+        return {
+          functionCall: {
+            name: part.functionCall.name,
+            args: part.functionCall.args || {}
+          }
+        };
+      } else if (part.functionResponse) {
+        // Validate function response has required fields
+        if (!part.functionResponse.name) {
+          console.warn('[GoogleLlm] convertContent: Skipping function response with missing name:', part.functionResponse);
+          return null;
         }
-      };
-    } else if (part.functionResponse) {
-      return {
-        function_response: {
-          name: part.functionResponse.name,
-          response: part.functionResponse.response
-        }
-      };
-    }
-    return {}; // Empty part as fallback
-  });
-  
+        return {
+          functionResponse: {
+            name: part.functionResponse.name,
+            response: part.functionResponse.response || {}
+          }
+        };
+      }
+      // Log and skip invalid parts instead of returning empty object
+      console.warn('[GoogleLlm] convertContent: Skipping invalid part with keys:', Object.keys(part));
+      return null;
+    })
+    .filter(part => part !== null); // Filter out null parts
+
   return { role, parts };
 }
 
@@ -252,7 +253,7 @@ class GenAIClient {
     /* these params are apparently optional */
     project: process.env?.GOOGLE_CLOUD_PROJECT,
     location: process.env?.GOOGLE_CLOUD_LOCATION,
-	  apiVersion: 'v1'     
+	apiVersion: 'v1'     
   }:
   {
     vertexai:false,
@@ -286,24 +287,54 @@ class GenAIClient {
       // Log configuration for debugging
       // Convert content format
       const convertedContents = contents.map(convertContent);
-      
+
+      // Validate converted contents to ensure no empty parts
+      convertedContents.forEach((content, index) => {
+        content.parts = content.parts.filter((part: any) => {
+          const partKeys = Object.keys(part);
+          if (partKeys.length === 0) {
+            console.error(`[GoogleLlm] Filtering out empty part at Content ${index}`);
+            return false;
+          }
+          return true;
+        });
+      });
+
+      // Log the converted contents for debugging
+      console.log('[GoogleLlm] Sending request to API with', convertedContents.length, 'content items');
+      convertedContents.forEach((content, index) => {
+        console.log(`[GoogleLlm] Content ${index}: role=${content.role}, parts=${content.parts?.length}`);
+        content.parts?.forEach((part: any, partIndex: number) => {
+          const partKeys = Object.keys(part);
+          console.log(`[GoogleLlm] Content ${index}, Part ${partIndex}: keys=${partKeys.join(', ')}`);
+        });
+      });
+
       try {
+        // Build config object
+        const generateConfig: any = {
+          temperature: config.temperature,
+          topP: config.topP,
+          topK: config.topK,
+          maxOutputTokens: config.maxOutputTokens,
+          candidateCount: config.candidateCount,
+          stopSequences: config.stopSequences,
+          responseSchema: config.responseSchema,
+          responseMimeType: config.responseMimeType,
+          systemInstruction: systemInstructionText,
+          tools: convertTools(config.tools),
+        };
+
+        // Add thinkingConfig if present
+        if (config.thinkingConfig) {
+          generateConfig.thinkingConfig = config.thinkingConfig;
+        }
+
         // Generate content
         const response = await genModel.generateContent({
           model: model,
           contents: convertedContents,
-          config: {
-            temperature: config.temperature,
-            topP: config.topP,
-            topK: config.topK,
-            maxOutputTokens: config.maxOutputTokens,
-            candidateCount: config.candidateCount,
-            stopSequences: config.stopSequences,
-            responseSchema: config.responseSchema,
-            responseMimeType: config.responseMimeType,
-            systemInstruction: systemInstructionText,
-            tools: convertTools(config.tools),
-          },
+          config: generateConfig,
         });
         
         // Convert response back to our expected format
@@ -878,4 +909,4 @@ ${JSON.stringify(resp)}
 -----------------------------------------------------------
 `;
   }
-} 
+}

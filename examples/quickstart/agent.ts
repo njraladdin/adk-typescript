@@ -7,15 +7,14 @@ import { runAgent } from 'adk-typescript';
 
 /**
  * Returns current weather information for a specified city
- * @param params Object containing city name
+ * @param city Name of the city to get weather for
  * @param context Optional ToolContext
  * @returns Promise resolving to weather information or error
  */
 async function getWeather(
-  params: Record<string, any>,
+  city: string,
   context: ToolContext
 ): Promise<{ status: string; report?: string; error_message?: string }> {
-  const city = params.city;
   console.log(`--- Tool: getWeather called for city: ${city} ---`);
   const cityNormalized = city.toLowerCase().trim();
   const mockWeatherDb: Record<string, { status: string; report: string }> = {
@@ -29,12 +28,10 @@ async function getWeather(
 
 /**
  * Gets the current local time and timezone.
- * @param params Empty object (no parameters needed)
  * @param context Optional ToolContext
  * @returns Promise resolving to time information
  */
 async function getCurrentTime(
-  params: Record<string, any>,
   context: ToolContext
 ): Promise<{ currentTime: string; timezone: string; }> {
     console.log(`--- Tool: getCurrentTime called ---`);
