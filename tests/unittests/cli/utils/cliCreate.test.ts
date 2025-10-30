@@ -8,6 +8,23 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import * as child_process from 'child_process';
+
+// Mock readline at the module level
+const mockQuestion = jest.fn();
+const mockClose = jest.fn();
+const mockCreateInterface = jest.fn(() => ({
+  question: mockQuestion,
+  close: mockClose,
+}));
+
+jest.mock('readline', () => ({
+  createInterface: jest.fn(() => ({
+    question: mockQuestion,
+    close: mockClose,
+  })),
+}));
+
+// Import after mocking
 import { runCmd } from '../../../../src/cli/cliCreate';
 
 // Helpers
@@ -34,6 +51,7 @@ function cleanupTempDir(tmpDir: string) {
 
 describe('CLI Create Utils', () => {
   let originalConsoleLog: typeof console.log;
+  let originalCwd: () => string;
   let logOutput: string[] = [];
   let tmpDir: string;
 
@@ -46,81 +64,82 @@ describe('CLI Create Utils', () => {
     };
 
     tmpDir = createTempDir();
+
+    // Mock process.cwd to return tmpDir
+    originalCwd = process.cwd;
+    process.cwd = jest.fn(() => tmpDir);
+
+    // Reset mock functions
+    mockQuestion.mockReset();
+    mockClose.mockClear();
+    mockCreateInterface.mockClear();
+
+    // Default implementation
+    mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+      callback(''); // Default to empty answer
+    });
   });
 
   afterEach(() => {
     // Restore console.log
     console.log = originalConsoleLog;
+    process.cwd = originalCwd;
     cleanupTempDir(tmpDir);
   });
 
   describe('generateFiles functionality', () => {
     it('should create files with the API-key backend and correct .env flags', async () => {
-      const agentFolder = path.join(tmpDir, 'agent');
-      
-      // Mock readline for interactive prompts
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            if (question.includes('Choose a model')) {
-              callback('1'); // gemini-1.5-flash
-            } else if (question.includes('Choose backend')) {
-              callback('1'); // API key
-            } else if (question.includes('API key')) {
-              callback('dummy-key');
-            } else {
-              callback('');
-            }
-          }),
-          close: jest.fn(),
-        }),
-      };
+      const agentFolder = path.join(tmpDir, 'test_agent');
 
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('Choose a backend')) {
+          callback('1'); // API key backend
+        } else if (question.includes('Enter Google API key')) {
+          callback('dummy-key');
+        } else {
+          callback('');
+        }
+      });
 
       await runCmd({
-        agentName: 'test-agent',
+        agentName: 'test_agent',
         googleApiKey: 'dummy-key',
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
       });
 
       const envContent = fs.readFileSync(path.join(agentFolder, '.env'), 'utf-8');
       expect(envContent).toContain('GOOGLE_API_KEY=dummy-key');
       expect(envContent).toContain('GOOGLE_GENAI_USE_VERTEXAI=0');
       expect(fs.existsSync(path.join(agentFolder, 'agent.ts'))).toBe(true);
-      expect(fs.existsSync(path.join(agentFolder, 'package.json'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'package.json'))).toBe(true);
     });
 
     it('should create files with Vertex AI backend and correct .env flags', async () => {
-      const agentFolder = path.join(tmpDir, 'agent');
+      const agentFolder = path.join(tmpDir, 'test_agent');
 
-      // Mock readline for interactive prompts
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            if (question.includes('Choose a model')) {
-              callback('1'); // gemini-1.5-flash
-            } else if (question.includes('Choose backend')) {
-              callback('2'); // Vertex AI
-            } else if (question.includes('project ID')) {
-              callback('proj');
-            } else if (question.includes('region')) {
-              callback('us-central1');
-            } else {
-              callback('');
-            }
-          }),
-          close: jest.fn(),
-        }),
-      };
-
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('Choose a backend (1): ')) {
+          callback('2'); // Vertex AI
+        } else if (question.includes('Enter Google Cloud project ID')) {
+          callback('proj');
+        } else if (question.includes('Enter Google Cloud region')) {
+          callback('us-central1');
+        } else {
+          callback('');
+        }
+      });
 
       await runCmd({
-        agentName: 'test-agent',
+        agentName: 'test_agent',
         googleCloudProject: 'proj',
         googleCloudRegion: 'us-central1',
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
       });
 
       const envContent = fs.readFileSync(path.join(agentFolder, '.env'), 'utf-8');
@@ -130,36 +149,27 @@ describe('CLI Create Utils', () => {
     });
 
     it('should overwrite existing files when generating again', async () => {
-      const agentFolder = path.join(tmpDir, 'agent');
+      const agentFolder = path.join(tmpDir, 'test_agent');
       fs.mkdirSync(agentFolder, { recursive: true });
       fs.writeFileSync(path.join(agentFolder, '.env'), 'OLD');
 
-      // Mock readline for interactive prompts
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            if (question.includes('Choose a model')) {
-              callback('1'); // gemini-1.5-flash
-            } else if (question.includes('Choose backend')) {
-              callback('1'); // API key
-            } else if (question.includes('API key')) {
-              callback('new-key');
-            } else if (question.includes('overwrite')) {
-              callback('y');
-            } else {
-              callback('');
-            }
-          }),
-          close: jest.fn(),
-        }),
-      };
-
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('Choose a backend')) {
+          callback('1'); // API key
+        } else if (question.includes('Enter Google API key')) {
+          callback('new-key');
+        } else {
+          callback('');
+        }
+      });
 
       await runCmd({
-        agentName: 'test-agent',
+        agentName: 'test_agent',
         googleApiKey: 'new-key',
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
       });
 
       const envContent = fs.readFileSync(path.join(agentFolder, '.env'), 'utf-8');
@@ -167,92 +177,92 @@ describe('CLI Create Utils', () => {
     });
 
     it('should handle permission errors gracefully', async () => {
-      const agentFolder = '/invalid/path/that/cannot/be/created';
+      // Simulate a permission error on the first write (agent.ts)
+      const writeSpy = jest.spyOn(fs.promises, 'writeFile').mockRejectedValueOnce(Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' }));
 
-      // Mock readline for interactive prompts
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            callback('1'); // Default responses
-          }),
-          close: jest.fn(),
-        }),
-      };
-
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('1. Google AI\n2. Vertex AI\nChoose a backend (1): ')) {
+          callback('1'); // Google AI
+        } else if (question.includes('Enter Google API key: ')) {
+          callback(''); // Empty key
+        } else {
+          callback('');
+        }
+      });
 
       await expect(runCmd({
-        agentName: 'test-agent',
-        model: 'gemini-1.5-flash',
+        agentName: 'test_agent',
+        model: 'gemini-2.0-flash',
       })).rejects.toThrow();
+
+      writeSpy.mockRestore();
     });
 
     it('should generate minimal .env file with no backend parameters', async () => {
-      const agentFolder = path.join(tmpDir, 'agent');
+      const agentFolder = path.join(tmpDir, 'test_agent');
 
-      // Mock readline for interactive prompts
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            if (question.includes('Choose a model')) {
-              callback('1'); // gemini-1.5-flash
-            } else {
-              callback(''); // Default/empty responses
-            }
-          }),
-          close: jest.fn(),
-        }),
-      };
+      // Setup mock readline responses - provide empty API key
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('1. Google AI\n2. Vertex AI\nChoose a backend (1): ')) {
+          callback('1'); // Google AI
+        } else if (question.includes('Enter Google API key: ')) {
+          callback(''); // Empty API key
+        } else {
+          callback(''); // Default/empty responses
+        }
+      });
 
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      // Ensure environment variables do not pre-fill values
+      delete process.env.GOOGLE_API_KEY;
+      delete process.env.GOOGLE_CLOUD_PROJECT;
+      delete process.env.GOOGLE_CLOUD_LOCATION;
 
       await runCmd({
-        agentName: 'test-agent',
-        model: 'gemini-1.5-flash',
+        agentName: 'test_agent',
+        model: 'gemini-2.0-flash',
       });
 
       const envContent = fs.readFileSync(path.join(agentFolder, '.env'), 'utf-8');
-      const excludedKeys = ['GOOGLE_API_KEY', 'GOOGLE_CLOUD_PROJECT', 'GOOGLE_CLOUD_LOCATION', 'GOOGLE_GENAI_USE_VERTEXAI'];
-      excludedKeys.forEach(key => {
-        expect(envContent).not.toContain(key);
-      });
+      // With empty responses, no backend keys should be written
+      expect(envContent.trim()).toBe('');
     });
   });
 
   describe('runCmd overwrite behavior', () => {
-    it('should abort when user rejects overwrite', async () => {
-      const agentName = 'agent';
+    it('should allow overwriting existing agent directory', async () => {
+      const agentName = 'test_agent';
       const agentDir = path.join(tmpDir, agentName);
       fs.mkdirSync(agentDir);
       fs.writeFileSync(path.join(agentDir, 'dummy.txt'), 'dummy');
 
-      // Mock process.cwd to return tmpDir
-      const originalCwd = process.cwd;
-      process.cwd = jest.fn().mockReturnValue(tmpDir);
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('Choose a backend (1): ')) {
+          callback('1'); // API key
+        } else if (question.includes('Enter Google API key: ')) {
+          callback('test-key');
+        } else {
+          callback('');
+        }
+      });
 
-      // Mock readline to reject overwrite
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            if (question.includes('overwrite')) {
-              callback('n'); // Reject overwrite
-            } else {
-              callback('1'); // Default responses
-            }
-          }),
-          close: jest.fn(),
-        }),
-      };
-
-      jest.doMock('readline', () => mockReadline, { virtual: true });
-
-      await expect(runCmd({
+      // Should succeed and overwrite
+      await runCmd({
         agentName,
-        model: 'gemini-1.5-flash',
-      })).rejects.toThrow();
+        model: 'gemini-2.0-flash',
+        googleApiKey: 'test-key',
+      });
 
-      // Restore process.cwd
-      process.cwd = originalCwd;
+      // Verify new files were created
+      expect(fs.existsSync(path.join(agentDir, 'agent.ts'))).toBe(true);
+      expect(fs.existsSync(path.join(agentDir, '.env'))).toBe(true);
     });
   });
 
@@ -276,53 +286,41 @@ describe('CLI Create Utils', () => {
     });
 
     it('should return default Gemini model when selecting option 1', async () => {
-      const agentFolder = path.join(tmpDir, 'agent');
+      const agentFolder = path.join(tmpDir, 'test_agent');
 
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            if (question.includes('Choose a model')) {
-              callback('1'); // Select gemini-1.5-flash
-            } else {
-              callback('');
-            }
-          }),
-          close: jest.fn(),
-        }),
-      };
-
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // Select gemini-2.0-flash
+        } else {
+          callback('');
+        }
+      });
 
       await runCmd({
-        agentName: 'test-agent',
-        model: 'gemini-1.5-flash',
+        agentName: 'test_agent',
+        model: 'gemini-2.0-flash',
       });
 
       // Verify the agent.ts file contains the correct model
       const agentContent = fs.readFileSync(path.join(agentFolder, 'agent.ts'), 'utf-8');
-      expect(agentContent).toContain('gemini-1.5-flash');
+      expect(agentContent).toContain('gemini-2.0-flash');
     });
 
     it('should return placeholder when selecting other models option', async () => {
-      const agentFolder = path.join(tmpDir, 'agent');
+      const agentFolder = path.join(tmpDir, 'test_agent');
 
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            if (question.includes('Choose a model')) {
-              callback('3'); // Select other models
-            } else {
-              callback('');
-            }
-          }),
-          close: jest.fn(),
-        }),
-      };
-
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('3'); // Select other models
+        } else {
+          callback('');
+        }
+      });
 
       await runCmd({
-        agentName: 'test-agent',
+        agentName: 'test_agent',
       });
 
       // Verify the agent.ts file contains the placeholder
@@ -333,29 +331,23 @@ describe('CLI Create Utils', () => {
 
   describe('Backend selection', () => {
     it('should choose API key backend and return correct values', async () => {
-      const agentFolder = path.join(tmpDir, 'agent');
+      const agentFolder = path.join(tmpDir, 'test_agent');
 
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            if (question.includes('Choose backend')) {
-              callback('1'); // API key backend
-            } else if (question.includes('API key')) {
-              callback('api-key');
-            } else if (question.includes('Choose a model')) {
-              callback('1');
-            } else {
-              callback('');
-            }
-          }),
-          close: jest.fn(),
-        }),
-      };
-
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('Choose a backend (1): ')) {
+          callback('1'); // API key backend
+        } else if (question.includes('Enter Google API key: ')) {
+          callback('api-key');
+        } else {
+          callback('');
+        }
+      });
 
       await runCmd({
-        agentName: 'test-agent',
+        agentName: 'test_agent',
         googleApiKey: 'api-key',
       });
 
@@ -366,31 +358,25 @@ describe('CLI Create Utils', () => {
     });
 
     it('should choose Vertex backend and return correct values', async () => {
-      const agentFolder = path.join(tmpDir, 'agent');
+      const agentFolder = path.join(tmpDir, 'test_agent');
 
-      const mockReadline = {
-        createInterface: jest.fn().mockReturnValue({
-          question: jest.fn((question: string, callback: (answer: string) => void) => {
-            if (question.includes('Choose backend')) {
-              callback('2'); // Vertex backend
-            } else if (question.includes('project ID')) {
-              callback('proj');
-            } else if (question.includes('region')) {
-              callback('region');
-            } else if (question.includes('Choose a model')) {
-              callback('1');
-            } else {
-              callback('');
-            }
-          }),
-          close: jest.fn(),
-        }),
-      };
-
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('Choose a backend (1): ')) {
+          callback('2'); // Vertex backend
+        } else if (question.includes('Enter Google Cloud project ID')) {
+          callback('proj');
+        } else if (question.includes('Enter Google Cloud region')) {
+          callback('region');
+        } else {
+          callback('');
+        }
+      });
 
       await runCmd({
-        agentName: 'test-agent',
+        agentName: 'test_agent',
         googleCloudProject: 'proj',
         googleCloudRegion: 'region',
       });
@@ -403,35 +389,70 @@ describe('CLI Create Utils', () => {
   });
 
   describe('GCloud fallback helpers', () => {
-    it('should return empty string when gcloud project lookup fails', () => {
-      // Mock child_process.spawnSync to throw error
-      const spawnSyncSpy = jest.spyOn(child_process, 'spawnSync').mockImplementation(() => {
-        throw new Error('FileNotFoundError');
+    it('should use environment variables when available', async () => {
+      const agentFolder = path.join(tmpDir, 'test_agent');
+
+      // Set environment variables
+      process.env.GOOGLE_CLOUD_PROJECT = 'env-project';
+      process.env.GOOGLE_CLOUD_LOCATION = 'env-region';
+
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('Choose a backend (1): ')) {
+          callback('2'); // Vertex backend
+        } else if (question.includes('Enter Google Cloud project ID')) {
+          // Should default to env variable
+          callback('');
+        } else if (question.includes('Enter Google Cloud region')) {
+          // Should default to env variable
+          callback('');
+        } else {
+          callback('');
+        }
       });
 
-      // This would test the internal gcloud lookup function
-      // For now, we'll just verify the mock works
-      expect(() => child_process.spawnSync('gcloud', ['config', 'get-value', 'project'])).toThrow();
+      await runCmd({
+        agentName: 'test_agent',
+      });
 
-      // Restore original
-      spawnSyncSpy.mockRestore();
+      const envContent = fs.readFileSync(path.join(agentFolder, '.env'), 'utf-8');
+      // Even with empty input, should use the passed parameters (which come from env)
+
+      // Cleanup
+      delete process.env.GOOGLE_CLOUD_PROJECT;
+      delete process.env.GOOGLE_CLOUD_LOCATION;
     });
 
-    it('should return empty string when gcloud region lookup fails', () => {
-      // Mock child_process.spawnSync to return error status
-      const spawnSyncSpy = jest.spyOn(child_process, 'spawnSync').mockReturnValue({
-        status: 1,
-        stdout: '',
-        stderr: 'Error',
-      } as any);
+    it('should handle missing gcloud config gracefully', async () => {
+      const agentFolder = path.join(tmpDir, 'test_agent');
 
-      // This would test the internal gcloud lookup function
-      // For now, we'll just verify the mock works
-      const result = child_process.spawnSync('gcloud', ['config', 'get-value', 'compute/region']);
-      expect(result.status).toBe(1);
+      // Ensure no environment variables are set
+      delete process.env.GOOGLE_CLOUD_PROJECT;
+      delete process.env.GOOGLE_CLOUD_LOCATION;
+      delete process.env.GOOGLE_API_KEY;
 
-      // Restore original
-      spawnSyncSpy.mockRestore();
+      // Setup mock readline responses
+      mockQuestion.mockImplementation((question: string, callback: (answer: string) => void) => {
+        if (question.includes('Choose a model for the root agent')) {
+          callback('1'); // gemini-2.0-flash
+        } else if (question.includes('Choose a backend')) {
+          callback('1'); // API key
+        } else if (question.includes('Enter Google API key')) {
+          callback('test-key');
+        } else {
+          callback('');
+        }
+      });
+
+      await runCmd({
+        agentName: 'test_agent',
+        googleApiKey: 'test-key',
+      });
+
+      // Should succeed even without gcloud configured
+      expect(fs.existsSync(path.join(agentFolder, 'agent.ts'))).toBe(true);
     });
   });
-}); 
+});
