@@ -133,7 +133,7 @@ describe('CLI Tools', () => {
 
       expect(runCliSpy).toHaveBeenCalled();
       expect(rec.calls.length).toBeGreaterThan(0);
-      expect(rec.calls[0][0]).toHaveProperty('agentFolderName', 'agent');
+      expect(rec.calls[0][0][0]).toHaveProperty('agentFolderName', 'agent');
 
       // Restore original
       cliModule.runCli = originalRunCli;
@@ -190,7 +190,7 @@ describe('CLI Tools', () => {
 
       // Mock toCloudRun to throw an error
       const toCloudRunSpy = jest.fn().mockImplementation(() => {
-        throw new Error('boom');
+        return Promise.reject(new Error('boom'));
       });
 
       const agentDir = path.join(tmpDir, 'agent3');
@@ -201,7 +201,7 @@ describe('CLI Tools', () => {
       const originalToCloudRun = deployModule.toCloudRun;
       deployModule.toCloudRun = toCloudRunSpy;
 
-      await expect(toCloudRun({
+      await expect(deployModule.toCloudRun({
         agentFolder: agentDir,
         project: 'proj',
         serviceName: 'test-service',
@@ -376,7 +376,7 @@ describe('CLI Tools', () => {
 
       const conflictingOptions = { replay: 'file1.json', resume: 'file2.json' };
       // In a real CLI, this would trigger a validation error
-      expect(conflictingOptions.replay && conflictingOptions.resume).toBe(true);
+      expect(!!conflictingOptions.replay && !!conflictingOptions.resume).toBe(true);
     });
 
     it('should handle single exclusive option', () => {
@@ -399,4 +399,4 @@ describe('CLI Tools', () => {
       expect(hasReplay && hasResume).toBe(true); // Both provided - should be invalid
     });
   });
-}); 
+});
