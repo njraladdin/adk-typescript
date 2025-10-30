@@ -1,7 +1,7 @@
 # Agent Development Kit (ADK) for TypeScript
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-<!-- Placeholder for TS test badge: [![TypeScript Unit Tests](<URL_TO_YOUR_CI_BADGE>)](<URL_TO_YOUR_CI_WORKFLOW>) -->
+[![Tests](https://github.com/njraladdin/adk-typescript/actions/workflows/test.yml/badge.svg)](https://github.com/njraladdin/adk-typescript/actions/workflows/test.yml)
 [![r/agentdevelopmentkit](https://img.shields.io/badge/Reddit-r%2Fagentdevelopmentkit-FF4500?style=flat&logo=reddit&logoColor=white)](https://www.reddit.com/r/agentdevelopmentkit/)
 [![npm monthly downloads](https://img.shields.io/npm/dm/adk-typescript.svg)](https://www.npmjs.com/package/adk-typescript)
 
