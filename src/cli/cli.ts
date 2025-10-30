@@ -17,6 +17,9 @@ import * as envs from './utils/envs';
 // Import ts-node programmatically to register TypeScript support
 import { register } from 'ts-node';
 
+// Register tsconfig-paths to support path aliases like @/* imports
+import 'tsconfig-paths/register';
+
 interface InputFile {
   state: Record<string, any>;
   queries: string[];

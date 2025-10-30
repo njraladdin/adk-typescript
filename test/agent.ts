@@ -1,5 +1,6 @@
-import { LlmAgent as Agent } from 'adk-typescript/agents';
-import {  ToolContext } from 'adk-typescript/tools';
+import { LlmAgent as Agent } from '../src/agents/LlmAgent';
+import { ToolContext } from '../src/tools/ToolContext';
+import { runAgent } from '../src/cli/runAgent';
 
 // --- Tool Functions ---
 
@@ -55,3 +56,9 @@ export const rootAgent = new Agent({
                "If asked for weather AND time, use both tools.",
   tools: [getWeather, getCurrentTime], // List of available tools (functions)
 });
+
+// Run agent directly when this file is executed
+// Usage: npx ts-node test/agent.ts
+if (require.main === module) {
+  runAgent(rootAgent).catch(console.error);
+}
