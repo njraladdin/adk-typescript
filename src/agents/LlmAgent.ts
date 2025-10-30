@@ -97,6 +97,8 @@ type AfterToolCallback = SingleAfterToolCallback | SingleAfterToolCallback[];
 export interface LlmAgentOptions extends AgentOptions {
   /** The name of the agent */
   name: string;
+  /** Sub-agents to attach to this agent */
+  subAgents?: BaseAgent[];
   
   /** The LLM flow to use */
   flow?: BaseLlmFlow;
@@ -290,6 +292,13 @@ export class LlmAgent extends BaseAgent {
     this.afterModelCallback = options.afterModelCallback;
     this.beforeToolCallback = options.beforeToolCallback;
     this.afterToolCallback = options.afterToolCallback;
+    
+    // Add sub-agents if provided (for parity with SequentialAgent)
+    if (options.subAgents) {
+      for (const subAgent of options.subAgents) {
+        this.addSubAgent(subAgent);
+      }
+    }
     
     // Validate output schema configuration
     this.validateOutputSchema();

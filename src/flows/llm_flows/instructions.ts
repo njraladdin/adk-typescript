@@ -86,7 +86,8 @@ async function populateValues(
   context: InvocationContext
 ): Promise<string> {
   const replacer = async (match: string): Promise<string> => {
-    let varName = match.slice(1, -1).trim();
+    // Remove all leading and trailing braces to support multi-brace tokens like {{var}}
+    let varName = match.replace(/^{+/, '').replace(/}+$/, '').trim();
     let optional = false;
 
     if (varName.endsWith('?')) {

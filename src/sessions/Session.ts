@@ -63,7 +63,13 @@ export class Session {
     this.id = options.id || generateUuid();
     this.appName = options.appName || 'app';
     this.userId = options.userId || 'user';
-    this.state = new State(options.state);
+    // Support both plain object and State instance for initial state
+    if (options.state instanceof State) {
+      // Initialize using the full state contents
+      this.state = new State(options.state.getAll ? options.state.getAll() : {});
+    } else {
+      this.state = new State(options.state);
+    }
     
     if (options.events) {
       this.events = [...options.events];
@@ -129,4 +135,4 @@ function generateUuid(): string {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-} 
+}
