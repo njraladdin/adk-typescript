@@ -22,8 +22,8 @@
  *    import { FunctionTool } from 'adk-typescript/tools';
  */
 
-// Version information
-export { VERSION } from './version';
+// Import version
+import { VERSION } from './version';
 
 // Import modules to re-export
 import * as agentsModule from './agents';
@@ -34,6 +34,9 @@ import * as runnersModule from './runners';
 import * as sessionsModule from './sessions';
 import * as memoryModule from './memory';
 import * as utilsModule from './utils';
+
+// Export version
+export { VERSION };
 
 // Import CLI utilities
 export { runAgent } from './cli/runAgent';
