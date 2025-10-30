@@ -132,23 +132,8 @@ export class FunctionTool extends BaseTool {
     params: Record<string, any>,
     context: ToolContext
   ): Promise<any> {
-    // Get the function's parameter names from the declaration
-    const declaration = this._getDeclaration();
-    const paramNames = declaration?.parameters?.required || [];
-
-    // If there are specific named parameters (not just 'params'),
-    // pass them as individual arguments
-    if (paramNames.length > 0 && !paramNames.includes('params')) {
-      // Extract values in the order defined by the function declaration
-      const args = paramNames.map((name: string) => params[name]);
-      // Add context as the last argument
-      // Cast fn to a function that accepts rest parameters
-      const fn = this.fn as (...args: any[]) => any;
-      return await fn(...args, context);
-    } else {
-      // Legacy behavior: pass params object directly as first argument, then context
-      // This matches the signature: (params: Record<string, any>, context: ToolContext)
-      return await this.fn(params, context);
-    }
+    // Always pass params object as first argument, then context
+    // This matches the ToolFunction signature: (params: Record<string, any>, context: ToolContext)
+    return await this.fn(params, context);
   }
-} 
+}

@@ -83,7 +83,7 @@ describe('BaseTool', () => {
       expect(llmRequest.config).toBeDefined();
       expect(llmRequest.config!.tools).toEqual([]);
       // Make sure no function declarations were added
-      expect(llmRequest.config!.tools.length).toBe(0);
+      expect(llmRequest.config!.tools!.length).toBe(0);
     });
 
     test('should add function declaration to LLM request', async () => {
@@ -110,8 +110,8 @@ describe('BaseTool', () => {
       // Verify the function declaration was added to the request
       expect(llmRequest.config).toBeDefined();
       expect(llmRequest.config!.tools).toBeDefined();
-      expect(llmRequest.config!.tools.length).toBe(1);
-      expect(llmRequest.config!.tools[0].functionDeclarations).toContainEqual(declaration);
+      expect(llmRequest.config!.tools!.length).toBe(1);
+      expect(llmRequest.config!.tools![0].functionDeclarations).toContainEqual(declaration);
     });
 
     test('should add function declaration to LLM request with existing tools', async () => {
@@ -144,8 +144,8 @@ describe('BaseTool', () => {
       });
 
       // Verify the function declaration was added to a new tool entry (not the googleSearch one)
-      expect(llmRequest.config.tools.length).toBe(2);
-      expect(llmRequest.config.tools[1].functionDeclarations).toContainEqual(declaration);
+      expect(llmRequest.config.tools!.length).toBe(2);
+      expect(llmRequest.config.tools![1].functionDeclarations).toContainEqual(declaration);
     });
 
     test('should add function declaration to existing function declarations', async () => {
@@ -188,9 +188,9 @@ describe('BaseTool', () => {
       });
 
       // Verify the function declaration was added to the existing functionDeclarations array
-      expect(llmRequest.config.tools.length).toBe(2);
-      expect(llmRequest.config.tools[1].functionDeclarations.length).toBe(2);
-      expect(llmRequest.config.tools[1].functionDeclarations[1]).toEqual(declaration);
+      expect(llmRequest.config.tools!.length).toBe(2);
+      expect(llmRequest.config.tools![1].functionDeclarations.length).toBe(2);
+      expect(llmRequest.config.tools![1].functionDeclarations[1]).toEqual(declaration);
     });
   });
 });

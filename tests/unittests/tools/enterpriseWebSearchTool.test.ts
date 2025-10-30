@@ -68,8 +68,8 @@ describe('EnterpriseWebSearchTool', () => {
 
       expect(llmRequest.config).toBeDefined();
       expect(llmRequest.config!.tools).toBeDefined();
-      expect(llmRequest.config!.tools.length).toBe(1);
-      expect(llmRequest.config!.tools[0]).toEqual({
+      expect(llmRequest.config!.tools!.length).toBe(1);
+      expect(llmRequest.config!.tools![0]).toEqual({
         enterpriseWebSearch: {}
       });
     });
@@ -86,8 +86,8 @@ describe('EnterpriseWebSearchTool', () => {
 
       expect(llmRequest.config).toBeDefined();
       expect(llmRequest.config!.tools).toBeDefined();
-      expect(llmRequest.config!.tools.length).toBe(1);
-      expect(llmRequest.config!.tools[0]).toEqual({
+      expect(llmRequest.config!.tools!.length).toBe(1);
+      expect(llmRequest.config!.tools![0]).toEqual({
         enterpriseWebSearch: {}
       });
     });
@@ -141,8 +141,8 @@ describe('EnterpriseWebSearchTool', () => {
         llmRequest 
       });
 
-      expect(llmRequest.config.tools.length).toBe(2);
-      expect(llmRequest.config.tools[1]).toEqual({
+      expect(llmRequest.config.tools!.length).toBe(2);
+      expect(llmRequest.config.tools![1]).toEqual({
         enterpriseWebSearch: {}
       });
     });
@@ -161,4 +161,4 @@ describe('EnterpriseWebSearchTool', () => {
       });
     });
   });
-}); 
+});
