@@ -13,10 +13,12 @@ import * as contents from './contents';
 import * as nlPlanning from './NlPlanning';
 import * as codeExecution from './CodeExecution';
 
-export {
-  BaseLlmFlow,
+export type {
   BaseLlmRequestProcessor,
   BaseLlmResponseProcessor,
+};
+export {
+  BaseLlmFlow,
   SingleFlow,
   AutoFlow,
   basic,

@@ -5,9 +5,11 @@ import { GcsArtifactService } from './GcsArtifactService';
 import { InMemoryArtifactService } from './InMemoryArtifactService';
 
 // Export all components
-export {
+export type {
   ArtifactParams,
   BaseArtifactService,
+};
+export {
   GcsArtifactService,
   InMemoryArtifactService,
 }; 

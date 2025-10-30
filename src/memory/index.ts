@@ -3,12 +3,14 @@
  */
 
 // Export the BaseMemoryService interface and implementations
-export { BaseMemoryService, MemoryResult, SearchMemoryResponse } from './BaseMemoryService';
+export type { BaseMemoryService, MemoryResult, SearchMemoryResponse } from './BaseMemoryService';
 export { InMemoryMemoryService } from './InMemoryMemoryService';
-export { VertexAiRagMemoryService, VertexAiRagConfig } from './VertexAiRagMemoryService';
+export { VertexAiRagMemoryService } from './VertexAiRagMemoryService';
+export type { VertexAiRagConfig } from './VertexAiRagMemoryService';
 
 // Export the MemoryEntry interface and implementation
-export { MemoryEntry, MemoryEntryImpl } from './MemoryEntry';
+export type { MemoryEntry } from './MemoryEntry';
+export { MemoryEntryImpl } from './MemoryEntry';
 
 // Export utility functions
 export { formatTimestamp } from './utils';

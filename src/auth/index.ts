@@ -6,15 +6,19 @@
 
 // We'll use named exports to avoid ambiguities with existing exports
 // Export from original credential/scheme files (different naming to avoid conflicts)
-export {
+export type {
   AuthCredential as SimpleAuthCredential,
+} from './AuthCredential';
+export {
   ApiKeyCredential,
   BearerCredential,
   BasicCredential
 } from './AuthCredential';
 
-export {
+export type {
   AuthScheme as SimpleAuthScheme,
+} from './AuthSchemes';
+export {
   ApiKeyAuthScheme,
   BearerAuthScheme,
   BasicAuthScheme

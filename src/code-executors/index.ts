@@ -11,17 +11,19 @@ import {
 import { VertexAiCodeExecutor, VertexAiCodeExecutorOptions } from './VertexAiCodeExecutor';
 
 // Export all components
+export type {
+  CodeExecutionInput,
+  CodeExecutionResult,
+  File,
+  VertexAiCodeExecutorOptions
+};
 export {
   BaseCodeExecutor,
   BuiltInCodeExecutor,
   CodeExecutorContext,
   UnsafeLocalCodeExecutor,
   VertexAiCodeExecutor,
-  CodeExecutionInput,
-  CodeExecutionResult,
   CodeExecutionUtils,
-  File,
-  VertexAiCodeExecutorOptions
 };
 
 // Note: The following executors would need to be implemented if needed:

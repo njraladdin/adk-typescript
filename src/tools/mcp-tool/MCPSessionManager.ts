@@ -70,7 +70,7 @@ export class AsyncExitStack {
 }
 
 // Re-export MCP SDK types we need
-export { McpBaseTool };
+export type { McpBaseTool };
 
 // Wrap the MCP Client for our needs
 export type ClientSession = Client;

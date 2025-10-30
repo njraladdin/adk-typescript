@@ -3,7 +3,8 @@
  */
 
 // Core agent interfaces and contexts
-export { BaseAgent, BeforeAgentCallback, AfterAgentCallback } from './BaseAgent';
+export { BaseAgent } from './BaseAgent';
+export type { BeforeAgentCallback, AfterAgentCallback } from './BaseAgent';
 export { ReadonlyContext } from './ReadonlyContext';
 export { CallbackContext } from './CallbackContext';
 export { InvocationContext, LlmCallsLimitExceededError } from './InvocationContext';
