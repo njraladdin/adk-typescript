@@ -133,6 +133,12 @@ export abstract class BaseAgent {
     // Create invocation context for this agent
     const invocationContext = this.createInvocationContext(parentContext);
     
+    // Check if this is a live invocation and delegate to runLive
+    if (invocationContext.live) {
+      yield* this.runLive(invocationContext);
+      return;
+    }
+    
     // Run before-agent callback if present
     const beforeEvent = await this.handleBeforeAgentCallback(invocationContext);
     if (beforeEvent) {
@@ -417,4 +423,4 @@ export abstract class BaseAgent {
 
     return retEvent;
   }
-} 
+}
