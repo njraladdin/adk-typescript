@@ -35,10 +35,13 @@ class MockAgent {
     this.lastInput = invocationContext.userContent?.parts[0].text;
 
     if (this.beforeAgentCallback && invocationContext.session?.state) {
-      const callbackContext = {
-        state: invocationContext.session.state,
-      } as CallbackContext;
+      const callbackContext = new CallbackContext(invocationContext);
       this.beforeAgentCallback(callbackContext);
+      // Simulate committing callback state changes back to the session state
+      const delta = callbackContext.state.getDelta ? callbackContext.state.getDelta() : {};
+      for (const [key, value] of Object.entries(delta)) {
+        invocationContext.session.state.set(key, value);
+      }
     }
 
     const responseText =
@@ -67,7 +70,7 @@ async function createToolContext(state: Record<string, any> = {}): Promise<ToolC
     userId: 'test_user'
   });
   
-  const sessionState = new State(Object.entries(state));
+  const sessionState = new State(state);
   
   const mockSession = new Session({
     id: sessionData.id,
@@ -224,4 +227,4 @@ describe('AgentTool', () => {
       expect(result).toBe('This is not JSON');
     });
   });
-}); 
+});

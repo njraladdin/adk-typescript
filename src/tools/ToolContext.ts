@@ -127,6 +127,13 @@ export class ToolContext extends CallbackContext {
   // Maintain backward compatibility with the original ToolContext interface
   
   /**
+   * Get the session associated with this tool context
+   */
+  get session() {
+    return this.invocationContext.session;
+  }
+  
+  /**
    * Check if the context has a specific property 
    */
   has(key: string): boolean {
@@ -151,4 +158,4 @@ export class ToolContext extends CallbackContext {
       this[key] = value;
     }
   }
-} 
+}

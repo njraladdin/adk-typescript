@@ -126,9 +126,9 @@ export class AgentTool extends BaseTool {
     // Pass the parent session's state to allow state access and modification
     const sessionOptions: Record<string, any> = {};
     
-    // Only add state if context.session and context.session.state exist
-    if (context?.session?.state) {
-      sessionOptions.state = context.session.state;
+    // Initialize sub-agent session with the parent session's plain state dict
+    if ((context as any)?.session?.state?.getAll) {
+      sessionOptions.state = (context as any).session.state.getAll();
     }
     
     // Create a new session - access invocationContext through the getter
@@ -161,11 +161,13 @@ export class AgentTool extends BaseTool {
       }
     }
     
-    // After the sub-agent runs, its session may have a modified state.
-    // We need to merge this state back into the parent context's session state.
-    if (context?.session?.state && session?.state) {
-      for (const [key, value] of session.state.entries()) {
-        context.session.state.set(key, value);
+    // After the sub-agent runs, merge its session state back into both
+    // the callback context state (delta-aware) and the parent session state.
+    if ((context as any)?.state && (context as any)?.session?.state && session?.state) {
+      const merged = session.state.getAll();
+      for (const [key, value] of Object.entries(merged)) {
+        (context as any).state.set(key, value);
+        (context as any).session.state.set(key, value);
       }
     }
     
@@ -187,11 +189,14 @@ export class AgentTool extends BaseTool {
       toolResult = mergedText;
     }
     
-    // If an output key is specified, store the result in the state
-    if (this.outputKey && context?.session?.state) {
-      context.session.state.set(this.outputKey, toolResult);
+    // If an output key is specified, store the result in both states
+    if (this.outputKey && (context as any)?.state) {
+      (context as any).state.set(this.outputKey, toolResult);
+      if ((context as any)?.session?.state) {
+        (context as any).session.state.set(this.outputKey, toolResult);
+      }
     }
     
     return toolResult;
   }
-} 
+}
