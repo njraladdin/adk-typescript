@@ -35,6 +35,9 @@ import * as sessionsModule from './sessions';
 import * as memoryModule from './memory';
 import * as utilsModule from './utils';
 
+// Import CLI utilities
+export { runAgent } from './cli/runAgent';
+
 // Export namespaced modules (similar to Python's import structure)
 export const agents = agentsModule;
 export const tools = toolsModule;
