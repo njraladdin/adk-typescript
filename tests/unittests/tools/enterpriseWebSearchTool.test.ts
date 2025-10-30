@@ -25,7 +25,10 @@ async function createToolContext(): Promise<ToolContext>   {
     events: []
   });
 
-  const agent = new SequentialAgent('test_agent');
+  const agent = new SequentialAgent({
+    name: 'test_agent',
+    instruction: 'Be helpful, harmless, and honest in your responses. Avoid responses that could be harmful, illegal, unethical, deceptive, or promote misinformation.'
+  });
 
   const invocationContext = new InvocationContext({
     invocationId: 'invocation_id',
