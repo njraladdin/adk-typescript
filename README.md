@@ -81,6 +81,53 @@ This approach ensures that:
 
 See the [Installation Guide](./installation.md) for more details on setting up your environment.
 
+## 🎯 Quick Start Example
+
+Here's a simple weather agent to get you started:
+
+```typescript
+// agent.ts
+import { LlmAgent } from 'adk-typescript/agents';
+import { ToolContext } from 'adk-typescript/tools';
+import { runAgent } from 'adk-typescript';
+
+// Define a tool function with explicit parameters
+async function getWeather(
+  city: string,
+  context: ToolContext
+): Promise<{ temperature: string; condition: string }> {
+  // Your weather API logic here
+  return {
+    temperature: '72°F',
+    condition: 'Sunny'
+  };
+}
+
+// Create your agent
+export const rootAgent = new LlmAgent({
+  name: 'weather_agent',
+  model: 'gemini-2.0-flash',
+  description: 'A helpful weather assistant',
+  instruction: 'You help users get weather information. Use the getWeather tool when asked about weather.',
+  tools: [getWeather], // Pass functions directly!
+});
+
+// Run programmatically (optional)
+if (require.main === module) {
+  runAgent(rootAgent).catch(console.error);
+}
+```
+
+**Run your agent:**
+
+```bash
+# Via CLI (interactive chat)
+npx adk run .
+
+# Or run directly with Node/ts-node
+npx ts-node agent.ts
+```
+
 ## 📚 Documentation
 
 Our TypeScript-specific documentation is available at **[https://njraladdin.github.io/adk-typescript/](https://njraladdin.github.io/adk-typescript/)**.
