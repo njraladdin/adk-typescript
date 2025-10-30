@@ -1,9 +1,13 @@
 import * as readline from 'readline';
+import { config } from 'dotenv';
 import { LlmAgent } from '../agents/LlmAgent';
 import { Runner } from '../runners';
 import { InMemorySessionService } from '../sessions/InMemorySessionService';
 import { InMemoryArtifactService } from '../artifacts/InMemoryArtifactService';
 import { Content, Part } from '../models/types';
+
+// Load environment variables from .env file
+config();
 
 /**
  * Run an agent interactively from any file

@@ -238,7 +238,12 @@ class GenAIClient {
   
   constructor(private httpOptions: { headers: Record<string, string>, api_version?: string }) {
     // Check if this is a Vertex AI environment
-    this.vertexai = !!process.env.VERTEX_AI || !!process.env.GOOGLE_GENAI_USE_VERTEXAI || !!process.env.GOOGLE_CLOUD_PROJECT;
+    // Only use Vertex AI if explicitly enabled via GOOGLE_GENAI_USE_VERTEXAI or VERTEX_AI
+    const useVertexAI = process.env.GOOGLE_GENAI_USE_VERTEXAI === '1' ||
+                        process.env.GOOGLE_GENAI_USE_VERTEXAI === 'true' ||
+                        process.env.VERTEX_AI === '1' ||
+                        process.env.VERTEX_AI === 'true';
+    this.vertexai = useVertexAI;
 
     // Initialize Google GenAI with API key from environment
     this.genAI = new GoogleGenAI(this.vertexai ? {
