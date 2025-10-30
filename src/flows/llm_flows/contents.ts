@@ -362,8 +362,8 @@ export function getContents(
       id: event.id,
       author: event.author,
       role: event.content?.role,
-      hasFunctionCalls: event.getFunctionCalls().length > 0,
-      hasFunctionResponses: event.getFunctionResponses().length > 0
+      hasFunctionCalls: safeGetFunctionCalls(event).length > 0,
+      hasFunctionResponses: safeGetFunctionResponses(event).length > 0
     });
     
     if (!event.content || !event.content.role || !event.content.parts) {
