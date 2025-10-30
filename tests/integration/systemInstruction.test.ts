@@ -111,8 +111,10 @@ class UnitFlow {
     
     // Include context variables in instruction if needed
     if (context.session) {
-      // Get the session state
-      const state = context.session.state.getAll();
+      // Get the session state - getAll() returns {_value: {...}, _delta: {...}}
+      // We need to access the actual values from _value
+      const stateData = context.session.state.getAll();
+      const state = (stateData as any)._value || stateData;
       
       // Get artifacts - we create this method for compatibility with Python code
       const artifacts: Record<string, Part[]> = {};
@@ -226,10 +228,14 @@ describe('System Instruction Tests', () => {
     const artifacts: Record<string, Part[]> = {
       fileName: [{ type: "text", text: "test artifact" } as Part]
     };
-    
+
+    // Get the state values properly - getAll() returns {_value: {...}, _delta: {...}}
+    const stateData = session.state.getAll();
+    const state = (stateData as any)._value || stateData;
+
     const si = _context_formatter.populate_context_and_artifact_variable_values(
       agent.instruction || '',
-      session.state.getAll(),
+      state,
       artifacts
     );
     
@@ -292,4 +298,4 @@ describe('System Instruction Tests', () => {
     
     expect(si).toContain("This is the plain text sub agent instruction.");
   });
-}); 
+});
