@@ -192,14 +192,19 @@ export class LlmRequest {
     }
 
     if (declarations.length > 0) {
+      // Ensure tools array exists
+      if (!this.config.tools) {
+        this.config.tools = [];
+      }
+
       // Find an existing tool entry with functionDeclarations (camelCase format)
-      let toolEntry = this.config.tools.find(t => 
+      let toolEntry = this.config.tools.find(t =>
         Array.isArray((t as any).functionDeclarations)
       );
-      
+
       // Also check for snake_case format for backward compatibility
       if (!toolEntry) {
-        toolEntry = this.config.tools.find(t => 
+        toolEntry = this.config.tools.find(t =>
           Array.isArray(t.functionDeclarations)
         );
         
@@ -268,9 +273,14 @@ export class LlmRequest {
     if (!functionDef) {
       return;
     }
-    
+
+    // Ensure tools array exists
+    if (!this.config.tools) {
+      this.config.tools = [];
+    }
+
     // Find an existing tool entry with functionDeclarations (camelCase format)
-    const toolEntry = this.config.tools.find(t => 
+    const toolEntry = this.config.tools.find(t =>
       Array.isArray((t as any).functionDeclarations)
     );
     
