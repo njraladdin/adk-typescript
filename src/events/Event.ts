@@ -98,29 +98,17 @@ export class Event extends LlmResponse {
     const functionResponsesLength = this.getFunctionResponses().length;
     const isPartial = this.partial;
     const hasTrailingCodeExecution = this.hasTrailingCodeExecutionResult();
-    
-    console.log(`[Event.isFinalResponse] Event ${this.id}:`);
-    console.log(`  skipSummarization: ${skipSummarization}`);
-    console.log(`  hasLongRunningToolIds: ${hasLongRunningToolIds}`);
-    console.log(`  functionCallsLength: ${functionCallsLength}`);
-    console.log(`  functionResponsesLength: ${functionResponsesLength}`);
-    console.log(`  isPartial: ${isPartial}`);
-    console.log(`  hasTrailingCodeExecution: ${hasTrailingCodeExecution}`);
-    
+
     if (skipSummarization || hasLongRunningToolIds) {
-      console.log(`  -> returning true (skipSummarization or longRunningToolIds)`);
       return true;
     }
-    
-    const result = (
+
+    return (
       functionCallsLength === 0 &&
       functionResponsesLength === 0 &&
       !isPartial &&
       !hasTrailingCodeExecution
     );
-    
-    console.log(`  -> returning ${result}`);
-    return result;
   }
 
   /**

@@ -386,34 +386,18 @@ export abstract class BaseLlmFlow {
     let stepCount = 0;
     while (true) {
       stepCount++;
-      console.log(`\n=== BaseLlmFlow.runAsync - Step ${stepCount} ===`);
-      
+
       let lastEvent: Event | undefined;
-      
+
       for await (const event of this._runOneStepAsync(invocationContext)) {
         lastEvent = event;
-        console.log(`Step ${stepCount} - Event: author=${event.author}, partial=${event.partial}, functionCalls=${event.getFunctionCalls().length}, functionResponses=${event.getFunctionResponses().length}`);
-        if (event.content?.parts && event.content.parts.length > 0) {
-          const textParts = event.content.parts.filter(p => p.text).map(p => p.text?.substring(0, 100) + '...');
-          console.log(`Step ${stepCount} - Event text: ${textParts.join(', ')}`);
-        }
         yield event;
       }
-      
-      console.log(`Step ${stepCount} - lastEvent exists: ${!!lastEvent}`);
-      if (lastEvent) {
-        console.log(`Step ${stepCount} - lastEvent.isFinalResponse(): ${lastEvent.isFinalResponse()}`);
-        console.log(`Step ${stepCount} - lastEvent details: author=${lastEvent.author}, functionCalls=${lastEvent.getFunctionCalls().length}, functionResponses=${lastEvent.getFunctionResponses().length}, partial=${lastEvent.partial}`);
-      }
-      
+
       if (!lastEvent || lastEvent.isFinalResponse()) {
-        console.log(`Step ${stepCount} - Breaking loop: lastEvent=${!!lastEvent}, isFinalResponse=${lastEvent?.isFinalResponse()}`);
         break;
       }
-      
-      console.log(`Step ${stepCount} - Continuing loop - not a final response`);
     }
-    console.log(`\n=== BaseLlmFlow.runAsync - Completed after ${stepCount} steps ===`);
   }
 
   /**
@@ -432,28 +416,6 @@ export abstract class BaseLlmFlow {
     yield* this._preprocessAsync(invocationContext, llmRequest);
     if (invocationContext.endInvocation) {
       return;
-    }
-
-    // Log the LLM request contents to see if function responses are included
-    console.log(`\n--- _runOneStepAsync - LLM Request Contents ---`);
-    console.log(`Contents in request: ${llmRequest.contents?.length || 0}`);
-    if (llmRequest.contents && llmRequest.contents.length > 0) {
-      llmRequest.contents.forEach((content, i) => {
-        console.log(`Content ${i}: role=${content.role}, parts=${content.parts?.length || 0}`);
-        if (content.parts) {
-          content.parts.forEach((part, j) => {
-            if (part.text) {
-              console.log(`  Part ${j}: text=${part.text.substring(0, 150)}...`);
-            }
-            if (part.functionCall) {
-              console.log(`  Part ${j}: functionCall=${part.functionCall.name}(${JSON.stringify(part.functionCall.args)})`);
-            }
-            if (part.functionResponse) {
-              console.log(`  Part ${j}: functionResponse=${part.functionResponse.name} -> ${JSON.stringify(part.functionResponse.response).substring(0, 150)}...`);
-            }
-          });
-        }
-      });
     }
 
     // Create model response event after preprocessing, like in Python
@@ -493,15 +455,12 @@ export abstract class BaseLlmFlow {
     llmRequest: LlmRequest
   ): AsyncGenerator<Event, void, unknown> {
     const agent = invocationContext.agent;
-    
-    console.log(`[BaseLlmFlow._preprocessAsync] Starting preprocessing for agent: ${agent.name}`);
-    
+
     // Make sure the agent is an LlmAgent
     if (!(agent instanceof LlmAgent)) {
-      console.log(`[BaseLlmFlow._preprocessAsync] Agent is not LlmAgent, skipping`);
       return;
     }
-    
+
     // Run all request processors
     for (const processor of this.requestProcessors) {
       yield* processor.runAsync(invocationContext, llmRequest);
@@ -509,31 +468,23 @@ export abstract class BaseLlmFlow {
         return;
       }
     }
-    
+
     // Run processors for tools
-    console.log(`[BaseLlmFlow._preprocessAsync] Creating ReadonlyContext for canonicalTools`);
-    console.log(`[BaseLlmFlow._preprocessAsync] Session state before ReadonlyContext - test_value:`, invocationContext.session.state.get('test_value'));
-    
     const ctx = new ReadonlyContext(invocationContext);
-    console.log(`[BaseLlmFlow._preprocessAsync] ReadonlyContext created - test_value:`, ctx.state.get('test_value'));
-    
     const tools = await agent.canonicalTools(ctx);
-    console.log(`[BaseLlmFlow._preprocessAsync] Got ${tools.length} canonical tools`);
-    
+
     for (const tool of tools) {
       // Create a new ToolContext directly with the invocation context
       // This matches the Python implementation: tool_context = ToolContext(invocation_context)
       const toolContext = new ToolContext(
         invocationContext
       );
-      
-      await tool.processLlmRequest({ 
-        toolContext, 
-        llmRequest 
+
+      await tool.processLlmRequest({
+        toolContext,
+        llmRequest
       });
     }
-    
-    console.log(`[BaseLlmFlow._preprocessAsync] Preprocessing completed`);
   }
 
   /**
@@ -551,46 +502,35 @@ export abstract class BaseLlmFlow {
     llmResponse: LlmResponse,
     modelResponseEvent: Event
   ): AsyncGenerator<Event, void, unknown> {
-    console.log(`\n--- _postprocessAsync ---`);
-    console.log(`LLM response has content: ${!!llmResponse.content}`);
-    console.log(`LLM response has errorCode: ${!!llmResponse.errorCode}`);
-    console.log(`LLM response interrupted: ${llmResponse.interrupted}`);
-    
     // Process the response with response processors
     yield* this._postprocessRunProcessorsAsync(invocationContext, llmResponse);
 
     if (invocationContext.endInvocation) {
-      console.log(`_postprocessAsync: endInvocation is true, returning`);
       return;
     }
-    
+
     // Skip the model response event if there is no content and no error code
     // This is needed for the code executor to trigger another loop
     if (!llmResponse.content && !llmResponse.errorCode && !llmResponse.interrupted) {
-      console.log(`_postprocessAsync: Skipping model response event - no content, no error, not interrupted`);
       return;
     }
 
     // Generate the finalized model response event
     const finalEvent = this._finalizeModelResponseEvent(llmRequest, llmResponse, modelResponseEvent);
-    console.log(`_postprocessAsync: Generated final event with ${finalEvent.getFunctionCalls().length} function calls`);
-    
+
     // Update the mutable event id to avoid conflict
     modelResponseEvent.id = Event.newId();
-    
+
     // Yield the event first
     yield finalEvent;
-    
+
     // Handle any function calls in the response
     if (finalEvent && finalEvent.getFunctionCalls().length > 0) {
-      console.log(`_postprocessAsync: Processing ${finalEvent.getFunctionCalls().length} function calls`);
       yield* this._postprocessHandleFunctionCallsAsync(
         invocationContext,
         finalEvent,
         llmRequest
       );
-    } else {
-      console.log(`_postprocessAsync: No function calls to process`);
     }
   }
 
@@ -700,62 +640,40 @@ export abstract class BaseLlmFlow {
     llmRequest: LlmRequest
   ): AsyncGenerator<Event, void, unknown> {
     try {
-      console.log(`\n--- _postprocessHandleFunctionCallsAsync ---`);
-      console.log(`Function calls in event: ${functionCallEvent.getFunctionCalls().length}`);
-      const functionCalls = functionCallEvent.getFunctionCalls();
-      for (let i = 0; i < functionCalls.length; i++) {
-        const call = functionCalls[i];
-        console.log(`Function call ${i}: name=${call.name}, args=${JSON.stringify(call.args)}`);
-      }
-      
       // Handle function calls asynchronously
       // Get tools dictionary if available
       const toolsDict = 'getToolsDict' in llmRequest ? llmRequest.getToolsDict() : {};
 
       const functionResponseEvent = await functions.handleFunctionCallsAsync(
-        invocationContext, 
-        functionCallEvent, 
+        invocationContext,
+        functionCallEvent,
         toolsDict
       );
-      
+
       if (functionResponseEvent) {
-        console.log(`Function response event created: author=${functionResponseEvent.author}`);
-        const functionResponses = functionResponseEvent.getFunctionResponses();
-        console.log(`Function responses in event: ${functionResponses.length}`);
-        for (let i = 0; i < functionResponses.length; i++) {
-          const response = functionResponses[i];
-          console.log(`Function response ${i}: name=${response.name}, response=${JSON.stringify(response.response).substring(0, 200)}...`);
-        }
-        
         // Check for auth event
         const authEvent = functions.generateAuthEvent(
-          invocationContext, 
+          invocationContext,
           functionResponseEvent
         );
         if (authEvent) {
-          console.log(`Auth event generated: ${authEvent.id}`);
           yield authEvent;
         }
-        
-        console.log(`Yielding function response event: ${functionResponseEvent.id}`);
+
         yield functionResponseEvent;
-        
+
         // Check for transfer_to_agent
         const transferToAgent = functionResponseEvent.actions?.transferToAgent;
         if (transferToAgent && typeof invocationContext.agent.runAsync === 'function') {
-          console.log(`Transferring to agent: ${transferToAgent}`);
           const agentToRun = this._getAgentToRun(invocationContext, transferToAgent);
           if (typeof agentToRun.runAsync === 'function') {
             yield* agentToRun.runAsync(invocationContext);
             return;
           }
         }
-        
+
         // DO NOT recursively call _runOneStepAsync here!
         // The main loop in runAsync will handle the continuation naturally
-        console.log(`Function call handling complete - returning to main loop`);
-      } else {
-        console.log(`No function response event created`);
       }
     } catch (error) {
       console.error('Error handling function calls:', error);

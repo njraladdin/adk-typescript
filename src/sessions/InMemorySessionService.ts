@@ -245,7 +245,6 @@ export class InMemorySessionService extends BaseSessionService {
     }
 
     if (event.actions && event.actions.stateDelta) {
-      console.log('appendingstateDelta', event.actions.stateDelta);
       for (const [key, value] of Object.entries(event.actions.stateDelta)) {
         if (key.startsWith(StatePrefix.APP_PREFIX)) {
           if (!this.appState[appName]) {
@@ -263,9 +262,6 @@ export class InMemorySessionService extends BaseSessionService {
           this.userState[appName][userId][key.substring(StatePrefix.USER_PREFIX.length)] = value;
         }
       }
-
-      console.log('appending result appState', this.appState);
-      console.log('appending result userState', this.userState);
     }
 
     const storageSession = this.sessions[appName][userId][sessionId];

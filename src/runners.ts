@@ -191,17 +191,9 @@ export class Runner {
     
     // Find the appropriate agent to run
     const agentToRun = this._findAgentToRun(session as any, this.agent);
-    
+
     // Run the agent asynchronously
-    console.log(`\n=== Runner.runAsync - Starting agent execution ===`);
-    console.log(`Agent to run: ${agentToRun.name}`);
-    console.log(`Session has ${session.events.length} events before execution`);
-    
-    let eventCount = 0;
     for await (const event of agentToRun.runAsync(invocationContext)) {
-      eventCount++;
-      console.log(`Runner - Event ${eventCount}: author=${event.author}, isFinalResponse=${event.isFinalResponse()}, functionCalls=${event.getFunctionCalls().length}, functionResponses=${event.getFunctionResponses().length}, partial=${event.partial}`);
-      
       // PYTHON BEHAVIOR: Save ALL non-partial events to session immediately BEFORE yielding
       // This matches: if not event.partial: await self.session_service.append_event(session=session, event=event)
       // This ensures session state is updated before the next agent iteration
@@ -211,16 +203,13 @@ export class Runner {
             session: session as any,
             event: event as any
           });
-          console.log(`Runner - Saved non-partial event to session: ${event.id}`);
         } catch (error) {
           console.error('Runner - Error saving event to session:', error);
         }
       }
-      
+
       yield event;
     }
-    
-    console.log(`=== Runner.runAsync - Agent execution completed with ${eventCount} events ===`);
   }
 
   /**
@@ -504,14 +493,6 @@ export class Runner {
       runConfig: runConfig,
       llm: llm
     });
-    console.log( {memoryService: this.memoryService,
-      invocationId: invocationId,
-      agent: this.agent,
-      session: session,
-      userContent: newMessage,
-      liveRequestQueue: liveRequestQueue,
-      runConfig: runConfig,
-      llm: llm})
 
     if (runConfig.supportCfc && this.agent instanceof LlmAgent) {
       // Get the agent's model name using canonicalModel
