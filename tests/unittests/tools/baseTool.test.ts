@@ -52,7 +52,9 @@ function createToolContext(): ToolContext {
     events: []
   });
 
-  const agent = new SequentialAgent('test_agent');
+  const agent = new SequentialAgent({
+    name: 'test_agent'
+  });
 
   const invocationContext = new InvocationContext({
     invocationId: 'invocation_id',
@@ -191,4 +193,4 @@ describe('BaseTool', () => {
       expect(llmRequest.config.tools[1].functionDeclarations[1]).toEqual(declaration);
     });
   });
-}); 
+});
