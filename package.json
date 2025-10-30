@@ -32,6 +32,8 @@
     "build:watch": "tsc --watch",
     "copy-browser": "copyfiles -u 2 \"src/cli/browser/**/*\" dist/cli",
     "test": "jest",
+    "test:unit": "jest tests/unittests",
+    "test:integration": "jest tests/integration",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "ts-node src/index.ts",
