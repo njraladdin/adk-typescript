@@ -18,33 +18,28 @@
     </h3>
 </html>
 
-**⚠️ Unofficial Port & Experimental Status:** This is an unofficial TypeScript port of the [Google ADK Python library](https://github.com/google/adk-python). It's currently in an experimental (alpha) stage, so some features and APIs may be unstable or contain bugs.
+**⚠️ Unofficial Port & Experimental Status:** This is an unofficial TypeScript port of the [Google ADK Python library](https://github.com/google/adk-python). Currently in alpha - APIs may change.
 
-**Agent Development Kit (ADK)** for TypeScript is a flexible and modular framework for developing and deploying AI agents. While optimized for Gemini and the Google ecosystem, ADK is model-agnostic, deployment-agnostic, and is built for compatibility with other frameworks. ADK was designed to make agent development feel more like software development, to make it easier for developers to create, deploy, and orchestrate agentic architectures that range from simple tasks to complex workflows.
+**ADK TypeScript** is a code-first framework for building and deploying AI agents. Optimized for Gemini but model-agnostic. Build agents like software: modular, testable, and production-ready.
 
 
 ---
 
 ## ✨ Key Features
 
-- **Rich Tool Ecosystem**: Utilize pre-built tools, custom functions,
-  OpenAPI specs, or integrate existing tools to give agents diverse
-  capabilities, all for tight integration with the Google ecosystem.
+- **Code-First Development**: Define agents, tools, and orchestration in TypeScript. Full control, testability, and version management.
 
-- **Code-First Development**: Define agent logic, tools, and orchestration
-  directly in TypeScript for ultimate flexibility, testability, and versioning.
+- **Rich Tool Ecosystem**: Pre-built tools, custom functions, OpenAPI specs. Tight Google ecosystem integration.
 
-- **Modular Multi-Agent Systems**: Design scalable applications by composing
-  multiple specialized agents into flexible hierarchies.
+- **Multi-Agent Systems**: Compose specialized agents into scalable hierarchies.
 
-- **Deploy Anywhere**: Easily containerize and deploy agents on Cloud Run or
-  scale with other cloud platforms.
+- **Deploy Anywhere**: Cloud Run, Docker, or any platform. Your choice.
 
-- **Integrated Developer Tooling**: Develop and iterate locally with ease using the included CLI (`npx adk`) and Developer UI (`npx adk web`) for running agents, inspecting execution (`Event` stream), debugging, and visualizing agent graphs (`npx adk graph`).
+- **Developer Tooling**: CLI (`npx adk`), Web UI (`npx adk web`), graph visualization, and execution inspection.
 
-- **Native Streaming Support**: Build real-time, interactive experiences with native support for bidirectional streaming (text, potentially audio/video) using `Runner.runLive` and `LiveRequestQueue`.
+- **Native Streaming**: Bidirectional streaming support via `Runner.runLive` and `LiveRequestQueue`.
 
-- **Built-in Agent Evaluation**: Assess agent performance systematically with the `evaluation` module (`AgentEvaluator`). Create multi-turn evaluation datasets (`.test.json` files) and run evaluations locally via the CLI (`npx adk eval`).
+- **Built-in Evaluation**: Test agents with `.test.json` datasets via `npx adk eval`.
 
 ## 🚀 Installation
 
@@ -218,7 +213,7 @@ npx adk deploy cloud_run <path_to_agent_folder> --project <your-gcp-project> --r
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! As this is a work-in-progress port, contributions are especially valuable. Whether it's bug reports, feature requests, documentation improvements, or code contributions, please see our [**Contributing Guidelines**](./CONTRIBUTING.md) (Link may need updating for TypeScript specifics) to get started.
+Contributions welcome! This is a community-driven port. Bug reports, features, docs, and code all appreciated. See [**Contributing Guidelines**](./CONTRIBUTING.md).
 
 ## 📄 License
 

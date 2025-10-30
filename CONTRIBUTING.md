@@ -1,33 +1,47 @@
-# How to contribute
+# Contributing to ADK TypeScript
 
-We'd love to accept your patches and contributions to this project.
+Thanks for your interest in contributing! This is an unofficial community port, and contributions are what make it better.
 
-## Before you begin
+## How to Contribute
 
-### Sign our Contributor License Agreement
+### Reporting Issues
 
-Contributions to this project must be accompanied by a
-[Contributor License Agreement](https://cla.developers.google.com/about) (CLA).
-You (or your employer) retain the copyright to your contribution; this simply
-gives us permission to use and redistribute your contributions as part of the
-project.
+- Check existing issues before creating a new one
+- Include version info, code snippets, and error messages
+- Describe expected vs actual behavior
 
-If you or your current employer have already signed the Google CLA (even if it
-was for a different project), you probably don't need to do it again.
+### Pull Requests
 
-Visit <https://cla.developers.google.com/> to see your current agreements or to
-sign a new one.
+1. Fork the repo and create a branch from `main`
+2. Make your changes with clear commit messages
+3. Add tests if applicable
+4. Ensure tests pass: `npm test`
+5. Submit a PR with a clear description
 
-### Review our community guidelines
+### Development Setup
 
-This project follows
-[Google's Open Source Community Guidelines](https://opensource.google/conduct/).
+```bash
+git clone https://github.com/njraladdin/adk-typescript.git
+cd adk-typescript
+npm install
+npm test
+```
 
-## Contribution process
+### Code Style
 
-### Code reviews
+- Follow existing TypeScript conventions
+- Use meaningful variable names
+- Add JSDoc comments for public APIs
+- Keep changes focused and atomic
 
-All submissions, including submissions by project members, require review. We
-use GitHub pull requests for this purpose. Consult
-[GitHub Help](https://help.github.com/articles/about-pull-requests/) for more
-information on using pull requests.
+### Areas We Need Help
+
+- Bug fixes and stability improvements
+- Documentation improvements
+- Test coverage
+- Feature parity with Python ADK
+- Performance optimizations
+
+## Code of Conduct
+
+Be respectful and constructive. This is a learning community building cool AI stuff together.
