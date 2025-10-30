@@ -1,4 +1,5 @@
 import { LlmAgent as Agent } from 'adk-typescript/agents';
+import { runAgent } from 'adk-typescript';
 
 class WeatherData {
   temperature: string;
@@ -38,3 +39,9 @@ Here are the data you have for Cupertino
   outputSchema: WeatherData,
   outputKey: 'weather_data',
 });
+
+// Run agent directly when this file is executed
+// Usage: npx ts-node examples/fields_output_schema/agent.ts
+if (require.main === module) {
+  runAgent(rootAgent).catch(console.error);
+}

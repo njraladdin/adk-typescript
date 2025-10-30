@@ -1,5 +1,6 @@
-import { LlmAgent } from '../../../src/agents/LlmAgent';
-import { SequentialAgent } from '../../../src/agents/SequentialAgent';
+import { LlmAgent } from '../../src/agents/LlmAgent';
+import { SequentialAgent } from '../../src/agents/SequentialAgent';
+import { runAgent } from '../../src/cli/runAgent';
 
 const subAgent1 = new LlmAgent({
   name: 'sub_agent_1',
@@ -22,3 +23,9 @@ const sequentialAgent = new SequentialAgent({
 });
 
 export const rootAgent = sequentialAgent;
+
+// Run agent directly when this file is executed
+// Usage: npx ts-node examples/non_llm_sequential/agent.ts
+if (require.main === module) {
+  runAgent(rootAgent as any).catch(console.error);
+}

@@ -16,7 +16,9 @@
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "adk-typescript": ["src/index.ts"],
+      "adk-typescript/*": ["src/*"]
     }
   },
   "include": ["src/**/*"],

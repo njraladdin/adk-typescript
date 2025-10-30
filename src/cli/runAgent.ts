@@ -39,7 +39,7 @@ export async function runAgent(
     userId = 'test-user',
     initialState = {}
   } = options;
-
+console.log('running agent')
   const sessionService = new InMemorySessionService();
   const artifactService = new InMemoryArtifactService();
 

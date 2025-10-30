@@ -1,10 +1,11 @@
-import { LlmAgent } from '../../../src/agents/LlmAgent';
-import { ToolContext } from '../../../src/tools/ToolContext';
-import { CallbackContext } from '../../../src/agents/CallbackContext';
-import { LlmRequest } from '../../../src/models/LlmRequest';
-import { LlmResponse } from '../../../src/models/LlmResponse';
-import { BaseTool } from '../../../src/tools/BaseTool';
-import { Content, Part } from '../../../src/models/types';
+import { LlmAgent } from '../../src/agents/LlmAgent';
+import { ToolContext } from '../../src/tools/ToolContext';
+import { CallbackContext } from '../../src/agents/CallbackContext';
+import { LlmRequest } from '../../src/models/LlmRequest';
+import { LlmResponse } from '../../src/models/LlmResponse';
+import { BaseTool } from '../../src/tools/BaseTool';
+import { Content, Part } from '../../src/models/types';
+import { runAgent } from '../../src/cli/runAgent';
 
 // --- Tool Functions ---
 
@@ -267,3 +268,9 @@ export const rootAgent = new LlmAgent({
   beforeToolCallback: [beforeToolCb1, beforeToolCb2, beforeToolCb3],
   afterToolCallback: [afterToolCb1, afterToolCb2, afterToolCb3],
 });
+
+// Run agent directly when this file is executed
+// Usage: npx ts-node examples/callbacks/agent.ts
+if (require.main === module) {
+  runAgent(rootAgent).catch(console.error);
+}
