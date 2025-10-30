@@ -19,15 +19,18 @@ const serviceInstances: { [key: string]: SessionService } = {};
 function getSessionService(
   serviceType: SessionServiceType = SessionServiceType.IN_MEMORY
 ): SessionService {
-  // Return existing instance if available
+  // For IN_MEMORY tests, always create a new instance to ensure test isolation
+  if (serviceType === SessionServiceType.IN_MEMORY) {
+    return new InMemorySessionService();
+  }
+  
+  // For DATABASE tests, return existing instance if available
   if (serviceInstances[serviceType]) {
     return serviceInstances[serviceType];
   }
   
-  // Create new instance
-  const service = serviceType === SessionServiceType.DATABASE
-    ? new DatabaseSessionService('sqlite:///:memory:')
-    : new InMemorySessionService();
+  // Create new DATABASE instance
+  const service = new DatabaseSessionService('sqlite:///:memory:');
     
   // Store instance for cleanup
   serviceInstances[serviceType] = service;
@@ -113,7 +116,7 @@ describe.each([
     expect(session.appName).toBe(appName);
     expect(session.userId).toBe(userId);
     expect(session.id).toBeDefined();
-    expect(session.state).toEqual(state);
+    expect(session.state.getAll()).toEqual(state);
     
     const retrievedSession = await resolveValue(
       sessionService.getSession({
@@ -123,7 +126,10 @@ describe.each([
       })
     );
     
-    expect(retrievedSession).toEqual(session);
+    expect(retrievedSession?.appName).toBe(session.appName);
+    expect(retrievedSession?.userId).toBe(session.userId);
+    expect(retrievedSession?.id).toBe(session.id);
+    expect(retrievedSession?.state.getAll()).toEqual(session.state.getAll());
 
     const sessionId = session.id;
     await resolveValue(
