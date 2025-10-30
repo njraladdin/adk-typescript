@@ -7,13 +7,64 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
-import { runInputFile, runInteractively, runCli } from '../../../../src/cli/cli';
 import { InMemoryArtifactService } from '../../../../src/artifacts/InMemoryArtifactService';
 import { InMemorySessionService } from '../../../../src/sessions/InMemorySessionService';
 import { Content, Part } from '../../../../src/models/types';
-import { Runner } from '../../../../src/runners';
 import { Session } from '../../../../src/sessions/Session';
+import { BaseAgent } from '../../../../src/agents/BaseAgent';
+import { Event } from '../../../../src/events/Event';
+import { InvocationContext } from '../../../../src/agents/InvocationContext';
 import * as envs from '../../../../src/cli/utils/envs';
+
+// Mock the Runner class before importing the CLI functions
+jest.mock('../../../../src/runners', () => {
+  const originalModule = jest.requireActual('../../../../src/runners');
+  
+  class MockRunner extends originalModule.Runner {
+    constructor(params: any) {
+      super(params);
+    }
+
+    async *runAsync(params: {
+      userId: string;
+      sessionId: string;
+      newMessage: Content;
+      runConfig?: any;
+    }): AsyncGenerator<Event, void, unknown> {
+      const { newMessage } = params;
+      const text = newMessage?.parts?.[0]?.text || '';
+      
+      yield new Event({
+        author: 'assistant',
+        content: { role: 'assistant', parts: [{ text: `echo:${text}` }] }
+      });
+    }
+  }
+  
+  return {
+    ...originalModule,
+    Runner: MockRunner
+  };
+});
+
+// Provide a controllable mock for readline before importing CLI
+const __readlineAnswers: string[] = [];
+const setReadlineAnswers = (...answers: string[]) => {
+  __readlineAnswers.splice(0, __readlineAnswers.length, ...answers);
+};
+const readlineMock = {
+  createInterface: jest.fn().mockReturnValue({
+    question: jest.fn((question: string, callback: (answer: string) => void) => {
+      const answer = __readlineAnswers.length ? __readlineAnswers.shift()! : 'exit';
+      callback(answer);
+    }),
+    close: jest.fn(),
+  }),
+};
+jest.mock('readline', () => readlineMock);
+
+import { runInputFile, runInteractively, runCli } from '../../../../src/cli/cli';
+import { Runner } from '../../../../src/runners';
 
 // Helpers
 class Recorder {
@@ -33,18 +84,35 @@ class MockContent {
   constructor(public role: string, public parts: MockPart[]) {}
 }
 
-class MockAgent {
-  constructor(public name: string) {}
-}
+class MockAgent extends BaseAgent {
+  constructor(name: string) {
+    super(name);
+  }
 
-class MockRunner {
-  constructor(...args: any[]) {}
+  protected async *runAsyncImpl(
+    invocationContext: InvocationContext
+  ): AsyncGenerator<Event, void, unknown> {
+    yield new Event({
+      author: this.name,
+      invocationId: invocationContext.invocationId,
+      branch: invocationContext.branch,
+      content: { role: 'assistant', parts: [{ text: `Mock response from ${this.name}` }] }
+    });
+  }
 
-  async *runAsync(...args: any[]): AsyncGenerator<any> {
-    const message = args[0]?.newMessage || args[2];
-    const text = message?.parts?.[0]?.text || '';
-    const response = new MockContent('assistant', [new MockPart(`echo:${text}`)]);
-    yield { author: 'assistant', content: response };
+  protected async *runLiveImpl(
+    invocationContext: InvocationContext
+  ): AsyncGenerator<Event, void, unknown> {
+    yield new Event({
+      author: this.name,
+      invocationId: invocationContext.invocationId,
+      branch: invocationContext.branch,
+      content: { role: 'assistant', parts: [{ text: `Mock live response from ${this.name}` }] }
+    });
+  }
+
+  setUserContent(content: Content, invocationContext: InvocationContext): void {
+    // No-op for testing
   }
 }
 
@@ -85,10 +153,6 @@ describe('CLI Utils', () => {
 
   describe('runInputFile', () => {
     it('should echo user & assistant messages and return a populated session', async () => {
-      // Mock Runner
-      const originalRunner = Runner;
-      (global as any).Runner = MockRunner;
-
       const inputJson = {
         state: { foo: 'bar' },
         queries: ['hello world'],
@@ -109,12 +173,9 @@ describe('CLI Utils', () => {
         inputPath
       );
 
-      expect(session.state.foo).toBe('bar');
+      expect(session.state.get('foo')).toBe('bar');
       expect(logOutput.some(line => line.includes('[user]'))).toBe(true);
       expect(logOutput.some(line => line.includes('[assistant]'))).toBe(true);
-
-      // Restore Runner
-      (global as any).Runner = originalRunner;
     });
   });
 
@@ -145,9 +206,6 @@ describe('CLI Utils', () => {
       
       // Mock envs.loadDotenvForAgent
       jest.spyOn(envs, 'loadDotenvForAgent').mockImplementation(() => {});
-      
-      // Mock Runner
-      (global as any).Runner = MockRunner;
     });
 
     it('should process an input file without raising and without saving', async () => {
@@ -158,7 +216,7 @@ describe('CLI Utils', () => {
       // Mock require to return our fake agent
       const originalRequire = require;
       jest.doMock(path.join(fakeAgentDir, 'agent.ts'), () => ({
-        rootAgent: new MockAgent('fake_root')
+        rootAgent: { name: 'fake_root' }
       }), { virtual: true });
 
       await expect(runCli({
@@ -184,9 +242,9 @@ describe('CLI Utils', () => {
         }),
       };
       
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      setReadlineAnswers('exit', 'sess123');
       jest.doMock(path.join(fakeAgentDir, 'agent.ts'), () => ({
-        rootAgent: new MockAgent('fake_root')
+        rootAgent: { name: 'fake_root' }
       }), { virtual: true });
 
       const sessionFile = path.join(fakeAgentDir, 'sess123.session.json');
@@ -215,8 +273,6 @@ describe('CLI Utils', () => {
         userId: 'u',
       });
       const artifactService = new InMemoryArtifactService();
-      // Mock Runner
-      (global as any).Runner = MockRunner;
 
       const rootAgent = new MockAgent('root') as any;
 
@@ -234,7 +290,7 @@ describe('CLI Utils', () => {
         }),
       };
 
-      jest.doMock('readline', () => mockReadline, { virtual: true });
+      setReadlineAnswers('  ', 'hello', 'exit');
 
       await runInteractively(rootAgent, artifactService, session, sessionService);
 
@@ -285,14 +341,11 @@ describe('CLI Utils', () => {
         }),
       };
 
-      jest.doMock('readline', () => mockReadline, { virtual: true });
-      jest.doMock(path.join(fakeAgentDir, 'agent.ts'), () => ({
-        rootAgent: new MockAgent('fake_root')
-      }), { virtual: true });
+      setReadlineAnswers('exit');
+     jest.doMock(path.join(fakeAgentDir, 'agent.ts'), () => ({
+       rootAgent: new MockAgent('fake_root')
+     }), { virtual: true });
       
-      // Mock Runner
-      (global as any).Runner = MockRunner;
-
       await runCli({
         agentParentDir: path.dirname(fakeAgentDir),
         agentFolderName: 'fake_agent',
@@ -305,4 +358,4 @@ describe('CLI Utils', () => {
       expect(logOutput.some(msg => msg.includes('[assistant]: hello!'))).toBe(true);
     });
   });
-}); 
+});
