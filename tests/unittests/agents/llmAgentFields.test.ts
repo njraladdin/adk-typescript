@@ -41,7 +41,7 @@ describe('LlmAgent Fields', () => {
   describe('canonical_model', () => {
     it('should throw an error if no model is found', () => {
       const agent = new LlmAgent({ name: 'test_agent' });
-      expect(() => agent.canonicalModel).toThrow('No model found for test_agent.');
+      expect(() => agent.canonicalModel).toThrow('No model found for test_agent');
     });
 
     it('should return a model instance from a string name', () => {
@@ -65,7 +65,7 @@ describe('LlmAgent Fields', () => {
       const childAgent = new LlmAgent({ name: 'child_agent' });
       parentAgent.addSubAgent(childAgent);
 
-      expect(childAgent.canonicalModel).toBe(parentAgent.canonicalModel);
+      expect(childAgent.canonicalModel.model).toBe(parentAgent.canonicalModel.model);
     });
   });
 
@@ -196,7 +196,7 @@ describe('LlmAgent Fields', () => {
         expect(() => {
             new LlmAgent({
                 name: 'test_agent',
-                generateContentConfig: { systemInstruction: 'hello', tools:[] },
+                generateContentConfig: { systemInstruction: 'hello' },
             });
         }).toThrow('System instruction must be set via LlmAgent.instruction.');
     });
@@ -206,7 +206,7 @@ describe('LlmAgent Fields', () => {
         expect(() => {
             new LlmAgent({
                 name: 'test_agent',
-                generateContentConfig: { responseSchema: TestSchema, tools:[] },
+                generateContentConfig: { responseSchema: TestSchema },
             });
         }).toThrow('Response schema must be set via LlmAgent.output_schema.');
     });

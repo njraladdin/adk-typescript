@@ -81,7 +81,7 @@ export interface GenerateContentConfig {
   candidateCount?: number;
   stopSequences?: string[];
   systemInstruction?: string;
-  tools: Tool[];
+  tools?: Tool[];
   responseSchema?: any;
   responseMimeType?: string;
   thinkingConfig?: ThinkingConfig;
@@ -150,4 +150,4 @@ export interface Message {
   parts: Part[];
   timestamp: Date;
   text: () => string;
-} 
+}
