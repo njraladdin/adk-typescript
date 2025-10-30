@@ -10,7 +10,7 @@ import { getAgentGraph } from './agentGraph';
 import { createApiServer } from './apiServer';
 import { startWebServer } from './webServer';
 import * as fs from 'fs';
-import { VERSION } from '../index';
+import { VERSION } from '../version';
 import { HelpfulCommand } from './HelpfulCommand';
 
 const program = new Command();

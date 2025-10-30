@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { promisify } from 'util';
-import { VERSION } from '../index';
+import { VERSION } from '../version';
 
 const AGENT_TS_TEMPLATE = `import { LlmAgent as Agent } from 'adk-typescript/agents';
 import {  ToolContext } from 'adk-typescript/tools';
