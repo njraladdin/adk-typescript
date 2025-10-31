@@ -1,7 +1,29 @@
 # Changelog
 
+## [current_version]
+* Fixed tool function parameter handling in all examples and documentation
+* Updated README.md with correct FunctionTool usage pattern showing explicit function declarations
+* Fixed examples (quickstart, default_agent, callbacks, fields_planner) to use correct tool function signatures with `params: Record<string, any>`
 
-## [current_version] 
+## [v1.0.4]
+* Migrated to @google/genai: Ported the codebase to use the official @google/genai package for improved Google AI integration
+* Added runAgent functionality: New capability to run agents directly by executing files, making the package more versatile when installed
+* Improved Environment Configuration: Moved project constants to .env file for better configuration management
+* Fixed automatic function declarations generation
+* Improved logic for checking whether to use Google AI or Vertex AI
+* Added bash script for quick build and package linking during development
+* Fixed VERSION object shorthand syntax error
+* Fixed ES module import issue in CLI tests on Node.js 18.x
+* Fixed undefined errors in LlmRequest.ts for strict TypeScript compilation
+* Fixed TypeScript isolatedModules errors for CI
+* Comprehensive test suite fixes across multiple components (FunctionTool, LlmAgentFields, sessionService, cliTools, BaseAgent, connectionsClient, enterpriseWebSearchTool, AgentTool, applicationIntegrationToolset, googleLlm, cli, asyncToolCallbacks, basetool, cliCreate)
+* Added automated testing with GitHub Actions: Continuous integration now runs automatically
+* Configured CI to run only unit tests
+* Updated GitHub Actions to run tests only for Node.js version 20.x
+* Fixed slow startup time on CLI run command
+* Removed spammy console logs for cleaner output
+* Cleaned up README
+* Added example agent to README for better onboarding
 
 ## [1.0.3] 
 * Removed JSDoc-based function description extraction, since JSDoc is not available at runtime for functions in TypeScript (unlike Python).

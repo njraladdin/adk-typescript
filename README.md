@@ -83,14 +83,15 @@ Here's a simple weather agent to get you started:
 ```typescript
 // agent.ts
 import { LlmAgent } from 'adk-typescript/agents';
-import { ToolContext } from 'adk-typescript/tools';
+import { ToolContext, FunctionTool } from 'adk-typescript/tools';
 import { runAgent } from 'adk-typescript';
 
-// Define a tool function with explicit parameters
+// Define a tool function - receives params as an object
 async function getWeather(
-  city: string,
+  params: Record<string, any>,
   context: ToolContext
 ): Promise<{ temperature: string; condition: string }> {
+  const city = params.city; // Extract city from params
   // Your weather API logic here
   return {
     temperature: '72°F',
@@ -98,13 +99,34 @@ async function getWeather(
   };
 }
 
+// Create a tool with explicit function declaration
+const getWeatherTool = new FunctionTool({
+  name: 'getWeather',
+  description: 'Get current weather for a city',
+  fn: getWeather,
+  functionDeclaration: {
+    name: 'getWeather',
+    description: 'Get current weather for a city',
+    parameters: {
+      type: 'object',
+      properties: {
+        city: {
+          type: 'string',
+          description: 'Name of the city'
+        }
+      },
+      required: ['city']
+    }
+  }
+});
+
 // Create your agent
 export const rootAgent = new LlmAgent({
   name: 'weather_agent',
   model: 'gemini-2.0-flash',
   description: 'A helpful weather assistant',
   instruction: 'You help users get weather information. Use the getWeather tool when asked about weather.',
-  tools: [getWeather], // Pass functions directly!
+  tools: [getWeatherTool],
 });
 
 // Run programmatically (optional)

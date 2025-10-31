@@ -1,8 +1,6 @@
-
-
 import { LlmAgent as Agent } from 'adk-typescript/agents';
 import { BuiltInPlanner } from 'adk-typescript/planners';
-import { ToolContext } from 'adk-typescript/tools';
+import { ToolContext, FunctionTool } from 'adk-typescript/tools';
 import { runAgent } from 'adk-typescript';
 
 // --- Tool Functions ---
@@ -10,14 +8,15 @@ import { runAgent } from 'adk-typescript';
 /**
  * Roll a die and return the rolled result.
  *
- * @param sides The integer number of sides the die has.
+ * @param params Tool parameters containing sides
  * @param toolContext The tool context for state management.
  * @returns An integer of the result of rolling the die.
  */
 function rollDie(
-  sides: number,
+  params: Record<string, any>,
   toolContext: ToolContext
 ): number {
+  const sides = params.sides;
   const result = Math.floor(Math.random() * sides) + 1;
 
   if (!toolContext.state.get('rolls')) {
@@ -33,12 +32,15 @@ function rollDie(
 /**
  * Check if a given list of numbers are prime.
  *
- * @param nums The list of numbers to check.
+ * @param params Tool parameters containing nums
+ * @param toolContext The tool context (optional)
  * @returns A string indicating which number is prime.
  */
 async function checkPrime(
-  nums: number[]
+  params: Record<string, any>,
+  toolContext?: ToolContext
 ): Promise<string> {
+  const nums = params.nums;
   const primes = new Set<number>();
 
   for (const number of nums) {
@@ -67,6 +69,48 @@ async function checkPrime(
 
 // --- Agent Definition ---
 
+// Create tools with explicit function declarations
+const rollDieTool = new FunctionTool({
+  name: 'rollDie',
+  description: 'Roll a die and return the rolled result',
+  fn: rollDie,
+  functionDeclaration: {
+    name: 'rollDie',
+    description: 'Roll a die and return the rolled result',
+    parameters: {
+      type: 'object',
+      properties: {
+        sides: {
+          type: 'number',
+          description: 'The integer number of sides the die has'
+        }
+      },
+      required: ['sides']
+    }
+  }
+});
+
+const checkPrimeTool = new FunctionTool({
+  name: 'checkPrime',
+  description: 'Check if a given list of numbers are prime',
+  fn: checkPrime,
+  functionDeclaration: {
+    name: 'checkPrime',
+    description: 'Check if a given list of numbers are prime',
+    parameters: {
+      type: 'object',
+      properties: {
+        nums: {
+          type: 'array',
+          description: 'The list of numbers to check',
+          items: { type: 'number' }
+        }
+      },
+      required: ['nums']
+    }
+  }
+});
+
 export const rootAgent = new Agent({
   model: 'gemini-2.0-flash',
   name: 'data_processing_agent',
@@ -88,7 +132,7 @@ export const rootAgent = new Agent({
     You should always perform the previous 3 steps when asking for a roll and checking prime numbers.
     You should not rely on the previous history on prime results.
   `,
-  tools: [rollDie, checkPrime],
+  tools: [rollDieTool, checkPrimeTool],
   planner: new BuiltInPlanner({
     includeThoughts: true,
   }),
